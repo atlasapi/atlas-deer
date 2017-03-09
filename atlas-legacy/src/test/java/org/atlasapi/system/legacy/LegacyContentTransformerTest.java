@@ -255,18 +255,39 @@ public class LegacyContentTransformerTest {
         legacyItem.setId(2L);
         legacyItem.setPublisher(Publisher.AMAZON_UK);
         legacyItem.setReviews(Arrays.asList(
-                Review.builder().withLocale(Locale.CHINESE).withReview("hen hao").build(),
-                Review.builder().withLocale(Locale.ENGLISH).withReview("dog's bolls").build(),
-                Review.builder().withLocale(Locale.FRENCH).withReview("tres bien").build()
+                Review.builder()
+                        .withLocale(Locale.CHINESE)
+                        .withReview("hen hao")
+                        .withPublisherKey(Publisher.METABROADCAST.key())
+                        .build(),
+                Review.builder()
+                        .withLocale(Locale.ENGLISH)
+                        .withReview("dog's bolls")
+                        .withPublisherKey(Publisher.RADIO_TIMES.key())
+                        .build(),
+                Review.builder()
+                        .withLocale(Locale.FRENCH)
+                        .withReview("tres bien")
+                        .withPublisherKey(null)
+                        .build()
         ));
 
         transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
         assertThat(transformedItem.getReviews().size(), is(3));
 
         assertThat(transformedItem.getReviews().containsAll(Arrays.asList(
-                org.atlasapi.entity.Review.builder("hen hao").withLocale(Locale.CHINESE).withSource(Optional.of(Publisher.AMAZON_UK)).build(),
-                org.atlasapi.entity.Review.builder("dog's bolls").withLocale(Locale.ENGLISH).withSource(Optional.of(Publisher.AMAZON_UK)).build(),
-                org.atlasapi.entity.Review.builder("tres bien").withLocale(Locale.FRENCH).withSource(Optional.of(Publisher.AMAZON_UK)).build()
+                org.atlasapi.entity.Review.builder("hen hao")
+                        .withLocale(Locale.CHINESE)
+                        .withSource(Optional.of(Publisher.METABROADCAST))
+                        .build(),
+                org.atlasapi.entity.Review.builder("dog's bolls")
+                        .withLocale(Locale.ENGLISH)
+                        .withSource(Optional.of(Publisher.RADIO_TIMES))
+                        .build(),
+                org.atlasapi.entity.Review.builder("tres bien")
+                        .withLocale(Locale.FRENCH)
+                        .withSource(Optional.empty())
+                        .build()
         )), is(true));
     }
 
