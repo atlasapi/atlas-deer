@@ -106,7 +106,7 @@ public class QueryContextParser implements ParameterNameProvider {
                                         "series.id",
                                         "actionableFilterParameters",
                                         "aliases.namespace",
-                                        "aliases.value"
+                                        "aliases.value",
                                         "platform",
                                         "downweigh"
                                 )
