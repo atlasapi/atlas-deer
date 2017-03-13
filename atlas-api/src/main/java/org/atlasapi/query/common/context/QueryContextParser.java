@@ -4,9 +4,9 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.application.ApplicationResolutionException;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
@@ -71,45 +71,52 @@ public class QueryContextParser implements ParameterNameProvider {
 
     @Override
     public ImmutableSet<String> getOptionalParameters() {
+        // These have to be maintained for reasons of backwards compatibility. Some of
+        // them are no longer being used and some have been properly added to the
+        // AttributeQueryParsers for some endpoints where it is appropriate,
+        // but not for others where they are not wanted.
+        //
+        // Removing them from this list will cause calls that improperly reference them
+        // to fail whereas before they were just ignored. Therefore we need to preserve
+        // them here to ensure those calls continue to work.
+        ImmutableSet<String> backwardsCompatibilityList = ImmutableSet.of(
+                JsonResponseWriter.CALLBACK,
+                "available",
+                "order_by",
+                "q",
+                "title_boost",
+                "locations.available",
+                "broadcasts.transmissionTime.gt",
+                "broadcasts.transmissionTime.lt",
+                "broadcasts.transmissionTime.eq",
+                "broadcasts.transmissionEndTime.gt",
+                "broadcasts.transmissionEndTime.lt",
+                "broadcasts.transmissionEndTime.eq",
+                "region",
+                "broadcastWeight",
+                "titleWeight",
+                "tags.topic.id",
+                "brand.series.available",
+                "sub_items.limit",
+                "sub_items.offset",
+                "sub_items.ordering",
+                "sub_items_summaries.limit",
+                "sub_items_summaries.offset",
+                "sub_items_summaries.ordering",
+                "episode.brand.id",
+                "brand.id",
+                "series.id",
+                "actionableFilterParameters",
+                "platform",
+                "downweigh"
+        );
         return ImmutableSet.copyOf(
                 Iterables.concat(
                         ImmutableList.of(
                                 annotationExtractor.getParameterNames(),
                                 selectionBuilder.getParameterNames(),
                                 configFetcher.getParameterNames(),
-                                ImmutableSet.of(
-                                        JsonResponseWriter.CALLBACK,
-                                        "available",
-                                        "order_by",
-                                        "q",
-                                        "title_boost",
-                                        "locations.available",
-                                        "broadcasts.transmissionTime.gt",
-                                        "broadcasts.transmissionTime.lt",
-                                        "broadcasts.transmissionTime.eq",
-                                        "broadcasts.transmissionEndTime.gt",
-                                        "broadcasts.transmissionEndTime.lt",
-                                        "broadcasts.transmissionEndTime.eq",
-                                        "region",
-                                        "broadcastWeight",
-                                        "titleWeight",
-                                        "tags.topic.id",
-                                        "brand.series.available",
-                                        "sub_items.limit",
-                                        "sub_items.offset",
-                                        "sub_items.ordering",
-                                        "sub_items_summaries.limit",
-                                        "sub_items_summaries.offset",
-                                        "sub_items_summaries.ordering",
-                                        "episode.brand.id",
-                                        "brand.id",
-                                        "series.id",
-                                        "actionableFilterParameters",
-                                        "aliases.namespace",
-                                        "aliases.value",
-                                        "platform",
-                                        "downweigh"
-                                )
+                                backwardsCompatibilityList
                         )
                 )
         );

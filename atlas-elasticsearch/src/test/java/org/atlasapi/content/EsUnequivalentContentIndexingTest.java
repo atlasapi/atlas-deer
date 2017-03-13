@@ -64,7 +64,7 @@ public final class EsUnequivalentContentIndexingTest {
     @Before
     public void setup() throws TimeoutException {
         ElasticSearchHelper.refresh(esClient.client());
-        contentIndexer = new EsUnequivalentContentIndex(
+        contentIndexer = EsUnequivalentContentIndex.create(
                 esClient.client(),
                 EsSchema.CONTENT_INDEX,
                 mock(ChannelGroupResolver.class),

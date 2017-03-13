@@ -520,6 +520,46 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.SPECIALIZATION,
                                 EnumCoercer.create(Specialization.FROM_KEY())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.Q,
+                                StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.TITLE_BOOST,
+                                FloatCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.ORDER_BY,
+                                StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.REGION,
+                                IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.BROADCAST_WEIGHT,
+                                FloatCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.SEARCH_TOPIC_ID,
+                                StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.BRAND_ID,
+                                IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.EPISODE_BRAND_ID,
+                                IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.ACTIONABLE_FILTER_PARAMETERS,
+                                StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.SERIES_ID,
+                                IdCoercer.create(idCodec())
                         )
                 )
         );

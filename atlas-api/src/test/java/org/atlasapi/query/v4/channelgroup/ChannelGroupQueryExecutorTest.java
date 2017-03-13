@@ -8,8 +8,6 @@ import java.util.stream.StreamSupport;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupRef;
@@ -30,6 +28,8 @@ import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.common.query.Selection;
 
 import com.google.common.base.Optional;
@@ -128,7 +128,7 @@ public class ChannelGroupQueryExecutorTest {
         when(attributeQuery.getAttribute()).thenReturn(attribute);
         when(attribute.getPath()).thenReturn(ImmutableList.of("path"));
 
-        AttributeQuerySet attributeQueries = new AttributeQuerySet(Sets.<AttributeQuery<Object>>newHashSet(
+        AttributeQuerySet attributeQueries = AttributeQuerySet.create(Sets.<AttributeQuery<Object>>newHashSet(
                 attributeQuery));
 
         when(channelQuery.getOperands()).thenReturn(attributeQueries);
@@ -275,7 +275,7 @@ public class ChannelGroupQueryExecutorTest {
         when(attributeQuery.getAttribute()).thenReturn(attribute);
         when(attribute.getPath()).thenReturn(ImmutableList.of("path"));
 
-        AttributeQuerySet attributeQueries = new AttributeQuerySet(Sets.<AttributeQuery<Object>>newHashSet(
+        AttributeQuerySet attributeQueries = AttributeQuerySet.create(Sets.<AttributeQuery<Object>>newHashSet(
                 attributeQuery));
 
         when(channelQuery.getOperands()).thenReturn(attributeQueries);

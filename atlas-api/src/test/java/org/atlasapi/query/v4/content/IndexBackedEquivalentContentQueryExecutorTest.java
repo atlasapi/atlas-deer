@@ -2,7 +2,6 @@ package org.atlasapi.query.v4.content;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.entity.Id;
@@ -12,6 +11,8 @@ import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.context.QueryContext;
+
+import com.metabroadcast.applications.client.model.internal.Application;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -33,7 +34,7 @@ public class IndexBackedEquivalentContentQueryExecutorTest {
 
     @Before
     public void setup() {
-        qe = new IndexBackedEquivalentContentQueryExecutor(contentIndex, equivalentContentResolver);
+        qe = IndexBackedEquivalentContentQueryExecutor.create(contentIndex, equivalentContentResolver);
     }
 
     @Test(expected = NotFoundException.class)

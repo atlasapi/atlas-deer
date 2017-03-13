@@ -112,7 +112,7 @@ public class ChannelQueryExecutorTest {
         when(channelQuery.isListQuery()).thenReturn(true);
         when(channelQuery.getContext()).thenReturn(context);
         when(channelQuery.getOperands()).thenReturn(
-                new AttributeQuerySet(Sets.<AttributeQuery<Object>>newHashSet())
+                AttributeQuerySet.create(Sets.<AttributeQuery<Object>>newHashSet())
         );
         when(channelResolver.resolveChannels(any(ChannelQuery.class)))
                 .thenReturn(
@@ -223,7 +223,7 @@ public class ChannelQueryExecutorTest {
         when(channelQuery.isListQuery()).thenReturn(true);
         when(channelQuery.getContext()).thenReturn(context);
         when(channelQuery.getOperands()).thenReturn(
-                new AttributeQuerySet(Sets.<AttributeQuery<Object>>newHashSet())
+                AttributeQuerySet.create(Sets.<AttributeQuery<Object>>newHashSet())
         );
 
         when(channelResolver.resolveChannels(any(ChannelQuery.class)))
@@ -306,7 +306,7 @@ public class ChannelQueryExecutorTest {
         when(query.isListQuery()).thenReturn(true);
         when(query.getContext()).thenReturn(context);
         when(query.getOperands()).thenReturn(
-                new AttributeQuerySet(ImmutableList.<AttributeQuery<Object>>of(
+                AttributeQuerySet.create(ImmutableList.<AttributeQuery<Object>>of(
                         namespaceAttribute,
                         valueAttribute
                 ))
@@ -379,7 +379,7 @@ public class ChannelQueryExecutorTest {
         when(query.isListQuery()).thenReturn(true);
         when(query.getContext()).thenReturn(context);
         when(query.getOperands()).thenReturn(
-                new AttributeQuerySet(ImmutableList.<AttributeQuery<Object>>of(
+                AttributeQuerySet.create(ImmutableList.<AttributeQuery<Object>>of(
                         namespaceAttribute,
                         valueAttribute,
                         advertisedOnAttribute

@@ -65,7 +65,7 @@ public class QueryModule {
 
     @Bean
     public ContextualQueryExecutor<Topic, Content> topicContentQueryExecutor() {
-        return new TopicContentQueryExecutor(
+        return TopicContentQueryExecutor.create(
                 persistenceModule.topicStore(),
                 persistenceModule.contentIndex(),
                 mergingContentResolver()
@@ -84,7 +84,7 @@ public class QueryModule {
 
     @Bean
     public QueryExecutor<Content> contentQueryExecutor() {
-        return new IndexBackedEquivalentContentQueryExecutor(
+        return IndexBackedEquivalentContentQueryExecutor.create(
                 persistenceModule.contentIndex(),
                 mergingContentResolver()
         );
