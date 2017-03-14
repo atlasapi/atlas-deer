@@ -1,4 +1,4 @@
-package org.atlasapi.content;
+package org.atlasapi.query;
 
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;
@@ -11,7 +11,11 @@ public class QueryOrderingTest {
 
     @Test
     public void defaultsToAscending() {
-        QueryOrdering ordering = QueryOrdering.fromOrderBy("foo,bar.desc,baz");
+        QueryOrdering ordering = QueryOrdering.fromOrderBy(ImmutableList.of(
+                "foo",
+                "bar.desc",
+                "baz"
+        ));
 
         ImmutableList<QueryOrdering.Clause> sortOrder = ordering.getSortOrder();
 

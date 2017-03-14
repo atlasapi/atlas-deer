@@ -114,7 +114,7 @@ public class EsTopicIndexTest {
         index.index(topic);
         refresh(esClient.client());
 
-        AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
+        AttributeQuerySet query = AttributeQuerySet.create(ImmutableList.of(
                 Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId()))
         ));
         IndexQueryResult result = Futures.getUnchecked(index.query(
@@ -138,7 +138,7 @@ public class EsTopicIndexTest {
         index.index(topic);
         refresh(esClient.client());
 
-        AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
+        AttributeQuerySet query = AttributeQuerySet.create(ImmutableList.of(
                 Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId())),
                 Attributes.ALIASES_VALUE.createQuery(Operators.EQUALS, ImmutableList.of("Alias"))
         ));
@@ -163,7 +163,7 @@ public class EsTopicIndexTest {
         index.index(topic);
         refresh(esClient.client());
 
-        AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
+        AttributeQuerySet query = AttributeQuerySet.create(ImmutableList.of(
                 Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId()))
         ));
         IndexQueryResult result = Futures.getUnchecked(index.query(
@@ -195,7 +195,7 @@ public class EsTopicIndexTest {
         index.index(topic1);
         refresh(esClient.client());
 
-        AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
+        AttributeQuerySet query = AttributeQuerySet.create(ImmutableList.of(
                 Attributes.ALIASES_VALUE.createQuery(Operators.EQUALS, ImmutableList.of("Alias"))
         ));
         IndexQueryResult result = Futures.getUnchecked(index.query(query,
