@@ -65,6 +65,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private static final String METER_FAILURE = "meter.failure";
     private static final String METER_NOP = "meter.nop";
     private static final String METER_BLACKLIST = "meter.blacklist";
+    private static final String METER_GRAPH_SIZE_WARN = "graph.size.meter.warn";
+    private static final String METER_GRAPH_SIZE_REJECT = "graph.size.meter.reject";
     private static final String METER_FAILED_TO_LOCK_ADJACENTS = "lock.adjacents.meter.failure";
     private static final String METER_FAILED_TO_LOCK_TRANSITIVES = "lock.transitives.meter.failure";
     private static final String COUNTER_BLOCKED = "counter.blocked";
@@ -78,9 +80,9 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private static final String CREATED_GRAPH_HISTOGRAM_SIZE = "graph.created.histogram.size";
 
     private static final Duration EXECUTION_DURATION_ALERTING_THRESHOLD = Duration.ofSeconds(2);
-    private static final int GRAPH_SIZE_ALERTING_THRESHOLD = 150;
 
     private final MessageSender<EquivalenceGraphUpdateMessage> messageSender;
+    private final EquivalenceGraphRejectionFilter rejectionFilter;
 
     private final MetricRegistry metricRegistry;
     private final String updateEquivalences;
@@ -93,6 +95,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             String metricPrefix
     ) {
         this.messageSender = checkNotNull(messageSender);
+        this.rejectionFilter = EquivalenceGraphRejectionFilter.create();
 
         this.metricRegistry = metricRegistry;
         this.updateEquivalences = metricPrefix + "updateEquivalences.";
@@ -139,17 +142,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                                 )
                         )
                         .build();
-
-                graphUpdate.getAllGraphs()
-                        .stream()
-                        .filter(graph ->
-                                graph.getAdjacencyList().size() > GRAPH_SIZE_ALERTING_THRESHOLD)
-                        .forEach(graph -> log.warn(
-                                "Found large graph with id: {}, size: {}, update subject: {}",
-                                graph.getId().longValue(),
-                                graph.getAdjacencyList().size(),
-                                subject
-                        ));
 
                 metricRegistry
                         .histogram(updateEquivalences + CREATED_GRAPH_HISTOGRAM_COUNT)
@@ -342,16 +334,19 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
     }
 
-    private Optional<EquivalenceGraphUpdate> updateGraphs(ResourceRef subject,
-            ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources)
-            throws StoreException {
+    private Optional<EquivalenceGraphUpdate> updateGraphs(
+            ResourceRef subject,
+            ImmutableSet<ResourceRef> assertedAdjacents,
+            Set<Publisher> sources
+    ) throws StoreException {
 
         Optional<EquivalenceGraph> optionalSubjGraph = existingGraph(subject);
         EquivalenceGraph subjGraph = optionalSubjGraph.or(EquivalenceGraph.valueOf(subject));
         Adjacents subAdjs = subjGraph.getAdjacents(subject);
 
         OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraphs = existingGraphMaps(
-                assertedAdjacents);
+                assertedAdjacents
+        );
 
         if (optionalSubjGraph.isPresent() &&
                 checkForOrphanedContent(subjGraph, adjacentsExistingGraphs, assertedAdjacents)) {
@@ -368,30 +363,61 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 adjacentsExistingGraphs
         );
 
-        Map<Id, Adjacents> updatedAdjacents = updateAdjacencies(subject,
-                subjGraph.getAdjacencyList().values(), assertedAdjacentGraphs, sources
+        Map<Id, Adjacents> updatedAdjacents = updateAdjacencies(
+                subject,
+                subjGraph.getAdjacencyList().values(),
+                assertedAdjacentGraphs,
+                sources
         );
 
-        EquivalenceGraphUpdate update =
-                computeUpdate(subject, assertedAdjacentGraphs, updatedAdjacents);
+        EquivalenceGraphUpdate update = computeUpdate(
+                subject,
+                assertedAdjacentGraphs,
+                updatedAdjacents
+        );
 
-        if (changeInAdjacents(subAdjs, assertedAdjacents, sources)) {
-            store(update.getAllGraphs());
+        if (adjacentsUnchanged(subAdjs, assertedAdjacents, sources)) {
+            metricRegistry.meter(updateEquivalences + METER_NOP).mark();
+            log.debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
 
-            return Optional.of(update);
+            // Do not return an update if nothing has changed to reduce the work that the
+            // downstream stores have to do.
+            return Optional.absent();
         }
 
-        metricRegistry.meter(updateEquivalences + METER_NOP).mark();
-        log.debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
+        EquivalenceGraphRejectionFilter.Decision rejectionDecision = rejectionFilter.shouldReject(
+                subject,
+                ImmutableSet.<EquivalenceGraph>builder()
+                        .add(subjGraph)
+                        .addAll(assertedAdjacentGraphs.values())
+                        .build(),
+                update
+        );
 
-        // Do not return an update if nothing has changed to reduce the work that the downstream
-        // stores have to do.
-        return Optional.absent();
+        if (rejectionDecision == EquivalenceGraphRejectionFilter.Decision.WARN) {
+            metricRegistry.meter(updateEquivalences + METER_GRAPH_SIZE_WARN).mark();
+        } else if (rejectionDecision == EquivalenceGraphRejectionFilter.Decision.FAIL) {
+            metricRegistry.meter(updateEquivalences + METER_GRAPH_SIZE_REJECT).mark();
+            log.error(
+                    "Rejecting update that would result in very large graph, "
+                            + "update subject: {}, adjacents: {}",
+                    subject,
+                    assertedAdjacents
+            );
+
+            return Optional.absent();
+        }
+
+        store(update.getAllGraphs());
+
+        return Optional.of(update);
     }
 
-    private EquivalenceGraphUpdate computeUpdate(ResourceRef subject,
+    private EquivalenceGraphUpdate computeUpdate(
+            ResourceRef subject,
             Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs,
-            Map<Id, Adjacents> updatedAdjacents) {
+            Map<Id, Adjacents> updatedAdjacents
+    ) {
         Map<Id, EquivalenceGraph> updatedGraphs = computeUpdatedGraphs(updatedAdjacents);
         EquivalenceGraph updatedGraph = graphFor(subject, updatedGraphs);
 
@@ -457,9 +483,12 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         return set;
     }
 
-    private Map<Id, Adjacents> updateAdjacencies(ResourceRef subject,
-            Iterable<Adjacents> subjAdjacencies, Map<ResourceRef, EquivalenceGraph> adjacentGraphs,
-            Set<Publisher> sources) throws StoreException {
+    private Map<Id, Adjacents> updateAdjacencies(
+            ResourceRef subject,
+            Iterable<Adjacents> subjAdjacencies,
+            Map<ResourceRef, EquivalenceGraph> adjacentGraphs,
+            Set<Publisher> sources
+    ) throws StoreException {
         Map<Id, Adjacents> updated = Maps.newHashMap();
 
         ImmutableSet<Adjacents> allAdjacents = currentTransitiveAdjacents(adjacentGraphs)
@@ -468,7 +497,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             if (updated.containsKey(adj.getId())) {
                 updated.put(
                         adj.getId(),
-                        updateAdjacents(updated.get(adj.getId()),
+                        updateAdjacents(
+                                updated.get(adj.getId()),
                                 subject,
                                 adjacentGraphs.keySet(),
                                 sources
@@ -484,8 +514,12 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         return ImmutableMap.copyOf(updated);
     }
 
-    private Adjacents updateAdjacents(Adjacents adj, ResourceRef subject,
-            Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) {
+    private Adjacents updateAdjacents(
+            Adjacents adj,
+            ResourceRef subject,
+            Set<ResourceRef> assertedAdjacents,
+            Set<Publisher> sources
+    ) {
         Adjacents result = adj;
         if (subject.getId().equals(adj.getRef().getId())) {
             result = updateSubjectAdjacents(adj, assertedAdjacents, sources);
@@ -504,8 +538,11 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         return result;
     }
 
-    private Adjacents updateSubjectAdjacents(Adjacents subj,
-            Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) {
+    private Adjacents updateSubjectAdjacents(
+            Adjacents subj,
+            Set<ResourceRef> assertedAdjacents,
+            Set<Publisher> sources
+    ) {
         ImmutableSet.Builder<ResourceRef> updatedOutgoingEdges = ImmutableSet.<ResourceRef>builder()
                 .add(subj.getRef())
                 .addAll(assertedAdjacents)
@@ -545,28 +582,45 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 && !adjacentsExistingGraphs.get(assertedAdjacentId).isPresent();
     }
 
-    private Map<ResourceRef, EquivalenceGraph> resolveRefs(Set<ResourceRef> adjacents,
-            OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraph) {
+    private Map<ResourceRef, EquivalenceGraph> resolveRefs(
+            Set<ResourceRef> adjacents,
+            OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraph
+    ) {
         Map<ResourceRef, EquivalenceGraph> graphs = Maps.newHashMapWithExpectedSize(
                 adjacents.size()
         );
         for (ResourceRef adj : adjacents) {
-            graphs.put(adj, adjacentsExistingGraph.get(adj.getId())
-                    .or(EquivalenceGraph.valueOf(adj)));
+            graphs.put(
+                    adj,
+                    adjacentsExistingGraph
+                            .get(adj.getId())
+                            .or(EquivalenceGraph.valueOf(adj))
+            );
         }
         return graphs;
     }
 
-    private boolean changeInAdjacents(Adjacents subjAdjs,
-            ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources) {
-        Set<ResourceRef> currentNeighbours
-                = Sets.filter(subjAdjs.getOutgoingEdges(), Sourceds.sourceFilter(sources));
-        Set<ResourceRef> subjectAndAsserted = MoreSets.add(assertedAdjacents, subjAdjs.getRef());
-        boolean change = !currentNeighbours.equals(subjectAndAsserted);
-        if (change) {
+    private boolean adjacentsUnchanged(
+            Adjacents subjAdjacents,
+            ImmutableSet<ResourceRef> assertedAdjacents,
+            Set<Publisher> sources
+    ) {
+        Set<ResourceRef> currentNeighbours = Sets.filter(
+                subjAdjacents.getOutgoingEdges(),
+                Sourceds.sourceFilter(sources)
+        );
+        Set<ResourceRef> subjectAndAsserted = MoreSets.add(
+                assertedAdjacents,
+                subjAdjacents.getRef()
+        );
+
+        boolean unchanged = currentNeighbours.equals(subjectAndAsserted);
+
+        if (!unchanged) {
             log.debug("Equivalence change: {} -> {}", currentNeighbours, subjectAndAsserted);
         }
-        return change;
+
+        return unchanged;
     }
 
     private Optional<EquivalenceGraph> existingGraph(ResourceRef subject) throws StoreException {
