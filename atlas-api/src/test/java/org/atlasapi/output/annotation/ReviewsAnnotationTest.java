@@ -40,7 +40,7 @@ public class ReviewsAnnotationTest {
     }
 
     @Test
-    public void missingSourcesAreAddedToReviews() throws Exception {
+    public void missingSourcesAreAddedToReviewsFromContent() throws Exception {
         Iterable<Review> actualReviews = reviewsAnnotation.populateMissingReviewSources(
                 content.getReviews(),
                 content.getSource()
