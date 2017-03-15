@@ -49,6 +49,9 @@ public class ReviewsWriter implements EntityListWriter<Review> {
         writer.writeField("date", entity.getDate());
         writer.writeField("review_type", reviewType);
 
-        writer.writeObject(sourceWriter, entity.getSource().orElse(null), ctxt);
+        Optional<Publisher> source = entity.getSource();
+        if (source.isPresent()) {
+            writer.writeObject(sourceWriter, source.get(), ctxt);
+        }
     }
 }
