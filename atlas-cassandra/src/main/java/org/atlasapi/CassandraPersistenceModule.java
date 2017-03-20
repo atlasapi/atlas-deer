@@ -7,6 +7,7 @@ import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.v2.CqlContentStore;
+import org.atlasapi.content.v2.NormalizedEquivScheduleStore;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -24,7 +25,6 @@ import org.atlasapi.organisation.IdSettingOrganisationStore;
 import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.organisation.OrganisationUriStore;
 import org.atlasapi.schedule.AstyanaxCassandraScheduleStore;
-import org.atlasapi.schedule.CassandraEquivalentScheduleStore;
 import org.atlasapi.schedule.DatastaxCassandraScheduleStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ItemAndBroadcastSerializer;
@@ -98,7 +98,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private CassandraEquivalenceGraphStore nullMessageSendingEquivalenceGraphStore;
 
     private CassandraEquivalenceGraphStore nullMessageSendingEquivGraphStore;
-    private CassandraEquivalentScheduleStore equivalentScheduleStore;
+    private NormalizedEquivScheduleStore equivalentScheduleStore;
     private DatastaxCassandraScheduleStore v2ScheduleStore;
     private AstyanaxCassandraContentStore astyanaxContentStore;
     private CqlContentStore cqlContentStore;
@@ -195,16 +195,16 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 METRIC_PREFIX + "NullMessageSendingCassandraEquivalenceGraphStore."
         );
 
-        this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(
+        this.equivalentScheduleStore = new NormalizedEquivScheduleStore(
                 contentEquivalenceGraphStore,
                 cqlContentStore,
                 session,
                 read,
                 write,
                 new SystemClock(),
-                metrics,
-                METRIC_PREFIX + "CassandraEquivalenceScheduleStore."
+                metrics
         );
+
         this.nullMessageSendingEquivGraphStore = new CassandraEquivalenceGraphStore(
                 nullMessageSender(
                         EquivalenceGraphUpdateMessage.class),
