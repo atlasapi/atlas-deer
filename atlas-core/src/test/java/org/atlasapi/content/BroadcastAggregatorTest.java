@@ -225,7 +225,7 @@ public class BroadcastAggregatorTest {
     }
 
     @Test
-    public void GetsAllExcludedVariantRefsWithNoPlatform() throws Exception {
+    public void getsAllExcludedVariantRefsWithNoPlatform() throws Exception {
 
         List<ChannelVariantRef> excludedRefs = broadcastAggregator.resolveExcludedVariantRefs(
                 variantRefParent,
