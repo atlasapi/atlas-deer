@@ -262,11 +262,6 @@ public class BroadcastAggregatorTest {
     }
 
     @Test
-    public void aggregatedBroadcastDoesNotHaveExcludedVariantsFromAnotherPlatform() throws Exception {
-
-    }
-
-    @Test
     public void childTitlesAreParsedCorrectlyFromParent() throws Exception {
         String parent = "BBC One";
 
