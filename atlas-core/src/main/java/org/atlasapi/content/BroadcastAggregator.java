@@ -84,7 +84,7 @@ public class BroadcastAggregator {
             if (sameTimeBroadcasts.size() > 1) {
                 aggregatedBroadcasts.putAll(
                         dateTime,
-                        aggregateBroadcastsInternal(sameTimeBroadcasts)
+                        aggregateBroadcastsInternal(sameTimeBroadcasts, platformOptional)
                 );
             } else {
                 aggregatedBroadcasts.put(dateTime, Iterables.getOnlyElement(sameTimeBroadcasts));
@@ -98,7 +98,10 @@ public class BroadcastAggregator {
 
     }
 
-    private Set<ResolvedBroadcast> aggregateBroadcastsInternal(Collection<ResolvedBroadcast> broadcasts) {
+    private Set<ResolvedBroadcast> aggregateBroadcastsInternal(
+            Collection<ResolvedBroadcast> broadcasts,
+            Optional<Platform> platformOptional
+    ) {
 
         // Map parent channels to parent
         Multimap<ChannelRef, ResolvedBroadcast> parentChannelMap = broadcasts.stream()
@@ -118,7 +121,11 @@ public class BroadcastAggregator {
         // For each parent channel, merge the children
         for (ChannelRef channelRef : parentChannelMap.keySet()) {
             resolvedBroadcasts.add(
-                    aggregateChannelsFromParent(channelRef, parentChannelMap.get(channelRef))
+                    aggregateChannelsFromParent(
+                            channelRef,
+                            parentChannelMap.get(channelRef),
+                            platformOptional
+                    )
             );
         }
 
@@ -188,7 +195,8 @@ public class BroadcastAggregator {
 
     private ResolvedBroadcast aggregateChannelsFromParent(
             ChannelRef channelRef,
-            Collection<ResolvedBroadcast> broadcasts
+            Collection<ResolvedBroadcast> broadcasts,
+            Optional<Platform> platformOptional
     ) {
         // If there's just one, no need to merge
         if (broadcasts.size() == 1) {
@@ -204,18 +212,26 @@ public class BroadcastAggregator {
 
         return ResolvedBroadcast.create(
                 broadcasts.iterator().next().getBroadcast(),
-                buildResolvedChannel(parent, channelIdAndTitles)
+                buildResolvedChannel(parent, channelIdAndTitles, platformOptional)
         );
     }
 
-    private ResolvedChannel buildResolvedChannel(Channel parent, Map<Id, String> channelIdsAndTitles) {
+    private ResolvedChannel buildResolvedChannel(
+            Channel parent,
+            Map<Id, String> channelIdsAndTitles,
+            Optional<Platform> platformOptional
+    ) {
 
         return ResolvedChannel.builder(parent)
                 .withIncludedVariants(
                         Optional.of(getIncludedVariantRefs(parent, channelIdsAndTitles.entrySet()))
                 )
                 .withExcludedVariants(
-                        Optional.of(resolveExcludedVariantRefs(parent, channelIdsAndTitles.keySet()))
+                        Optional.of(resolveExcludedVariantRefs(
+                                parent,
+                                channelIdsAndTitles.keySet(),
+                                platformOptional
+                        ))
                 )
                 .build();
 
@@ -250,9 +266,22 @@ public class BroadcastAggregator {
     }
 
     // Create refs of unresolved channels
-    List<ChannelVariantRef> resolveExcludedVariantRefs(Channel parent, Set<Id> ids) {
+    List<ChannelVariantRef> resolveExcludedVariantRefs(
+            Channel parent,
+            Set<Id> ids,
+            Optional<Platform> platformOptional
+    ) {
+
+        List<Id> platformIds = platformOptional.map(platform ->
+                StreamSupport.stream(platform.getChannels().spliterator(), false)
+                .map(channelNumbering -> channelNumbering.getChannel().getId())
+                .collect(MoreCollectors.toImmutableList())
+        )
+                .orElseGet(ImmutableList::of);
+
         return parent.getVariations().stream()
                 .filter(channelRef -> !ids.contains(channelRef.getId()))
+                .filter(channelRef -> platformIds.isEmpty() || platformIds.contains(channelRef.getId()))
                 .map(channelRef -> resolveChannel(channelRef.getId()))
                 .map(channel -> ChannelVariantRef.create(
                         parseChildTitle(parent.getTitle(), channel.getTitle()),

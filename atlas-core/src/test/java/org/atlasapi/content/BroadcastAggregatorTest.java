@@ -225,20 +225,45 @@ public class BroadcastAggregatorTest {
     }
 
     @Test
-    public void onlyGetsAllExcludedVariantRefs() throws Exception {
+    public void GetsAllExcludedVariantRefsWithNoPlatform() throws Exception {
 
         List<ChannelVariantRef> excludedRefs = broadcastAggregator.resolveExcludedVariantRefs(
                 variantRefParent,
-                includedVariantIds
+                includedVariantIds,
+                Optional.empty()
         );
 
         assertThat(excludedRefs.size(), is(2));
-        assertThat(
+        assertTrue(
                 excludedRefs.stream().allMatch(channelVariantRef ->
                         excludedVariantIds.contains(channelVariantRef.getId())
-                ),
-                is(true)
+                )
         );
+    }
+
+    @Test
+    public void onlyGetsExcludedVariantRefsFromPlatformWhenProvided() throws Exception {
+
+        Platform platform = mock(Platform.class);
+        ChannelNumbering channelNumbering = mock(ChannelNumbering.class);
+        ChannelRef channelRef = new ChannelRef(Id.valueOf(444L), Publisher.METABROADCAST);
+
+        when(channelNumbering.getChannel()).thenReturn(channelRef);
+        when(platform.getChannels()).thenReturn(ImmutableList.of(channelNumbering));
+
+        List<ChannelVariantRef> excludedRefs = broadcastAggregator.resolveExcludedVariantRefs(
+                variantRefParent,
+                includedVariantIds,
+                Optional.of(platform)
+        );
+
+        assertThat(excludedRefs.size(), is(1));
+        assertThat(excludedRefs.get(0).getId(), is(channelRef.getId()));
+    }
+
+    @Test
+    public void aggregatedBroadcastDoesNotHaveExcludedVariantsFromAnotherPlatform() throws Exception {
+
     }
 
     @Test
