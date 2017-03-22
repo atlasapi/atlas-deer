@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import javax.annotation.PostConstruct;
 
+import com.metabroadcast.common.health.probes.Probe;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.system.health.AstyanaxProbe;
 
@@ -23,23 +24,27 @@ public class HealthModule {
 
     private @Autowired Collection<HealthProbe> probes;
     private @Autowired HealthController healthController;
+    private @Autowired org.atlasapi.system.health.HealthController k8HealthController;
     private @Autowired MetricsModule metricsModule;
     private @Autowired AtlasPersistenceModule persistenceModule;
 
-    public
     @Bean
-    HealthController healthController() {
+    public HealthController healthController() {
         return new HealthController(ImmutableList.of(
                 new MemoryInfoProbe()
         ));
     }
 
-    public
     @Bean
-    org.atlasapi.system.HealthController threadController() {
+    public org.atlasapi.system.HealthController threadController() {
         return new org.atlasapi.system.HealthController(
                 persistenceModule.persistenceModule().getSession()
         );
+    }
+
+    @Bean
+    public org.atlasapi.system.health.HealthController k8HealthController() {
+        return org.atlasapi.system.health.HealthController.create(getProbes());
     }
 
     @PostConstruct
@@ -52,5 +57,34 @@ public class HealthModule {
         healthController.addProbes(ImmutableList.of(
                 new MetricsProbe("Metrics", metricsModule.metrics())
         ));
+    }
+
+    private Iterable<Probe> getProbes() {
+
+        Probe cassandraProbe = com.metabroadcast.common.health.probes.CassandraProbe.create(
+                persistenceModule.persistenceModule().getSession()
+        );
+
+        Probe astyanaxProbe = org.atlasapi.system.health.probes.AstyanaxProbe.create(
+                persistenceModule.persistenceModule().getContext()
+        );
+
+        return ImmutableList.of(
+                cassandraProbe,
+                astyanaxProbe,
+                metricProbeFor("cassandra", cassandraProbe),
+                metricProbeFor("astyanax", astyanaxProbe)
+        );
+    }
+
+    public com.metabroadcast.common.health.probes.MetricsProbe metricProbeFor(
+            String metricPrefix,
+            Probe probe
+    ) {
+        return com.metabroadcast.common.health.probes.MetricsProbe.create(
+                probe,
+                metricsModule.metrics(),
+                metricPrefix
+        );
     }
 }
