@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -38,5 +39,19 @@ public class HealthController {
         response.setStatus(result.getStatus() == Status.HEALTHY ? SC_OK
                                                                 : SC_INTERNAL_SERVER_ERROR
         );
+
+        PrintWriter writer = response.getWriter();
+        result.getProbeResults().forEach(probeResult -> {
+                writer.println(
+                        String.format(
+                                "%s: %s",
+                                probeResult.getIdentifier(),
+                                probeResult.getStatus().toString()
+                        )
+                );
+                probeResult.getMsg().ifPresent(writer::println);
+                probeResult.getReason().ifPresent(writer::println);
+                writer.println();
+        });
     }
 }

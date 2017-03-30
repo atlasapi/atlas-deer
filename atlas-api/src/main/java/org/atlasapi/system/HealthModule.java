@@ -24,7 +24,6 @@ public class HealthModule {
 
     private @Autowired Collection<HealthProbe> probes;
     private @Autowired HealthController healthController;
-    private @Autowired org.atlasapi.system.health.HealthController k8HealthController;
     private @Autowired MetricsModule metricsModule;
     private @Autowired AtlasPersistenceModule persistenceModule;
 
@@ -62,10 +61,12 @@ public class HealthModule {
     private Iterable<Probe> getProbes() {
 
         Probe cassandraProbe = com.metabroadcast.common.health.probes.CassandraProbe.create(
+                "cassandra",
                 persistenceModule.persistenceModule().getSession()
         );
 
         Probe astyanaxProbe = org.atlasapi.system.health.probes.AstyanaxProbe.create(
+                "astyanax",
                 persistenceModule.persistenceModule().getContext()
         );
 
@@ -77,14 +78,15 @@ public class HealthModule {
         );
     }
 
-    public com.metabroadcast.common.health.probes.MetricsProbe metricProbeFor(
+    private com.metabroadcast.common.health.probes.MetricsProbe metricProbeFor(
             String metricPrefix,
             Probe probe
     ) {
-        return com.metabroadcast.common.health.probes.MetricsProbe.create(
-                probe,
-                metricsModule.metrics(),
-                metricPrefix
-        );
+        return com.metabroadcast.common.health.probes.MetricsProbe.builder()
+                .withIdentifier(probe + "Metrics")
+                .withDelegate(probe)
+                .withMetricRegistry(metricsModule.metrics())
+                .withMetricPrefix(metricPrefix)
+                .build();
     }
 }
