@@ -44,7 +44,7 @@ public class AstyanaxProbe extends Probe {
 
                 infoList.add("Active hosts: " + Long.toString(pool.getHostActiveCount()));
 
-                if (isHealthy(pool)) {
+                if (isUnhealthy(pool)) {
                     return ProbeResult.unhealthy(identifier, Strings.join(infoList, ", "));
                 }
 
@@ -55,8 +55,8 @@ public class AstyanaxProbe extends Probe {
         };
     }
 
-    private boolean isHealthy(ConnectionPoolMonitor poolMonitor) {
-        return poolMonitor.getHostActiveCount() > 0;
+    private boolean isUnhealthy(ConnectionPoolMonitor poolMonitor) {
+        return poolMonitor.getHostActiveCount() <= 0;
     }
 
 }

@@ -71,22 +71,19 @@ public class HealthModule {
         );
 
         return ImmutableList.of(
-                cassandraProbe,
-                astyanaxProbe,
-                metricProbeFor("cassandra", cassandraProbe),
-                metricProbeFor("astyanax", astyanaxProbe)
+                metricProbeFor(cassandraProbe),
+                metricProbeFor(astyanaxProbe)
         );
     }
 
     private com.metabroadcast.common.health.probes.MetricsProbe metricProbeFor(
-            String metricPrefix,
             Probe probe
     ) {
         return com.metabroadcast.common.health.probes.MetricsProbe.builder()
-                .withIdentifier(probe + "Metrics")
+                .withIdentifier(probe.getIdentifier() + "Metrics")
                 .withDelegate(probe)
                 .withMetricRegistry(metricsModule.metrics())
-                .withMetricPrefix(metricPrefix)
+                .withMetricPrefix("atlas-deer-api")
                 .build();
     }
 }
