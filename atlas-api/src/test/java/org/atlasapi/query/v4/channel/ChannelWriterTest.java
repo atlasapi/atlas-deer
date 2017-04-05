@@ -79,7 +79,7 @@ public class ChannelWriterTest {
     @Before
     public void setUp() throws Exception {
 
-        this.channelWriter = new ChannelWriter(
+        this.channelWriter = ChannelWriter.create(
                 listName,
                 fieldName,
                 channelGroupSummaryWriter
