@@ -172,6 +172,8 @@ message Broadcast {
     optional BlackoutRestriction blackout_restriction = 21;
     optional bool new_episode = 22;
     optional bool revised_repeat = 23;
+    optional bool continuation = 24;
+    optional bool new_one_off = 25;
 }
 
 message BlackoutRestriction {
