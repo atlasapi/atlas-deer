@@ -3,11 +3,14 @@ FROM 448613307115.dkr.ecr.eu-west-1.amazonaws.com/jvm-oracle:latest
 ENV LOG4J_CONFIGURATION="file:////usr/local/jetty/log4j.properties" \
     NIMROD_LOG_LEVEL="INFO" \
     ROOT_LOG_LEVEL="INFO" \
-    JVM_MEMORY="5G" \
+    JVM_MEMORY="7.5G" \
     DEBUG_AND_REMOTE_OPTS="" \
-    JVM_OPTS="-XX:+UseConcMarkSweepGC \
-      -XX:+UseParNewGC \
-      -XX:CMSInitiatingOccupancyFraction=75 \
+    JVM_OPTS="-XX:+UnlockExperimentalVMOptions \
+      -XX:+UseG1GC \
+      -XX:MaxGCPauseMillis=200 \
+      -XX:InitiatingHeapOccupancyPercent=30 \
+      -XX:G1OldCSetRegionThresholdPercent=20 \
+      -XX:G1MixedGCLiveThresholdPercent=75 \
       -XX:+ExitOnOutOfMemoryError"
 
 COPY atlas-api/target/atlas-api.war /usr/local/jetty/atlas-api.war
