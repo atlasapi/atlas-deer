@@ -276,6 +276,7 @@ public class AtlasPersistenceModule {
     public EventWriter eventWriter() {
         return persistenceModule().eventStore();
     }
+
     @Bean
     public EventResolver eventResolver() {
         return persistenceModule().eventStore();
@@ -378,17 +379,19 @@ public class AtlasPersistenceModule {
     }
 
     public Mongo mongo(String mongoHost, Integer mongoPort) {
-        Mongo mongo = new MongoClient(
-                mongoHosts(mongoHost, mongoPort),
-                MongoClientOptions.builder()
-                        .connectionsPerHost(1000)
-                        .connectTimeout(10000)
-                        .build()
-        );
+
+        MongoClientOptions.Builder mongoOptions = MongoClientOptions.builder()
+                .connectionsPerHost(1000)
+                .connectTimeout(10000);
+
         if (processingConfig == null || !processingConfig.toBoolean()) {
-            mongo.setReadPreference(ReadPreference.secondaryPreferred());
+            mongoOptions.readPreference(ReadPreference.secondaryPreferred());
         }
-        return mongo;
+
+        return new MongoClient(
+                mongoHosts(mongoHost, mongoPort),
+                mongoOptions.build()
+        );
     }
 
     private IdGeneratorBuilder idGeneratorBuilder() {

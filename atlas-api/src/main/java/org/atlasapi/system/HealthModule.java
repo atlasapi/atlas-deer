@@ -4,7 +4,10 @@ import java.util.Collection;
 
 import javax.annotation.PostConstruct;
 
+import com.metabroadcast.common.health.probes.MongoProbe;
 import com.metabroadcast.common.health.probes.Probe;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.mongodb.MongoClient;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.system.health.AstyanaxProbe;
 
@@ -15,6 +18,7 @@ import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 
 import com.google.common.collect.ImmutableList;
+import org.atlasapi.system.health.probes.ElasticsearchProbe;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -70,9 +74,21 @@ public class HealthModule {
                 persistenceModule.persistenceModule().getContext()
         );
 
+        Probe mongoProbe = MongoProbe.create(
+                "mongo",
+                (MongoClient) persistenceModule.databasedReadMongo().database().getMongo()
+        );
+
+        Probe elasticSearchProbe = ElasticsearchProbe.create(
+                "elasticsearch",
+                persistenceModule.contentSearcher()
+        );
+
         return ImmutableList.of(
                 metricProbeFor(cassandraProbe),
-                metricProbeFor(astyanaxProbe)
+                metricProbeFor(astyanaxProbe),
+                metricProbeFor(mongoProbe),
+                metricProbeFor(elasticSearchProbe)
         );
     }
 
