@@ -80,6 +80,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
                 requestTimeout,
                 translator
         );
+
     }
 
     @Override

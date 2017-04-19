@@ -16,6 +16,7 @@ import org.atlasapi.util.SecondaryIndex;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -33,6 +34,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
     private final EsPopularTopicIndex popularTopicsIndex;
     private final EsContentTitleSearcher contentSearcher;
     private final EsContentTranslator translator;
+    private final TransportClient esClient;
 
     public ElasticSearchContentIndexModule(
             String seeds,
@@ -46,7 +48,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
             SecondaryIndex equivContentIndex
     ) {
         Settings settings = createSettings(clusterName, ssl);
-        TransportClient esClient = new TransportClient(settings);
+        this.esClient = new TransportClient(settings);
         registerSeeds(esClient, seeds, port);
 
         unequivIndex = new EsUnequivalentContentIndex(
@@ -101,6 +103,10 @@ public class ElasticSearchContentIndexModule implements IndexModule {
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
+    }
+
+    public TransportClient getEsClient() {
+        return esClient;
     }
 
     public ContentIndex equivContentIndex() {

@@ -81,7 +81,7 @@ public class HealthModule {
 
         Probe elasticSearchProbe = ElasticsearchProbe.create(
                 "elasticsearch",
-                persistenceModule.contentSearcher()
+                persistenceModule.esContentIndexModule().getEsClient()
         );
 
         return ImmutableList.of(
