@@ -23,8 +23,7 @@ ENV SERVER_PORT="8080" \
     JVM_MEMORY="6G" \
     DEBUG_AND_REMOTE_OPTS="" \
     JVM_OPTS="-XX:+UseG1GC \
-      -XX:MaxGCPauseMillis=150 \
-      -XX:CMSInitiatingOccupancyFraction=60 \
+      -XX:MaxGCPauseMillis=2000 \
       -XX:+ExitOnOutOfMemoryError"
 
 COPY atlas-processing/target/atlas-processing.war /usr/local/jetty/atlas-processing.war
