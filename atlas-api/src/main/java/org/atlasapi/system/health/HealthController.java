@@ -29,12 +29,12 @@ public class HealthController {
         return new HealthController(probes);
     }
 
-    @RequestMapping("/system/health/alive")
+    @RequestMapping("/4/system/health/alive")
     public void isAlive(HttpServletResponse response) {
         response.setStatus(HttpServletResponse.SC_OK);
     }
 
-    @RequestMapping("/system/health/probes")
+    @RequestMapping("/4/system/health/probes")
     public void showHealthForProbes(HttpServletResponse response) throws IOException {
         Result result = health.status(Health.FailurePolicy.ANY);
 
