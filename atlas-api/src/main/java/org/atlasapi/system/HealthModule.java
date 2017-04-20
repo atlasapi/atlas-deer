@@ -6,7 +6,6 @@ import javax.annotation.PostConstruct;
 
 import com.metabroadcast.common.health.probes.MongoProbe;
 import com.metabroadcast.common.health.probes.Probe;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 import com.mongodb.MongoClient;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.system.health.AstyanaxProbe;
@@ -25,6 +24,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class HealthModule {
+
+    private static final String METRIC_PREFIX = "atlas-deer-api";
 
     private @Autowired Collection<HealthProbe> probes;
     private @Autowired HealthController healthController;
@@ -47,7 +48,7 @@ public class HealthModule {
 
     @Bean
     public org.atlasapi.system.health.HealthController k8HealthController() {
-        return org.atlasapi.system.health.HealthController.create(getProbes());
+        return org.atlasapi.system.health.HealthController.create(getProbes(METRIC_PREFIX));
     }
 
     @PostConstruct
@@ -62,7 +63,7 @@ public class HealthModule {
         ));
     }
 
-    private Iterable<Probe> getProbes() {
+    Iterable<Probe> getProbes(String metricPrefix) {
 
         Probe cassandraProbe = com.metabroadcast.common.health.probes.CassandraProbe.create(
                 "cassandra",
@@ -85,21 +86,22 @@ public class HealthModule {
         );
 
         return ImmutableList.of(
-                metricProbeFor(cassandraProbe),
-                metricProbeFor(astyanaxProbe),
-                metricProbeFor(mongoProbe),
-                metricProbeFor(elasticSearchProbe)
+                metricProbeFor(cassandraProbe, metricPrefix),
+                metricProbeFor(astyanaxProbe, metricPrefix),
+                metricProbeFor(mongoProbe, metricPrefix),
+                metricProbeFor(elasticSearchProbe, metricPrefix)
         );
     }
 
     private com.metabroadcast.common.health.probes.MetricsProbe metricProbeFor(
-            Probe probe
+            Probe probe,
+            String metricPrefix
     ) {
         return com.metabroadcast.common.health.probes.MetricsProbe.builder()
                 .withIdentifier(probe.getIdentifier() + "Metrics")
                 .withDelegate(probe)
                 .withMetricRegistry(metricsModule.metrics())
-                .withMetricPrefix("atlas-deer-api")
+                .withMetricPrefix(metricPrefix)
                 .build();
     }
 }
