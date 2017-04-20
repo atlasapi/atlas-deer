@@ -48,7 +48,9 @@ public class Broadcast extends Identified implements Hashable {
     private Boolean live;
     private Boolean newSeries;
     private Boolean newEpisode;
+    private Boolean newOneOff;
     private Boolean premiere;
+    private Boolean continuation;
     private Boolean is3d;
     private Optional<BlackoutRestriction> blackoutRestriction = Optional.absent();
     private Boolean revisedRepeat;
@@ -250,6 +252,16 @@ public class Broadcast extends Identified implements Hashable {
     }
 
     @Nullable
+    @FieldName("continuation")
+    public Boolean getContinuation() {
+        return continuation;
+    }
+
+    public void setContinuation(Boolean continuation) {
+        this.continuation = continuation;
+    }
+
+    @Nullable
     @FieldName("new_series")
     public Boolean getNewSeries() {
         return newSeries;
@@ -267,6 +279,16 @@ public class Broadcast extends Identified implements Hashable {
 
     public void setNewEpisode(Boolean newEpisode) {
         this.newEpisode = newEpisode;
+    }
+
+    @Nullable
+    @FieldName("new_one_off")
+    public Boolean getNewOneOff() {
+        return newOneOff;
+    }
+
+    public void setNewOneOff(Boolean newOneOff) {
+        this.newOneOff = newOneOff;
     }
 
     @Nullable
@@ -375,7 +397,9 @@ public class Broadcast extends Identified implements Hashable {
         copy.widescreen = widescreen;
         copy.newSeries = newSeries;
         copy.newEpisode = newEpisode;
+        copy.newOneOff = newOneOff;
         copy.premiere = premiere;
+        copy.continuation = continuation;
         copy.live = live;
         copy.versionId = versionId;
         copy.revisedRepeat = revisedRepeat;

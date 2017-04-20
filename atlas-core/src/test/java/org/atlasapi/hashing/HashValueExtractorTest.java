@@ -598,7 +598,9 @@ public class HashValueExtractorTest {
         broadcast.setLive(true);
         broadcast.setNewSeries(true);
         broadcast.setNewEpisode(false);
+        broadcast.setNewOneOff(true);
         broadcast.setPremiere(false);
+        broadcast.setContinuation(false);
         broadcast.set3d(false);
         broadcast.setBlackoutRestriction(new BlackoutRestriction(true));
 

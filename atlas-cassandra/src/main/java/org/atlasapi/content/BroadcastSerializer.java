@@ -73,8 +73,14 @@ public class BroadcastSerializer {
         if (broadcast.getNewEpisode() != null) {
             builder.setNewEpisode(broadcast.getNewEpisode());
         }
+        if (broadcast.getNewOneOff() != null) {
+            builder.setNewOneOff(broadcast.getNewOneOff());
+        }
         if (broadcast.getPremiere() != null) {
             builder.setPremiere(broadcast.getPremiere());
+        }
+        if (broadcast.getContinuation() != null) {
+            builder.setContinuation(broadcast.getContinuation());
         }
         if (broadcast.is3d() != null) {
             builder.setIsThreeD(broadcast.is3d());
@@ -121,7 +127,9 @@ public class BroadcastSerializer {
         if (msg.hasNewEpisode()) {
             broadcast.setNewEpisode(msg.getNewEpisode());
         }
+        broadcast.setNewOneOff(msg.hasNewOneOff() ? msg.getNewOneOff() : null);
         broadcast.setPremiere(msg.hasPremiere() ? msg.getPremiere() : null);
+        broadcast.setContinuation(msg.hasContinuation() ? msg.getContinuation() : null);
         broadcast.set3d(msg.hasIsThreeD() ? msg.getIsThreeD() : null);
         broadcast.setVersionId(msg.hasVersion() ? msg.getVersion() : null);
         if (msg.hasBlackoutRestriction()) {
