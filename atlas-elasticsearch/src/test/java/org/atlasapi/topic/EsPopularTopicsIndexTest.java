@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 public class EsPopularTopicsIndexTest {
 
     private final Node esClient = ElasticSearchHelper.testNode();
-    private final EsUnequivalentContentIndex index = new EsUnequivalentContentIndex(
+    private final EsUnequivalentContentIndex index = EsUnequivalentContentIndex.create(
             esClient.client(),
             EsSchema.CONTENT_INDEX,
             mock(ChannelGroupResolver.class),

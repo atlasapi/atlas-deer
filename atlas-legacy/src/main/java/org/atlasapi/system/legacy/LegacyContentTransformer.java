@@ -460,7 +460,9 @@ public class LegacyContentTransformer
         b.setLive(input.getLive());
         b.setNewSeries(input.getNewSeries());
         b.setNewEpisode(input.getNewEpisode());
+        b.setNewOneOff(input.getNewOneOff());
         b.setPremiere(input.getPremiere());
+        b.setContinuation(input.getContinuation());
         b.set3d(version.is3d());
         b.setVersionId(version.getCanonicalUri());
         b.setBlackoutRestriction(transformBlackoutRestriction(input.getBlackoutRestriction()));

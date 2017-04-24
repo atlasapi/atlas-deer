@@ -7,9 +7,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.google.common.base.Optional;
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
@@ -40,7 +37,10 @@ import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 
+import com.metabroadcast.applications.client.model.internal.Application;
+
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
@@ -578,8 +578,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getNewEpisode() == null && toMerge.getNewEpisode() != null) {
             chosen.setNewEpisode(toMerge.getNewEpisode());
         }
+        if (chosen.getNewOneOff() == null && toMerge.getNewOneOff() != null) {
+            chosen.setNewOneOff(toMerge.getNewOneOff());
+        }
         if (chosen.getPremiere() == null && toMerge.getPremiere() != null) {
             chosen.setPremiere(toMerge.getPremiere());
+        }
+        if (chosen.getContinuation() == null && toMerge.getContinuation() != null) {
+            chosen.setContinuation(toMerge.getContinuation());
         }
         if (shouldUpdateBlackoutRestriction(chosen, toMerge)) {
             chosen.setBlackoutRestriction(toMerge.getBlackoutRestriction().get());

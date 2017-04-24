@@ -174,7 +174,9 @@ CREATE TYPE IF NOT EXISTS Broadcast (
   l boolean,
   ns boolean,
   ne boolean,
+  noo boolean,
   p boolean,
+  co boolean,
   thd boolean,
   br boolean,
   rr boolean

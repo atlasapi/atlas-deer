@@ -38,7 +38,9 @@ public class Broadcast implements Identified {
     @Field(name = "l") private Boolean live;
     @Field(name = "ns") private Boolean newSeries;
     @Field(name = "ne") private Boolean newEpisode;
+    @Field(name = "noo") private Boolean newOneOff;
     @Field(name = "p") private Boolean premiere;
+    @Field(name = "co") private Boolean continuation;
     @Field(name = "thd") private Boolean is3d;
     @Field(name = "br") private Boolean blackoutRestriction;
     @Field(name = "rr") private Boolean revisedRepeat;
@@ -230,12 +232,28 @@ public class Broadcast implements Identified {
         this.newEpisode = newEpisode;
     }
 
+    public Boolean getNewOneOff() {
+        return newOneOff;
+    }
+
+    public void setNewOneOff(Boolean newOneOff) {
+        this.newOneOff = newOneOff;
+    }
+
     public Boolean getPremiere() {
         return premiere;
     }
 
     public void setPremiere(Boolean premiere) {
         this.premiere = premiere;
+    }
+
+    public Boolean getContinuation() {
+        return continuation;
+    }
+
+    public void setContinuation(Boolean continuation) {
+        this.continuation = continuation;
     }
 
     public Boolean getIs3d() {

@@ -1,7 +1,5 @@
 package org.atlasapi.content;
 
-import java.util.Optional;
-
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -20,10 +18,14 @@ public class InstrumentedContentIndex implements ContentIndex {
     private final Timer contentIndexTimer;
     private final Timer queryTimer;
 
-    public InstrumentedContentIndex(ContentIndex delegate, MetricRegistry metrics) {
+    private InstrumentedContentIndex(ContentIndex delegate, MetricRegistry metrics) {
         this.delegate = checkNotNull(delegate);
         this.contentIndexTimer = metrics.timer("EsContentIndex.index");
         this.queryTimer = metrics.timer("EsContentIndex.query");
+    }
+
+    public static InstrumentedContentIndex create(ContentIndex delegate, MetricRegistry metrics) {
+        return new InstrumentedContentIndex(delegate, metrics);
     }
 
     @Override
@@ -39,15 +41,16 @@ public class InstrumentedContentIndex implements ContentIndex {
     }
 
     @Override
-    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query,
-            Iterable<Publisher> publishers, Selection selection,
-            Optional<IndexQueryParams> queryParams) {
+    public ListenableFuture<IndexQueryResult> query(
+            AttributeQuerySet query,
+            Iterable<Publisher> publishers,
+            Selection selection
+    ) {
         Timer.Context time = queryTimer.time();
         ListenableFuture<IndexQueryResult> result = delegate.query(
                 query,
                 publishers,
-                selection,
-                queryParams
+                selection
         );
         time.stop();
         return result;

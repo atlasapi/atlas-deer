@@ -122,6 +122,13 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         format.writeList(RELATED_LINKS_WRITER, channel.getRelatedLinks(), ctxt);
         format.writeField("start_date", channel.getStartDate());
         format.writeField("advertised_from", channel.getAdvertiseFrom());
+        format.writeField("short_description", channel.getShortDescription());
+        format.writeField("medium_description", channel.getMediumDescription());
+        format.writeField("long_description", channel.getLongDescription());
+        format.writeField("region", channel.getRegion());
+        format.writeList("target_regions", "target_region", channel.getTargetRegions(), ctxt);
+        format.writeField("channel_type", channel.getChannelType());
+        format.writeField("interactive", channel.getInteractive());
 
         if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ||
                 contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY)) {

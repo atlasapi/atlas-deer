@@ -1,9 +1,7 @@
 package org.atlasapi.query.v4.topic;
 
-import java.util.Optional;
 import java.util.Set;
 
-import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
@@ -24,6 +22,7 @@ import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.query.Selection;
 
 import com.google.common.base.Function;
@@ -43,11 +42,22 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
     private final ContentIndex index;
     private final MergingEquivalentsResolver<Content> contentResolver;
 
-    public TopicContentQueryExecutor(TopicResolver topicResolver, ContentIndex index,
-            MergingEquivalentsResolver<Content> equivalentsResolver) {
+    private TopicContentQueryExecutor(
+            TopicResolver topicResolver,
+            ContentIndex index,
+            MergingEquivalentsResolver<Content> equivalentsResolver
+    ) {
         this.topicResolver = checkNotNull(topicResolver);
         this.index = checkNotNull(index);
         this.contentResolver = checkNotNull(equivalentsResolver);
+    }
+
+    public static TopicContentQueryExecutor create(
+            TopicResolver topicResolver,
+            ContentIndex index,
+            MergingEquivalentsResolver<Content> equivalentsResolver
+    ) {
+        return new TopicContentQueryExecutor(topicResolver, index, equivalentsResolver);
     }
 
     @Override
@@ -65,8 +75,8 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         );
     }
 
-    private AsyncFunction<Resolved<Topic>, ContextualQueryResult<Topic, Content>> resolveContentToContextualQuery(
-            final ContextualQuery<Topic, Content> query) {
+    private AsyncFunction<Resolved<Topic>, ContextualQueryResult<Topic, Content>>
+    resolveContentToContextualQuery(ContextualQuery<Topic, Content> query) {
         return resolved -> {
             com.google.common.base.Optional<Topic> possibleTopic = resolved.getResources().first();
 
@@ -88,8 +98,8 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         };
     }
 
-    private Function<ResolvedEquivalents<Content>, ContextualQueryResult<Topic, Content>> toContextualQuery(
-            final Topic topic, final QueryContext context) {
+    private Function<ResolvedEquivalents<Content>, ContextualQueryResult<Topic, Content>>
+    toContextualQuery(Topic topic, QueryContext context) {
         return content -> ContextualQueryResult.valueOf(
                 QueryResult.singleResult(topic, context),
                 QueryResult.listResult(
@@ -129,9 +139,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         return index.query(
                 query.getOperands(),
                 query.getContext().getApplication().getConfiguration().getEnabledReadSources(),
-                query.getContext().getSelection().or(Selection.all()),
-                Optional.empty()
+                query.getContext().getSelection().or(Selection.all())
         );
     }
-
 }

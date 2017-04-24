@@ -18,7 +18,6 @@ public class AttributeLookupTreeTest {
 
     @Test
     public void testAttributeLookup() {
-
         AttributeLookupTree tree = AttributeLookupTree.create();
 
         tree.put(Attributes.ALIASES_NAMESPACE);
@@ -58,7 +57,6 @@ public class AttributeLookupTreeTest {
 
     @Test
     public void testGetAllKeys() {
-
         AttributeLookupTree tree = AttributeLookupTree.create();
 
         tree.put(Attributes.ID);
@@ -70,4 +68,22 @@ public class AttributeLookupTreeTest {
         assertThat(keys, hasItems("id", "aliases.namespace", "aliases.value"));
     }
 
+    @Test
+    public void getAllKeysWhenOneKeyIsPrefixOfAnother() throws Exception {
+        AttributeLookupTree tree = AttributeLookupTree.create();
+
+        tree.put(Attributes.CONTENT_TITLE_PREFIX);
+        tree.put(Attributes.TITLE_BOOST);
+
+        Set<String> keys = tree.allKeys();
+        assertThat(keys.size(), is(2));
+        assertThat(
+                keys.contains(Attributes.CONTENT_TITLE_PREFIX.externalName()),
+                is(true)
+        );
+        assertThat(
+                keys.contains(Attributes.TITLE_BOOST.externalName()),
+                is(true)
+        );
+    }
 }
