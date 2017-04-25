@@ -91,8 +91,10 @@ public final class BroadcastWriter implements EntityListWriter<ResolvedBroadcast
         writer.writeField("surround", broadcast.getSurround());
         writer.writeField("live", broadcast.getLive());
         writer.writeField("premiere", broadcast.getPremiere());
+        writer.writeField("continuation", broadcast.getContinuation());
         writer.writeField("new_series", broadcast.getNewSeries());
         writer.writeField("new_episode", broadcast.getNewEpisode());
+        writer.writeField("new_one_off", broadcast.getNewOneOff());
         writer.writeField("revised_repeat", broadcast.getRevisedRepeat());
 
         if (!broadcast.getBlackoutRestriction().isPresent()) {

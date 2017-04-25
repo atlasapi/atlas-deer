@@ -45,7 +45,7 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
     private final long timeOutDuration;
     private final TimeUnit timeOutUnit;
 
-    private final EsQueryBuilder builder = new EsQueryBuilder();
+    private final EsQueryBuilder builder = EsQueryBuilder.create();
 
     public EsTopicIndex(Client esClient, String indexName, long timeOutDuration,
             TimeUnit timeOutUnit) {

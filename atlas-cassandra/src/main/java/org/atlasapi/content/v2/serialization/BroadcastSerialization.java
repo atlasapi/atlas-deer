@@ -54,7 +54,9 @@ public class BroadcastSerialization {
         internal.setLive(broadcast.getLive());
         internal.setNewSeries(broadcast.getNewSeries());
         internal.setNewEpisode(broadcast.getNewEpisode());
+        internal.setNewOneOff(broadcast.getNewOneOff());
         internal.setPremiere(broadcast.getPremiere());
+        internal.setContinuation(broadcast.getContinuation());
         internal.setIs3d(broadcast.is3d());
         internal.setBlackoutRestriction(broadcast.getBlackoutRestriction().isPresent()
                 && broadcast.getBlackoutRestriction().get().getAll());
@@ -91,7 +93,9 @@ public class BroadcastSerialization {
         broadcast.setLive(internal.getLive());
         broadcast.setNewSeries(internal.getNewSeries());
         broadcast.setNewEpisode(internal.getNewEpisode());
+        broadcast.setNewOneOff(internal.getNewOneOff());
         broadcast.setPremiere(internal.getPremiere());
+        broadcast.setContinuation(internal.getContinuation());
         broadcast.set3d(internal.getIs3d());
         broadcast.setBlackoutRestriction(
                 new org.atlasapi.content.BlackoutRestriction(internal.getBlackoutRestriction()));

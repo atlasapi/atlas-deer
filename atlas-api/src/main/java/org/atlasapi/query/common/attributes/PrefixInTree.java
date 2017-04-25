@@ -44,17 +44,21 @@ public class PrefixInTree<T> extends ConcurrentRadixTree<Optional<T>> {
                 nodeMatchLen++;
             }
 
-            node = matchLen < superString.length() ? node.getOutgoingEdge(superString.charAt(
-                    matchLen))
-                                                   : null;
+            node = matchLen < superString.length()
+                   ? node.getOutgoingEdge(superString.charAt(matchLen))
+                   : null;
         }
 
         return processResult(superString, prev, matchLen, nodeMatchLen);
     }
 
     @SuppressWarnings("unchecked")
-    private Optional<T> processResult(String key, Node curNode, int matchLen,
-            int curNodeMatch) {
+    private Optional<T> processResult(
+            String key,
+            Node curNode,
+            int matchLen,
+            int curNodeMatch
+    ) {
         int incomingEdgeLength = curNode.getIncomingEdge().length();
         Optional<T> value = Optional.absent();
         if (matchLen > 0 && matchLen <= key.length()
@@ -69,17 +73,19 @@ public class PrefixInTree<T> extends ConcurrentRadixTree<Optional<T>> {
     }
 
     public Set<String> allKeys() {
-        final ImmutableSet.Builder<String> keys = ImmutableSet.builder();
-        traverseDescendants("", root, new NodeKeyPairHandler() {
+        ImmutableSet.Builder<String> keys = ImmutableSet.builder();
 
-            @Override
-            public boolean handle(ConcurrentRadixTree.NodeKeyPair nodeKeyPair) {
-                if (nodeKeyPair.node.getOutgoingEdges().isEmpty()) {
-                    keys.add(nodeKeyPair.key.toString());
+        traverseDescendants(
+                "",
+                root,
+                nodeKeyPair -> {
+                    if (leafNode(nodeKeyPair.node)) {
+                        keys.add(nodeKeyPair.key.toString());
+                    }
+                    return true;
                 }
-                return true;
-            }
-        });
+        );
+
         return keys.build();
     }
 
@@ -87,5 +93,4 @@ public class PrefixInTree<T> extends ConcurrentRadixTree<Optional<T>> {
         put(key, Optional.fromNullable(value));
         return this;
     }
-
 }

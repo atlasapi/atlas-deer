@@ -77,6 +77,8 @@ public class BroadcastSerializerTest {
         // These fields are new and are not set in the serialized broadcast
         expectedBroadcast.setNewEpisode(null);
         expectedBroadcast.setRevisedRepeat(null);
+        expectedBroadcast.setContinuation(null);
+        expectedBroadcast.setNewOneOff(null);
 
         checkBroadcast(broadcast, expectedBroadcast);
         checkBroadcastTimes(
@@ -109,7 +111,9 @@ public class BroadcastSerializerTest {
         assertThat(actual.getLive(), is(expected.getLive()));
         assertThat(actual.getNewSeries(), is(expected.getNewSeries()));
         assertThat(actual.getNewEpisode(), is(expected.getNewEpisode()));
+        assertThat(actual.getNewOneOff(), is(expected.getNewOneOff()));
         assertThat(actual.getPremiere(), is(expected.getPremiere()));
+        assertThat(actual.getContinuation(), is(expected.getContinuation()));
         assertThat(actual.is3d(), is(expected.is3d()));
         assertThat(actual.getVersionId(), is(expected.getVersionId()));
     }
@@ -150,7 +154,9 @@ public class BroadcastSerializerTest {
         broadcast.setLive(true);
         broadcast.setNewSeries(false);
         broadcast.setNewEpisode(true);
+        broadcast.setNewOneOff(true);
         broadcast.setPremiere(true);
+        broadcast.setContinuation(false);
         broadcast.set3d(true);
         broadcast.setVersionId("version");
         return broadcast;

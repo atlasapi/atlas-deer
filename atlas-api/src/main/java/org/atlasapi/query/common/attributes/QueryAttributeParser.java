@@ -50,7 +50,7 @@ public class QueryAttributeParser implements ParameterNameProvider {
     }
 
     public AttributeQuerySet parse(HttpServletRequest request) throws QueryParseException {
-        return new AttributeQuerySet(parseListQuery(request));
+        return AttributeQuerySet.create(parseListQuery(request));
     }
 
     @Override
