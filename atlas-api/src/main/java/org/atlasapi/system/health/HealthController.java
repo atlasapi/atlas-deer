@@ -1,6 +1,7 @@
 package org.atlasapi.system.health;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.metabroadcast.common.health.Health;
 import com.metabroadcast.common.health.Result;
 import com.metabroadcast.common.health.Status;
@@ -19,7 +20,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 public class HealthController {
 
     private final Health health;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
 
     private HealthController(Iterable<Probe> probes) {
         this.health = Health.create(checkNotNull(probes));

@@ -279,6 +279,10 @@
       <groupId>io.prometheus</groupId>
       <artifactId>simpleclient_dropwizard</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jdk8</artifactId>
+    </dependency>
   </dependencies>
 
   <distributionManagement>
