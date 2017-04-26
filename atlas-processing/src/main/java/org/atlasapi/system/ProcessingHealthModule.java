@@ -1,13 +1,10 @@
 package org.atlasapi.system;
 
-import java.util.Collection;
-
 import javax.annotation.PostConstruct;
 
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.system.health.AstyanaxProbe;
 
-import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.health.probes.MemoryInfoProbe;
 import com.metabroadcast.common.persistence.cassandra.health.CassandraProbe;
 import com.metabroadcast.common.webapp.health.HealthController;
@@ -21,7 +18,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ProcessingHealthModule extends HealthModule {
 
-    private @Autowired Collection<HealthProbe> probes;
+    private static final String METRIC_PREFIX = "atlas-deer-processing";
+
     private @Autowired HealthController healthController;
     private @Autowired ProcessingMetricsModule metricsModule;
     private @Autowired AtlasPersistenceModule persistenceModule;
@@ -41,6 +39,11 @@ public class ProcessingHealthModule extends HealthModule {
                 .getSession());
     }
 
+    @Bean
+    public org.atlasapi.system.health.HealthController k8HealthController() {
+        return org.atlasapi.system.health.HealthController.create(getProbes(METRIC_PREFIX));
+    }
+
     @PostConstruct
     public void addProbes() {
         healthController.addProbes(ImmutableList.of(
@@ -49,4 +52,5 @@ public class ProcessingHealthModule extends HealthModule {
                 new MetricsProbe("Metrics", metricsModule.metrics())
         ));
     }
+
 }
