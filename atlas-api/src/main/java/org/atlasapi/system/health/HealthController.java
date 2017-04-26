@@ -37,7 +37,7 @@ public class HealthController {
 
     @RequestMapping("/system/health/probes")
     public void showHealthForProbes(HttpServletResponse response) throws IOException {
-        Result result = health.status(Health.FailurePolicy.ANY);
+        Result result = health.status(Health.FailurePolicy.ALL);
 
         response.setContentType("application/json");
         response.setStatus(result.getStatus() == Status.HEALTHY ? SC_OK
