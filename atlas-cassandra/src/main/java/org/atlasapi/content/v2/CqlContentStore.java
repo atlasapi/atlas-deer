@@ -190,7 +190,30 @@ public class CqlContentStore implements ContentStore {
 
             batch.addAll(updateWriteDates(content, now));
             batch.addAll(deleteContainerSummary(previous, content, messages));
-            batch.addAll(updateContainerDenormalizedInfo(content, previous, messages));
+            try {
+                batch.addAll(updateContainerDenormalizedInfo(content, previous, messages));
+            } catch (Exception e) {
+                String contentInfo = String.format(
+                        "Content - {title: %s, id: %d, type: %s}",
+                        content.getTitle(),
+                        content.getId().longValue(),
+                        content.getClass().getSimpleName()
+                );
+                String previousInfo = previous != null ? String.format(
+                        "Previous - {title: %s, id: %d, type: %s}",
+                        previous.getTitle(),
+                        previous.getId().longValue(),
+                        previous.getClass().getSimpleName()
+                )
+                                                       : "null";
+                log.error(
+                        "Error with updateContainerDenormalizedInfo: {} {}",
+                        contentInfo,
+                        previousInfo,
+                        e
+                );
+                throw new RuntimeException(e); //rethrow to be caught by metrics
+            }
             batch.addAll(updateChildrenSummaries(content, previous, messages));
 
             setExistingItemRefs(content, previous);
@@ -616,7 +639,7 @@ public class CqlContentStore implements ContentStore {
             Content content,
             Content previous,
             ImmutableList.Builder<ResourceUpdatedMessage> messages
-    ) {
+    ) throws Exception {
         List<Statement> result = Lists.newArrayList();
 
         if (content instanceof Series) {
