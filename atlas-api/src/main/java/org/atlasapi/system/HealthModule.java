@@ -47,7 +47,7 @@ public class HealthModule {
     }
 
     @Bean
-    public org.atlasapi.system.health.HealthController k8HealthController() {
+    public org.atlasapi.system.health.HealthController apiK8HealthController() {
         return org.atlasapi.system.health.HealthController.create(getProbes(METRIC_PREFIX));
     }
 
