@@ -16,7 +16,6 @@ import org.atlasapi.util.SecondaryIndex;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
