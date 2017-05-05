@@ -364,10 +364,21 @@ public class ContentBootstrapListener
     }
 
     private Content resolveLegacyContent(Id id) {
-        return Iterables.getOnlyElement(
-                Futures.getUnchecked(legacyContentResolver.resolveIds(ImmutableList.of(id)))
-                        .getResources()
-        );
+        try {
+            Content content = Iterables.getOnlyElement(
+                    Futures.getUnchecked(
+                            legacyContentResolver.resolveIds(
+                                    ImmutableList.of(id)
+                            )
+                    ).getResources()
+            );
+
+            return content;
+
+        } catch (NullPointerException e) {
+            log.error("Failed to resolve legacy content: {}", id, e);
+            throw new RuntimeException(e);
+        }
     }
 
     private void logResult(Id id, Result result) {
