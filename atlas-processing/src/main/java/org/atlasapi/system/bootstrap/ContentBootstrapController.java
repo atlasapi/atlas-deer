@@ -105,6 +105,7 @@ public class ContentBootstrapController {
                 .withContentWriter(builder.write)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(builder.equivalentContentStore)
+                .withSegmentMigratorAndContentResolver(null, legacyResolver)
                 .withContentIndex(contentIndex)
                 .build();
 
@@ -112,6 +113,7 @@ public class ContentBootstrapController {
                 .withContentWriter(builder.write)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(builder.equivalentContentStore)
+                .withSegmentMigratorAndContentResolver(null, legacyResolver)
                 .withContentIndex(contentIndex)
                 .withMigrateEquivalents(builder.equivalenceGraphStore)
                 .build();
