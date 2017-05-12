@@ -38,7 +38,8 @@ public class Image implements Sourced, Hashable {
 
         COLOR("color"),
         BLACK_AND_WHITE("black_and_white"),
-        SINGLE_COLOR("single_color");
+        SINGLE_COLOR("single_color"),
+        MONOCHROME("monochrome");
 
         private final String name;
 
@@ -57,7 +58,10 @@ public class Image implements Sourced, Hashable {
         DARK_OPAQUE("dark_opaque"),
         LIGHT_OPAQUE("light_opaque"),
         DARK_TRANSPARENT("dark_transparent"),
-        LIGHT_TRANSPARENT("light_transparent");
+        LIGHT_TRANSPARENT("light_transparent"),
+        DARK_MONOCHROME("dark_monochrome"),
+        LIGHT_MONOCHROME("light_monochrome"),
+        YV_MONOCHROME("yv_monochrome");
 
         private final String name;
 
