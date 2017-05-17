@@ -27,9 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -102,6 +100,42 @@ public class BroadcastAggregatorTest {
 
         assertThat(resolvedBroadcasts.size(), is(2));
 
+    }
+
+    @Test
+    public void broadcastContinuationOnSameChannelAggregate() throws Exception {
+        Broadcast firstBroadcast = getFutureBroadcast(444L, 1, 2);
+        Broadcast secondBroadcast = getFutureBroadcast(444L, 3, 5);
+        secondBroadcast.setContinuation(true);
+
+        Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
+                ImmutableSet.of(firstBroadcast, secondBroadcast),
+                Optional.empty(),
+                ImmutableList.of()
+        );
+
+        assertThat(resolvedBroadcasts.size(), is(1));
+        Broadcast broadcast = Iterables.getFirst(resolvedBroadcasts, null).getBroadcast();
+        assertThat(broadcast.getTransmissionTime(), is(firstBroadcast.getTransmissionTime()));
+        assertThat(broadcast.getTransmissionEndTime(), is(secondBroadcast.getTransmissionEndTime()));
+    }
+
+    @Test
+    public void broadcastContinuationOnSameChannelFirstInPast() throws Exception {
+        Broadcast firstBroadcast = getFutureBroadcast(444L, -3, -2);
+        Broadcast secondBroadcast = getFutureBroadcast(444L, -1, 1);
+        secondBroadcast.setContinuation(true);
+
+        Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
+                ImmutableSet.of(firstBroadcast, secondBroadcast),
+                Optional.empty(),
+                ImmutableList.of()
+        );
+
+        assertThat(resolvedBroadcasts.size(), is(1));
+        Broadcast broadcast = Iterables.getFirst(resolvedBroadcasts, null).getBroadcast();
+        assertEquals(firstBroadcast.getTransmissionTime(), broadcast.getTransmissionTime());
+        assertEquals(secondBroadcast.getTransmissionEndTime(), broadcast.getTransmissionEndTime());
     }
 
     @Test

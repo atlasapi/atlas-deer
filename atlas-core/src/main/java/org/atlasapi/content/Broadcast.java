@@ -384,6 +384,10 @@ public class Broadcast extends Identified implements Hashable {
     }
 
     public Broadcast copy() {
+        return copyWithNewInterval(transmissionInterval);
+    }
+
+    public Broadcast copyWithNewInterval(Interval transmissionInterval) {
         Broadcast copy = new Broadcast(channelId, transmissionInterval);
         Identified.copyTo(this, copy);
         copy.activelyPublished = activelyPublished;

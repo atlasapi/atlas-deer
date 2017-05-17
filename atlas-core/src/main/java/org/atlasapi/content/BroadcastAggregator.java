@@ -2,7 +2,6 @@ package org.atlasapi.content;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -22,6 +21,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeComparator;
+import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,10 +29,13 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -61,6 +64,7 @@ public class BroadcastAggregator {
         if (platformOptional.isPresent()) {
             broadcasts = removeBroadcastsNotOnPlatform(broadcasts, platformOptional.get());
         }
+        broadcasts = aggregateContinuations(broadcasts);
 
         // Filter out previous broadcasts and collect by transmission time
         Multimap<DateTime, ResolvedBroadcast> broadcastMap = broadcasts.stream()
@@ -72,7 +76,6 @@ public class BroadcastAggregator {
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         resolvedBroadcast -> resolvedBroadcast.getBroadcast().getTransmissionTime(),
                         resolvedBroadcast -> resolvedBroadcast
-
                 ));
 
         // Aggregate the broadcasts with same transmission times
@@ -249,6 +252,21 @@ public class BroadcastAggregator {
         return StreamSupport.stream(broadcasts.spliterator(), false)
                 .filter(broadcast -> platformIds.contains(broadcast.getChannelId()))
                 .collect(MoreCollectors.toImmutableSet());
+    }
+
+    Set<Broadcast> aggregateContinuations(Set<Broadcast> broadcasts) {
+        Map<Id, Broadcast> channelId2Broadcast = new HashMap<>();
+        Set<Broadcast> aggregated = new LinkedHashSet<>(broadcasts.size());
+        for (Broadcast broadcast : broadcasts) {
+            Broadcast old = channelId2Broadcast.put(broadcast.getChannelId(), broadcast);
+            if (old != null && Boolean.TRUE.equals(broadcast.getContinuation())) {
+                broadcast = old.copyWithNewInterval(
+                        new Interval(old.getTransmissionTime(), broadcast.getTransmissionEndTime()));
+                aggregated.remove(old);
+            }
+            aggregated.add(broadcast);
+        }
+        return ImmutableSet.copyOf(aggregated);
     }
 
     // Create refs of resolved channels
