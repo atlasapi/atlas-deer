@@ -21,13 +21,17 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -134,16 +138,62 @@ public class BroadcastAggregatorTest {
 
         assertThat(resolvedBroadcasts.size(), is(1));
         Broadcast broadcast = Iterables.getFirst(resolvedBroadcasts, null).getBroadcast();
-        assertEquals(firstBroadcast.getTransmissionTime(), broadcast.getTransmissionTime());
-        assertEquals(secondBroadcast.getTransmissionEndTime(), broadcast.getTransmissionEndTime());
+        assertThat(broadcast.getTransmissionTime(), is(firstBroadcast.getTransmissionTime()));
+        assertThat(broadcast.getTransmissionEndTime(), is(secondBroadcast.getTransmissionEndTime()));
+    }
+
+    @Test
+    public void broadcastContinuationOnSameChannelOutOfOrder() throws Exception {
+        Broadcast firstBroadcast = getFutureBroadcast(444L, 1, 2);
+        Broadcast secondBroadcast = getFutureBroadcast(444L, 3, 5);
+        secondBroadcast.setContinuation(true);
+
+        Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
+                ImmutableSet.of(secondBroadcast, firstBroadcast),
+                Optional.empty(),
+                ImmutableList.of()
+        );
+
+        assertThat(resolvedBroadcasts.size(), is(1));
+        Broadcast broadcast = Iterables.getFirst(resolvedBroadcasts, null).getBroadcast();
+        assertThat(broadcast.getTransmissionTime(), is(firstBroadcast.getTransmissionTime()));
+        assertThat(broadcast.getTransmissionEndTime(), is(secondBroadcast.getTransmissionEndTime()));
+    }
+    @Test
+    public void multipleBroadcastContinuationsOnSameChannel() throws Exception {
+        Broadcast firstBroadcast = getFutureBroadcast(444L, -3, -2);
+        Broadcast firstBroadcastCont = getFutureBroadcast(444L, -1, 1);
+        firstBroadcastCont.setContinuation(true);
+        Broadcast secondBroadcast = getFutureBroadcast(444L, 5, 6);
+        Broadcast secondBroadcastCont = getFutureBroadcast(444L, 7, 9);
+        secondBroadcastCont.setContinuation(true);
+
+        Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
+                ImmutableSet.of(firstBroadcast, firstBroadcastCont, secondBroadcast, secondBroadcastCont),
+                Optional.empty(),
+                ImmutableList.of()
+        );
+
+        assertThat(resolvedBroadcasts.size(), is(2));
+        List<Broadcast> sorted = resolvedBroadcasts.stream()
+                .map(ResolvedBroadcast::getBroadcast)
+                .sorted(Comparator.comparing(Broadcast::getTransmissionTime))
+                .collect(MoreCollectors.toImmutableList());
+        Broadcast broadcast = sorted.get(0);
+        assertThat(broadcast.getTransmissionTime(), is(firstBroadcast.getTransmissionTime()));
+        assertThat(broadcast.getTransmissionEndTime(), is(firstBroadcastCont.getTransmissionEndTime()));
+
+        broadcast = sorted.get(1);
+        assertThat(broadcast.getTransmissionTime(), is(secondBroadcast.getTransmissionTime()));
+        assertThat(broadcast.getTransmissionEndTime(), is(secondBroadcastCont.getTransmissionEndTime()));
     }
 
     @Test
     public void downweighChannelBroadcastIsNotFirst() throws Exception {
 
-        Broadcast downweighedBroadcast1 = new Broadcast(Id.valueOf(333L), DateTime.now().plusHours(1), DateTime.now().plusHours(2));
-        Broadcast normalBroadcast1 = new Broadcast(Id.valueOf(111L), DateTime.now().plusHours(1), DateTime.now().plusHours(2));
-        Broadcast normalBroadcast2 = new Broadcast(Id.valueOf(222L), DateTime.now().plusHours(1), DateTime.now().plusHours(2));
+        Broadcast downweighedBroadcast1 = getFutureBroadcast(333L,1, 2);
+        Broadcast normalBroadcast1 = getFutureBroadcast(111L,1,2);
+        Broadcast normalBroadcast2 = getFutureBroadcast(222L,1,2);
 
 
         Collection<ResolvedBroadcast> resolvedBroadcasts = ImmutableSet.of(
