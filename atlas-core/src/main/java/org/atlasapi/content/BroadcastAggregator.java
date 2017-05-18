@@ -267,9 +267,7 @@ public class BroadcastAggregator {
                 .collect(MoreCollectors.toImmutableSet());
     }
 
-    Set<Broadcast> mergeBroadcastContinuations(
-            Collection<Broadcast> broadcasts
-    ) {
+    Set<Broadcast> mergeBroadcastContinuations(Collection<Broadcast> broadcasts) {
         return broadcasts.stream()
                 .sorted(Comparator.comparing(Broadcast::getTransmissionEndTime))
                 .collect(
@@ -277,9 +275,17 @@ public class BroadcastAggregator {
                                 ArrayListMultimap::create,
                                 this::accumulateBroadcastContinuations,
                                 this::combineBroadcastContinuations,
-                                m -> ImmutableSet.copyOf(m.values())));
+                                channelId2broadcasts ->
+                                        ImmutableSet.copyOf(channelId2broadcasts.values())));
     }
 
+    /**
+     * This is an accumulator method for a Collector.
+     * It's purpose is to fold the broadcast parameter into the Multimap,
+     * resolving the continuations.
+     * @param channelId2Broadcast   accumulated collection of broadcasts.
+     * @param broadcast             the broadcast to fold into the collection.
+     */
     private void accumulateBroadcastContinuations(
             ListMultimap<Id, Broadcast> channelId2Broadcast,
             Broadcast broadcast
@@ -301,6 +307,13 @@ public class BroadcastAggregator {
                                     broadcast.getTransmissionEndTime())));
         }
     }
+
+    /**
+     * This is a combiner method for a Collector.
+     * @param broadcasts1   the first collection of broadcasts to combine.
+     * @param broadcasts2   the second collection of broadcasts to combine into the first.
+     * @return  the first collection of broadcasts, with the second added.
+     */
     private ListMultimap<Id, Broadcast> combineBroadcastContinuations(
             ListMultimap<Id, Broadcast> broadcasts1,
             ListMultimap<Id, Broadcast> broadcasts2

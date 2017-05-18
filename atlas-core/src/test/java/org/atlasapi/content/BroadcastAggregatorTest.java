@@ -20,8 +20,10 @@ import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -149,7 +151,8 @@ public class BroadcastAggregatorTest {
         secondBroadcast.setContinuation(true);
 
         Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
-                ImmutableSet.of(secondBroadcast, firstBroadcast),
+                // enforce out of order broadcasts, so we can ensure this doesn't break things
+                new LinkedHashSet<>(Arrays.asList(secondBroadcast, firstBroadcast)),
                 Optional.empty(),
                 ImmutableList.of()
         );
