@@ -1,15 +1,18 @@
 package org.atlasapi.content;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.Booleans;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
@@ -22,6 +25,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeComparator;
+import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,10 +33,21 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -57,13 +72,17 @@ public class BroadcastAggregator {
             Optional<Platform> platformOptional,
             List<Id> downweighChannelIds
     ) {
+
         // Remove broadcasts we don't care about
-        if (platformOptional.isPresent()) {
-            broadcasts = removeBroadcastsNotOnPlatform(broadcasts, platformOptional.get());
-        }
+        Set<Broadcast> platformBroadcasts = platformOptional.isPresent()
+                ? removeBroadcastsNotOnPlatform(broadcasts, platformOptional.get())
+                : broadcasts;
+
+        // Merge broadcast continuations
+        Set<Broadcast> mergedContinuations = mergeBroadcastContinuations(platformBroadcasts);
 
         // Filter out previous broadcasts and collect by transmission time
-        Multimap<DateTime, ResolvedBroadcast> broadcastMap = broadcasts.stream()
+        Multimap<DateTime, ResolvedBroadcast> broadcastMap = mergedContinuations.stream()
                 .filter(broadcast -> broadcast.getTransmissionEndTime().isAfterNow())
                 .map(broadcast -> ResolvedBroadcast.create(
                         broadcast,
@@ -72,11 +91,9 @@ public class BroadcastAggregator {
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         resolvedBroadcast -> resolvedBroadcast.getBroadcast().getTransmissionTime(),
                         resolvedBroadcast -> resolvedBroadcast
-
                 ));
 
         // Aggregate the broadcasts with same transmission times
-
         ImmutableMultimap.Builder<DateTime, ResolvedBroadcast> aggregatedBroadcasts = ImmutableMultimap.builder();
 
         for(DateTime dateTime : broadcastMap.keySet()) {
@@ -249,6 +266,51 @@ public class BroadcastAggregator {
         return StreamSupport.stream(broadcasts.spliterator(), false)
                 .filter(broadcast -> platformIds.contains(broadcast.getChannelId()))
                 .collect(MoreCollectors.toImmutableSet());
+    }
+
+    Set<Broadcast> mergeBroadcastContinuations(Collection<Broadcast> broadcasts) {
+        return broadcasts.stream()
+                .sorted(Comparator.comparing(Broadcast::getTransmissionEndTime))
+                .collect(
+                        Collector.<Broadcast, ListMultimap<Id, Broadcast>, Set<Broadcast>>of(
+                                ArrayListMultimap::create,
+                                this::accumulateBroadcastContinuations,
+                                this::combineBroadcastContinuations,
+                                channelId2broadcasts ->
+                                        ImmutableSet.copyOf(channelId2broadcasts.values())));
+    }
+
+    private void accumulateBroadcastContinuations(
+            ListMultimap<Id, Broadcast> channelId2Broadcast,
+            Broadcast broadcast
+    ) {
+        // This is a Collector.accumulator method, the second argument is folded into the first.
+        List<Broadcast> broadcasts = channelId2Broadcast.get(broadcast.getChannelId());
+        // Note: we can't use !broadcast.getContinuation() as it can be null
+        if (broadcasts.isEmpty() || !Boolean.TRUE.equals(broadcast.getContinuation())) {
+            // If we don't have a broadcast on the channel yet, or if it's not a continuation,
+            // just add it.
+            broadcasts.add(broadcast);
+        } else {
+            // Otherwise remove the previous broadcast, merge it with this one, and add the result.
+            int last = broadcasts.size() - 1;
+            Broadcast original = broadcasts.get(last);
+            broadcasts.set(
+                    last,
+                    original.copyWithNewInterval(
+                            new Interval(
+                                    original.getTransmissionTime(),
+                                    broadcast.getTransmissionEndTime())));
+        }
+    }
+
+    private ListMultimap<Id, Broadcast> combineBroadcastContinuations(
+            ListMultimap<Id, Broadcast> broadcasts1,
+            ListMultimap<Id, Broadcast> broadcasts2
+    ) {
+        // This is a Collector.combiner method, the second argument is folded into the first.
+        broadcasts2.values().forEach(b -> accumulateBroadcastContinuations(broadcasts1, b));
+        return broadcasts1;
     }
 
     // Create refs of resolved channels

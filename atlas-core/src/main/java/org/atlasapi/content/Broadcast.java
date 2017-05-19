@@ -384,24 +384,32 @@ public class Broadcast extends Identified implements Hashable {
     }
 
     public Broadcast copy() {
-        Broadcast copy = new Broadcast(channelId, transmissionInterval);
+        // Use copyWithNewInterval with the current interval so we don't add code dupe
+        return copyWithNewInterval(transmissionInterval);
+    }
+
+    public Broadcast copyWithNewInterval(Interval newTransmissionInterval) {
+        Broadcast copy = new Broadcast(channelId, newTransmissionInterval);
         Identified.copyTo(this, copy);
+        copy.scheduleDate = scheduleDate;
         copy.activelyPublished = activelyPublished;
         copy.sourceId = sourceId;
-        copy.scheduleDate = scheduleDate;
+        copy.versionId = versionId;
         copy.repeat = repeat;
         copy.subtitled = subtitled;
         copy.signed = signed;
         copy.audioDescribed = audioDescribed;
         copy.highDefinition = highDefinition;
         copy.widescreen = widescreen;
+        copy.surround = surround;
+        copy.live = live;
         copy.newSeries = newSeries;
         copy.newEpisode = newEpisode;
         copy.newOneOff = newOneOff;
         copy.premiere = premiere;
         copy.continuation = continuation;
-        copy.live = live;
-        copy.versionId = versionId;
+        copy.is3d = is3d;
+        copy.blackoutRestriction = blackoutRestriction;
         copy.revisedRepeat = revisedRepeat;
         return copy;
     }
