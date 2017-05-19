@@ -388,31 +388,28 @@ public class Broadcast extends Identified implements Hashable {
         return copyWithNewInterval(transmissionInterval);
     }
 
-    /**
-     * Return a copy of this broadcast, but with a new transmission interval.
-     * Used for merging Broadcast continuations.
-     * @param newTransmissionInterval   the new transmission interval.
-     * @return  a new copy of this broadcast, with the new transmission interval.
-     */
     public Broadcast copyWithNewInterval(Interval newTransmissionInterval) {
         Broadcast copy = new Broadcast(channelId, newTransmissionInterval);
         Identified.copyTo(this, copy);
+        copy.scheduleDate = scheduleDate;
         copy.activelyPublished = activelyPublished;
         copy.sourceId = sourceId;
-        copy.scheduleDate = scheduleDate;
+        copy.versionId = versionId;
         copy.repeat = repeat;
         copy.subtitled = subtitled;
         copy.signed = signed;
         copy.audioDescribed = audioDescribed;
         copy.highDefinition = highDefinition;
         copy.widescreen = widescreen;
+        copy.surround = surround;
+        copy.live = live;
         copy.newSeries = newSeries;
         copy.newEpisode = newEpisode;
         copy.newOneOff = newOneOff;
         copy.premiere = premiere;
         copy.continuation = continuation;
-        copy.live = live;
-        copy.versionId = versionId;
+        copy.is3d = is3d;
+        copy.blackoutRestriction = blackoutRestriction;
         copy.revisedRepeat = revisedRepeat;
         return copy;
     }

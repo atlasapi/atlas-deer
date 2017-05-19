@@ -12,6 +12,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.Booleans;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
@@ -279,18 +280,13 @@ public class BroadcastAggregator {
                                         ImmutableSet.copyOf(channelId2broadcasts.values())));
     }
 
-    /**
-     * This is an accumulator method for a Collector.
-     * It's purpose is to fold the broadcast parameter into the Multimap,
-     * resolving the continuations.
-     * @param channelId2Broadcast   accumulated collection of broadcasts.
-     * @param broadcast             the broadcast to fold into the collection.
-     */
     private void accumulateBroadcastContinuations(
             ListMultimap<Id, Broadcast> channelId2Broadcast,
             Broadcast broadcast
     ) {
+        // This is a Collector.accumulator method, the second argument is folded into the first.
         List<Broadcast> broadcasts = channelId2Broadcast.get(broadcast.getChannelId());
+        // Note: we can't use !broadcast.getContinuation() as it can be null
         if (broadcasts.isEmpty() || !Boolean.TRUE.equals(broadcast.getContinuation())) {
             // If we don't have a broadcast on the channel yet, or if it's not a continuation,
             // just add it.
@@ -308,16 +304,11 @@ public class BroadcastAggregator {
         }
     }
 
-    /**
-     * This is a combiner method for a Collector.
-     * @param broadcasts1   the first collection of broadcasts to combine.
-     * @param broadcasts2   the second collection of broadcasts to combine into the first.
-     * @return  the first collection of broadcasts, with the second added.
-     */
     private ListMultimap<Id, Broadcast> combineBroadcastContinuations(
             ListMultimap<Id, Broadcast> broadcasts1,
             ListMultimap<Id, Broadcast> broadcasts2
     ) {
+        // This is a Collector.combiner method, the second argument is folded into the first.
         broadcasts2.values().forEach(b -> accumulateBroadcastContinuations(broadcasts1, b));
         return broadcasts1;
     }
