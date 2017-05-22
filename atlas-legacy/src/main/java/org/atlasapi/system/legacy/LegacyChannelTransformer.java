@@ -1,14 +1,21 @@
 package org.atlasapi.system.legacy;
 
+import java.math.BigInteger;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelEquivRef;
 import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.channel.ChannelType;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.MediaType;
+import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.ChannelNumbering;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
@@ -18,6 +25,8 @@ import com.google.common.collect.Iterables;
 
 public class LegacyChannelTransformer
         extends BaseLegacyResourceTransformer<org.atlasapi.media.channel.Channel, Channel> {
+
+    private final SubstitutionTableNumberCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
 
     @Nullable
     @Override
@@ -32,6 +41,7 @@ public class LegacyChannelTransformer
                 .withBroadcaster(input.getBroadcaster())
                 .withParent(input.getParent())
                 .withVariations(input.getVariations())
+                .withSameAs(transformSameAs(input.getSameAs()))
                 .withStartDate(input.getStartDate())
                 .withEndDate(input.getEndDate())
                 .withImages(transformImages(input.getAllImages()))
@@ -46,6 +56,7 @@ public class LegacyChannelTransformer
                                 input.getSource()
                         )
                 ).withAdvertiseFrom(input.getAdvertiseFrom())
+                .withAdvertiseTo(input.getAdvertiseTo())
                 .withShortDescription(input.getShortDescription())
                 .withMediumDescription(input.getMediumDescription())
                 .withLongDescription(input.getLongDescription())
@@ -78,6 +89,7 @@ public class LegacyChannelTransformer
                 .withBroadcaster(input.getBroadcaster())
                 .withSource(input.getSource())
                 .withAdvertiseFrom(input.getAdvertiseFrom())
+                .withAdvertiseTo(input.getAdvertiseTo())
                 .withMediaType(
                         org.atlasapi.media.entity.MediaType.valueOf(
                                 input.getMediaType().toString().toUpperCase()
@@ -98,19 +110,13 @@ public class LegacyChannelTransformer
     ) {
         return Iterables.transform(
                 channelNumbers,
-                new Function<ChannelNumbering, ChannelGroupMembership>() {
-
-                    @Override
-                    public ChannelGroupMembership apply(ChannelNumbering channelNumbering) {
-                        return ChannelGroupMembership.builder(publisher)
-                                .withChannelGroupId(channelNumbering.getChannelGroup())
-                                .withChannelId(channelNumbering.getChannel())
-                                .withChannelNumber(channelNumbering.getChannelNumber())
-                                .withStartDate(channelNumbering.getStartDate())
-                                .withEndDate(channelNumbering.getEndDate())
-                                .build();
-                    }
-                }
+                channelNumbering -> ChannelGroupMembership.builder(publisher)
+                        .withChannelGroupId(channelNumbering.getChannelGroup())
+                        .withChannelId(channelNumbering.getChannel())
+                        .withChannelNumber(channelNumbering.getChannelNumber())
+                        .withStartDate(channelNumbering.getStartDate())
+                        .withEndDate(channelNumbering.getEndDate())
+                        .build()
         );
 
     }
@@ -119,19 +125,22 @@ public class LegacyChannelTransformer
             Iterable<TemporalField<org.atlasapi.media.entity.Image>> legacyImages) {
         return Iterables.transform(
                 legacyImages,
-                new Function<TemporalField<org.atlasapi.media.entity.Image>, TemporalField<Image>>() {
-
-                    @Override
-                    public TemporalField<Image> apply(
-                            TemporalField<org.atlasapi.media.entity.Image> input) {
-                        return new TemporalField<>(
-                                transformImage(input.getValue()),
-                                input.getStartDate(),
-                                input.getEndDate()
-                        );
-                    }
-                }
+                input -> new TemporalField<>(
+                        transformImage(input.getValue()),
+                        input.getStartDate(),
+                        input.getEndDate()
+                )
         );
 
+    }
+
+    private Set<ChannelEquivRef> transformSameAs(Set<org.atlasapi.equiv.ChannelRef> channelRefs) {
+        return channelRefs.stream()
+                .map(ref -> ChannelEquivRef.create(
+                        Id.valueOf(ref.getId()),
+                        ref.getUri(),
+                        ref.getPublisher()
+                ))
+                .collect(MoreCollectors.toImmutableSet());
     }
 }

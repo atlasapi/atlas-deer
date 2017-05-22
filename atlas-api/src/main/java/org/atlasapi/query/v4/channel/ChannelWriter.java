@@ -17,6 +17,7 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.AliasWriter;
+import org.atlasapi.output.writers.ChannelEquivRefWriter;
 import org.atlasapi.output.writers.ChannelVariantRefWriter;
 import org.atlasapi.output.writers.ImageListWriter;
 import org.atlasapi.output.writers.RelatedLinkWriter;
@@ -40,13 +41,14 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
     private static final AliasWriter ALIAS_WRITER = new AliasWriter();
     private static final ImageListWriter IMAGE_WRITER = new ImageListWriter();
     private static final RelatedLinkWriter RELATED_LINKS_WRITER = new RelatedLinkWriter();
+    private static final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
 
     private final String listName;
     private final String fieldName;
-    private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final ChannelGroupSummaryWriter channelGroupSummaryWriter;
     private final ChannelVariantRefWriter includedVariantWriter;
     private final ChannelVariantRefWriter excludedVariantWriter;
+    private final ChannelEquivRefWriter equivRefWriter;
 
 
     private ChannelWriter(
@@ -66,6 +68,12 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         excludedVariantWriter = ChannelVariantRefWriter.create(
                 "excluded_variant",
                 "excluded_variants",
+                idCodec
+        );
+
+        equivRefWriter = ChannelEquivRefWriter.create(
+                "same_as",
+                "same_as",
                 idCodec
         );
     }
@@ -113,6 +121,7 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         format.writeList(IMAGE_WRITER, channel.getImages(), ctxt);
         format.writeList(AVAILABLE_FROM_WRITER, channel.getAvailableFrom(), ctxt);
         format.writeObject(AVAILABLE_FROM_WRITER, channel.getSource(), ctxt);
+        format.writeList(equivRefWriter, channel.getSameAs(), ctxt);
         format.writeField("media_type", channel.getMediaType());
         format.writeObject(BROADCASTER_WRITER, channel.getBroadcaster(), ctxt);
         format.writeList(ALIAS_WRITER, channel.getAliases(), ctxt);
@@ -122,6 +131,7 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         format.writeList(RELATED_LINKS_WRITER, channel.getRelatedLinks(), ctxt);
         format.writeField("start_date", channel.getStartDate());
         format.writeField("advertised_from", channel.getAdvertiseFrom());
+        format.writeField("advertised_from", channel.getAdvertiseTo());
         format.writeField("short_description", channel.getShortDescription());
         format.writeField("medium_description", channel.getMediumDescription());
         format.writeField("long_description", channel.getLongDescription());
