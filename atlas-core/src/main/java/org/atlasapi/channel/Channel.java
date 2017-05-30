@@ -470,7 +470,7 @@ public class Channel extends Identified implements Sourced {
             this.startDate = channel.getStartDate();
             this.endDate = channel.getEndDate();
             this.advertiseFrom = channel.getAdvertiseFrom();
-            this.advertiseFrom = channel.getAdvertiseTo();
+            this.advertiseTo = channel.getAdvertiseTo();
 
             return this;
         }

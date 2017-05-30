@@ -107,6 +107,7 @@ public class ChannelWriterTest {
         verify(fieldWriter).writeField(eq(regional), eq(null));
         verify(fieldWriter).writeField(eq(startDate), eq(null));
         verify(fieldWriter).writeField(eq(advertisedFrom), eq(null));
+        verify(fieldWriter).writeField(eq(advertisedTo), eq(null));
         verify(fieldWriter).writeField(eq(shortDescription), eq(null));
         verify(fieldWriter).writeField(eq(mediumDescription), eq(null));
         verify(fieldWriter).writeField(eq(longDescription), eq(null));
@@ -125,7 +126,7 @@ public class ChannelWriterTest {
                 eq(Sets.newHashSet()),
                 any(OutputContext.class)
         );
-        verify(fieldWriter, times(4)).writeList(
+        verify(fieldWriter, times(5)).writeList(
                 any(EntityListWriter.class),
                 eq(Sets.newHashSet()),
                 any(OutputContext.class)
@@ -209,7 +210,7 @@ public class ChannelWriterTest {
                 eq(targetRegionsSet),
                 any(OutputContext.class)
         );
-        verify(fieldWriter, times(4)).writeList(
+        verify(fieldWriter, times(5)).writeList(
                 any(ImageListWriter.class),
                 any(Iterable.class),
                 any(OutputContext.class)
