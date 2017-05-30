@@ -42,9 +42,11 @@ public class Channel extends Identified implements Sourced {
     private final ImmutableSet<TemporalField<Image>> images;
     private final ChannelRef parent;
     private final ImmutableSet<ChannelRef> variations;
+    private final ImmutableSet<ChannelEquivRef> sameAs;
     private final LocalDate startDate;
     private final LocalDate endDate;
     private final DateTime advertiseFrom;
+    private final DateTime advertiseTo;
     private final String shortDescription;
     private final String mediumDescription;
     private final String longDescription;
@@ -71,9 +73,11 @@ public class Channel extends Identified implements Sourced {
             Set<TemporalField<Image>> images,
             ChannelRef parent,
             Set<ChannelRef> variations,
+            Set<ChannelEquivRef> sameAs,
             @Nullable LocalDate startDate,
             @Nullable LocalDate endDate,
             @Nullable DateTime advertiseFrom,
+            @Nullable DateTime advertiseTo,
             @Nullable String shortDescription,
             @Nullable String mediumDescription,
             @Nullable String longDescription,
@@ -102,6 +106,7 @@ public class Channel extends Identified implements Sourced {
         this.startDate = startDate;
         this.endDate = endDate;
         this.advertiseFrom = advertiseFrom;
+        this.advertiseTo = advertiseTo;
         this.shortDescription = shortDescription;
         this.mediumDescription = mediumDescription;
         this.longDescription = longDescription;
@@ -109,6 +114,7 @@ public class Channel extends Identified implements Sourced {
         this.targetRegions = ImmutableSet.copyOf(targetRegions);
         this.channelType = channelType;
         this.interactive = interactive;
+        this.sameAs = ImmutableSet.copyOf(sameAs);
     }
 
     @Override
@@ -185,6 +191,11 @@ public class Channel extends Identified implements Sourced {
         return variations;
     }
 
+    @FieldName("same_as")
+    public ImmutableSet<ChannelEquivRef> getSameAs() {
+        return sameAs;
+    }
+
     @FieldName("start_date")
     public LocalDate getStartDate() {
         return startDate;
@@ -198,6 +209,11 @@ public class Channel extends Identified implements Sourced {
     @FieldName("advertised_from")
     public DateTime getAdvertiseFrom() {
         return advertiseFrom;
+    }
+
+    @FieldName("advertised_to")
+    public DateTime getAdvertiseTo() {
+        return advertiseTo;
     }
 
     public ChannelRef toRef() {
@@ -275,7 +291,9 @@ public class Channel extends Identified implements Sourced {
         private Set<TemporalField<Image>> images = Sets.newHashSet();
         private ChannelRef parent;
         private Set<ChannelRef> variations = Sets.newHashSet();
+        private Set<ChannelEquivRef> sameAs = Sets.newHashSet();
         private DateTime advertiseFrom;
+        private DateTime advertiseTo;
         private LocalDate startDate;
         private LocalDate endDate;
         private String shortDescription;
@@ -395,6 +413,11 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
+        public Builder withSameAs(Set<ChannelEquivRef> sameAs) {
+            this.sameAs = ImmutableSet.copyOf(sameAs);
+            return this;
+        }
+
         public Builder withStartDate(LocalDate startDate) {
             this.startDate = startDate;
             return this;
@@ -420,6 +443,11 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
+        public Builder withAdvertiseTo(DateTime dateTime) {
+            this.advertiseTo = dateTime;
+            return this;
+        }
+
         public Builder copyOf(Channel channel) {
             this.uri = channel.getCanonicalUri();
             this.id = channel.getId();
@@ -438,9 +466,11 @@ public class Channel extends Identified implements Sourced {
             this.images = channel.getAllImages();
             this.parent = channel.getParent();
             this.variations = channel.getVariations();
+            this.sameAs = channel.getSameAs();
             this.startDate = channel.getStartDate();
             this.endDate = channel.getEndDate();
             this.advertiseFrom = channel.getAdvertiseFrom();
+            this.advertiseFrom = channel.getAdvertiseTo();
 
             return this;
         }
@@ -506,9 +536,11 @@ public class Channel extends Identified implements Sourced {
                     images,
                     parent,
                     variations,
+                    sameAs,
                     startDate,
                     endDate,
                     advertiseFrom,
+                    advertiseTo,
                     shortDescription,
                     mediumDescription,
                     longDescription,

@@ -60,6 +60,7 @@ public class ChannelWriterTest {
     private String regional = "regional";
     private String startDate = "start_date";
     private String advertisedFrom = "advertised_from";
+    private String advertisedTo = "advertised_to";
     private String shortDescription = "short_description";
     private String mediumDescription = "medium_description";
     private String longDescription = "long_description";
@@ -74,6 +75,7 @@ public class ChannelWriterTest {
     private boolean regionalValue = true;
     private LocalDate startDateValue = LocalDate.parse("2016-05-26");
     private DateTime advertisedFromValue = DateTime.parse("2016-05-27T07:15:30.450Z");
+    private DateTime advertisedToValue = DateTime.parse("2017-05-27T07:15:30.450Z");
     private String interactive = "interactive";
 
     @Before
@@ -160,6 +162,7 @@ public class ChannelWriterTest {
                 .withRegional(regionalValue)
                 .withStartDate(startDateValue)
                 .withAdvertiseFrom(advertisedFromValue)
+                .withAdvertiseTo(advertisedToValue)
                 .withShortDescription(shortDescription)
                 .withMediumDescription(mediumDescription)
                 .withLongDescription(longDescription)
@@ -187,6 +190,7 @@ public class ChannelWriterTest {
         verify(fieldWriter).writeField(eq(regional), eq(regionalValue));
         verify(fieldWriter).writeField(eq(startDate), eq(startDateValue));
         verify(fieldWriter).writeField(eq(advertisedFrom), eq(advertisedFromValue));
+        verify(fieldWriter).writeField(eq(advertisedTo), eq(advertisedToValue));
         verify(fieldWriter).writeField(eq(shortDescription), eq(shortDescription));
         verify(fieldWriter).writeField(eq(mediumDescription), eq(mediumDescription));
         verify(fieldWriter).writeField(eq(longDescription), eq(longDescription));
