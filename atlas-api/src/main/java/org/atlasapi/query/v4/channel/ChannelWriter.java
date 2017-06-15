@@ -2,6 +2,7 @@ package org.atlasapi.query.v4.channel;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import javax.annotation.Nonnull;
 
@@ -26,7 +27,6 @@ import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 
 import static org.atlasapi.output.writers.SourceWriter.sourceListWriter;

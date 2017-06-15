@@ -1,6 +1,7 @@
 package org.atlasapi.query.v4.channelgroup;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -37,7 +38,6 @@ import org.atlasapi.query.common.exceptions.UncheckedQueryExecutionException;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.promise.Promise;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -158,13 +158,13 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         resolvedChannelGroupBuilder.withRegionChannelGroups(
                 contextHasAnnotation(ctxt, Annotation.REGIONS) ?
                     resolveRegionChannelGroups(channelGroup) :
-                    Optional.absent()
+                    Optional.empty()
         );
 
         resolvedChannelGroupBuilder.withPlatformChannelGroup(
                 contextHasAnnotation(ctxt, Annotation.PLATFORM) ?
                     resolvePlatformChannelGroup(channelGroup) :
-                    Optional.absent()
+                    Optional.empty()
         );
 
         if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ||
@@ -186,7 +186,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                     resolveAdvertisedChannels(channelGroup)
             );
         } else {
-            resolvedChannelGroupBuilder.withAdvertisedChannels(Optional.absent());
+            resolvedChannelGroupBuilder.withAdvertisedChannels(Optional.empty());
         }
 
         return resolvedChannelGroupBuilder.build();
@@ -195,7 +195,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     private Optional<Iterable<ChannelGroup<?>>> resolveRegionChannelGroups(ChannelGroup<?> entity) {
 
         if(!(entity instanceof  Platform)) {
-            return Optional.absent();
+            return Optional.empty();
         }
 
         Platform platform = (Platform) entity;
@@ -211,15 +211,16 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     private Optional<ChannelGroup<?>> resolvePlatformChannelGroup(ChannelGroup<?> entity) {
         if(!(entity instanceof Region)) {
-            return Optional.absent();
+            return Optional.empty();
         }
 
         Id platformId = ((Region) entity).getPlatform().getId();
 
-        return Promise.wrap(channelGroupResolver.resolveIds(ImmutableSet.of(platformId)))
+        return Optional.ofNullable(Promise.wrap(channelGroupResolver.resolveIds(ImmutableSet.of(platformId)))
                 .then(Resolved::getResources)
                 .get(1, TimeUnit.MINUTES)
-                .first();
+                .first().orNull()
+        );
     }
 
     private Optional<Iterable<ResolvedChannel>> resolveChannelsWithChannelGroups(
@@ -227,7 +228,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     ) {
         Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity);
         if (!channels.isPresent()) {
-            return Optional.absent();
+            return Optional.empty();
         }
 
         return Optional.of(

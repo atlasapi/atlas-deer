@@ -1,12 +1,14 @@
 package org.atlasapi.query.v4.channel;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelEquivRef;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelGroupSummary;
@@ -32,7 +34,6 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.promise.Promise;
 
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
@@ -152,7 +153,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
             }
         }
 
-        FluentIterable<Channel> channels = getChannels(channelQueryBuilder.build());
+        Iterable<Channel> channels = getChannels(channelQueryBuilder.build());
 
         ImmutableList<Channel> filteredChannels = ordering.immutableSortedCopy(channels)
                 .stream()
@@ -197,7 +198,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                 channelQuery.getAliasValue().isPresent();
     }
 
-    private FluentIterable<Channel> getChannels(ChannelQuery channelQuery)
+    private Iterable<Channel> getChannels(ChannelQuery channelQuery)
             throws QueryExecutionException {
 
         ListenableFuture<Resolved<Channel>> resolvingChannels;
@@ -214,11 +215,11 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         );
 
         try {
-            return Futures.get(
+            return Futures.getChecked(
                     resolvedIterable,
+                    QueryExecutionException.class,
                     1,
-                    TimeUnit.MINUTES,
-                    QueryExecutionException.class
+                    TimeUnit.MINUTES
             );
         } catch (Exception e) {
             throw new QueryExecutionException(e);
@@ -226,25 +227,30 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
     }
 
     private ResolvedChannel resolveAnnotationData(QueryContext ctxt, Channel channel) {
-        ResolvedChannel.Builder resolvedChannelBuilder =
-                ResolvedChannel.builder(channel);
+        ResolvedChannel.Builder resolvedChannelBuilder = ResolvedChannel.builder(channel);
 
         resolvedChannelBuilder.withChannelGroupSummaries(
                 contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ?
                 resolveChannelGroupSummaries(channel) :
-                Optional.absent()
+                Optional.empty()
         );
 
         resolvedChannelBuilder.withParentChannel(
                 contextHasAnnotation(ctxt, Annotation.PARENT) ?
                 resolveParentChannel(channel) :
-                Optional.absent()
+                Optional.empty()
         );
 
         resolvedChannelBuilder.withChannelVariations(
                 contextHasAnnotation(ctxt, Annotation.VARIATIONS) ?
                 resolveChannelVariations(channel) :
-                Optional.absent()
+                Optional.empty()
+        );
+
+        resolvedChannelBuilder.withResolvedEquivalents(
+                ctxt.getApplication().getConfiguration().isPrecedenceEnabled() ?
+                resolveEquivalents(channel) :
+                Optional.empty()
         );
 
         return resolvedChannelBuilder.build();
@@ -273,7 +279,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                 ImmutableList.of(channel.getParent().getId())))
                 .then(Resolved::getResources)
                 .then(FluentIterable::first)
-                .then(Optional::get)
+                .then(com.google.common.base.Optional::get)
                 .get(1, TimeUnit.MINUTES));
     }
 
@@ -283,8 +289,19 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
         return Optional.of(Promise.wrap(channelResolver.resolveIds(ids))
                 .then(Resolved::getResources)
-                .get(1, TimeUnit.MINUTES));
+                .get(1, TimeUnit.MINUTES)
+        );
 
+    }
+
+    private Optional<Iterable<Channel>> resolveEquivalents(Channel channel) {
+
+        Iterable<Id> ids = Iterables.transform(channel.getSameAs(), ChannelEquivRef::getId);
+
+        return Optional.of(Promise.wrap(channelResolver.resolveIds(ids))
+                .then(Resolved::getResources)
+                .get(1, TimeUnit.MINUTES)
+        );
     }
 
     private Ordering<? super Channel> ordering(String orderBy) {

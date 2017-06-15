@@ -318,6 +318,11 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
+        public Builder withAlias(Alias alias) {
+            this.aliases.add(alias);
+            return this;
+        }
+
         public Builder withTitles(Iterable<TemporalField<String>> titles) {
             Iterables.addAll(this.titles, titles);
             return this;

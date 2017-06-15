@@ -65,6 +65,14 @@ public class ChannelQueryExecutorTest {
     @InjectMocks
     private ChannelQueryExecutor objectUnderTest;
 
+    @Mock
+    private Application application = mock(Application.class);
+
+    private ApplicationConfiguration appConf = ApplicationConfiguration.builder()
+            .withNoPrecedence(ImmutableList.of())
+            .withEnabledWriteSources(ImmutableList.of())
+            .build();
+
     @Test
     public void testExecuteSingle() throws Exception {
         Id channelId = Id.valueOf(1L);
@@ -74,6 +82,8 @@ public class ChannelQueryExecutorTest {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter("annotations")).thenReturn("banana");
         when(context.getRequest()).thenReturn(request);
+        when(context.getApplication()).thenReturn(application);
+        when(application.getConfiguration()).thenReturn(appConf);
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelId);
         when(channelQuery.getContext()).thenReturn(context);
@@ -104,6 +114,7 @@ public class ChannelQueryExecutorTest {
         when(context.getRequest()).thenReturn(request);
 
         when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(configuration.isPrecedenceEnabled()).thenReturn(false);
         when(application.getConfiguration()).thenReturn(configuration);
         when(context.getApplication()).thenReturn(application);
 
@@ -145,6 +156,8 @@ public class ChannelQueryExecutorTest {
 
         when(request.getParameter("annotations")).thenReturn("parent");
         when(context.getRequest()).thenReturn(request);
+        when(context.getApplication()).thenReturn(application);
+        when(application.getConfiguration()).thenReturn(appConf);
 
         when(parentRef.getId()).thenReturn(parentId);
         when(result.getParent()).thenReturn(parentRef);
@@ -171,8 +184,8 @@ public class ChannelQueryExecutorTest {
 
         assertThat(queryResult.getOnlyResource().getChannel(), is(result));
         assert (queryResult.getOnlyResource().getParentChannel().isPresent());
-        assertThat(queryResult.getOnlyResource().getChannelGroupSummaries(), is(Optional.absent()));
-        assertThat(queryResult.getOnlyResource().getChannelVariations(), is(Optional.absent()));
+        assertThat(queryResult.getOnlyResource().getChannelGroupSummaries(), is(java.util.Optional.empty()));
+        assertThat(queryResult.getOnlyResource().getChannelVariations(), is(java.util.Optional.empty()));
         assertThat(queryResult.getOnlyResource().getParentChannel().get(), is(parent));
     }
 
@@ -202,6 +215,7 @@ public class ChannelQueryExecutorTest {
 
         when(application.getConfiguration()).thenReturn(configuration);
         when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(configuration.isPrecedenceEnabled()).thenReturn(false);
         when(context.getApplication()).thenReturn(application);
 
         when(context.getSelection()).thenReturn(Optional.of(selection));
@@ -259,7 +273,7 @@ public class ChannelQueryExecutorTest {
         ImmutableList<ResolvedChannel> resolvedChannels = queryResult.getResources().toList();
 
         for (ResolvedChannel resolvedChannel : resolvedChannels) {
-            assertThat(resolvedChannel.getParentChannel(), is(Optional.absent()));
+            assertThat(resolvedChannel.getParentChannel(), is(java.util.Optional.empty()));
             assert (resolvedChannel.getChannelGroupSummaries().isPresent());
             assert (resolvedChannel.getChannelVariations().isPresent());
 
@@ -299,6 +313,7 @@ public class ChannelQueryExecutorTest {
 
         when(application.getConfiguration()).thenReturn(configuration);
         when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(configuration.isPrecedenceEnabled()).thenReturn(false);
         when(context.getApplication()).thenReturn(application);
 
         when(context.getSelection()).thenReturn(Optional.of(selection));
@@ -372,6 +387,7 @@ public class ChannelQueryExecutorTest {
 
         when(application.getConfiguration()).thenReturn(configuration);
         when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(configuration.isPrecedenceEnabled()).thenReturn(false);
         when(context.getApplication()).thenReturn(application);
 
         when(context.getSelection()).thenReturn(Optional.of(selection));

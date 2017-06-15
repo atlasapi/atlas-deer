@@ -1,6 +1,7 @@
 package org.atlasapi.output.annotation;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -15,7 +16,6 @@ import org.atlasapi.output.ResolvedChannelWithChannelGroupMembership;
 import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMultimap;

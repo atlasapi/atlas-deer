@@ -1,8 +1,8 @@
 package org.atlasapi.channel;
 
 import java.util.List;
+import java.util.Optional;
 
-import com.google.common.base.Optional;
 import org.atlasapi.content.ChannelVariantRef;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -13,9 +13,10 @@ public class ResolvedChannel {
     private final Optional<List<ChannelGroupSummary>> channelGroupSummaries;
     private final Optional<Channel> parentChannel;
     private final Optional<Iterable<Channel>> channelVariations;
-    private final java.util.Optional<List<ChannelVariantRef>> includedVariants;
-    private final java.util.Optional<List<ChannelVariantRef>> excludedVariants;
-    private Optional<ChannelGroupMembership> channelGroupMembership;
+    private final Optional<List<ChannelVariantRef>> includedVariants;
+    private final Optional<List<ChannelVariantRef>> excludedVariants;
+    private final Optional<ChannelGroupMembership> channelGroupMembership;
+    private final Optional<Iterable<Channel>> equivalents;
 
     private ResolvedChannel(
             Channel channel,
@@ -23,8 +24,9 @@ public class ResolvedChannel {
             Optional<Channel> parentChannel,
             Optional<Iterable<Channel>> channelVariations,
             Optional<ChannelGroupMembership> channelGroupMembership,
-            java.util.Optional<List<ChannelVariantRef>> includedVariants,
-            java.util.Optional<List<ChannelVariantRef>> excludedVariants
+            Optional<List<ChannelVariantRef>> includedVariants,
+            Optional<List<ChannelVariantRef>> excludedVariants,
+            Optional<Iterable<Channel>> equivalents
     ) {
         this.channel = checkNotNull(channel);
         this.channelGroupSummaries = checkNotNull(channelGroupSummaries);
@@ -33,10 +35,15 @@ public class ResolvedChannel {
         this.channelGroupMembership = checkNotNull(channelGroupMembership);
         this.includedVariants = checkNotNull(includedVariants);
         this.excludedVariants = checkNotNull(excludedVariants);
+        this.equivalents = checkNotNull(equivalents);
     }
 
     public static Builder builder(Channel channel) {
         return new Builder(channel);
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public Channel getChannel() {
@@ -59,26 +66,38 @@ public class ResolvedChannel {
         return channelGroupMembership;
     }
 
-    public java.util.Optional<List<ChannelVariantRef>> getIncludedVariants() {
+    public Optional<List<ChannelVariantRef>> getIncludedVariants() {
         return includedVariants;
     }
 
-    public java.util.Optional<List<ChannelVariantRef>> getExcludedVariants() {
+    public Optional<List<ChannelVariantRef>> getExcludedVariants() {
         return excludedVariants;
+    }
+
+    public Optional<Iterable<Channel>> getEquivalents() {
+        return equivalents;
     }
 
     public static class Builder {
 
-        private final Channel channel;
-        private Optional<List<ChannelGroupSummary>> channelGroupSummaries = Optional.absent();
-        private Optional<Channel> parentChannel = Optional.absent();
-        private Optional<Iterable<Channel>> channelVariations = Optional.absent();
-        private Optional<ChannelGroupMembership> channelGroupMembership = Optional.absent();
-        private java.util.Optional<List<ChannelVariantRef>> includedVariants = java.util.Optional.empty();
-        private java.util.Optional<List<ChannelVariantRef>> excludedVariants = java.util.Optional.empty();
+        private Channel channel;
+        private Optional<List<ChannelGroupSummary>> channelGroupSummaries = Optional.empty();
+        private Optional<Channel> parentChannel = Optional.empty();
+        private Optional<Iterable<Channel>> channelVariations = Optional.empty();
+        private Optional<ChannelGroupMembership> channelGroupMembership = Optional.empty();
+        private Optional<List<ChannelVariantRef>> includedVariants = Optional.empty();
+        private Optional<List<ChannelVariantRef>> excludedVariants = Optional.empty();
+        private Optional<Iterable<Channel>> equivalents = Optional.empty();
 
         private Builder(Channel channel) {
             this.channel = channel;
+        }
+
+        private Builder () {}
+
+        public Builder withChannel(Channel channel) {
+            this.channel = channel;
+            return this;
         }
 
         public Builder withChannelGroupSummaries(Optional<List<ChannelGroupSummary>> channelGroupSummaries) {
@@ -101,13 +120,18 @@ public class ResolvedChannel {
             return this;
         }
 
-        public Builder withIncludedVariants(java.util.Optional<List<ChannelVariantRef>> includedVariants) {
+        public Builder withIncludedVariants(Optional<List<ChannelVariantRef>> includedVariants) {
             this.includedVariants = includedVariants;
             return this;
         }
 
-        public Builder withExcludedVariants(java.util.Optional<List<ChannelVariantRef>> excludedVariants) {
+        public Builder withExcludedVariants(Optional<List<ChannelVariantRef>> excludedVariants) {
             this.excludedVariants = excludedVariants;
+            return this;
+        }
+
+        public Builder withResolvedEquivalents(Optional<Iterable<Channel>> equivalents) {
+            this.equivalents = equivalents;
             return this;
         }
 
@@ -119,12 +143,14 @@ public class ResolvedChannel {
                     channelVariations,
                     channelGroupMembership,
                     includedVariants,
-                    excludedVariants
+                    excludedVariants,
+                    equivalents
             );
         }
 
         public static Builder copyOf(ResolvedChannel resolvedChannel) {
-            return new Builder(resolvedChannel.getChannel())
+            return new Builder()
+                    .withChannel(resolvedChannel.getChannel())
                     .withParentChannel(resolvedChannel.getParentChannel())
                     .withChannelVariations(resolvedChannel.getChannelVariations())
                     .withChannelGroupSummaries(resolvedChannel.getChannelGroupSummaries())

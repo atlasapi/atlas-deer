@@ -1,10 +1,15 @@
 package org.atlasapi.query.v4.channel;
 
 import java.io.IOException;
+import java.util.stream.StreamSupport;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.atlasapi.channel.ResolvedChannel;
+import org.atlasapi.output.ChannelMerger;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
@@ -19,14 +24,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ChannelQueryResultWriter extends QueryResultWriter<ResolvedChannel> {
 
     private final EntityListWriter<ResolvedChannel> channelListWriter;
+    private final ChannelMerger merger;
 
     public ChannelQueryResultWriter(
             EntityListWriter<ResolvedChannel> channelListWriter,
             EntityWriter<Object> licenseWriter,
-            EntityWriter<HttpServletRequest> requestWriter
+            EntityWriter<HttpServletRequest> requestWriter,
+            ChannelMerger merger
     ) {
         super(licenseWriter, requestWriter);
         this.channelListWriter = checkNotNull(channelListWriter);
+        this.merger = checkNotNull(merger);
     }
 
     @Override
@@ -37,10 +45,45 @@ public class ChannelQueryResultWriter extends QueryResultWriter<ResolvedChannel>
 
         if (result.isListResult()) {
             FluentIterable<ResolvedChannel> resources = result.getResources();
-            writer.writeList(channelListWriter, resources, ctxt);
+
+            writer.writeList(channelListWriter, mergeEquivalents(resources, ctxt), ctxt);
         } else {
-            writer.writeObject(channelListWriter, result.getOnlyResource(), ctxt);
+            ResolvedChannel resolvedChannel = result.getOnlyResource();
+
+            writer.writeObject(channelListWriter, mergeEquivalents(resolvedChannel, ctxt), ctxt);
         }
 
+    }
+
+    private ResolvedChannel mergeEquivalents(ResolvedChannel resource, OutputContext ctxt) {
+        return Iterables.getOnlyElement(
+                mergeEquivalents(Lists.newArrayList(resource), ctxt)
+        );
+    }
+
+    private Iterable<ResolvedChannel> mergeEquivalents(
+            Iterable<ResolvedChannel> resources,
+            OutputContext ctxt
+    ) {
+        ImmutableSet.Builder<ResolvedChannel> mergedSet = ImmutableSet.builder();
+
+        StreamSupport.stream(resources.spliterator(), false)
+                .forEach(resolvedChannel -> {
+                    if (resolvedChannel.getEquivalents().isPresent()) {
+                        mergedSet.add(
+                                ResolvedChannel.Builder.copyOf(resolvedChannel).withChannel(
+                                        merger.merge(
+                                                ctxt,
+                                                resolvedChannel.getChannel(),
+                                                resolvedChannel.getEquivalents().get()
+                                        )
+                                ).build()
+                        );
+                    } else {
+                        mergedSet.add(resolvedChannel);
+                    }
+                });
+
+        return mergedSet.build();
     }
 }

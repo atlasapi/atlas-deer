@@ -1,6 +1,6 @@
 package org.atlasapi.channel;
 
-import com.google.common.base.Optional;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -46,9 +46,9 @@ public class ResolvedChannelGroup {
     public static class Builder {
 
         private final ChannelGroup<?> channelGroup;
-        private Optional<Iterable<ChannelGroup<?>>> regionChannelGroups = Optional.absent();
-        private Optional<ChannelGroup<?>> platformChannelGroup = Optional.absent();
-        private Optional<Iterable<ResolvedChannel>> channels = Optional.absent();
+        private Optional<Iterable<ChannelGroup<?>>> regionChannelGroups = Optional.empty();
+        private Optional<ChannelGroup<?>> platformChannelGroup = Optional.empty();
+        private Optional<Iterable<ResolvedChannel>> channels = Optional.empty();
 
         public Builder(ChannelGroup<?> channelGroup) {
             this.channelGroup = checkNotNull(channelGroup);

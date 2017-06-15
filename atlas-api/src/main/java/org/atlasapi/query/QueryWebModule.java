@@ -26,6 +26,7 @@ import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
+import org.atlasapi.output.ChannelMerger;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.QueryResultWriter;
@@ -584,7 +585,12 @@ public class QueryWebModule {
         return new ChannelController(
                 channelQueryParser(),
                 channelQueryExecutor,
-                new ChannelQueryResultWriter(channelListWriter(), licenseWriter, requestWriter())
+                new ChannelQueryResultWriter(
+                        channelListWriter(),
+                        licenseWriter,
+                        requestWriter(),
+                        ChannelMerger.create()
+                )
         );
     }
 
