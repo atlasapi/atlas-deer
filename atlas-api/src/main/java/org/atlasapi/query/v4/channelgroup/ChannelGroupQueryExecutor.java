@@ -144,7 +144,6 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                         .map(channelGroup -> resolveAnnotationData(query.getContext(), channelGroup))
                         .collect(MoreCollectors.toImmutableList());
 
-
         return QueryResult.listResult(
                 resolvedChannelGroups,
                 query.getContext(),
@@ -311,7 +310,10 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         Iterable<ResolvedChannel> sortedChannels =
                 StreamSupport.stream(resolvedChannels.spliterator(), false)
                         .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
-                        .map(channel -> ResolvedChannel.builder(channel).build())
+                        .map(channel -> ResolvedChannel.builder(channel)
+                                .withResolvedEquivalents(resolveChannelEquivalents(channel))
+                                .build()
+                        )
                         .collect(Collectors.toList());
 
         return Optional.of(sortedChannels);
