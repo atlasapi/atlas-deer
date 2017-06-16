@@ -2,7 +2,6 @@ package org.atlasapi.query.v4.channelgroup;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -14,7 +13,6 @@ import javax.annotation.Nullable;
 import com.google.common.collect.Iterables;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelEquivRef;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelGroupRef;
@@ -322,7 +320,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     @Nullable
     private Iterable<Channel> resolveChannelEquivalents(Channel channel) {
 
-        if (channel.getSameAs().isEmpty()) {
+        if (channel.getSameAs() == null || channel.getSameAs().isEmpty()) {
             return null;
         }
 
