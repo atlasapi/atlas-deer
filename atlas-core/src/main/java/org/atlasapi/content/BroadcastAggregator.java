@@ -241,14 +241,14 @@ public class BroadcastAggregator {
 
         return ResolvedChannel.builder(parent)
                 .withIncludedVariants(
-                        Optional.of(getIncludedVariantRefs(parent, channelIdsAndTitles.entrySet()))
+                        getIncludedVariantRefs(parent, channelIdsAndTitles.entrySet())
                 )
                 .withExcludedVariants(
-                        Optional.of(resolveExcludedVariantRefs(
+                        resolveExcludedVariantRefs(
                                 parent,
                                 channelIdsAndTitles.keySet(),
                                 platformOptional
-                        ))
+                        )
                 )
                 .build();
 

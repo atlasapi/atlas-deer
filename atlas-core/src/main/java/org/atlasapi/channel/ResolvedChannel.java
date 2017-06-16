@@ -10,32 +10,32 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ResolvedChannel {
 
     private final Channel channel;
-    private final Optional<List<ChannelGroupSummary>> channelGroupSummaries;
-    private final Optional<Channel> parentChannel;
-    private final Optional<Iterable<Channel>> channelVariations;
-    private final Optional<List<ChannelVariantRef>> includedVariants;
-    private final Optional<List<ChannelVariantRef>> excludedVariants;
-    private final Optional<ChannelGroupMembership> channelGroupMembership;
-    private final Optional<Iterable<Channel>> equivalents;
+    private final List<ChannelGroupSummary> channelGroupSummaries;
+    private final Channel parentChannel;
+    private final Iterable<Channel> channelVariations;
+    private final List<ChannelVariantRef> includedVariants;
+    private final List<ChannelVariantRef> excludedVariants;
+    private final ChannelGroupMembership channelGroupMembership;
+    private final Iterable<Channel> equivalents;
 
     private ResolvedChannel(
             Channel channel,
-            Optional<List<ChannelGroupSummary>> channelGroupSummaries,
-            Optional<Channel> parentChannel,
-            Optional<Iterable<Channel>> channelVariations,
-            Optional<ChannelGroupMembership> channelGroupMembership,
-            Optional<List<ChannelVariantRef>> includedVariants,
-            Optional<List<ChannelVariantRef>> excludedVariants,
-            Optional<Iterable<Channel>> equivalents
+            List<ChannelGroupSummary> channelGroupSummaries,
+            Channel parentChannel,
+            Iterable<Channel> channelVariations,
+            ChannelGroupMembership channelGroupMembership,
+            List<ChannelVariantRef> includedVariants,
+            List<ChannelVariantRef> excludedVariants,
+            Iterable<Channel> equivalents
     ) {
         this.channel = checkNotNull(channel);
-        this.channelGroupSummaries = checkNotNull(channelGroupSummaries);
-        this.parentChannel = checkNotNull(parentChannel);
-        this.channelVariations = checkNotNull(channelVariations);
-        this.channelGroupMembership = checkNotNull(channelGroupMembership);
-        this.includedVariants = checkNotNull(includedVariants);
-        this.excludedVariants = checkNotNull(excludedVariants);
-        this.equivalents = checkNotNull(equivalents);
+        this.channelGroupSummaries = channelGroupSummaries;
+        this.parentChannel = parentChannel;
+        this.channelVariations = channelVariations;
+        this.channelGroupMembership = channelGroupMembership;
+        this.includedVariants = includedVariants;
+        this.excludedVariants = excludedVariants;
+        this.equivalents = equivalents;
     }
 
     public static Builder builder(Channel channel) {
@@ -51,43 +51,43 @@ public class ResolvedChannel {
     }
 
     public Optional<List<ChannelGroupSummary>> getChannelGroupSummaries() {
-        return channelGroupSummaries;
+        return Optional.ofNullable(channelGroupSummaries);
     }
 
     public Optional<Channel> getParentChannel() {
-        return parentChannel;
+        return Optional.ofNullable(parentChannel);
     }
 
     public Optional<Iterable<Channel>> getChannelVariations() {
-        return channelVariations;
+        return Optional.ofNullable(channelVariations);
     }
 
     public Optional<ChannelGroupMembership> getChannelGroupMembership() {
-        return channelGroupMembership;
+        return Optional.ofNullable(channelGroupMembership);
     }
 
     public Optional<List<ChannelVariantRef>> getIncludedVariants() {
-        return includedVariants;
+        return Optional.ofNullable(includedVariants);
     }
 
     public Optional<List<ChannelVariantRef>> getExcludedVariants() {
-        return excludedVariants;
+        return Optional.ofNullable(excludedVariants);
     }
 
     public Optional<Iterable<Channel>> getEquivalents() {
-        return equivalents;
+        return Optional.ofNullable(equivalents);
     }
 
     public static class Builder {
 
         private Channel channel;
-        private Optional<List<ChannelGroupSummary>> channelGroupSummaries = Optional.empty();
-        private Optional<Channel> parentChannel = Optional.empty();
-        private Optional<Iterable<Channel>> channelVariations = Optional.empty();
-        private Optional<ChannelGroupMembership> channelGroupMembership = Optional.empty();
-        private Optional<List<ChannelVariantRef>> includedVariants = Optional.empty();
-        private Optional<List<ChannelVariantRef>> excludedVariants = Optional.empty();
-        private Optional<Iterable<Channel>> equivalents = Optional.empty();
+        private List<ChannelGroupSummary> channelGroupSummaries;
+        private Channel parentChannel;
+        private Iterable<Channel> channelVariations;
+        private ChannelGroupMembership channelGroupMembership;
+        private List<ChannelVariantRef> includedVariants;
+        private List<ChannelVariantRef> excludedVariants;
+        private Iterable<Channel> equivalents;
 
         private Builder(Channel channel) {
             this.channel = channel;
@@ -100,37 +100,37 @@ public class ResolvedChannel {
             return this;
         }
 
-        public Builder withChannelGroupSummaries(Optional<List<ChannelGroupSummary>> channelGroupSummaries) {
+        public Builder withChannelGroupSummaries(List<ChannelGroupSummary> channelGroupSummaries) {
             this.channelGroupSummaries = channelGroupSummaries;
             return this;
         }
 
-        public Builder withParentChannel(Optional<Channel> parentChannel) {
+        public Builder withParentChannel(Channel parentChannel) {
             this.parentChannel = parentChannel;
             return this;
         }
 
-        public Builder withChannelVariations(Optional<Iterable<Channel>> channelVariations) {
+        public Builder withChannelVariations(Iterable<Channel> channelVariations) {
             this.channelVariations = channelVariations;
             return this;
         }
 
-        public Builder withChannelGroupMembership(Optional<ChannelGroupMembership> channelGroupMembership) {
+        public Builder withChannelGroupMembership(ChannelGroupMembership channelGroupMembership) {
             this.channelGroupMembership = channelGroupMembership;
             return this;
         }
 
-        public Builder withIncludedVariants(Optional<List<ChannelVariantRef>> includedVariants) {
+        public Builder withIncludedVariants(List<ChannelVariantRef> includedVariants) {
             this.includedVariants = includedVariants;
             return this;
         }
 
-        public Builder withExcludedVariants(Optional<List<ChannelVariantRef>> excludedVariants) {
+        public Builder withExcludedVariants(List<ChannelVariantRef> excludedVariants) {
             this.excludedVariants = excludedVariants;
             return this;
         }
 
-        public Builder withResolvedEquivalents(Optional<Iterable<Channel>> equivalents) {
+        public Builder withResolvedEquivalents(Iterable<Channel> equivalents) {
             this.equivalents = equivalents;
             return this;
         }
@@ -151,12 +151,12 @@ public class ResolvedChannel {
         public static Builder copyOf(ResolvedChannel resolvedChannel) {
             return new Builder()
                     .withChannel(resolvedChannel.getChannel())
-                    .withParentChannel(resolvedChannel.getParentChannel())
-                    .withChannelVariations(resolvedChannel.getChannelVariations())
-                    .withChannelGroupSummaries(resolvedChannel.getChannelGroupSummaries())
-                    .withChannelGroupMembership(resolvedChannel.getChannelGroupMembership())
-                    .withIncludedVariants(resolvedChannel.getIncludedVariants())
-                    .withExcludedVariants(resolvedChannel.getExcludedVariants());
+                    .withParentChannel(resolvedChannel.getParentChannel().orElse(null))
+                    .withChannelVariations(resolvedChannel.getChannelVariations().orElse(null))
+                    .withChannelGroupSummaries(resolvedChannel.getChannelGroupSummaries().orElse(null))
+                    .withChannelGroupMembership(resolvedChannel.getChannelGroupMembership().orElse(null))
+                    .withIncludedVariants(resolvedChannel.getIncludedVariants().orElse(null))
+                    .withExcludedVariants(resolvedChannel.getExcludedVariants().orElse(null));
         }
     }
 

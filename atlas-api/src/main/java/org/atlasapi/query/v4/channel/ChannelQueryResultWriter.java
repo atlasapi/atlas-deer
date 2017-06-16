@@ -1,6 +1,7 @@
 package org.atlasapi.query.v4.channel;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.stream.StreamSupport;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,7 +58,7 @@ public class ChannelQueryResultWriter extends QueryResultWriter<ResolvedChannel>
 
     private ResolvedChannel mergeEquivalents(ResolvedChannel resource, OutputContext ctxt) {
         return Iterables.getOnlyElement(
-                mergeEquivalents(Lists.newArrayList(resource), ctxt)
+                mergeEquivalents(Collections.singleton(resource), ctxt)
         );
     }
 

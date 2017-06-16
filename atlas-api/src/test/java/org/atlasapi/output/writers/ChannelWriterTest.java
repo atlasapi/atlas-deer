@@ -63,8 +63,8 @@ public class ChannelWriterTest {
         excludedRefs = Lists.newArrayList(ChannelVariantRef.create("excluded", Id.valueOf(456L)));
 
         resolvedChannelWithVariants = ResolvedChannel.builder(channel)
-                        .withIncludedVariants(Optional.of(includedRefs))
-                        .withExcludedVariants(Optional.of(excludedRefs))
+                        .withIncludedVariants(includedRefs)
+                        .withExcludedVariants(excludedRefs)
                         .build();
 
     }

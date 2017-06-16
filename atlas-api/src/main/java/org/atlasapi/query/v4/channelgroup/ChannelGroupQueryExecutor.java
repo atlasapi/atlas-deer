@@ -246,7 +246,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         );
     }
 
-    private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(
+    private List<ChannelGroupSummary> resolveChannelGroupSummaries(
             Channel channel,
             Function<ChannelGroupMembership, Boolean> whitelistedChannelGroupPredicate
     ) {
@@ -260,7 +260,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     }
 
-    private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(
+    private List<ChannelGroupSummary> resolveChannelGroupSummaries(
             Iterable<Id> channelGroupIds
     ) {
 
@@ -269,9 +269,9 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                         .then(Resolved::getResources)
                         .get(1, TimeUnit.MINUTES);
 
-        return Optional.of(StreamSupport.stream(channelGroups.spliterator(), false)
+        return StreamSupport.stream(channelGroups.spliterator(), false)
                 .map(ChannelGroup::toSummary)
-                .collect(MoreCollectors.toImmutableList()));
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannels(ChannelGroup<?> entity) {
