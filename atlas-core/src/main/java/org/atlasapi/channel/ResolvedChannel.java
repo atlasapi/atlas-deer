@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import org.atlasapi.content.ChannelVariantRef;
 
+import javax.annotation.Nullable;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ResolvedChannel {
@@ -130,7 +132,7 @@ public class ResolvedChannel {
             return this;
         }
 
-        public Builder withResolvedEquivalents(Iterable<Channel> equivalents) {
+        public Builder withResolvedEquivalents(@Nullable Iterable<Channel> equivalents) {
             this.equivalents = equivalents;
             return this;
         }

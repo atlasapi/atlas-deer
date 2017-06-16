@@ -2,15 +2,19 @@ package org.atlasapi.query.v4.channelgroup;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
+import com.google.common.collect.Iterables;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelEquivRef;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelGroupRef;
@@ -240,6 +244,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                                 whitelistedChannelGroupPredicate
                                         )
                                 )
+                                .withResolvedEquivalents(
+                                        resolveChannelEquivalents(
+                                                resolvedChannel.getChannel()
+                                        )
+                                )
                                 .build()
                         )
                         .collect(Collectors.toList())
@@ -306,6 +315,20 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                         .collect(Collectors.toList());
 
         return Optional.of(sortedChannels);
+    }
+
+    @Nullable
+    private Iterable<Channel> resolveChannelEquivalents(Channel channel) {
+
+        if (channel.getSameAs().isEmpty()) {
+            return null;
+        }
+
+        Iterable<Id> ids = Iterables.transform(channel.getSameAs(), ResourceRef::getId);
+
+        return Promise.wrap(channelResolver.resolveIds(ids))
+                        .then(Resolved::getResources)
+                        .get(1, TimeUnit.MINUTES);
     }
 
     private boolean contextHasAnnotation(QueryContext ctxt, Annotation annotation) {

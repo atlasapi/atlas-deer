@@ -51,7 +51,7 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
     private final ChannelEquivRefWriter equivRefWriter;
 
 
-    private ChannelWriter(
+    protected ChannelWriter(
             String listName,
             String fieldName,
             ChannelGroupSummaryWriter channelGroupSummaryWriter
@@ -154,7 +154,6 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         }
     }
 
-    @Nonnull
     @Override
     public String fieldName(ResolvedChannel entity) {
         return fieldName;

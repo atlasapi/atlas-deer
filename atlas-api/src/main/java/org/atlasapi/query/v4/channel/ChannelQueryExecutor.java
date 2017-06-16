@@ -1,12 +1,10 @@
 package org.atlasapi.query.v4.channel;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.google.common.collect.Lists;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelEquivRef;

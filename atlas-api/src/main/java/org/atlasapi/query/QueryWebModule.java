@@ -119,6 +119,7 @@ import org.atlasapi.query.v4.channel.ChannelController;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.query.v4.channel.ChannelQueryResultWriter;
 import org.atlasapi.query.v4.channel.ChannelWriter;
+import org.atlasapi.query.v4.channel.MergingChannelWriter;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupListWriter;
@@ -588,8 +589,7 @@ public class QueryWebModule {
                 new ChannelQueryResultWriter(
                         channelListWriter(),
                         licenseWriter,
-                        requestWriter(),
-                        ChannelMerger.create()
+                        requestWriter()
                 )
         );
     }
@@ -608,10 +608,11 @@ public class QueryWebModule {
     }
 
     private ChannelWriter channelWriter() {
-        return ChannelWriter.create(
+        return MergingChannelWriter.create(
                 "channels",
                 "channel",
-                ChannelGroupSummaryWriter.create(idCodec())
+                ChannelGroupSummaryWriter.create(idCodec()),
+                ChannelMerger.create()
         );
     }
 

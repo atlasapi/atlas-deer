@@ -19,7 +19,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
