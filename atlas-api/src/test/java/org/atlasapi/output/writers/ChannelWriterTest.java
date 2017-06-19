@@ -19,7 +19,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -63,8 +62,8 @@ public class ChannelWriterTest {
         excludedRefs = Lists.newArrayList(ChannelVariantRef.create("excluded", Id.valueOf(456L)));
 
         resolvedChannelWithVariants = ResolvedChannel.builder(channel)
-                        .withIncludedVariants(Optional.of(includedRefs))
-                        .withExcludedVariants(Optional.of(excludedRefs))
+                        .withIncludedVariants(includedRefs)
+                        .withExcludedVariants(excludedRefs)
                         .build();
 
     }

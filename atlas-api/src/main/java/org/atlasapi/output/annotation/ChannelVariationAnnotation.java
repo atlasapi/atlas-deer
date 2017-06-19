@@ -1,6 +1,7 @@
 package org.atlasapi.output.annotation;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -10,8 +11,6 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
 import org.atlasapi.query.v4.channel.ChannelWriter;
-
-import com.google.common.base.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

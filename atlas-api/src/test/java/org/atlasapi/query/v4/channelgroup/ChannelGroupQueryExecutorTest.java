@@ -198,8 +198,8 @@ public class ChannelGroupQueryExecutorTest {
         assertThat(queryResult.getOnlyResource().getRegionChannelGroups().get().iterator().next(),
                 is(testRegionChannelGroup));
 
-        assertThat(queryResult.getOnlyResource().getPlatformChannelGroup(), is(Optional.absent()));
-        assertThat(queryResult.getOnlyResource().getChannels(), is(Optional.absent()));
+        assertThat(queryResult.getOnlyResource().getPlatformChannelGroup(), is(java.util.Optional.empty()));
+        assertThat(queryResult.getOnlyResource().getChannels(), is(java.util.Optional.empty()));
     }
 
     @Test
@@ -320,7 +320,7 @@ public class ChannelGroupQueryExecutorTest {
                     .collect(Collectors.toList());
 
             assert(channelGroupsChannels.containsAll(ImmutableList.of(channel, channel2)));
-            assertThat(resolvedChannelGroup.getPlatformChannelGroup(), is(Optional.absent()));
+            assertThat(resolvedChannelGroup.getPlatformChannelGroup(), is(java.util.Optional.empty()));
         }
 
     }

@@ -12,8 +12,6 @@ import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.query.common.QueryResult;
 
-import com.google.common.collect.FluentIterable;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelQueryResultWriter extends QueryResultWriter<ResolvedChannel> {
@@ -36,10 +34,13 @@ public class ChannelQueryResultWriter extends QueryResultWriter<ResolvedChannel>
         OutputContext ctxt = OutputContext.valueOf(result.getContext());
 
         if (result.isListResult()) {
-            FluentIterable<ResolvedChannel> resources = result.getResources();
+            Iterable<ResolvedChannel> resources = result.getResources();
+
             writer.writeList(channelListWriter, resources, ctxt);
         } else {
-            writer.writeObject(channelListWriter, result.getOnlyResource(), ctxt);
+            ResolvedChannel resolvedChannel = result.getOnlyResource();
+
+            writer.writeObject(channelListWriter, resolvedChannel, ctxt);
         }
 
     }

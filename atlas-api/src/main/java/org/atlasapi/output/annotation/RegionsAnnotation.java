@@ -1,6 +1,7 @@
 package org.atlasapi.output.annotation;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.Region;
@@ -9,8 +10,6 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ChannelGroupWriter;
 import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
-
-import com.google.common.base.Optional;
 
 public class RegionsAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
 
