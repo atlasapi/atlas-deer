@@ -318,6 +318,11 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
+        public Builder withAlias(Alias alias) {
+            this.aliases.add(alias);
+            return this;
+        }
+
         public Builder withTitles(Iterable<TemporalField<String>> titles) {
             Iterables.addAll(this.titles, titles);
             return this;
@@ -451,8 +456,8 @@ public class Channel extends Identified implements Sourced {
         public Builder copyOf(Channel channel) {
             this.uri = channel.getCanonicalUri();
             this.id = channel.getId();
-            this.aliases = channel.getAliases();
-            this.titles = channel.getAllTitles();
+            this.aliases = Sets.newHashSet(channel.getAliases());
+            this.titles = Sets.newHashSet(channel.getAllTitles());
             this.publisher = channel.getSource();
             this.mediaType = channel.getMediaType();
             this.key = channel.getKey();
@@ -460,13 +465,13 @@ public class Channel extends Identified implements Sourced {
             this.regional = channel.getRegional();
             this.broadcaster = channel.getBroadcaster();
             this.availableFrom = channel.availableFrom;
-            this.channelGroups = channel.getChannelGroups();
-            this.genres = channel.getGenres();
-            this.relatedLinks = channel.getRelatedLinks();
-            this.images = channel.getAllImages();
+            this.channelGroups = Sets.newHashSet(channel.getChannelGroups());
+            this.genres = Sets.newHashSet(channel.getGenres());
+            this.relatedLinks = Sets.newHashSet(channel.getRelatedLinks());
+            this.images = Sets.newHashSet(channel.getAllImages());
             this.parent = channel.getParent();
-            this.variations = channel.getVariations();
-            this.sameAs = channel.getSameAs();
+            this.variations = Sets.newHashSet(channel.getVariations());
+            this.sameAs = Sets.newHashSet(channel.getSameAs());
             this.startDate = channel.getStartDate();
             this.endDate = channel.getEndDate();
             this.advertiseFrom = channel.getAdvertiseFrom();

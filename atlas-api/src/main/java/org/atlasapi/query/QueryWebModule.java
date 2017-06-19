@@ -26,6 +26,7 @@ import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
+import org.atlasapi.output.ChannelMerger;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.QueryResultWriter;
@@ -118,6 +119,7 @@ import org.atlasapi.query.v4.channel.ChannelController;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.query.v4.channel.ChannelQueryResultWriter;
 import org.atlasapi.query.v4.channel.ChannelWriter;
+import org.atlasapi.query.v4.channel.MergingChannelWriter;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupListWriter;
@@ -584,7 +586,11 @@ public class QueryWebModule {
         return new ChannelController(
                 channelQueryParser(),
                 channelQueryExecutor,
-                new ChannelQueryResultWriter(channelListWriter(), licenseWriter, requestWriter())
+                new ChannelQueryResultWriter(
+                        channelListWriter(),
+                        licenseWriter,
+                        requestWriter()
+                )
         );
     }
 
@@ -602,10 +608,11 @@ public class QueryWebModule {
     }
 
     private ChannelWriter channelWriter() {
-        return ChannelWriter.create(
+        return MergingChannelWriter.create(
                 "channels",
                 "channel",
-                ChannelGroupSummaryWriter.create(idCodec())
+                ChannelGroupSummaryWriter.create(idCodec()),
+                ChannelMerger.create()
         );
     }
 

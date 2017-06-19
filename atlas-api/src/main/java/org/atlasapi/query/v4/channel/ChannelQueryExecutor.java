@@ -7,6 +7,7 @@ import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelEquivRef;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelGroupSummary;
@@ -32,7 +33,6 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.promise.Promise;
 
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
@@ -152,7 +152,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
             }
         }
 
-        FluentIterable<Channel> channels = getChannels(channelQueryBuilder.build());
+        Iterable<Channel> channels = getChannels(channelQueryBuilder.build());
 
         ImmutableList<Channel> filteredChannels = ordering.immutableSortedCopy(channels)
                 .stream()
@@ -197,7 +197,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                 channelQuery.getAliasValue().isPresent();
     }
 
-    private FluentIterable<Channel> getChannels(ChannelQuery channelQuery)
+    private Iterable<Channel> getChannels(ChannelQuery channelQuery)
             throws QueryExecutionException {
 
         ListenableFuture<Resolved<Channel>> resolvingChannels;
@@ -214,11 +214,11 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         );
 
         try {
-            return Futures.get(
+            return Futures.getChecked(
                     resolvedIterable,
+                    QueryExecutionException.class,
                     1,
-                    TimeUnit.MINUTES,
-                    QueryExecutionException.class
+                    TimeUnit.MINUTES
             );
         } catch (Exception e) {
             throw new QueryExecutionException(e);
@@ -226,31 +226,28 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
     }
 
     private ResolvedChannel resolveAnnotationData(QueryContext ctxt, Channel channel) {
-        ResolvedChannel.Builder resolvedChannelBuilder =
-                ResolvedChannel.builder(channel);
+        ResolvedChannel.Builder resolvedChannelBuilder = ResolvedChannel.builder(channel);
 
-        resolvedChannelBuilder.withChannelGroupSummaries(
-                contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ?
-                resolveChannelGroupSummaries(channel) :
-                Optional.absent()
-        );
+        if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY)) {
+            resolvedChannelBuilder.withChannelGroupSummaries(resolveChannelGroupSummaries(channel));
+        }
 
-        resolvedChannelBuilder.withParentChannel(
-                contextHasAnnotation(ctxt, Annotation.PARENT) ?
-                resolveParentChannel(channel) :
-                Optional.absent()
-        );
+        if (contextHasAnnotation(ctxt, Annotation.PARENT)) {
+            resolvedChannelBuilder.withParentChannel(resolveParentChannel(channel));
+        }
 
-        resolvedChannelBuilder.withChannelVariations(
-                contextHasAnnotation(ctxt, Annotation.VARIATIONS) ?
-                resolveChannelVariations(channel) :
-                Optional.absent()
-        );
+        if (contextHasAnnotation(ctxt, Annotation.VARIATIONS)) {
+            resolvedChannelBuilder.withChannelVariations(resolveChannelVariations(channel));
+        }
+
+        if (ctxt.getApplication().getConfiguration().isPrecedenceEnabled()) {
+            resolvedChannelBuilder.withResolvedEquivalents(resolveEquivalents(channel));
+        }
 
         return resolvedChannelBuilder.build();
     }
 
-    private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(Channel channel) {
+    private List<ChannelGroupSummary> resolveChannelGroupSummaries(Channel channel) {
 
         Iterable<ChannelGroup<?>> channelGroups =
                 Promise.wrap(channelGroupResolver.resolveIds(
@@ -261,30 +258,39 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                         .then(Resolved::getResources)
                         .get(1, TimeUnit.MINUTES);
 
-        return Optional.of(StreamSupport.stream(channelGroups.spliterator(), false)
+        return StreamSupport.stream(channelGroups.spliterator(), false)
                 .map(ChannelGroup::toSummary)
-                .collect(MoreCollectors.toImmutableList()));
+                .collect(MoreCollectors.toImmutableList());
 
     }
 
-    private Optional<Channel> resolveParentChannel(Channel channel) {
+    private Channel resolveParentChannel(Channel channel) {
 
-        return Optional.of(Promise.wrap(channelResolver.resolveIds(
+        return Promise.wrap(channelResolver.resolveIds(
                 ImmutableList.of(channel.getParent().getId())))
                 .then(Resolved::getResources)
                 .then(FluentIterable::first)
-                .then(Optional::get)
-                .get(1, TimeUnit.MINUTES));
+                .then(com.google.common.base.Optional::get)
+                .get(1, TimeUnit.MINUTES);
     }
 
-    private Optional<Iterable<Channel>> resolveChannelVariations(Channel channel) {
+    private Iterable<Channel> resolveChannelVariations(Channel channel) {
 
         Iterable<Id> ids = Iterables.transform(channel.getVariations(), ChannelRef::getId);
 
-        return Optional.of(Promise.wrap(channelResolver.resolveIds(ids))
+        return Promise.wrap(channelResolver.resolveIds(ids))
                 .then(Resolved::getResources)
-                .get(1, TimeUnit.MINUTES));
+                .get(1, TimeUnit.MINUTES);
 
+    }
+
+    private Iterable<Channel> resolveEquivalents(Channel channel) {
+
+        Iterable<Id> ids = Iterables.transform(channel.getSameAs(), ChannelEquivRef::getId);
+
+        return Promise.wrap(channelResolver.resolveIds(ids))
+                .then(Resolved::getResources)
+                .get(1, TimeUnit.MINUTES);
     }
 
     private Ordering<? super Channel> ordering(String orderBy) {
