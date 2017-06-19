@@ -7,6 +7,7 @@ import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ResolvedBroadcast;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
+import org.atlasapi.output.ChannelMerger;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -47,7 +48,8 @@ public final class BroadcastWriter implements EntityListWriter<ResolvedBroadcast
         this.channelWriter = MergingChannelWriter.create(
                 "channels",
                 "channel",
-                ChannelGroupSummaryWriter.create(new SubstitutionTableNumberCodec())
+                ChannelGroupSummaryWriter.create(new SubstitutionTableNumberCodec()),
+                ChannelMerger.create()
         );
     }
 
