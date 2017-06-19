@@ -17,6 +17,7 @@ import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
+import org.atlasapi.query.v4.channel.MergingChannelWriter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -43,7 +44,7 @@ public final class BroadcastWriter implements EntityListWriter<ResolvedBroadcast
         this.fieldName = checkNotNull(fieldName);
         this.listName = checkNotNull(listName);
         this.codec = checkNotNull(codec);
-        this.channelWriter = ChannelWriter.create(
+        this.channelWriter = MergingChannelWriter.create(
                 "channels",
                 "channel",
                 ChannelGroupSummaryWriter.create(new SubstitutionTableNumberCodec())
