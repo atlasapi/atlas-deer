@@ -38,7 +38,7 @@ public class SourcesController {
         return new SourcesController(sourceIdCodec);
     }
 
-    @RequestMapping({ "/system/sources/{sourceId}.*" })
+    @RequestMapping({"/system/sources/{sourceId}.*"})
     public void listSources(
             HttpServletRequest request,
             HttpServletResponse response,
