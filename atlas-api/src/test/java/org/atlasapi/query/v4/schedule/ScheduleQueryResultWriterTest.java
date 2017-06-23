@@ -65,7 +65,8 @@ public class ScheduleQueryResultWriterTest {
     );
     private final EntityListWriter<ChannelSchedule> scheduleWriter = new ScheduleListWriter(
             new ChannelListWriter(channelAnnotations),
-            new ScheduleEntryListWriter(contentWriter, broadcastWriter, channelResolver)
+            new ScheduleEntryListWriter(contentWriter, broadcastWriter, channelResolver),
+            channelResolver
     );
     private final EntityWriter<Object> licenseWriter = new LicenseWriter(new License("test"));
     private final ScheduleQueryResultWriter writer = new ScheduleQueryResultWriter(

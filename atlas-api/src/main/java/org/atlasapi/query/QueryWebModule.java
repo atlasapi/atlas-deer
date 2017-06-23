@@ -327,7 +327,8 @@ public class QueryWebModule {
                 );
         ScheduleListWriter scheduleWriter = new ScheduleListWriter(
                 channelListWriter(),
-                entryListWriter
+                entryListWriter,
+                channelResolver
         );
         return new ScheduleController(
                 queryModule.equivalentScheduleStoreScheduleQueryExecutor(),
