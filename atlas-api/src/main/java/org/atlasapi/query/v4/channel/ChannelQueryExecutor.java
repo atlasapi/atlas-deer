@@ -230,7 +230,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         ResolvedChannel.Builder resolvedChannelBuilder = ResolvedChannel.builder(channel);
 
         if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY)) {
-            resolvedChannelBuilder.withChannelGroupSummaries(resolveChannelGroupSummaries(channel));
+            resolvedChannelBuilder.withChannelGroupSummaries(resolveChannelGroupSummaries(ctxt, channel));
         }
 
         if (contextHasAnnotation(ctxt, Annotation.PARENT)) {
