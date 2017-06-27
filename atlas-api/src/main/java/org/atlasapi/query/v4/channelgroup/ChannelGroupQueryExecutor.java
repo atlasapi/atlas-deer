@@ -11,6 +11,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Iterables;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
@@ -172,6 +173,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY)) {
             resolvedChannelGroupBuilder.withAdvertisedChannels(
                     resolveChannelsWithChannelGroups(
+                            ctxt.getApplication().getConfiguration(),
                             channelGroup,
                             contextHasAnnotation(
                                     ctxt,
@@ -225,7 +227,9 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     }
 
     private Optional<Iterable<ResolvedChannel>> resolveChannelsWithChannelGroups(
-            ChannelGroup<?> entity, Function<ChannelGroupMembership, Boolean> whitelistedChannelGroupPredicate
+            ApplicationConfiguration conf,
+            ChannelGroup<?> entity,
+            Function<ChannelGroupMembership, Boolean> whitelistedChannelGroupPredicate
     ) {
         Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity);
         if (!channels.isPresent()) {
@@ -237,6 +241,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                         .map(resolvedChannel -> ResolvedChannel.builder(resolvedChannel.getChannel())
                                 .withChannelGroupSummaries(
                                         resolveChannelGroupSummaries(
+                                                conf,
                                                 resolvedChannel.getChannel(),
                                                 whitelistedChannelGroupPredicate
                                         )
@@ -253,6 +258,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     }
 
     private List<ChannelGroupSummary> resolveChannelGroupSummaries(
+            ApplicationConfiguration conf,
             Channel channel,
             Function<ChannelGroupMembership, Boolean> whitelistedChannelGroupPredicate
     ) {
@@ -262,11 +268,12 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .map(ResourceRef::getId)
                 .collect(MoreCollectors.toImmutableList());
 
-        return resolveChannelGroupSummaries(channelGroupIds);
+        return resolveChannelGroupSummaries(conf, channelGroupIds);
 
     }
 
     private List<ChannelGroupSummary> resolveChannelGroupSummaries(
+            ApplicationConfiguration conf,
             Iterable<Id> channelGroupIds
     ) {
 
@@ -276,6 +283,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                         .get(1, TimeUnit.MINUTES);
 
         return StreamSupport.stream(channelGroups.spliterator(), false)
+                .filter(cg -> conf.isReadEnabled(cg.getSource()))
                 .map(ChannelGroup::toSummary)
                 .collect(MoreCollectors.toImmutableList());
     }

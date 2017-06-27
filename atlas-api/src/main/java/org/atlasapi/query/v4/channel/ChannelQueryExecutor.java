@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelEquivRef;
@@ -229,7 +230,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         ResolvedChannel.Builder resolvedChannelBuilder = ResolvedChannel.builder(channel);
 
         if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY)) {
-            resolvedChannelBuilder.withChannelGroupSummaries(resolveChannelGroupSummaries(channel));
+            resolvedChannelBuilder.withChannelGroupSummaries(resolveChannelGroupSummaries(ctxt, channel));
         }
 
         if (contextHasAnnotation(ctxt, Annotation.PARENT)) {
@@ -247,12 +248,15 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         return resolvedChannelBuilder.build();
     }
 
-    private List<ChannelGroupSummary> resolveChannelGroupSummaries(Channel channel) {
+    private List<ChannelGroupSummary> resolveChannelGroupSummaries(QueryContext ctxt, Channel channel) {
+
+        ApplicationConfiguration conf = ctxt.getApplication().getConfiguration();
 
         Iterable<ChannelGroup<?>> channelGroups =
                 Promise.wrap(channelGroupResolver.resolveIds(
                         channel.getChannelGroups()
                                 .stream()
+                                .filter(cg -> conf.isReadEnabled(cg.getChannelGroup().getSource()))
                                 .map(cg -> cg.getChannelGroup().getId())
                                 .collect(Collectors.toList())))
                         .then(Resolved::getResources)
