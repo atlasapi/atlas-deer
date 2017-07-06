@@ -12,6 +12,8 @@ import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
 import org.atlasapi.content.Container;
+import org.atlasapi.content.ContainerRef;
+import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.ContentRef;
@@ -87,6 +89,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private static final Function<Described, String> TO_SHORT_DESCRIPTION =
             input -> input == null ? null : input.getShortDescription();
+
+    private static final Function<Item, ContainerRef> TO_CONTAINER_REF =
+            input -> input == null ? null : input.getContainerRef();
+
+    private static final Function<Item, ContainerSummary> TO_CONTAINER_SUMMARY =
+            input -> input == null ? null : input.getContainerSummary();
 
     private EquivalentSetContentHierarchyChooser hierarchyChooser;
 
@@ -327,6 +335,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen instanceof Film) {
             mergeFilmProperties(application, (Film) chosen, Iterables.filter(notChosen, Film.class));
         }
+        chosen.setContainerRef(first(notChosen, TO_CONTAINER_REF));
+        chosen.setContainerSummary(first(notChosen, TO_CONTAINER_SUMMARY));
     }
 
     private <T extends Content> void mergeKeyPhrases(T chosen, Iterable<T> notChosen) {
