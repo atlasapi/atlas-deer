@@ -335,8 +335,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen instanceof Film) {
             mergeFilmProperties(application, (Film) chosen, Iterables.filter(notChosen, Film.class));
         }
-        chosen.setContainerRef(first(notChosen, TO_CONTAINER_REF));
-        chosen.setContainerSummary(first(notChosen, TO_CONTAINER_SUMMARY));
+        if (chosen.getContainerRef() == null) {
+            chosen.setContainerRef(first(notChosen, TO_CONTAINER_REF));
+        }
+        if (chosen.getContainerSummary() == null) {
+            chosen.setContainerSummary(first(notChosen, TO_CONTAINER_SUMMARY));
+        }
     }
 
     private <T extends Content> void mergeKeyPhrases(T chosen, Iterable<T> notChosen) {
