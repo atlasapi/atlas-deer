@@ -1,46 +1,5 @@
 package org.atlasapi.output;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import org.atlasapi.content.Brand;
-import org.atlasapi.content.Broadcast;
-import org.atlasapi.content.Certificate;
-import org.atlasapi.content.Clip;
-import org.atlasapi.content.Container;
-import org.atlasapi.content.ContainerRef;
-import org.atlasapi.content.ContainerSummary;
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentGroup;
-import org.atlasapi.content.ContentRef;
-import org.atlasapi.content.ContentVisitorAdapter;
-import org.atlasapi.content.Described;
-import org.atlasapi.content.Encoding;
-import org.atlasapi.content.Film;
-import org.atlasapi.content.Image;
-import org.atlasapi.content.Item;
-import org.atlasapi.content.ItemRef;
-import org.atlasapi.content.LocationSummary;
-import org.atlasapi.content.ReleaseDate;
-import org.atlasapi.content.Subtitles;
-import org.atlasapi.content.Tag;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.Person;
-import org.atlasapi.entity.Rating;
-import org.atlasapi.entity.Review;
-import org.atlasapi.entity.Sourced;
-import org.atlasapi.entity.Sourceds;
-import org.atlasapi.equivalence.EquivalenceRef;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.segment.SegmentEvent;
-
-import com.metabroadcast.applications.client.model.internal.Application;
-
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
@@ -54,7 +13,49 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
+import com.metabroadcast.applications.client.model.internal.Application;
+import org.atlasapi.content.Brand;
+import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.Certificate;
+import org.atlasapi.content.Clip;
+import org.atlasapi.content.Container;
+import org.atlasapi.content.ContainerRef;
+import org.atlasapi.content.ContainerSummary;
+import org.atlasapi.content.Content;
+import org.atlasapi.content.ContentGroup;
+import org.atlasapi.content.ContentRef;
+import org.atlasapi.content.ContentVisitorAdapter;
+import org.atlasapi.content.Described;
+import org.atlasapi.content.Encoding;
+import org.atlasapi.content.Episode;
+import org.atlasapi.content.Film;
+import org.atlasapi.content.Image;
+import org.atlasapi.content.Item;
+import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.LocationSummary;
+import org.atlasapi.content.ReleaseDate;
+import org.atlasapi.content.SeriesRef;
+import org.atlasapi.content.Subtitles;
+import org.atlasapi.content.Tag;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.Person;
+import org.atlasapi.entity.Rating;
+import org.atlasapi.entity.Review;
+import org.atlasapi.entity.Sourced;
+import org.atlasapi.entity.Sourceds;
+import org.atlasapi.equivalence.EquivalenceRef;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.segment.SegmentEvent;
 import org.joda.time.Duration;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -95,6 +96,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private static final Function<Item, ContainerSummary> TO_CONTAINER_SUMMARY =
             input -> input == null ? null : input.getContainerSummary();
+
+    private static final Function<Item, SeriesRef> TO_SERIES_REF = input -> {
+        if (input instanceof Episode) {
+            Episode ep = (Episode) input;
+            return ep.getSeriesRef() == null ? null : ep.getSeriesRef();
+        }
+        return null;
+    };
 
     private EquivalentSetContentHierarchyChooser hierarchyChooser;
 
@@ -195,7 +204,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         if (chosen instanceof Person) {
             Person person = (Person) chosen;
-            ImmutableSet.Builder<String> quotes = ImmutableSet.builder();
+            Builder<String> quotes = ImmutableSet.builder();
             quotes.addAll(person.getQuotes());
             for (Person unchosen : Iterables.filter(notChosen, Person.class)) {
                 quotes.addAll(unchosen.getQuotes());
@@ -340,6 +349,18 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         if (chosen.getContainerSummary() == null) {
             chosen.setContainerSummary(first(notChosen, TO_CONTAINER_SUMMARY));
+        }
+
+        if (chosen instanceof Episode) {
+            Episode ep = (Episode) chosen;
+            if (ep.getSeriesRef() == null) {
+                ep.setSeriesRef(StreamSupport.stream(notChosen.spliterator(), false)
+                        .map(TO_SERIES_REF::apply)
+                        .filter(Objects::nonNull)
+                        .findFirst()
+                        .orElse(null)
+                );
+            }
         }
     }
 
