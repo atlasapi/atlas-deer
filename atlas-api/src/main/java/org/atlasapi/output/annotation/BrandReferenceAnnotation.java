@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.Series;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
@@ -30,6 +31,13 @@ public class BrandReferenceAnnotation extends OutputAnnotation<Content> {
                 writer.writeField(CONTAINER_FIELD, null);
             } else {
                 writer.writeObject(brandRefWriter, item.getContainerRef(), ctxt);
+            }
+        } else if (content instanceof Series) {
+            Series series = (Series) content;
+            if (series.getBrandRef() == null) {
+                writer.writeField(CONTAINER_FIELD, null);
+            } else {
+                writer.writeObject(brandRefWriter, series.getBrandRef(), ctxt);
             }
         }
     }
