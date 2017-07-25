@@ -124,17 +124,14 @@ public class ScheduleBootstrapper {
 
             @Override
             public void onFailure(Throwable t) {
-                log.error(
-                        "Error while processing schedules for channel {}/{}, bootstrap progress: {}/{}, success: {}, failure: {}\"",
-                        channel.getId(),
-                        channel.getTitle(),
-                        progress.incrementAndGet(),
-                        total.get(),
-                        processed.get(),
-                        failures.incrementAndGet(),
+                log.error("Error while processing schedules for channel "
+                                + channel.getId() + "/" + channel.getTitle()
+                                + ", bootstrap progress: "
+                                + progress.incrementAndGet() + "/" + total.get()
+                                + ", success: " + processed.get()
+                                + ", failure: " + failures.incrementAndGet(),
                         t
                 );
-
             }
         });
         return updateFuture;
