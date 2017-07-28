@@ -214,7 +214,14 @@ public class BroadcastAggregator {
         Map<Id, String> channelIdAndTitles = broadcasts.stream()
                 .map(ResolvedBroadcast::getResolvedChannel)
                 .map(ResolvedChannel::getChannel)
-                .collect(MoreCollectors.toImmutableMap(Channel::getId, Channel::getTitle));
+                .collect(Collectors.toMap(
+                        Channel::getId,
+                        Channel::getTitle,
+                        (id1, id2) -> {
+                            log.warn("duplicate key found for channel {}", id1);
+                            return id1;
+                        }
+                ));
 
         return ResolvedBroadcast.create(
                 broadcasts.iterator().next().getBroadcast(),
