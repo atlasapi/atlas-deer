@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -214,11 +215,18 @@ public class BroadcastAggregator {
         Map<Id, String> channelIdAndTitles = broadcasts.stream()
                 .map(ResolvedBroadcast::getResolvedChannel)
                 .map(ResolvedChannel::getChannel)
-                .collect(MoreCollectors.toImmutableMap(Channel::getId, Channel::getTitle));
+                .collect(Collectors.toMap(
+                        Channel::getId,
+                        Channel::getTitle,
+                        (id1, id2) -> {
+                            log.warn("duplicate key found for channel {}", id1);
+                            return id1;
+                        }
+                ));
 
         return ResolvedBroadcast.create(
                 broadcasts.iterator().next().getBroadcast(),
-                buildResolvedChannel(parent, channelIdAndTitles, platformOptional)
+                buildResolvedChannel(parent, ImmutableMap.copyOf(channelIdAndTitles), platformOptional)
         );
     }
 
