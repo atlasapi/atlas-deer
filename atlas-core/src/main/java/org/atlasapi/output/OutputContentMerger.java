@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.content.Brand;
@@ -162,7 +163,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
             @Override
             protected T visitContainer(Container container) {
-                mergeIn(application, container, (Iterable<Container>) equivalents);
+
+                Iterable<Container> equivs = StreamSupport.stream(equivalents.spliterator(), false)
+                        .filter(Container.class::isInstance)
+                        .map(Container.class::cast)
+                        .collect(Collectors.toList());
+
+                mergeIn(application, container, equivs);
                 return (T) container;
             }
 
