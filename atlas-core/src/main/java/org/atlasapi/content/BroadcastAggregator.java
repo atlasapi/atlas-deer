@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -225,7 +226,7 @@ public class BroadcastAggregator {
 
         return ResolvedBroadcast.create(
                 broadcasts.iterator().next().getBroadcast(),
-                buildResolvedChannel(parent, channelIdAndTitles, platformOptional)
+                buildResolvedChannel(parent, ImmutableMap.copyOf(channelIdAndTitles), platformOptional)
         );
     }
 
