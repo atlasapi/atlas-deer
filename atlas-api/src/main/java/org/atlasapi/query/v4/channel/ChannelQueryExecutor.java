@@ -52,6 +52,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
     private static final String TITLE = "title";
     private static final String TITLE_REVERSE = "title.reverse";
+    private static final String REFRESH_CACHE_PARAM = "refreshCache";
 
     private final ChannelResolver channelResolver;
     private final ChannelGroupResolver channelGroupResolver;
@@ -83,7 +84,10 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
             throws QueryExecutionException {
         return Futures.get(
                 Futures.transform(
-                        channelResolver.resolveIds(ImmutableSet.of(query.getOnlyId())),
+                        channelResolver.resolveIds(
+                                ImmutableSet.of(query.getOnlyId()),
+                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(REFRESH_CACHE_PARAM))
+                        ),
                         (Function<Resolved<Channel>, QueryResult<ResolvedChannel>>) input -> {
                             if (input.getResources().isEmpty()) {
                                 throw new UncheckedQueryExecutionException(

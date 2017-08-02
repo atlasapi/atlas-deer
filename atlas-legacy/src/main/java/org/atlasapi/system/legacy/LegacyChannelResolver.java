@@ -10,6 +10,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import javax.annotation.Nullable;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class LegacyChannelResolver implements ChannelResolver {
@@ -32,6 +34,14 @@ public class LegacyChannelResolver implements ChannelResolver {
                         resolveAndTransformLegacyChannels(ids)
                 )
         );
+    }
+
+    @Override
+    public ListenableFuture<Resolved<Channel>> resolveIds(Iterable<Id> ids, @Nullable Boolean refreshCache) {
+        if (refreshCache != null && refreshCache) {
+            legacyResolver.refreshCache();
+        }
+        return resolveIds(ids);
     }
 
     private Iterable<Channel> resolveAndTransformLegacyChannels(Iterable<Id> ids) {
