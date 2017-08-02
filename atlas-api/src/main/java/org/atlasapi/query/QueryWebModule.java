@@ -739,6 +739,10 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.ALIASES_VALUE,
                                 StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.REFRESH_CACHE,
+                                StringCoercer.create()
                         )
                 )
         );

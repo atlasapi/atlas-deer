@@ -152,6 +152,8 @@ public class Attributes {
     public static final String ADVERTISED_FROM_PARAM = "advertised";
     public static final String ALIASES_NAMESPACE_PARAM = "aliases.namespace";
     public static final String ALIASES_VALUE_PARAM = "aliases.value";
+    public static final String REFRESH_CACHE_PARAM = "refresh_cache";
+
     public static final Attribute<Boolean> ADVERTISED_ON = BooleanAttribute.single(
             ADVERTISED_FROM_PARAM,
             Identified.class
@@ -173,6 +175,11 @@ public class Attributes {
     );
     public static final Attribute<String> ORDER_BY_CHANNEL = StringAttribute.single(
             ORDER_BY_PARAM,
+            Channel.class
+    );
+
+    public static final Attribute<String> REFRESH_CACHE = StringAttribute.single(
+            REFRESH_CACHE_PARAM,
             Channel.class
     );
 
