@@ -41,6 +41,7 @@ import org.bouncycastle.util.Iterable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -87,7 +88,9 @@ public class ChannelQueryExecutorTest {
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelId);
         when(channelQuery.getContext()).thenReturn(context);
-        when(channelResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(channelId))))
+        when(channelResolver.resolveIds(
+                (Iterable<Id>) argThat(containsInAnyOrder(channelId)), Matchers.anyBoolean())
+        )
                 .thenReturn(
                         Futures.immediateFuture(
                                 Resolved.valueOf(ImmutableSet.of(result))
@@ -166,7 +169,9 @@ public class ChannelQueryExecutorTest {
         when(channelQuery.getOnlyId()).thenReturn(channelId);
         when(channelQuery.getContext()).thenReturn(context);
 
-        when(channelResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(channelId))))
+        when(channelResolver.resolveIds(
+                (Iterable<Id>) argThat(containsInAnyOrder(channelId)), Matchers.anyBoolean())
+        )
                 .thenReturn(
                         Futures.immediateFuture(
                                 Resolved.valueOf(ImmutableSet.of(result))
