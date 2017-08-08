@@ -50,6 +50,7 @@ import org.joda.time.Interval;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -473,22 +474,122 @@ public class OutputContentMergerTest {
         Image image1 = new Image("http://image1.org/");
 
         image1.setAvailabilityStart(DateTime.now().minusDays(1));
-        image1.setAvailabilityEnd(DateTime.now());
+        image1.setAvailabilityEnd(DateTime.now().plusDays(1));
         image1.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
 
+        item1.setImage(image1.getCanonicalUri());
         item1.setImages(ImmutableSet.of(image1));
 
         Item item2 = item(5L, "item2", Publisher.PA);
         Image image2 = new Image("http://image2.org/");
 
-        image1.setAvailabilityStart(DateTime.now().minusDays(1));
-        image1.setAvailabilityEnd(DateTime.now());
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
 
+        item2.setImage(image2.getCanonicalUri());
         item2.setImages(ImmutableSet.of(image2));
-        
+
         Content merged = merger.merge(item2,  ImmutableList.of(item1), application);
+        assertThat(merged.getImage(), is("http://image2.org/"));
         assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image2.org/"));
     }
+
+    @Test
+    public void testImageWithMergingReversed() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(1));
+        image1.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item1.setImage(image1.getCanonicalUri());
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+        image2.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
+
+        item2.setImage(image2.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image2));
+
+        Content merged = merger.merge(item2,  ImmutableList.of(item1), application);
+        assertThat(merged.getImage(), is("http://image1.org/"));
+        assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image1.org/"));
+    }
+
+    @Test
+    public void testImageWithMergingNoMatch() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(2));
+        image1.setAvailabilityEnd(DateTime.now().minusDays(1));
+
+        item1.setImage(image1.getCanonicalUri());
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+        image2.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
+
+        item2.setImage(image2.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image2));
+
+        Content merged = merger.merge(item2,  ImmutableList.of(item1), application);
+        assertNull(merged.getImage());
+        assertThat(merged.getImages().size(), is(0));
+    }
+
+    /* TODO @Test
+    public void testImageWithMergingAllMatch() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(1));
+        image1.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item1.setImage(image1.getCanonicalUri());
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item2.setImage(image2.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image2));
+
+        Content merged = merger.merge(item2,  ImmutableList.of(item1), application);
+        assertThat(merged.getImage(), is("http://image1.org/"));
+        assertThat(merged.getImages().size(), is(2));
+        assertThat(Iterables.get(merged.getImages(), 0).getCanonicalUri(), is("http://image1.org/"));
+        assertThat(Iterables.get(merged.getImages(), 1).getCanonicalUri(), is("http://image2.org/"));
+    }*/
 
     @Test
     // If there are multiple items in the equivalent set belonging to the same source 
