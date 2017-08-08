@@ -16,6 +16,7 @@ import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.EquivalentContentStore;
+import org.atlasapi.content.Film;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.Series;
@@ -185,23 +186,25 @@ public class ContentBootstrapListener
     }
 
     private void migrateParents(Content content, Result result) {
-        if (content instanceof Episode) {
-            migrateParentsForEpisode((Episode) content, result);
-        }
-
-        if (content instanceof Series) {
+        if (content instanceof Item) {
+            migrateParentsForItem((Item) content, result);
+        } else if (content instanceof Series) {
             migrateParentsForSeries((Series) content, result);
         }
+
     }
 
-    private void migrateParentsForEpisode(Episode episode, Result result) {
-        if (episode.getSeriesRef() != null) {
-            Id seriesId = episode.getSeriesRef().getId();
-            migrateParent(seriesId, result);
+    private void migrateParentsForItem(Item item, Result result) {
+        if (item instanceof Episode) {
+            Episode episode = (Episode) item;
+            if (episode.getSeriesRef() != null) {
+                Id seriesId = episode.getSeriesRef().getId();
+                migrateParent(seriesId, result);
+            }
         }
 
-        if (episode.getContainerRef() != null) {
-            Id containerId = episode.getContainerRef().getId();
+        if (item.getContainerRef() != null) {
+            Id containerId = item.getContainerRef().getId();
             migrateParent(containerId, result);
         }
     }
