@@ -423,6 +423,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 chosen.setThumbnail(top.getThumbnail());
 
             } else {
+                chosen.setImages(Iterables.filter(
+                        chosen.getImages(),
+                        img -> isImageAvailableAndNotGenericImageContentPlayer(img)
+                ));
                 chosen.getImages().forEach(img -> img.setSource(chosen.getSource()));
                 chosen.setImage(null);
             }
@@ -640,12 +644,15 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         // whether it is generic.
         for (Image image : images) {
             if (image.getCanonicalUri().equals(rewrittenUri)) {
-               return Image.IS_AVAILABLE.apply(image)
-                       && !Image.Type.GENERIC_IMAGE_CONTENT_PLAYER.equals(image.getType());
+                return isImageAvailableAndNotGenericImageContentPlayer(image);
             }
         }
         // Otherwise, we can only assume the image is available as we know no better
         return true;
+    }
+    private static boolean isImageAvailableAndNotGenericImageContentPlayer(Image image) {
+        return Image.IS_AVAILABLE.apply(image)
+                && !Image.Type.GENERIC_IMAGE_CONTENT_PLAYER.equals(image.getType());
     }
 
     private void mergeIn(

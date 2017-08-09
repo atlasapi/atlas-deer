@@ -87,7 +87,9 @@ public class ContentBootstrapListenerTest {
 
     @Test
     public void testMigrateItem() throws Exception {
+        mockItemBrandRef();
         EquivalenceGraphUpdate graphUpdate = mockContentMigration(item, itemRef);
+        EquivalenceGraphUpdate brandGraphUpdate = mockContentMigration(brand, brandRef);
 
         when(segmentEvent.getSegmentRef()).thenReturn(segmentRef);
         when(item.getSegmentEvents()).thenReturn(Lists.newArrayList(segmentEvent));
@@ -97,6 +99,7 @@ public class ContentBootstrapListenerTest {
         assertThat(result.getSucceeded(), is(true));
 
         verifyContentMigration(item, itemRef, graphUpdate);
+        verifyContentMigration(brand, brandRef, brandGraphUpdate);
         verify(legacySegmentMigrator).migrateLegacySegment(segmentRef.getId());
     }
 
@@ -179,6 +182,12 @@ public class ContentBootstrapListenerTest {
         );
 
         return graphUpdate;
+    }
+
+    private void mockItemBrandRef() {
+        when(item.getContainerRef()).thenReturn(brandRef);
+        when(legacyContentResolver.resolveIds(Lists.newArrayList(brandRef.getId())))
+                .thenReturn(Futures.immediateFuture(Resolved.valueOf(Lists.newArrayList(brand))));
     }
 
     private void mockBrandSeries() {
