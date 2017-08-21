@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
@@ -34,6 +35,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.longThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -375,6 +377,39 @@ public class BroadcastAggregatorTest {
                 broadcastAggregator.parseChildTitle(parent, "BBC One HD +1"),
                 is("BBC One HD +1")
         );
+    }
+
+    @Test
+    public void timeshiftedAndHdChannelsAreRemoved() throws Exception {
+        Channel timeshifted = getMockChannel(1L);
+        when(timeshifted.getTimeshifted()).thenReturn(true);
+        when(timeshifted.getHighDefinition()).thenReturn(false);
+
+        Channel hd = getMockChannel(2L);
+        when(hd.getTimeshifted()).thenReturn(false);
+        when(hd.getHighDefinition()).thenReturn(true);
+
+        Channel hdTimeshifted = getMockChannel(3L);
+        when(hdTimeshifted.getTimeshifted()).thenReturn(true);
+        when(hdTimeshifted.getHighDefinition()).thenReturn(true);
+
+        Channel neitherAsNulls = getMockChannel(4L);
+        when(neitherAsNulls.getTimeshifted()).thenReturn(null);
+        when(neitherAsNulls.getHighDefinition()).thenReturn(null);
+
+        Channel neitherAsBools = getMockChannel(5L);
+        when(neitherAsBools.getTimeshifted()).thenReturn(false);
+        when(neitherAsBools.getHighDefinition()).thenReturn(false);
+
+        List<Channel> channels = ImmutableList.of(timeshifted, hd, hdTimeshifted, neitherAsNulls, neitherAsBools);
+
+        ImmutableList<Channel> filteredChannels = channels.stream()
+                .filter(broadcastAggregator::isNotTimeshiftedOrHd)
+                .collect(MoreCollectors.toImmutableList());
+
+        assertThat(filteredChannels.size(), is(2));
+        assertTrue(filteredChannels.get(0).getId().longValue() >= 4L);
+        assertTrue(filteredChannels.get(1).getId().longValue() >= 4L);
     }
 
     private ChannelNumbering getChannelNumbering(long id) {

@@ -373,7 +373,7 @@ public class BroadcastAggregator {
         return downweighedIds.stream().noneMatch(includedVariantIds::contains);
     }
 
-    private boolean isNotTimeshiftedOrHd(Channel channel) {
+    boolean isNotTimeshiftedOrHd(Channel channel) {
         boolean timeshifted = MoreObjects.firstNonNull(channel.getTimeshifted(), false);
         boolean hd = MoreObjects.firstNonNull(channel.getHighDefinition(), false);
 
