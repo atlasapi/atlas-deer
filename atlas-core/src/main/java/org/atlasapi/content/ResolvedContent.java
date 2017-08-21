@@ -1,11 +1,10 @@
 package org.atlasapi.content;
 
-import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.topic.Topic;
 
 import java.util.List;
 
-public class ResolvedContent extends Content implements Equivalable<Content> {
+public class ResolvedContent {
 
     private final Content content;
     private final List<Topic> topics;
@@ -27,21 +26,6 @@ public class ResolvedContent extends Content implements Equivalable<Content> {
 
     public List<Clip> getClips() {
         return clips;
-    }
-
-    @Override
-    public <V> V accept(ContentVisitor<V> visitor) {
-        return content.accept(visitor);
-    }
-
-    @Override
-    public ContentRef toRef() {
-        return content.toRef();
-    }
-
-    @Override
-    public Described copy() {
-        return content.copy();
     }
 
     public static Builder resolvedContentBuilder() {

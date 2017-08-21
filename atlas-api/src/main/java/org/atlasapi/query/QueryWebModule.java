@@ -901,13 +901,13 @@ public class QueryWebModule {
     }
 
     @Bean
-    EntityListWriter<ResolvedContent> contentListWriter() {
+    EntityListWriter<Content, ResolvedContent> contentListWriter() {
         return new ContentListWriter(contentAnnotations());
     }
 
-    private AnnotationRegistry<ResolvedContent> contentAnnotations() {
+    private AnnotationRegistry<Content> contentAnnotations() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
-        return AnnotationRegistry.<ResolvedContent>builder()
+        return AnnotationRegistry.<Content>builder()
                 .registerDefault(
                         ID_SUMMARY,
                         IdentificationSummaryAnnotation.create(idSummaryWriter)

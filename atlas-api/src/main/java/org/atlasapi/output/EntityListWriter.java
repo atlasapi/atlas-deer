@@ -7,7 +7,7 @@ import javax.annotation.Nonnull;
  *
  * @param <T>
  */
-public interface EntityListWriter<T> extends EntityWriter<T> {
+public interface EntityListWriter<T, R> extends EntityWriter<T, R> {
 
     /**
      * <p>The name to use for the list field.</p>

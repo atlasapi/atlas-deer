@@ -7,9 +7,9 @@ import org.atlasapi.output.OutputContext;
 
 import com.google.common.base.Objects;
 
-public abstract class OutputAnnotation<T> {
+public abstract class OutputAnnotation<T, R> {
 
-    public abstract void write(T entity, FieldWriter writer, OutputContext ctxt) throws IOException;
+    public abstract void write(R entity, FieldWriter writer, OutputContext ctxt) throws IOException;
 
     @Override
     public String toString() {

@@ -34,13 +34,13 @@ public class TopicContentController {
     private static Logger log = LoggerFactory.getLogger(TopicContentController.class);
 
     private final ContextualQueryParser<Topic, ResolvedContent> parser;
-    private final ContextualQueryExecutor<Topic, ResolvedContent> queryExecutor;
+    private final ContextualQueryExecutor<Topic, Content> queryExecutor;
     private final ContextualResultWriter<Topic, ResolvedContent> resultWriter;
 
     private ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     public TopicContentController(ContextualQueryParser<Topic, ResolvedContent> parser,
-            ContextualQueryExecutor<Topic, ResolvedContent> queryExecutor,
+            ContextualQueryExecutor<Topic, Content> queryExecutor,
             ContextualResultWriter<Topic, ResolvedContent> resultWriter) {
         this.parser = checkNotNull(parser);
         this.queryExecutor = checkNotNull(queryExecutor);

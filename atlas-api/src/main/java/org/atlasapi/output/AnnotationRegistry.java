@@ -18,7 +18,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 
-public class AnnotationRegistry<T> {
+public class AnnotationRegistry<T, R> {
 
     public static final <T> Builder<T> builder() {
         return new Builder<T>();
@@ -39,28 +39,28 @@ public class AnnotationRegistry<T> {
         }
 
         public Builder<T> registerDefault(Annotation annotation,
-                OutputAnnotation<? super T> output) {
+                OutputAnnotation<? super T, R> output) {
             this.defaults.add(output);
             return register(annotation, output);
         }
 
         public Builder<T> register(Annotation annotation,
-                OutputAnnotation<? super T> outputAnnotation, Annotation implied) {
+                OutputAnnotation<? super T, R> outputAnnotation, Annotation implied) {
             return register(annotation, outputAnnotation, ImmutableSet.of(implied));
         }
 
-        public Builder<T> register(Annotation annotation, OutputAnnotation<? super T> output,
+        public Builder<T> register(Annotation annotation, OutputAnnotation<? super T, R> output,
                 Iterable<Annotation> implieds) {
             checkRegistered(implieds, "Cannot imply un-registered annotation '%s'");
             register(annotation, output);
             for (Annotation implied : implieds) {
-                OutputAnnotation<? super T> impliedOut = annotationMap.get(implied);
+                OutputAnnotation<? super T, R> impliedOut = annotationMap.get(implied);
                 implications.put(output, impliedOut);
             }
             return this;
         }
 
-        public Builder<T> register(Annotation annotation, OutputAnnotation<? super T> output,
+        public Builder<T> register(Annotation annotation, OutputAnnotation<? super T, R> output,
                 Iterable<Annotation> implieds, Iterable<Annotation> overridden) {
             checkRegistered(overridden, "Cannot override un-registered annotation '%s'");
             register(annotation, output, implieds);
@@ -68,8 +68,8 @@ public class AnnotationRegistry<T> {
             return this;
         }
 
-        public AnnotationRegistry<T> build() {
-            return new AnnotationRegistry<T>(
+        public AnnotationRegistry<T, R> build() {
+            return new AnnotationRegistry<T, R>(
                     annotationMap,
                     implications.build(),
                     overrides.build(),
@@ -77,7 +77,7 @@ public class AnnotationRegistry<T> {
             );
         }
 
-        private Iterable<OutputAnnotation<? super T>> toOutput(Iterable<Annotation> annotations) {
+        private Iterable<OutputAnnotation<? super T, R>> toOutput(Iterable<Annotation> annotations) {
             return Iterables.transform(annotations, Functions.forMap(annotationMap));
         }
 

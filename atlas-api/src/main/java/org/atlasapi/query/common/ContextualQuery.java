@@ -6,11 +6,11 @@ import org.atlasapi.query.common.context.QueryContext;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ContextualQuery<CONTEXT, RESOURCE> {
+public class ContextualQuery<CONTEXT, RESOURCE, RETURN_RES> {
 
-    public static final <C, R> ContextualQuery<C, R> valueOf(SingleQuery<C> contextQuery,
+    public static final <C, R, RR> ContextualQuery<C, R, RR> valueOf(SingleQuery<C> contextQuery,
             ListQuery<R> resourceQuery, QueryContext context) {
-        return new ContextualQuery<C, R>(contextQuery, resourceQuery, context);
+        return new ContextualQuery<C, R, RR>(contextQuery, resourceQuery, context);
     }
 
     private final SingleQuery<CONTEXT> contextQuery;

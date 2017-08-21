@@ -3,6 +3,7 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 import java.util.Map;
 
+import org.atlasapi.content.Content;
 import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
@@ -15,7 +16,7 @@ import org.atlasapi.topic.Topic;
 
 import com.google.common.collect.Maps;
 
-public class TopicsAnnotation extends OutputAnnotation<ResolvedContent> {
+public class TopicsAnnotation extends OutputAnnotation<Content, ResolvedContent> {
 
     private final EntityWriter<Topic> topicWriter;
 

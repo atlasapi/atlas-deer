@@ -36,7 +36,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic, ResolvedContent> {
+public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic, Content, ResolvedContent> {
 
     private static final long QUERY_TIMEOUT = 60000;
 
@@ -64,7 +64,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
 
     @Override
     public ContextualQueryResult<Topic, ResolvedContent> execute(
-            final ContextualQuery<Topic, ResolvedContent> query
+            final ContextualQuery<Topic, Content, ResolvedContent> query
     ) throws QueryExecutionException {
         return Futures.getChecked(
                 Futures.transformAsync(
@@ -78,7 +78,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
     }
 
     private AsyncFunction<Resolved<Topic>, ContextualQueryResult<Topic, Content>>
-    resolveContentToContextualQuery(ContextualQuery<Topic, ResolvedContent> query) {
+    resolveContentToContextualQuery(ContextualQuery<Topic, Content> query) {
         return resolved -> {
             com.google.common.base.Optional<Topic> possibleTopic = resolved.getResources().first();
 
@@ -136,7 +136,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         return topicResolver.resolveIds(ImmutableList.of(contextId));
     }
 
-    private ListenableFuture<IndexQueryResult> queryIndex(Query<ResolvedContent> query)
+    private ListenableFuture<IndexQueryResult> queryIndex(Query<Content> query)
             throws QueryExecutionException {
         return index.query(
                 query.getOperands(),

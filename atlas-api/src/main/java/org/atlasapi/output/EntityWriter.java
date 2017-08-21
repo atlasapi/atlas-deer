@@ -10,7 +10,7 @@ import javax.annotation.Nonnull;
  *
  * @param <T> the type of entities this writer writes.
  */
-public interface EntityWriter<T> {
+public interface EntityWriter<T, R> {
 
     /**
      * <p>Write out the entity using the {@link FieldWriter} according to the {@link
@@ -21,7 +21,7 @@ public interface EntityWriter<T> {
      * @param ctxt   - the context of the write
      * @throws IOException if the entity cannot be written
      */
-    void write(@Nonnull T entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt)
+    void write(@Nonnull R entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt)
             throws IOException;
 
     /**
@@ -34,6 +34,6 @@ public interface EntityWriter<T> {
      * @return the name to use for the field.
      */
     @Nonnull
-    String fieldName(T entity);
+    String fieldName(R entity);
 
 }

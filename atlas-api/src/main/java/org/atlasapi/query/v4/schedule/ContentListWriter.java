@@ -15,18 +15,18 @@ import org.atlasapi.query.common.Resource;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class ContentListWriter implements EntityListWriter<ResolvedContent> {
+public final class ContentListWriter implements EntityListWriter<Content, ResolvedContent> {
 
-    private AnnotationRegistry<ResolvedContent> annotationRegistry;
+    private AnnotationRegistry<Content, ResolvedContent> annotationRegistry;
 
-    public ContentListWriter(AnnotationRegistry<ResolvedContent> annotationRegistry) {
+    public ContentListWriter(AnnotationRegistry<Content> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
     @Override
     public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         ctxt.startResource(Resource.CONTENT);
-        List<OutputAnnotation<? super ResolvedContent>> annotations = ctxt
+        List<OutputAnnotation<Content, ResolvedContent>> annotations = ctxt
                 .getAnnotations(annotationRegistry);
         for (int i = 0; i < annotations.size(); i++) {
             annotations.get(i).write(entity, writer, ctxt);

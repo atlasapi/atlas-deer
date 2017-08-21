@@ -65,7 +65,7 @@ public class QueryModule {
     }
 
     @Bean
-    public ContextualQueryExecutor<Topic, ResolvedContent> topicContentQueryExecutor() {
+    public ContextualQueryExecutor<Topic, Content, ResolvedContent> topicContentQueryExecutor() {
         return TopicContentQueryExecutor.create(
                 persistenceModule.topicStore(),
                 persistenceModule.contentIndex(),
