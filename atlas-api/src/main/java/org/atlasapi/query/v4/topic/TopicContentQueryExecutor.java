@@ -1,6 +1,7 @@
 package org.atlasapi.query.v4.topic;
 
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
@@ -63,8 +64,8 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
 
     @Override
     public ContextualQueryResult<Topic, ResolvedContent> execute(
-            final ContextualQuery<Topic, ResolvedContent> query)
-            throws QueryExecutionException {
+            final ContextualQuery<Topic, ResolvedContent> query
+    ) throws QueryExecutionException {
         return Futures.getChecked(
                 Futures.transformAsync(
                         resolveTopic(query.getContextQuery().getOnlyId()),
@@ -76,7 +77,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         );
     }
 
-    private AsyncFunction<Resolved<Topic>, ContextualQueryResult<Topic, ResolvedContent>>
+    private AsyncFunction<Resolved<Topic>, ContextualQueryResult<Topic, Content>>
     resolveContentToContextualQuery(ContextualQuery<Topic, ResolvedContent> query) {
         return resolved -> {
             com.google.common.base.Optional<Topic> possibleTopic = resolved.getResources().first();
@@ -99,7 +100,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         };
     }
 
-    private Function<ResolvedEquivalents<ResolvedContent>, ContextualQueryResult<Topic, ResolvedContent>>
+    private Function<ResolvedEquivalents<Content>, ContextualQueryResult<Topic, Content>>
     toContextualQuery(Topic topic, QueryContext context) {
         return content -> ContextualQueryResult.valueOf(
                 QueryResult.singleResult(topic, context),
@@ -112,7 +113,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         );
     }
 
-    private ListenableFuture<ResolvedEquivalents<ResolvedContent>> resolveContent(
+    private ListenableFuture<ResolvedEquivalents<Content>> resolveContent(
             ListenableFuture<IndexQueryResult> queryIndex, QueryContext context) {
         return resolveContent(
                 queryIndex,
@@ -121,10 +122,10 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         );
     }
 
-    private ListenableFuture<ResolvedEquivalents<ResolvedContent>> resolveContent(
+    private ListenableFuture<ResolvedEquivalents<Content>> resolveContent(
             ListenableFuture<IndexQueryResult> queryHits,
             final Application application, final Set<Annotation> annotations) {
-        return Futures.transform(
+        return Futures.transformAsync(
                 queryHits,
                 (IndexQueryResult ids) ->
                         contentResolver.resolveIds(ids.getIds(), application, annotations)

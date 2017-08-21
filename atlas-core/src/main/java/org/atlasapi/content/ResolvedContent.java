@@ -5,7 +5,7 @@ import org.atlasapi.topic.Topic;
 
 import java.util.List;
 
-public class ResolvedContent extends Content implements Equivalable<ResolvedContent> {
+public class ResolvedContent extends Content implements Equivalable<Content> {
 
     private final Content content;
     private final List<Topic> topics;

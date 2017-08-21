@@ -378,7 +378,7 @@ public class QueryWebModule {
                 selectionBuilder()
         );
 
-        ContextualQueryParser<Topic, Content> parser = new ContextualQueryParser<>(
+        ContextualQueryParser<Topic, ResolvedContent> parser = new ContextualQueryParser<>(
                 Resource.TOPIC, Attributes.TOPIC_ID, Resource.CONTENT, idCodec(),
                 contentQueryAttributeParser(),
                 contextParser
