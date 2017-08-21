@@ -1,17 +1,14 @@
 package org.atlasapi.system.legacy;
 
-import java.math.BigInteger;
 import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelEquivRef;
 import org.atlasapi.channel.ChannelGroupMembership;
-import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.channel.ChannelType;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.MediaType;
@@ -20,13 +17,10 @@ import org.atlasapi.media.channel.ChannelNumbering;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 
 public class LegacyChannelTransformer
         extends BaseLegacyResourceTransformer<org.atlasapi.media.channel.Channel, Channel> {
-
-    private final SubstitutionTableNumberCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
 
     @Nullable
     @Override
@@ -36,6 +30,7 @@ public class LegacyChannelTransformer
                 .withId(input.getId())
                 .withKey(input.getKey())
                 .withHighDefinition(input.getHighDefinition())
+                .withTimeshifted(input.isTimeshifted())
                 .withTitles(input.getAllTitles())
                 .withAdult(input.getAdult())
                 .withBroadcaster(input.getBroadcaster())
@@ -86,6 +81,7 @@ public class LegacyChannelTransformer
                 .withUri(input.getCanonicalUri())
                 .withKey(input.getKey())
                 .withHighDefinition(input.getHighDefinition())
+                .withTimeshifted(input.getTimeshifted())
                 .withBroadcaster(input.getBroadcaster())
                 .withSource(input.getSource())
                 .withAdvertiseFrom(input.getAdvertiseFrom())
