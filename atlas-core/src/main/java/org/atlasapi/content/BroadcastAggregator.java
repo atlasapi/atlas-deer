@@ -374,8 +374,10 @@ public class BroadcastAggregator {
     }
 
     private boolean isNotTimeshiftedOrHd(Channel channel) {
-        return !(channel.getTimeshifted() ||
-                channel.getHighDefinition());
+        boolean timeshifted = MoreObjects.firstNonNull(channel.getTimeshifted(), false);
+        boolean hd = MoreObjects.firstNonNull(channel.getHighDefinition(), false);
+
+        return !(timeshifted || hd);
     }
 
 }
