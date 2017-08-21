@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.search;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -12,6 +13,7 @@ import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.media.entity.Publisher;
@@ -67,7 +69,7 @@ public class SearchController {
 
     private final SearchResolver searcher;
     private final ApplicationFetcher applicationFetcher;
-    private final QueryResultWriter<Content> resultWriter;
+    private final QueryResultWriter<ResolvedContent> resultWriter;
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
@@ -90,7 +92,7 @@ public class SearchController {
     ));
 
     public SearchController(SearchResolver searcher, ApplicationFetcher applicationFetcher,
-            QueryResultWriter<Content> resultWriter) {
+            QueryResultWriter<ResolvedContent> resultWriter) {
         this.searcher = searcher;
         this.applicationFetcher = applicationFetcher;
         this.resultWriter = resultWriter;
@@ -146,7 +148,7 @@ public class SearchController {
                     .orElse(DefaultApplication.create());
             Set<Specialization> specializations = specializations(specialization);
             Set<Publisher> publishers = publishers(publisher, application);
-            List<Identified> content = searcher.search(SearchQuery.builder(q)
+            List<ResolvedContent> resolvedContent = searcher.search(SearchQuery.builder(q)
                     .withSelection(selection)
                     .withSpecializations(specializations)
                     .withPublishers(publishers)
@@ -161,11 +163,17 @@ public class SearchController {
                     .withCurrentBroadcastsOnly(!Strings.isNullOrEmpty(currentBroadcastsOnly)
                                                ? Boolean.valueOf(currentBroadcastsOnly)
                                                : false)
-                    .build(), application);
+                    .build(), application)
+                    .stream()
+                    .filter(identified -> identified instanceof Content)
+                    .map(content -> (Content) content)
+                    .map(searchedContent -> ResolvedContent.resolvedContentBuilder().withContent(searchedContent).build())
+                    .collect(Collectors.toList());
+
             resultWriter.write(QueryResult.listResult(
-                    Iterables.filter(content, Content.class),
+                    resolvedContent,
                     QueryContext.standard(request),
-                    Long.valueOf(content.size())
+                    Long.valueOf(resolvedContent.size())
             ), writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

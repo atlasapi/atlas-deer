@@ -2,7 +2,7 @@ package org.atlasapi.query.v4.topic;
 
 import java.io.IOException;
 
-import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.ContextualResultWriter;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -13,26 +13,26 @@ import org.atlasapi.topic.Topic;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class TopicContentResultWriter implements ContextualResultWriter<Topic, Content> {
+public class TopicContentResultWriter implements ContextualResultWriter<Topic, ResolvedContent> {
 
     private final EntityWriter<Topic> topicWriter;
-    private final EntityListWriter<Content> contentWriter;
+    private final EntityListWriter<ResolvedContent> contentWriter;
 
     public TopicContentResultWriter(EntityWriter<Topic> topicWriter,
-            EntityListWriter<Content> contentWriter) {
+            EntityListWriter<ResolvedContent> contentWriter) {
         this.topicWriter = checkNotNull(topicWriter);
         this.contentWriter = checkNotNull(contentWriter);
     }
 
     @Override
-    public void write(ContextualQueryResult<Topic, Content> result, ResponseWriter writer)
+    public void write(ContextualQueryResult<Topic, ResolvedContent> result, ResponseWriter writer)
             throws IOException {
         writer.startResponse();
         writeResult(result, writer);
         writer.finishResponse();
     }
 
-    private void writeResult(ContextualQueryResult<Topic, Content> result, ResponseWriter writer)
+    private void writeResult(ContextualQueryResult<Topic, ResolvedContent> result, ResponseWriter writer)
             throws IOException {
 
         OutputContext ctxt = OutputContext.valueOf(result.getContext());

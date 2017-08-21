@@ -20,6 +20,7 @@ import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.MergingEquivalentsResolverBackedContainerSummaryResolver;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.equivalence.AnnotationBasedMergingEquivalentsResolver;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.event.Event;
@@ -64,7 +65,7 @@ public class QueryModule {
     }
 
     @Bean
-    public ContextualQueryExecutor<Topic, Content> topicContentQueryExecutor() {
+    public ContextualQueryExecutor<Topic, ResolvedContent> topicContentQueryExecutor() {
         return TopicContentQueryExecutor.create(
                 persistenceModule.topicStore(),
                 persistenceModule.contentIndex(),
@@ -83,7 +84,7 @@ public class QueryModule {
     }
 
     @Bean
-    public QueryExecutor<Content> contentQueryExecutor() {
+    public QueryExecutor<ResolvedContent> contentQueryExecutor() {
         return IndexBackedEquivalentContentQueryExecutor.create(
                 persistenceModule.contentIndex(),
                 mergingContentResolver()

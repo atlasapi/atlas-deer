@@ -4,15 +4,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.IndexQueryResult;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
@@ -35,7 +39,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<Content> {
+public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<ResolvedContent> {
 
     private final ContentIndex index;
     private final MergingEquivalentsResolver<Content> resolver;
@@ -59,7 +63,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
     }
 
     @Override
-    public QueryResult<Content> execute(Query<Content> query) throws QueryExecutionException {
+    public QueryResult<ResolvedContent> execute(Query<ResolvedContent> query) throws QueryExecutionException {
         try {
             return Futures.get(
                     executeQuery(query),
@@ -81,12 +85,12 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         }
     }
 
-    private ListenableFuture<QueryResult<Content>> executeQuery(Query<Content> query)
+    private ListenableFuture<QueryResult<ResolvedContent>> executeQuery(Query<ResolvedContent> query)
             throws QueryExecutionException {
         return query.isListQuery() ? executeListQuery(query) : executeSingleQuery(query);
     }
 
-    private ListenableFuture<QueryResult<Content>> executeSingleQuery(Query<Content> query) {
+    private ListenableFuture<QueryResult<ResolvedContent>> executeSingleQuery(Query<ResolvedContent> query) {
         final Id contentId = query.getOnlyId();
         return Futures.transform(
                 resolve(query, contentId),
@@ -98,12 +102,15 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
                         );
                     }
                     Content resource = equivs.get(0);
-                    return QueryResult.singleResult(resource, query.getContext());
+                    return QueryResult.singleResult(
+                            ResolvedContent.resolvedContentBuilder().withContent(resource).build(),
+                            query.getContext()
+                    );
                 }
         );
     }
 
-    private ListenableFuture<ResolvedEquivalents<Content>> resolve(Query<Content> query, Id id) {
+    private ListenableFuture<ResolvedEquivalents<Content>> resolve(Query<ResolvedContent> query, Id id) {
         return resolver.resolveIds(
                 ImmutableSet.of(id),
                 application(query),
@@ -111,7 +118,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         );
     }
 
-    private ListenableFuture<QueryResult<Content>> executeListQuery(Query<Content> query)
+    private ListenableFuture<QueryResult<ResolvedContent>> executeListQuery(Query<ResolvedContent> query)
             throws QueryExecutionException {
         try {
             ListenableFuture<IndexQueryResult> result = executeIndexQuery(query);
@@ -124,7 +131,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         }
     }
 
-    private ListenableFuture<IndexQueryResult> executeIndexQuery(Query<Content> query) {
+    private ListenableFuture<IndexQueryResult> executeIndexQuery(Query<ResolvedContent> query) {
         // Check if the query is requesting specific IDs
         Optional<ListenableFuture<IndexQueryResult>> naiveResult = query.getOperands()
                 .stream()
@@ -146,8 +153,8 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         );
     }
 
-    private ListenableFuture<QueryResult<Content>> resolveSearchQuery(
-            Query<Content> query,
+    private ListenableFuture<QueryResult<ResolvedContent>> resolveSearchQuery(
+            Query<ResolvedContent> query,
             IndexQueryResult input
     ) {
         ListenableFuture<ResolvedEquivalents<Content>> resolving =
@@ -159,7 +166,12 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         return Futures.transform(
                 resolving,
                 (ResolvedEquivalents<Content> resolved) -> {
-                    Iterable<Content> resources = resolved.getFirstElems();
+                    Iterable<ResolvedContent> resources = StreamSupport.stream(
+                            resolved.getFirstElems().spliterator(),
+                            false
+                    )
+                            .map(content -> ResolvedContent.resolvedContentBuilder().withContent(content).build())
+                            .collect(Collectors.toList());
                     return QueryResult.listResult(
                             resources, query.getContext(),
                             input.getTotalCount()
@@ -167,19 +179,19 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
                 });
     }
 
-    private Selection selection(Query<Content> query) {
+    private Selection selection(Query<ResolvedContent> query) {
         return query.getContext().getSelection().or(Selection.all());
     }
 
-    private ImmutableSet<Publisher> sources(Query<Content> query) {
+    private ImmutableSet<Publisher> sources(Query<ResolvedContent> query) {
         return application(query).getConfiguration().getEnabledReadSources();
     }
 
-    private Set<Annotation> annotations(Query<Content> query) {
+    private Set<Annotation> annotations(Query<ResolvedContent> query) {
         return ImmutableSet.copyOf(query.getContext().getAnnotations().values());
     }
 
-    private Application application(Query<Content> query) {
+    private Application application(Query<ResolvedContent> query) {
         return query.getContext().getApplication();
     }
 }

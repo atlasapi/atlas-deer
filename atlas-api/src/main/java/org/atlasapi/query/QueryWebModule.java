@@ -15,8 +15,10 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.content.MediaType;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
@@ -359,7 +361,6 @@ public class QueryWebModule {
                         contentListWriter(),
                         licenseWriter,
                         requestWriter(),
-                        channelGroupResolver,
                         idCodec()
                 )
         );
@@ -568,7 +569,7 @@ public class QueryWebModule {
         );
     }
 
-    private StandardQueryParser<Content> contentQueryParser() {
+    private StandardQueryParser<ResolvedContent> contentQueryParser() {
         QueryContextParser contextParser = QueryContextParser.create(
                 configFetcher,
                 new IndexAnnotationsExtractor(contentAnnotationIndex()), selectionBuilder()
@@ -855,7 +856,6 @@ public class QueryWebModule {
                         contentListWriter(),
                         licenseWriter,
                         requestWriter(),
-                        channelGroupResolver,
                         idCodec()
                 )
         );
@@ -901,13 +901,13 @@ public class QueryWebModule {
     }
 
     @Bean
-    EntityListWriter<Content> contentListWriter() {
+    EntityListWriter<ResolvedContent> contentListWriter() {
         return new ContentListWriter(contentAnnotations());
     }
 
-    private AnnotationRegistry<Content> contentAnnotations() {
+    private AnnotationRegistry<ResolvedContent> contentAnnotations() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
-        return AnnotationRegistry.<Content>builder()
+        return AnnotationRegistry.<ResolvedContent>builder()
                 .registerDefault(
                         ID_SUMMARY,
                         IdentificationSummaryAnnotation.create(idSummaryWriter)
@@ -967,7 +967,7 @@ public class QueryWebModule {
                 .register(PEOPLE, new PeopleAnnotation(), commonImplied)
                 .register(
                         TAGS,
-                        new TopicsAnnotation(topicResolver, topicListWriter()),
+                        new TopicsAnnotation(topicListWriter()),
                         commonImplied
                 )
                 .register(

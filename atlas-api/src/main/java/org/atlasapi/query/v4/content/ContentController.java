@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
@@ -34,16 +35,16 @@ public class ContentController {
 
     private static final Logger log = LoggerFactory.getLogger(ContentController.class);
 
-    private final QueryParser<Content> requestParser;
-    private final QueryExecutor<Content> queryExecutor;
-    private final QueryResultWriter<Content> resultWriter;
+    private final QueryParser<ResolvedContent> requestParser;
+    private final QueryExecutor<ResolvedContent> queryExecutor;
+    private final QueryResultWriter<ResolvedContent> resultWriter;
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     public ContentController(
-            QueryParser<Content> queryParser,
-            QueryExecutor<Content> queryExecutor,
-            QueryResultWriter<Content> resultWriter
+            QueryParser<ResolvedContent> queryParser,
+            QueryExecutor<ResolvedContent> queryExecutor,
+            QueryResultWriter<ResolvedContent> resultWriter
     ) {
         this.requestParser = queryParser;
         this.queryExecutor = queryExecutor;
@@ -57,8 +58,8 @@ public class ContentController {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            Query<Content> contentQuery = requestParser.parse(request);
-            QueryResult<Content> queryResult = queryExecutor.execute(contentQuery);
+            Query<ResolvedContent> contentQuery = requestParser.parse(request);
+            QueryResult<ResolvedContent> queryResult = queryExecutor.execute(contentQuery);
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             String queryString = request.getQueryString();

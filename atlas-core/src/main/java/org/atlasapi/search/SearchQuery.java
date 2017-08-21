@@ -12,6 +12,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
+import javax.annotation.Nullable;
+
 public class SearchQuery {
 
     public static final Builder builder(String query) {
@@ -96,7 +98,7 @@ public class SearchQuery {
             );
         }
 
-        public Builder isTopLevelOnly(Boolean topLevel) {
+        public Builder isTopLevelOnly(@Nullable Boolean topLevel) {
             this.topLevelOnly = topLevel;
             return this;
         }

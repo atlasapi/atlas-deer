@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.List;
 
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
@@ -13,18 +15,18 @@ import org.atlasapi.query.common.Resource;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class ContentListWriter implements EntityListWriter<Content> {
+public final class ContentListWriter implements EntityListWriter<ResolvedContent> {
 
-    private AnnotationRegistry<Content> annotationRegistry;
+    private AnnotationRegistry<ResolvedContent> annotationRegistry;
 
-    public ContentListWriter(AnnotationRegistry<Content> annotationRegistry) {
+    public ContentListWriter(AnnotationRegistry<ResolvedContent> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         ctxt.startResource(Resource.CONTENT);
-        List<OutputAnnotation<? super Content>> annotations = ctxt
+        List<OutputAnnotation<? super ResolvedContent>> annotations = ctxt
                 .getAnnotations(annotationRegistry);
         for (int i = 0; i < annotations.size(); i++) {
             annotations.get(i).write(entity, writer, ctxt);
@@ -38,7 +40,7 @@ public final class ContentListWriter implements EntityListWriter<Content> {
     }
 
     @Override
-    public String fieldName(Content entity) {
-        return entity.getClass().getSimpleName().toLowerCase();
+    public String fieldName(ResolvedContent entity) {
+        return entity.getContent().getClass().getSimpleName().toLowerCase();
     }
 }

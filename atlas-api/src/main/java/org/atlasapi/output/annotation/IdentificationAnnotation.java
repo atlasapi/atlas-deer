@@ -16,9 +16,6 @@ public class IdentificationAnnotation extends OutputAnnotation<Identified> {
     public void write(Identified entity, FieldWriter formatter, OutputContext ctxt)
             throws IOException {
         formatter.writeField("type", entity.getClass().getSimpleName().toLowerCase());
-        //        if (entity != null && !(entity instanceof Channel)) {
-        //            formatter.writeField("uri", entity.getCanonicalUri());
-        //        }
     }
 
 }
