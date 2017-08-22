@@ -135,6 +135,11 @@ public class BootstrapModule {
     }
 
     @Bean
+    EventBootstrapController eventBootstrapController() {
+        return new EventBootstrapController(persistence.eventResolver(), persistence.eventWriter());
+    }
+
+    @Bean
     ChannelIntervalScheduleBootstrapTaskFactory scheduleBootstrapTaskFactory() {
         return new ChannelIntervalScheduleBootstrapTaskFactory(persistence.legacyScheduleStore(),
                 persistence.scheduleStore(),

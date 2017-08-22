@@ -39,8 +39,11 @@ public class EventBootstrapController {
     }
 
     @VisibleForTesting
-    EventBootstrapController(EventResolver eventResolver,
-            NumberToShortStringCodec idCodec, EventWriter eventWriter) {
+    EventBootstrapController(
+            EventResolver eventResolver,
+            NumberToShortStringCodec idCodec,
+            EventWriter eventWriter
+    ) {
         this.idCodec = checkNotNull(idCodec);
         this.eventWriter = checkNotNull(eventWriter);
         this.eventResolver = checkNotNull(eventResolver);
