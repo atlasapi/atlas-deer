@@ -15,6 +15,7 @@ import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.content.ResolvedBroadcast;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.AnnotationRegistry;
@@ -57,7 +58,7 @@ public class ScheduleQueryResultWriterTest {
             .build();
     private final AnnotationRegistry<ResolvedChannel> channelAnnotations = AnnotationRegistry.<ResolvedChannel>builder()
             .build();
-    private EntityWriter<Content> contentWriter = new ContentListWriter(contentAnnotations);
+    private EntityWriter<ResolvedContent> contentWriter = new ContentListWriter(contentAnnotations);
     private EntityWriter<ResolvedBroadcast> broadcastWriter = BroadcastWriter.create(
             "broadcasts",
             "broadcast",

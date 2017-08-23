@@ -186,7 +186,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
                             .build();
                     updater.updateEquivalences(update.getAllGraphs());
                 } else {
-                    log.warn("Failed to resolve graph for {}", id);
+                    log.warn("Failed to resolveContent graph for {}", id);
                 }
             }
         } catch (WriteException | InterruptedException | ExecutionException e) {

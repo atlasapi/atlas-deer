@@ -22,7 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * <p> In a standard, single resource {@code ResourceAnnotationIndex} values can be resolved with or
  * without their overarching resource context. That is, for a {@link Resource}.CONTENT index {@code
- * 'description'} and {@code 'content.description'} both resolve {@code ([CONTENT] -> DESCRIPTION)}
+ * 'description'} and {@code 'content.description'} both resolveContent {@code ([CONTENT] -> DESCRIPTION)}
  * . </p>
  * <p>
  * <p> Indices can be attached to others so {@link Annotation}s for a resource type apply where that

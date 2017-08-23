@@ -17,6 +17,7 @@ import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.content.ResolvedBroadcast;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.EntityListWriter;
@@ -35,11 +36,11 @@ public class ScheduleEntryListWriter implements EntityListWriter<ItemAndBroadcas
     private static final Logger log = LoggerFactory.getLogger(ScheduleEntryListWriter.class);
 
     private final ChannelResolver channelResolver;
-    private EntityWriter<Content> contentWriter;
+    private EntityWriter<ResolvedContent> contentWriter;
     private EntityWriter<ResolvedBroadcast> broadcastWriter;
 
     public ScheduleEntryListWriter(
-            EntityWriter<Content> contentWriter,
+            EntityWriter<ResolvedContent> contentWriter,
             EntityWriter<ResolvedBroadcast> broadcastWriter,
             ChannelResolver channelResolver
     ) {
@@ -59,7 +60,7 @@ public class ScheduleEntryListWriter implements EntityListWriter<ItemAndBroadcas
         );
 
         writer.writeObject(broadcastWriter, "broadcast", broadcast, ctxt);
-        writer.writeObject(contentWriter, "item", entity.getItem(), ctxt);
+        writer.writeObject(contentWriter, "item", ResolvedContent.builder().withContent(entity.getItem()).build(), ctxt);
     }
 
     @Override
@@ -92,7 +93,7 @@ public class ScheduleEntryListWriter implements EntityListWriter<ItemAndBroadcas
                     .build();
 
         } catch (IOException e) {
-            log.error("Failed to resolve channel: {}", broadcast.getChannelId(), e);
+            log.error("Failed to resolveContent channel: {}", broadcast.getChannelId(), e);
             return null;
         }
 
@@ -108,7 +109,7 @@ public class ScheduleEntryListWriter implements EntityListWriter<ItemAndBroadcas
 
             return null;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.error("Failed to resolve channel equivlents", e);
+            log.error("Failed to resolveContent channel equivlents", e);
             return null;
         }
     }

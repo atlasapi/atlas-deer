@@ -3,15 +3,19 @@ package org.atlasapi.query.v4.search;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.media.entity.Publisher;
@@ -67,7 +71,7 @@ public class SearchController {
 
     private final SearchResolver searcher;
     private final ApplicationFetcher applicationFetcher;
-    private final QueryResultWriter<Content> resultWriter;
+    private final QueryResultWriter<ResolvedContent> resultWriter;
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
@@ -90,7 +94,7 @@ public class SearchController {
     ));
 
     public SearchController(SearchResolver searcher, ApplicationFetcher applicationFetcher,
-            QueryResultWriter<Content> resultWriter) {
+            QueryResultWriter<ResolvedContent> resultWriter) {
         this.searcher = searcher;
         this.applicationFetcher = applicationFetcher;
         this.resultWriter = resultWriter;
@@ -162,16 +166,30 @@ public class SearchController {
                                                ? Boolean.valueOf(currentBroadcastsOnly)
                                                : false)
                     .build(), application);
-            resultWriter.write(QueryResult.listResult(
-                    Iterables.filter(content, Content.class),
-                    QueryContext.standard(request),
-                    Long.valueOf(content.size())
-            ), writer);
+
+            resultWriter.write(
+                    QueryResult.listResult(
+                            makeResolved(content),
+                            QueryContext.standard(request),
+                            Long.valueOf(content.size())
+                    ),
+                    writer
+            );
+
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, writer, request, response);
         }
+    }
+
+    private Iterable<ResolvedContent> makeResolved(Iterable<Identified> contents) {
+        return StreamSupport.stream(contents.spliterator(), false)
+                .filter(content -> content instanceof Content)
+                .map(content -> (Content) content)
+                .map(content -> ResolvedContent.builder().withContent(content).build())
+                .collect(MoreCollectors.toImmutableList());
+
     }
 
     private Set<Publisher> publishers(String publisher, Application application) {

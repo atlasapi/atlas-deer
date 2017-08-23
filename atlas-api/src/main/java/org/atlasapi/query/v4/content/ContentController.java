@@ -6,12 +6,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
+import org.atlasapi.query.common.FullContentResolver;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryParser;
@@ -36,17 +38,20 @@ public class ContentController {
 
     private final QueryParser<Content> requestParser;
     private final QueryExecutor<Content> queryExecutor;
-    private final QueryResultWriter<Content> resultWriter;
+    private final FullContentResolver fullResolver;
+    private final QueryResultWriter<ResolvedContent> resultWriter;
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     public ContentController(
             QueryParser<Content> queryParser,
             QueryExecutor<Content> queryExecutor,
-            QueryResultWriter<Content> resultWriter
+            FullContentResolver fullResolver,
+            QueryResultWriter<ResolvedContent> resultWriter
     ) {
         this.requestParser = queryParser;
         this.queryExecutor = queryExecutor;
+        this.fullResolver = fullResolver;
         this.resultWriter = resultWriter;
     }
 
@@ -59,7 +64,8 @@ public class ContentController {
             writer = writerResolver.writerFor(request, response);
             Query<Content> contentQuery = requestParser.parse(request);
             QueryResult<Content> queryResult = queryExecutor.execute(contentQuery);
-            resultWriter.write(queryResult, writer);
+            QueryResult<ResolvedContent> resolvedQueryResult = fullResolver.resolve(queryResult);
+            resultWriter.write(resolvedQueryResult, writer);
         } catch (Exception e) {
             String queryString = request.getQueryString();
             log.error("Request exception " + request.getRequestURI() + (queryString != null

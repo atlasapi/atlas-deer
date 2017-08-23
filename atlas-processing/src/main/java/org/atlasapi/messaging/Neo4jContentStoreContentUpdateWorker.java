@@ -101,7 +101,7 @@ public class Neo4jContentStoreContentUpdateWorker
         Optional<Content> contentOptional = results.getResources().first();
 
         if (!contentOptional.isPresent()) {
-            throw WorkerException.create("Failed to resolve content " + contentId);
+            throw WorkerException.create("Failed to resolveContent content " + contentId);
         }
 
         return contentOptional.get();

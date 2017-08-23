@@ -65,7 +65,7 @@ public class EquivalenceGraphUpdateResolver {
                     .collect(MoreCollectors.toImmutableSet());
 
         } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to resolve equivalence graphs for {}", Joiner.on(",").join(graphIds));
+            log.error("Failed to resolveContent equivalence graphs for {}", Joiner.on(",").join(graphIds));
             throw Throwables.propagate(e);
         }
     }

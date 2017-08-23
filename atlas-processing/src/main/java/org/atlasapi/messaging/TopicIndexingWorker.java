@@ -92,7 +92,7 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
                 );
             } else {
                 LOG.warn(
-                        "{}: failed to resolve {} ",
+                        "{}: failed to resolveContent {} ",
                         new Object[] { message.getMessageId(), message.getUpdatedResource() }
                 );
             }

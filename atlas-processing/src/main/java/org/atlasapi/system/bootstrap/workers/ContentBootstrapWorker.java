@@ -117,8 +117,8 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         Resolved<Content> content = resolveContent(contentId);
 
         if (content.getResources().isEmpty()) {
-            log.error("Failed to resolve content {}", contentId);
-            throw new IllegalArgumentException("Failed to resolve content " + contentId);
+            log.error("Failed to resolveContent content {}", contentId);
+            throw new IllegalArgumentException("Failed to resolveContent content " + contentId);
         }
 
         WriteResult<Content, Content> result = null;

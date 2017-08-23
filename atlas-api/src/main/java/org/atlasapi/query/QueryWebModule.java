@@ -15,6 +15,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.content.MediaType;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.event.Event;
@@ -102,6 +103,7 @@ import org.atlasapi.query.annotation.IndexContextualAnnotationsExtractor;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
 import org.atlasapi.query.common.ContextualQueryContextParser;
 import org.atlasapi.query.common.ContextualQueryParser;
+import org.atlasapi.query.common.FullContentResolver;
 import org.atlasapi.query.common.IndexAnnotationsExtractor;
 import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryParser;
@@ -355,11 +357,11 @@ public class QueryWebModule {
         return new ContentController(
                 contentQueryParser(),
                 queryModule.contentQueryExecutor(),
+                fullContentResolver(),
                 new ContentQueryResultWriter(
                         contentListWriter(),
                         licenseWriter,
                         requestWriter(),
-                        channelGroupResolver,
                         idCodec()
                 )
         );
@@ -386,6 +388,7 @@ public class QueryWebModule {
         return new TopicContentController(
                 parser,
                 queryModule.topicContentQueryExecutor(),
+                fullContentResolver(),
                 new TopicContentResultWriter(
                         topicListWriter(), contentListWriter()
                 )
@@ -580,6 +583,10 @@ public class QueryWebModule {
                 idCodec(),
                 contextParser
         );
+    }
+
+    private FullContentResolver fullContentResolver() {
+        return new FullContentResolver(); //TODO: parameters
     }
 
     @Bean
@@ -855,7 +862,6 @@ public class QueryWebModule {
                         contentListWriter(),
                         licenseWriter,
                         requestWriter(),
-                        channelGroupResolver,
                         idCodec()
                 )
         );
@@ -901,7 +907,7 @@ public class QueryWebModule {
     }
 
     @Bean
-    EntityListWriter<Content> contentListWriter() {
+    EntityListWriter<ResolvedContent> contentListWriter() {
         return new ContentListWriter(contentAnnotations());
     }
 

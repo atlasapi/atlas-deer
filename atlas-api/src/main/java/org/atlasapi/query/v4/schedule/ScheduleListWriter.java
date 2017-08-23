@@ -78,7 +78,7 @@ public class ScheduleListWriter implements EntityListWriter<ChannelSchedule> {
 
             return null;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.error("Failed to resolve channel equivlents", e);
+            log.error("Failed to resolveContent channel equivlents", e);
             return null;
         }
     }

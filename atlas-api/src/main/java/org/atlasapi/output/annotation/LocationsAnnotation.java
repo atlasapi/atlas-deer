@@ -178,7 +178,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
                 Player player = playerTransformer.apply(maybePlayer.get());
                 writer.writeObject(playerWriter, player, ctxt);
             } else {
-                log.warn("Failed to resolve Player {}", policy.getPlayerRef());
+                log.warn("Failed to resolveContent Player {}", policy.getPlayerRef());
             }
         }
 
@@ -190,7 +190,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
                 Service service = serviceTransformer.apply(maybeService.get());
                 writer.writeObject(serviceWriter, service, ctxt);
             } else {
-                log.warn("Failed to resolve Service {}", policy.getServiceRef());
+                log.warn("Failed to resolveContent Service {}", policy.getServiceRef());
             }
         }
 

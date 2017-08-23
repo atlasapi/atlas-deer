@@ -94,7 +94,7 @@ public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
                     .build();
 
         } catch (IOException e) {
-            log.error("Failed to resolve channel: {}", broadcast.getChannelId(), e);
+            log.error("Failed to resolveContent channel: {}", broadcast.getChannelId(), e);
             return null;
         }
 
@@ -110,7 +110,7 @@ public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
 
             return null;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.error("Failed to resolve channel equivlents", e);
+            log.error("Failed to resolveContent channel equivlents", e);
             return null;
         }
     }

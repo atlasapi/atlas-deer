@@ -132,7 +132,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
                     .build();
 
         } catch (IOException e) {
-            log.error("Failed to resolve channel: {}", broadcast.getChannelId(), e);
+            log.error("Failed to resolveContent channel: {}", broadcast.getChannelId(), e);
             return null;
         }
 
@@ -148,7 +148,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
 
             return null;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.error("Failed to resolve channel equivlents", e);
+            log.error("Failed to resolveContent channel equivlents", e);
             return null;
         }
     }

@@ -2,10 +2,9 @@ package org.atlasapi.output.annotation;
 
 import java.io.IOException;
 
+import com.google.common.base.MoreObjects;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-
-import com.google.common.base.Objects;
 
 public abstract class OutputAnnotation<T> {
 
@@ -13,6 +12,6 @@ public abstract class OutputAnnotation<T> {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).toString();
+        return MoreObjects.toStringHelper(this).toString();
     }
 }

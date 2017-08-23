@@ -67,10 +67,10 @@ public class ApiKeyApplicationFetcher implements ApplicationFetcher {
         );
 
         if (result.getErrorCode().isPresent()) {
-            log.error("Unable to resolve application: {} - {}", result.getErrorCode().get(), apiKey);
+            log.error("Unable to resolveContent application: {} - {}", result.getErrorCode().get(), apiKey);
             throw ApplicationResolutionException.create(
                     apiKey,
-                    "Unable to resolve application"
+                    "Unable to resolveContent application"
             );
         }
         return result.getSingleResult();

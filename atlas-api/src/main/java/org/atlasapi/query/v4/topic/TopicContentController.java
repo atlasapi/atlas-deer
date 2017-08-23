@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.ContextualResultWriter;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
@@ -15,6 +16,7 @@ import org.atlasapi.query.common.ContextualQuery;
 import org.atlasapi.query.common.ContextualQueryExecutor;
 import org.atlasapi.query.common.ContextualQueryParser;
 import org.atlasapi.query.common.ContextualQueryResult;
+import org.atlasapi.query.common.FullContentResolver;
 import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.topic.Topic;
 
@@ -33,15 +35,18 @@ public class TopicContentController {
 
     private final ContextualQueryParser<Topic, Content> parser;
     private final ContextualQueryExecutor<Topic, Content> queryExecutor;
-    private final ContextualResultWriter<Topic, Content> resultWriter;
+    private final FullContentResolver fullContentResolver;
+    private final ContextualResultWriter<Topic, ResolvedContent> resultWriter;
 
     private ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     public TopicContentController(ContextualQueryParser<Topic, Content> parser,
             ContextualQueryExecutor<Topic, Content> queryExecutor,
-            ContextualResultWriter<Topic, Content> resultWriter) {
+            FullContentResolver fullContentResolver,
+            ContextualResultWriter<Topic, ResolvedContent> resultWriter) {
         this.parser = checkNotNull(parser);
         this.queryExecutor = checkNotNull(queryExecutor);
+        this.fullContentResolver = checkNotNull(fullContentResolver);
         this.resultWriter = checkNotNull(resultWriter);
     }
 
@@ -52,8 +57,9 @@ public class TopicContentController {
         try {
             writer = writerResolver.writerFor(request, response);
             ContextualQuery<Topic, Content> query = parser.parse(request);
-            ContextualQueryResult<Topic, Content> result = queryExecutor.execute(query);
-            resultWriter.write(result, writer);
+            ContextualQueryResult<Topic, Content> queryResult = queryExecutor.execute(query);
+            ContextualQueryResult<Topic, ResolvedContent> resolvedQueryResult = fullContentResolver.resolve(queryResult);
+            resultWriter.write(resolvedQueryResult, writer);
         } catch (QueryExecutionException qee) {
             log.error("Query execution exception " + request.getRequestURI(), qee.getCause());
             handleException(request, response, writer, qee);
