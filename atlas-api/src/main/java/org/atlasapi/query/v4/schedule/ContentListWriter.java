@@ -16,19 +16,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class ContentListWriter implements EntityListWriter<ResolvedContent> {
 
-    private AnnotationRegistry<Content> annotationRegistry;
+    private AnnotationRegistry<Content, ResolvedContent> annotationRegistry;
 
-    public ContentListWriter(AnnotationRegistry<Content> annotationRegistry) {
+    public ContentListWriter(AnnotationRegistry<Content, ResolvedContent> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
     @Override
     public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         ctxt.startResource(Resource.CONTENT);
-        List<OutputAnnotation<? super Content>> annotations = ctxt
+        List<OutputAnnotation<? super Content, ResolvedContent>> annotations = ctxt
                 .getAnnotations(annotationRegistry);
         for (int i = 0; i < annotations.size(); i++) {
-            annotations.get(i).write(entity.getContent(), writer, ctxt);
+            annotations.get(i).write(entity, writer, ctxt);
         }
         ctxt.endResource();
     }

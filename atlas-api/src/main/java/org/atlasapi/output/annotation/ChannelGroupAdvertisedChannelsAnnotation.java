@@ -26,7 +26,7 @@ import org.joda.time.LocalDate;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
+public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<ResolvedChannelGroup, ResolvedChannelGroup> {
 
     private final ChannelGroupChannelWriter channelWriter;
 

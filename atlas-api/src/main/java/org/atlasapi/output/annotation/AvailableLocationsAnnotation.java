@@ -7,6 +7,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.Policy;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.LocationsAnnotation.EncodedLocationWriter;
@@ -18,7 +19,7 @@ import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
 
-public class AvailableLocationsAnnotation extends OutputAnnotation<Content> {
+public class AvailableLocationsAnnotation extends OutputAnnotation<Content, ResolvedContent> {
 
     private final EncodedLocationWriter encodedLocationWriter;
 
@@ -30,8 +31,8 @@ public class AvailableLocationsAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        writer.writeList(encodedLocationWriter, encodedLocations(entity), ctxt);
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        writer.writeList(encodedLocationWriter, encodedLocations(entity.getContent()), ctxt);
     }
 
     private Boolean isAvailable(Policy input) {

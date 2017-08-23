@@ -20,6 +20,7 @@ import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ResolvedBroadcast;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.EntityListWriter;
@@ -32,7 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
+public class UpcomingContentDetailWriter implements EntityListWriter<ResolvedContent> {
 
     private static final Logger log = LoggerFactory.getLogger(UpcomingContentDetailWriter.class);
 
@@ -56,21 +57,24 @@ public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
     }
 
     @Override
-    public void write(@Nonnull Item entity, @Nonnull FieldWriter writer,
+    public void write(@Nonnull ResolvedContent entity, @Nonnull FieldWriter writer,
             @Nonnull OutputContext ctxt) throws IOException {
-        List<ResolvedBroadcast> sortedBroadcasts = entity.getBroadcasts()
-                .stream()
-                .sorted(Broadcast.startTimeOrdering())
-                .map(broadcast -> ResolvedBroadcast.create(broadcast, resolveChannel(broadcast)))
-                .collect(Collectors.toList());
+        if (entity.getContent() instanceof Item) {
+            Item item = (Item) entity.getContent();
+            List<ResolvedBroadcast> sortedBroadcasts = item.getBroadcasts()
+                    .stream()
+                    .sorted(Broadcast.startTimeOrdering())
+                    .map(broadcast -> ResolvedBroadcast.create(broadcast, resolveChannel(broadcast)))
+                    .collect(Collectors.toList());
 
-        writer.writeObject(broadcastWriter, Iterables.getFirst(sortedBroadcasts, null), ctxt);
-        writer.writeObject(itemDetailWriter, entity, ctxt);
+            writer.writeObject(broadcastWriter, Iterables.getFirst(sortedBroadcasts, null), ctxt);
+            writer.writeObject(itemDetailWriter, entity, ctxt);
+        }
     }
 
     @Nonnull
     @Override
-    public String fieldName(Item entity) {
+    public String fieldName(ResolvedContent entity) {
         return null;
     }
 

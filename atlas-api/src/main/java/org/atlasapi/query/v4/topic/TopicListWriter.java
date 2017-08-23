@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.topic;
 import java.io.IOException;
 import java.util.List;
 
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
@@ -13,18 +14,18 @@ import org.atlasapi.topic.Topic;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class TopicListWriter implements EntityListWriter<Topic> {
+public class TopicListWriter implements EntityListWriter<ResolvedContent> {
 
-    private final AnnotationRegistry<Topic> annotationRegistry;
+    private final AnnotationRegistry<Topic, ResolvedContent> annotationRegistry;
 
-    public TopicListWriter(AnnotationRegistry<Topic> annotationRegistry) {
+    public TopicListWriter(AnnotationRegistry<Topic, ResolvedContent> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
     @Override
-    public void write(Topic entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         ctxt.startResource(Resource.TOPIC);
-        List<OutputAnnotation<? super Topic>> annotations = ctxt
+        List<OutputAnnotation<? super Topic, ResolvedContent>> annotations = ctxt
                 .getAnnotations(annotationRegistry);
         for (int i = 0; i < annotations.size(); i++) {
             annotations.get(i).write(entity, writer, ctxt);
@@ -38,7 +39,7 @@ public class TopicListWriter implements EntityListWriter<Topic> {
     }
 
     @Override
-    public String fieldName(Topic entity) {
+    public String fieldName(ResolvedContent entity) {
         return "topic";
     }
 

@@ -10,6 +10,7 @@ import org.atlasapi.content.ContentVisitor;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Film;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.Song;
 import org.atlasapi.output.EntityWriter;
@@ -19,7 +20,7 @@ import org.atlasapi.output.writers.ItemDisplayTitleWriter;
 
 import org.joda.time.Duration;
 
-public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content> {
+public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content, ResolvedContent> {
 
     private final ItemDisplayTitleWriter displayTitleWriter = new ItemDisplayTitleWriter();
 
@@ -27,9 +28,9 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
     }
 
     @Override
-    public void write(Content content, final FieldWriter writer, final OutputContext ctxt)
+    public void write(ResolvedContent entity, final FieldWriter writer, final OutputContext ctxt)
             throws IOException {
-        content.accept(new ContentVisitor<Void>() {
+        entity.getContent().accept(new ContentVisitor<Void>() {
 
             public void writeField(String field, Object value) {
                 try {
@@ -100,10 +101,10 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
             }
         });
 
-        writer.writeField("media_type", content.getMediaType());
-        writer.writeField("specialization", content.getSpecialization());
+        writer.writeField("media_type", entity.getContent().getMediaType());
+        writer.writeField("specialization", entity.getContent().getSpecialization());
 
-        super.write(content, writer, ctxt);
+        super.write(entity, writer, ctxt);
     }
 
 }

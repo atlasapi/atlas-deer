@@ -2,6 +2,7 @@ package org.atlasapi.output.annotation;
 
 import java.io.IOException;
 
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.output.EntityListWriter;
@@ -11,7 +12,7 @@ import org.atlasapi.output.writers.AliasWriter;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
-public class ExtendedIdentificationAnnotation extends OutputAnnotation<Identified> {
+public class ExtendedIdentificationAnnotation extends OutputAnnotation<Identified, ResolvedContent> {
 
     private final EntityListWriter<EquivalenceRef> equivalentWriter = new EntityListWriter<EquivalenceRef>() {
 
@@ -43,10 +44,10 @@ public class ExtendedIdentificationAnnotation extends OutputAnnotation<Identifie
     }
 
     @Override
-    public void write(Identified entity, FieldWriter writer, OutputContext ctxt)
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
-        writer.writeList(aliasWriter, entity.getAliases(), ctxt);
-        writer.writeList(equivalentWriter, entity.getEquivalentTo(), ctxt);
+        writer.writeList(aliasWriter, entity.getContent().getAliases(), ctxt);
+        writer.writeList(equivalentWriter, entity.getContent().getEquivalentTo(), ctxt);
     }
 
 }

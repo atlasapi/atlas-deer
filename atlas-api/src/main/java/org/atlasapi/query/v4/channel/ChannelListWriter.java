@@ -17,9 +17,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelListWriter implements EntityListWriter<ResolvedChannel> {
 
-    private AnnotationRegistry<ResolvedChannel> annotationRegistry;
+    private AnnotationRegistry<ResolvedChannel, ResolvedChannel> annotationRegistry;
 
-    public ChannelListWriter(AnnotationRegistry<ResolvedChannel> annotationRegistry) {
+    public ChannelListWriter(AnnotationRegistry<ResolvedChannel, ResolvedChannel> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
@@ -29,12 +29,15 @@ public class ChannelListWriter implements EntityListWriter<ResolvedChannel> {
     }
 
     @Override
-    public void write(@Nonnull ResolvedChannel entity, @Nonnull FieldWriter writer,
-            @Nonnull OutputContext ctxt) throws IOException {
+    public void write(
+            @Nonnull ResolvedChannel entity,
+            @Nonnull FieldWriter writer,
+            @Nonnull OutputContext ctxt
+    ) throws IOException {
         ctxt.startResource(Resource.CHANNEL);
-        List<OutputAnnotation<? super ResolvedChannel>> annotations = ctxt
-                .getAnnotations(annotationRegistry);
-        for (OutputAnnotation<? super ResolvedChannel> annotation : annotations) {
+        List<OutputAnnotation<? super ResolvedChannel, ResolvedChannel>> annotations = ctxt.getAnnotations(annotationRegistry);
+
+        for (OutputAnnotation<? super ResolvedChannel, ResolvedChannel> annotation : annotations) {
             annotation.write(entity, writer, ctxt);
         }
         ctxt.endResource();

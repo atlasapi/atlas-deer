@@ -21,6 +21,7 @@ import org.atlasapi.content.ChannelsBroadcastFilter;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ResolvedBroadcast;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.FieldWriter;
@@ -40,7 +41,7 @@ import javax.annotation.Nullable;
 /**
  * Marker for {@link BroadcastsAnnotation} to only write broadcasts that have not yet broadcast.
  */
-public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
+public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content, ResolvedContent> { //TODO: add resolution
 
     private static final Logger log = LoggerFactory.getLogger(UpcomingBroadcastsAnnotation.class);
 
@@ -72,9 +73,9 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if (entity instanceof Item) {
-            Item item = (Item) entity;
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        if (entity.getContent() instanceof Item) {
+            Item item = (Item) entity.getContent();
             Stream<Broadcast> broadcastStream = item.getBroadcasts().stream()
                     .filter(Broadcast::isActivelyPublished)
                     .filter(b -> b.getTransmissionTime().isAfter(DateTime.now(DateTimeZone.UTC)));

@@ -7,10 +7,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
+import org.atlasapi.event.ResolvedEvent;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationRef;
@@ -27,7 +29,7 @@ import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 
 
-public class EventAnnotation extends OutputAnnotation<Event> {
+public class EventAnnotation extends OutputAnnotation<Event, ResolvedContent> { //TODO: possibly resolve organisations to ResolvedEvent
 
     private final EntityListWriter<ItemRef> itemRefWriter;
     private final EntityWriter<Publisher> publisherWriter = SourceWriter.sourceWriter("source");
@@ -43,14 +45,16 @@ public class EventAnnotation extends OutputAnnotation<Event> {
     }
 
     @Override
-    public void write(Event entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        writer.writeField("title", entity.getTitle());
-        writer.writeField("start_time", entity.getStartTime().toString());
-        writer.writeField("end_time", entity.getEndTime().toString());
-        writer.writeObject(publisherWriter, entity.getSource(), ctxt);
-        writer.writeList(participantWriter, entity.getParticipants(), ctxt);
-        writer.writeList(organisationListWriter, resolveOrganisations(entity.getOrganisations()), ctxt);
-        writer.writeList(itemRefWriter, entity.getContent(), ctxt);
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        Event event = entity.getEvent();
+
+        writer.writeField("title", event.getTitle());
+        writer.writeField("start_time", event.getStartTime().toString());
+        writer.writeField("end_time", event.getEndTime().toString());
+        writer.writeObject(publisherWriter, event.getSource(), ctxt);
+        writer.writeList(participantWriter, event.getParticipants(), ctxt);
+        writer.writeList(organisationListWriter, resolveOrganisations(event.getOrganisations()), ctxt);
+        writer.writeList(itemRefWriter, event.getContent(), ctxt);
     }
 
     private List<Organisation> resolveOrganisations(List<OrganisationRef> refs) {

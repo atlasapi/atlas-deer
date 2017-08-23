@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.util.Resolved;
@@ -88,7 +89,7 @@ public class EventAnnotationTest {
                 )
         );
 
-        eventAnnotation.write(event, fieldWriter, context);
+        eventAnnotation.write(ResolvedContent.wrap(event), fieldWriter, context);
         verify(fieldWriter).writeField("title", event.getTitle());
         verify(fieldWriter).writeField("start_time", event.getStartTime().toString());
         verify(fieldWriter).writeField("end_time", event.getEndTime().toString());

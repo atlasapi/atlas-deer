@@ -9,7 +9,7 @@ import org.atlasapi.output.writers.PriorityReasonsWriter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class PriorityScoreReasonsAnnotation extends OutputAnnotation<Content> {
+public class PriorityScoreReasonsAnnotation extends OutputAnnotation<Content, Content> {
 
     private final PriorityReasonsWriter priorityReasonsWriter;
 

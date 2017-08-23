@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.annotation.ContainerSummaryAnnotation;
 import org.atlasapi.output.annotation.ContentDescriptionAnnotation;
 import org.atlasapi.output.annotation.ExtendedDescriptionAnnotation;
@@ -52,7 +53,7 @@ public class AnnotationRegistryTest {
             mock(ContainerSummaryWriter.class)
     );
 
-    private final AnnotationRegistry<Content> registry = AnnotationRegistry.<Content>builder()
+    private final AnnotationRegistry<Content, ResolvedContent> registry = AnnotationRegistry.<Content, ResolvedContent>builder()
             .register(ID_SUMMARY, idSum)
             .register(ID, ident, ImmutableSet.of(ID_SUMMARY))
             .register(EXTENDED_ID, extIdent, ImmutableSet.of(ID))
@@ -69,7 +70,7 @@ public class AnnotationRegistryTest {
 
     @Test
     public void testMapsToOnlyTopLevelOutputAnnotation() {
-        List<OutputAnnotation<? super Content>> annotations
+        List<OutputAnnotation<? super Content, ResolvedContent>> annotations
                 = registry.activeAnnotations(ImmutableSet.of(ID_SUMMARY));
 
         assertTrue(
@@ -81,7 +82,7 @@ public class AnnotationRegistryTest {
     @Test
     public void testMapsImpliedAnnotations() {
 
-        List<OutputAnnotation<? super Content>> annotations
+        List<OutputAnnotation<? super Content, ResolvedContent>> annotations
                 = registry.activeAnnotations(ImmutableSet.of(ID));
 
         assertTrue(
@@ -98,7 +99,7 @@ public class AnnotationRegistryTest {
     @Test
     public void testTransitivelyImpliedAnnotations() {
 
-        List<OutputAnnotation<? super Content>> annotations = registry.activeAnnotations(
+        List<OutputAnnotation<? super Content, ResolvedContent>> annotations = registry.activeAnnotations(
                 ImmutableSet.of(EXTENDED_DESCRIPTION));
 
         assertTrue("1st mapped annotation should be id summary", idSum.equals(annotations.get(0)));
@@ -122,7 +123,7 @@ public class AnnotationRegistryTest {
     @Test
     public void testOverridesAnnotations() {
 
-        List<OutputAnnotation<? super Content>> annotations = registry.activeAnnotations(
+        List<OutputAnnotation<? super Content, ResolvedContent>> annotations = registry.activeAnnotations(
                 ImmutableSet.of(EXTENDED_DESCRIPTION, SERIES_SUMMARY));
 
         assertTrue("1st mapped annotation should be id summary", idSum.equals(annotations.get(0)));
@@ -152,7 +153,7 @@ public class AnnotationRegistryTest {
                 DESCRIPTION
         );
         for (List<Annotation> annotationList : Collections2.permutations(annotationSet)) {
-            List<OutputAnnotation<? super Content>> annotations = registry.activeAnnotations(
+            List<OutputAnnotation<? super Content, ResolvedContent>> annotations = registry.activeAnnotations(
                     annotationList);
 
             assertTrue(

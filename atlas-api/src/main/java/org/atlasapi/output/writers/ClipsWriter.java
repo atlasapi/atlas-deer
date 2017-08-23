@@ -6,6 +6,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import javax.annotation.Nonnull;
 
 import org.atlasapi.content.Clip;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -32,7 +33,7 @@ public class ClipsWriter implements EntityListWriter<Clip> {
         writer.writeField("title", entity.getTitle());
         writer.writeField("clipOf", entity.getClipOf());
 
-        locationsAnnotation.write(entity, writer, ctxt);
+        locationsAnnotation.write(ResolvedContent.wrap(entity), writer, ctxt);
     }
 
     @Nonnull

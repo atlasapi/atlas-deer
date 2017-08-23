@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.ResolvedContent;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -15,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
+public class SegmentEventsAnnotation extends OutputAnnotation<Content, ResolvedContent> {
 
     private final SegmentRelatedLinkMergingFetcher linkMergingFetcher;
     private final EntityListWriter<SegmentAndEventTuple> segmentWriter =
@@ -26,10 +28,10 @@ public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content entity, FieldWriter format, OutputContext ctxt) throws IOException {
-        if (entity instanceof Item) {
-            if (!((Item) entity).getSegmentEvents().isEmpty()) {
-                writeSegmentEvents(format, (Item) entity, ctxt);
+    public void write(ResolvedContent entity, FieldWriter format, OutputContext ctxt) throws IOException {
+        if (entity.getContent() instanceof Item) {
+            if (!((Item) entity.getContent()).getSegmentEvents().isEmpty()) {
+                writeSegmentEvents(format, (Item) entity.getContent(), ctxt);
             } else {
                 format.writeList(segmentWriter, ImmutableList.<SegmentAndEventTuple>of(), ctxt);
             }

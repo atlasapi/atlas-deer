@@ -11,7 +11,7 @@ import com.google.common.base.Throwables;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupIdSummaryAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
+public class ChannelGroupIdSummaryAnnotation extends OutputAnnotation<ResolvedChannelGroup, ResolvedChannelGroup> {
 
     private final IdSummaryWriter idSummaryWriter;
 

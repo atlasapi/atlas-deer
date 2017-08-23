@@ -18,7 +18,9 @@ import org.atlasapi.content.MediaType;
 import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.event.Event;
+import org.atlasapi.event.ResolvedEvent;
 import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
@@ -170,6 +172,7 @@ import com.metabroadcast.common.time.SystemClock;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import org.bouncycastle.math.raw.Mod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -625,7 +628,7 @@ public class QueryWebModule {
     }
 
     private ChannelGroupListWriter channelGroupListWriter() {
-        return new ChannelGroupListWriter(AnnotationRegistry.<ResolvedChannelGroup>builder()
+        return new ChannelGroupListWriter(AnnotationRegistry.<ResolvedChannelGroup, ResolvedChannelGroup>builder()
                 .registerDefault(CHANNEL_GROUP, new ChannelGroupAnnotation())
                 .register(
                         CHANNELS,
@@ -911,9 +914,9 @@ public class QueryWebModule {
         return new ContentListWriter(contentAnnotations());
     }
 
-    private AnnotationRegistry<Content> contentAnnotations() {
+    private AnnotationRegistry<Content, ResolvedContent> contentAnnotations() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
-        return AnnotationRegistry.<Content>builder()
+        return AnnotationRegistry.<Content, ResolvedContent>builder()
                 .registerDefault(
                         ID_SUMMARY,
                         IdentificationSummaryAnnotation.create(idSummaryWriter)
@@ -1044,14 +1047,14 @@ public class QueryWebModule {
                 .register(CHANNELS, new ChannelsAnnotation(), commonImplied)
                 .register(
                         CONTENT_SUMMARY,
-                        NullWriter.create(Content.class),
+                        NullWriter.create(ResolvedContent.class),
                         ImmutableSet.of(DESCRIPTION, BRAND_SUMMARY,
                                 SERIES_SUMMARY, BROADCASTS, LOCATIONS
                         )
                 )
                 .register(
                         CONTENT_DETAIL,
-                        NullWriter.create(Content.class),
+                        NullWriter.create(ResolvedContent.class),
                         ImmutableSet.of(
                                 EXTENDED_DESCRIPTION,
                                 SUB_ITEMS,
@@ -1116,9 +1119,9 @@ public class QueryWebModule {
                 )
                 .register(
                         SUPPRESS_EPISODE_NUMBERS,
-                        NullWriter.create(Content.class)
+                        NullWriter.create(ResolvedContent.class)
                 )
-                .register(NON_MERGED, NullWriter.create(Content.class))
+                .register(NON_MERGED, NullWriter.create(ResolvedContent.class))
                 .register(REVIEWS, new ReviewsAnnotation(
                         new ReviewsWriter(SourceWriter.sourceWriter("source")))
                 )
@@ -1129,8 +1132,8 @@ public class QueryWebModule {
     }
 
     @Bean
-    protected EntityListWriter<Topic> topicListWriter() {
-        return new TopicListWriter(AnnotationRegistry.<Topic>builder()
+    protected EntityListWriter<ResolvedContent> topicListWriter() {
+        return new TopicListWriter(AnnotationRegistry.<Topic, ResolvedContent>builder()
                 .registerDefault(
                         ID_SUMMARY,
                         IdentificationSummaryAnnotation.create(idSummaryWriter)
@@ -1146,8 +1149,8 @@ public class QueryWebModule {
     }
 
     @Bean
-    protected EntityListWriter<Event> eventListWriter() {
-        return new EventListWriter(AnnotationRegistry.<Event>builder()
+    protected EntityListWriter<ResolvedContent> eventListWriter() {
+        return new EventListWriter(AnnotationRegistry.<Event, ResolvedContent>builder()
                 .registerDefault(
                         ID_SUMMARY,
                         IdentificationSummaryAnnotation.create(idSummaryWriter)
@@ -1174,8 +1177,8 @@ public class QueryWebModule {
         return new OrganisationListWriter(new PersonListWriter());
     }
 
-    private AnnotationRegistry<Topic> topicAnnotationRegistry() {
-        return AnnotationRegistry.<Topic>builder()
+    private AnnotationRegistry<Topic, ResolvedContent> topicAnnotationRegistry() {
+        return AnnotationRegistry.<Topic, ResolvedContent>builder()
                 .registerDefault(
                         ID_SUMMARY,
                         IdentificationSummaryAnnotation.create(idSummaryWriter)
@@ -1201,7 +1204,7 @@ public class QueryWebModule {
     @SuppressWarnings("unchecked")
     private EntityListWriter<ResolvedChannel> channelListWriter() {
         return new ChannelListWriter(
-                AnnotationRegistry.<ResolvedChannel>builder()
+                AnnotationRegistry.<ResolvedChannel, ResolvedChannel>builder()
                         .registerDefault(CHANNEL, new ChannelAnnotation(channelWriter()))
                         .register(ID_SUMMARY, ChannelIdSummaryAnnotation.create(idSummaryWriter))
                         .register(
@@ -1230,14 +1233,14 @@ public class QueryWebModule {
 
     @Bean
     protected EntityListWriter<ModelClassInfo> modelListWriter() {
-        return new ModelInfoListWriter(AnnotationRegistry.<ModelClassInfo>builder()
+        return new ModelInfoListWriter(AnnotationRegistry.<ModelClassInfo, ModelClassInfo>builder()
                 .registerDefault(META_MODEL, new ModelInfoAnnotation<>(linkCreator()))
                 .build());
     }
 
     @Bean
     protected EntityListWriter<EndpointClassInfo> endpointListWriter() {
-        return new EndpointInfoListWriter(AnnotationRegistry.<EndpointClassInfo>builder()
+        return new EndpointInfoListWriter(AnnotationRegistry.<EndpointClassInfo, EndpointClassInfo>builder()
                 .registerDefault(META_ENDPOINT, new EndpointInfoAnnotation<>(linkCreator()))
                 .build());
     }

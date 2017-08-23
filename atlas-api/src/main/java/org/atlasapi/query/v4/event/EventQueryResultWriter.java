@@ -1,9 +1,12 @@
 package org.atlasapi.query.v4.event;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.event.Event;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -18,10 +21,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EventQueryResultWriter extends QueryResultWriter<Event> {
 
-    private final EntityListWriter<Event> eventListWriter;
+    private final EntityListWriter<ResolvedContent> eventListWriter;
 
     public EventQueryResultWriter(
-            EntityListWriter<Event> eventListWriter,
+            EntityListWriter<ResolvedContent> eventListWriter,
             EntityWriter<Object> licenseWriter,
             EntityWriter<HttpServletRequest> requestWriter
     ) {
@@ -36,10 +39,13 @@ public class EventQueryResultWriter extends QueryResultWriter<Event> {
         OutputContext ctxt = OutputContext.valueOf(result.getContext());
 
         if (result.isListResult()) {
-            FluentIterable<Event> events = result.getResources();
+            Iterable<ResolvedContent> events = StreamSupport.stream(result.getResources().spliterator(), false)
+                    .map(ResolvedContent::wrap)
+                    .collect(Collectors.toList());
+
             writer.writeList(eventListWriter, events, ctxt);
         } else {
-            writer.writeObject(eventListWriter, result.getOnlyResource(), ctxt);
+            writer.writeObject(eventListWriter, ResolvedContent.wrap(result.getOnlyResource()), ctxt);
         }
     }
 }

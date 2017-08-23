@@ -15,9 +15,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ModelInfoListWriter implements EntityListWriter<ModelClassInfo> {
 
-    private final AnnotationRegistry<ModelClassInfo> annotationRegistry;
+    private final AnnotationRegistry<ModelClassInfo, ModelClassInfo> annotationRegistry;
 
-    public ModelInfoListWriter(AnnotationRegistry<ModelClassInfo> annotationRegistry) {
+    public ModelInfoListWriter(AnnotationRegistry<ModelClassInfo, ModelClassInfo> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
@@ -25,7 +25,7 @@ public class ModelInfoListWriter implements EntityListWriter<ModelClassInfo> {
     public void write(ModelClassInfo entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
         ctxt.startResource(Resource.MODEL_INFO);
-        List<OutputAnnotation<? super ModelClassInfo>> annotations = ctxt
+        List<OutputAnnotation<? super ModelClassInfo, ModelClassInfo>> annotations = ctxt
                 .getAnnotations(annotationRegistry);
         for (int i = 0; i < annotations.size(); i++) {
             annotations.get(i).write(entity, writer, ctxt);

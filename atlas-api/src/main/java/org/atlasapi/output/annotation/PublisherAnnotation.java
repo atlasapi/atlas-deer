@@ -6,7 +6,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
-public class PublisherAnnotation extends OutputAnnotation<Content> {
+public class PublisherAnnotation extends OutputAnnotation<Content, Content> {
 
     public PublisherAnnotation() {
         super();

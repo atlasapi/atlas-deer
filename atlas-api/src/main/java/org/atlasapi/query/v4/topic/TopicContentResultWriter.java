@@ -16,11 +16,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class TopicContentResultWriter implements ContextualResultWriter<Topic, ResolvedContent> {
 
-    private final EntityWriter<Topic> topicWriter;
+    private final EntityWriter<ResolvedContent> topicWriter;
     private final EntityListWriter<ResolvedContent> contentWriter;
 
     public TopicContentResultWriter(
-            EntityWriter<Topic> topicWriter,
+            EntityWriter<ResolvedContent> topicWriter,
             EntityListWriter<ResolvedContent> contentWriter
     ) {
         this.topicWriter = checkNotNull(topicWriter);
@@ -40,7 +40,7 @@ public class TopicContentResultWriter implements ContextualResultWriter<Topic, R
 
         OutputContext ctxt = OutputContext.valueOf(result.getContext());
 
-        writer.writeObject(topicWriter, result.getContextResult().getOnlyResource(), ctxt);
+        writer.writeObject(topicWriter, ResolvedContent.wrap(result.getContextResult().getOnlyResource()), ctxt);
         writer.writeList(contentWriter, result.getResourceResult().getResources(), ctxt);
 
     }

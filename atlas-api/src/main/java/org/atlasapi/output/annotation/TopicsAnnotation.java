@@ -6,8 +6,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
@@ -21,27 +23,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 
-public class TopicsAnnotation extends OutputAnnotation<Content> {
-
-    private static final Function<Tag, Id> TAG_TO_ID = new Function<Tag, Id>() {
-
-        @Override
-        public Id apply(Tag input) {
-            return input.getTopic();
-        }
-    };
-    private static Function<Topic, Id> TOPIC_ID = new Function<Topic, Id>() {
-
-        @Override
-        public Id apply(Topic input) {
-            return input.getId();
-        }
-    };
+public class TopicsAnnotation extends OutputAnnotation<Content, ResolvedContent> { // TODO: add resolution - resolvedTopic?
 
     private final TopicResolver topicResolver;
-    private final EntityWriter<Topic> topicWriter;
+    private final EntityWriter<ResolvedContent> topicWriter;
 
-    public TopicsAnnotation(TopicResolver topicResolver, EntityWriter<Topic> topicListWriter) {
+    public TopicsAnnotation(TopicResolver topicResolver, EntityWriter<ResolvedContent> topicListWriter) {
         super();
         this.topicResolver = topicResolver;
         this.topicWriter = topicListWriter;
@@ -58,17 +45,17 @@ public class TopicsAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        List<Tag> tags = entity.getTags();
-        Iterable<Topic> topics = resolve(Lists.transform(tags, TAG_TO_ID));
-        final Map<Id, Topic> topicsMap = Maps.uniqueIndex(topics, TOPIC_ID);
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        List<Tag> tags = entity.getContent().getTags();
+        Iterable<Topic> topics = resolve(Lists.transform(tags, Tag::getTopic));
+        final Map<Id, Topic> topicsMap = Maps.uniqueIndex(topics, Identified::getId);
 
         writer.writeList(new EntityListWriter<Tag>() {
 
             @Override
             public void write(Tag entity, FieldWriter writer, OutputContext ctxt)
                     throws IOException {
-                writer.writeObject(topicWriter, topicsMap.get(entity.getTopic()), ctxt);
+                writer.writeObject(topicWriter, ResolvedContent.wrap(topicsMap.get(entity.getTopic())), ctxt);
                 writer.writeField("supervised", entity.isSupervised());
                 writer.writeField("weighting", entity.getWeighting());
                 writer.writeField("relationship", entity.getRelationship());

@@ -1,9 +1,12 @@
 package org.atlasapi.query.v4.topic;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
@@ -16,10 +19,10 @@ import com.google.common.collect.FluentIterable;
 
 public class TopicQueryResultWriter extends QueryResultWriter<Topic> {
 
-    private final EntityListWriter<Topic> topicListWriter;
+    private final EntityListWriter<ResolvedContent> topicListWriter;
 
     public TopicQueryResultWriter(
-            EntityListWriter<Topic> topicListWriter,
+            EntityListWriter<ResolvedContent> topicListWriter,
             EntityWriter<Object> licenseWriter,
             EntityWriter<HttpServletRequest> requestWriter
     ) {
@@ -34,10 +37,13 @@ public class TopicQueryResultWriter extends QueryResultWriter<Topic> {
         OutputContext ctxt = OutputContext.valueOf(result.getContext());
 
         if (result.isListResult()) {
-            FluentIterable<Topic> topics = result.getResources();
+            Iterable<ResolvedContent> topics = StreamSupport.stream(result.getResources().spliterator(), false)
+                    .map(ResolvedContent::wrap)
+                    .collect(Collectors.toList());
+
             writer.writeList(topicListWriter, topics, ctxt);
         } else {
-            writer.writeObject(topicListWriter, result.getOnlyResource(), ctxt);
+            writer.writeObject(topicListWriter, ResolvedContent.wrap(result.getOnlyResource()), ctxt);
         }
     }
 }

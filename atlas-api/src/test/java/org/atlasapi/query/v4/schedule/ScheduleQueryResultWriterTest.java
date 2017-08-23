@@ -54,9 +54,9 @@ public class ScheduleQueryResultWriterTest {
 
     private final ChannelResolver channelResolver = mock(ChannelResolver.class);
 
-    private final AnnotationRegistry<Content> contentAnnotations = AnnotationRegistry.<Content>builder()
+    private final AnnotationRegistry<Content, ResolvedContent> contentAnnotations = AnnotationRegistry.<Content, ResolvedContent>builder()
             .build();
-    private final AnnotationRegistry<ResolvedChannel> channelAnnotations = AnnotationRegistry.<ResolvedChannel>builder()
+    private final AnnotationRegistry<ResolvedChannel, ResolvedChannel> channelAnnotations = AnnotationRegistry.<ResolvedChannel, ResolvedChannel>builder()
             .build();
     private EntityWriter<ResolvedContent> contentWriter = new ContentListWriter(contentAnnotations);
     private EntityWriter<ResolvedBroadcast> broadcastWriter = BroadcastWriter.create(

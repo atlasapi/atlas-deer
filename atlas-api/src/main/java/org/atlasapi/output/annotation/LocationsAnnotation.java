@@ -8,6 +8,7 @@ import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.Player;
 import org.atlasapi.content.Policy;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Service;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -32,7 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class LocationsAnnotation extends OutputAnnotation<Content> {
+public class LocationsAnnotation extends OutputAnnotation<Content, ResolvedContent> { //TODO: add resolution
 
     private final EncodedLocationWriter encodedLocationWriter;
 
@@ -43,8 +44,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        writer.writeList(encodedLocationWriter, encodedLocations(entity), ctxt);
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        writer.writeList(encodedLocationWriter, encodedLocations(entity.getContent()), ctxt);
     }
 
     private Iterable<EncodedLocation> encodedLocations(Content content) {

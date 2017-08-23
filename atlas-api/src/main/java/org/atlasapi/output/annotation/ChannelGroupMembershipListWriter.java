@@ -20,7 +20,7 @@ import com.google.common.util.concurrent.Futures;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.output.writers.SourceWriter.sourceListWriter;
 
-public class ChannelGroupMembershipListWriter implements EntityListWriter<ChannelGroupMembership> {
+public class ChannelGroupMembershipListWriter implements EntityListWriter<ChannelGroupMembership> { //TODO: resolve channel groups
 
     private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter(
             "channel_groups",

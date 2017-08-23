@@ -4,12 +4,13 @@ import java.io.IOException;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Episode;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
-public class SeriesReferenceAnnotation extends OutputAnnotation<Content> {
+public class SeriesReferenceAnnotation extends OutputAnnotation<Content, ResolvedContent> {
 
     private static final String SERIES_FIELD = "series";
 
@@ -20,9 +21,9 @@ public class SeriesReferenceAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content content, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if (content instanceof Episode) {
-            Episode episode = (Episode) content;
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        if (entity.getContent() instanceof Episode) {
+            Episode episode = (Episode) entity.getContent();
             if (episode.getSeriesRef() == null) {
                 writer.writeField(SERIES_FIELD, null);
             } else {

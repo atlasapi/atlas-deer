@@ -18,49 +18,49 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 
-public class AnnotationRegistry<T> {
+public class AnnotationRegistry<T, W> {
 
-    public static final <T> Builder<T> builder() {
-        return new Builder<T>();
+    public static final <T, W> Builder<T, W> builder() {
+        return new Builder<T, W>();
     }
 
-    public static final class Builder<T> {
+    public static final class Builder<T, W> {
 
-        private final BiMap<Annotation, OutputAnnotation<? super T>> annotationMap = HashBiMap.create();
-        private final ImmutableSetMultimap.Builder<OutputAnnotation<? super T>, OutputAnnotation<? super T>> implications = ImmutableSetMultimap
+        private final BiMap<Annotation, OutputAnnotation<? super T, W>> annotationMap = HashBiMap.create();
+        private final ImmutableSetMultimap.Builder<OutputAnnotation<? super T, W>, OutputAnnotation<? super T, W>> implications = ImmutableSetMultimap
                 .builder();
-        private final ImmutableSetMultimap.Builder<OutputAnnotation<? super T>, OutputAnnotation<? super T>> overrides = ImmutableSetMultimap
+        private final ImmutableSetMultimap.Builder<OutputAnnotation<? super T, W>, OutputAnnotation<? super T, W>> overrides = ImmutableSetMultimap
                 .builder();
-        private final ImmutableList.Builder<OutputAnnotation<? super T>> defaults = ImmutableList.builder();
+        private final ImmutableList.Builder<OutputAnnotation<? super T, W>> defaults = ImmutableList.builder();
 
-        public Builder<T> register(Annotation annotation, OutputAnnotation<? super T> output) {
+        public Builder<T, W> register(Annotation annotation, OutputAnnotation<? super T, W> output) {
             annotationMap.put(annotation, output);
             return this;
         }
 
-        public Builder<T> registerDefault(Annotation annotation,
-                OutputAnnotation<? super T> output) {
+        public Builder<T, W> registerDefault(Annotation annotation,
+                OutputAnnotation<? super T, W> output) {
             this.defaults.add(output);
             return register(annotation, output);
         }
 
-        public Builder<T> register(Annotation annotation,
-                OutputAnnotation<? super T> outputAnnotation, Annotation implied) {
+        public Builder<T, W> register(Annotation annotation,
+                OutputAnnotation<? super T, W> outputAnnotation, Annotation implied) {
             return register(annotation, outputAnnotation, ImmutableSet.of(implied));
         }
 
-        public Builder<T> register(Annotation annotation, OutputAnnotation<? super T> output,
+        public Builder<T, W> register(Annotation annotation, OutputAnnotation<? super T, W> output,
                 Iterable<Annotation> implieds) {
             checkRegistered(implieds, "Cannot imply un-registered annotation '%s'");
             register(annotation, output);
             for (Annotation implied : implieds) {
-                OutputAnnotation<? super T> impliedOut = annotationMap.get(implied);
+                OutputAnnotation<? super T, W> impliedOut = annotationMap.get(implied);
                 implications.put(output, impliedOut);
             }
             return this;
         }
 
-        public Builder<T> register(Annotation annotation, OutputAnnotation<? super T> output,
+        public Builder<T, W> register(Annotation annotation, OutputAnnotation<? super T, W> output,
                 Iterable<Annotation> implieds, Iterable<Annotation> overridden) {
             checkRegistered(overridden, "Cannot override un-registered annotation '%s'");
             register(annotation, output, implieds);
@@ -68,8 +68,8 @@ public class AnnotationRegistry<T> {
             return this;
         }
 
-        public AnnotationRegistry<T> build() {
-            return new AnnotationRegistry<T>(
+        public AnnotationRegistry<T, W> build() {
+            return new AnnotationRegistry<T, W>(
                     annotationMap,
                     implications.build(),
                     overrides.build(),
@@ -77,7 +77,7 @@ public class AnnotationRegistry<T> {
             );
         }
 
-        private Iterable<OutputAnnotation<? super T>> toOutput(Iterable<Annotation> annotations) {
+        private Iterable<OutputAnnotation<? super T, W>> toOutput(Iterable<Annotation> annotations) {
             return Iterables.transform(annotations, Functions.forMap(annotationMap));
         }
 
@@ -92,16 +92,16 @@ public class AnnotationRegistry<T> {
         }
     }
 
-    private final SetMultimap<OutputAnnotation<? super T>, OutputAnnotation<? super T>> implications;
-    private final SetMultimap<OutputAnnotation<? super T>, OutputAnnotation<? super T>> overrides;
-    private final BiMap<Annotation, OutputAnnotation<? super T>> annotationMap;
-    private final Ordering<OutputAnnotation<? super T>> ordering;
-    private final ImmutableList<OutputAnnotation<? super T>> defaults;
+    private final SetMultimap<OutputAnnotation<? super T, W>, OutputAnnotation<? super T, W>> implications;
+    private final SetMultimap<OutputAnnotation<? super T, W>, OutputAnnotation<? super T, W>> overrides;
+    private final BiMap<Annotation, OutputAnnotation<? super T, W>> annotationMap;
+    private final Ordering<OutputAnnotation<? super T, W>> ordering;
+    private final ImmutableList<OutputAnnotation<? super T, W>> defaults;
 
-    private AnnotationRegistry(BiMap<Annotation, OutputAnnotation<? super T>> annotationMap,
-            SetMultimap<OutputAnnotation<? super T>, OutputAnnotation<? super T>> implications,
-            SetMultimap<OutputAnnotation<? super T>, OutputAnnotation<? super T>> overrides,
-            ImmutableList<OutputAnnotation<? super T>> defaults) {
+    private AnnotationRegistry(BiMap<Annotation, OutputAnnotation<? super T, W>> annotationMap,
+            SetMultimap<OutputAnnotation<? super T, W>, OutputAnnotation<? super T, W>> implications,
+            SetMultimap<OutputAnnotation<? super T, W>, OutputAnnotation<? super T, W>> overrides,
+            ImmutableList<OutputAnnotation<? super T, W>> defaults) {
         this.annotationMap = annotationMap;
         this.implications = implications;
         this.overrides = overrides;
@@ -111,25 +111,25 @@ public class AnnotationRegistry<T> {
                 .onResultOf(Functions.forMap(annotationMap.inverse()));
     }
 
-    public List<OutputAnnotation<? super T>> activeAnnotations(Iterable<Annotation> annotations) {
-        ImmutableList.Builder<OutputAnnotation<? super T>> writers = ImmutableList.builder();
+    public List<OutputAnnotation<? super T, W>> activeAnnotations(Iterable<Annotation> annotations) {
+        ImmutableList.Builder<OutputAnnotation<? super T, W>> writers = ImmutableList.builder();
         for (Annotation annotation : annotations) {
-            OutputAnnotation<? super T> writer = annotationMap.get(annotation);
+            OutputAnnotation<? super T, W> writer = annotationMap.get(annotation);
             if (writer != null) {
                 writers.add(writer);
             }
         }
-        List<OutputAnnotation<? super T>> flattened = flatten(writers.build());
+        List<OutputAnnotation<? super T, W>> flattened = flatten(writers.build());
         return ordering.immutableSortedCopy(flattened);
     }
 
-    private List<OutputAnnotation<? super T>> flatten(
-            Iterable<OutputAnnotation<? super T>> annotations) {
-        Set<OutputAnnotation<? super T>> activeAnnotations = Sets.newHashSet();
-        for (OutputAnnotation<? super T> annotation : annotations) {
+    private List<OutputAnnotation<? super T, W>> flatten(
+            Iterable<OutputAnnotation<? super T, W>> annotations) {
+        Set<OutputAnnotation<? super T, W>> activeAnnotations = Sets.newHashSet();
+        for (OutputAnnotation<? super T, W> annotation : annotations) {
             addWithImplied(activeAnnotations, annotation);
         }
-        for (OutputAnnotation<? super T> annotation : annotations) {
+        for (OutputAnnotation<? super T, W> annotation : annotations) {
             for (Object overridden : overrides.get(annotation)) {
                 activeAnnotations.remove(overridden);
             }
@@ -138,15 +138,15 @@ public class AnnotationRegistry<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private void addWithImplied(Set<OutputAnnotation<? super T>> builder,
-            OutputAnnotation<? super T> annotation) {
-        for (OutputAnnotation<?> implied : implications.get(annotation)) {
-            addWithImplied(builder, (OutputAnnotation<? super T>) implied);
+    private void addWithImplied(Set<OutputAnnotation<? super T, W>> builder,
+            OutputAnnotation<? super T, W> annotation) {
+        for (OutputAnnotation<?, W> implied : implications.get(annotation)) {
+            addWithImplied(builder, (OutputAnnotation<? super T, W>) implied);
         }
         builder.add(annotation);
     }
 
-    public List<OutputAnnotation<? super T>> defaultAnnotations() {
+    public List<OutputAnnotation<? super T, W>> defaultAnnotations() {
         return defaults;
     }
 

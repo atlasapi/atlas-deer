@@ -9,7 +9,7 @@ import org.atlasapi.output.OutputContext;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupMembershipAnnotation extends OutputAnnotation<ResolvedChannel> {
+public class ChannelGroupMembershipAnnotation extends OutputAnnotation<ResolvedChannel, ResolvedChannel> {
 
     private final ChannelGroupMembershipListWriter channelGroupMembershipWriter;
 

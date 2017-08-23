@@ -6,7 +6,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
-public class FilteringResourceAnnotation extends OutputAnnotation<Content> {
+public class FilteringResourceAnnotation extends OutputAnnotation<Content, Content> {
 
     public FilteringResourceAnnotation() {
         super();

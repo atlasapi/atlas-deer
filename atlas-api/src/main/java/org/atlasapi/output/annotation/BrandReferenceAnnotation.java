@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Series;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -12,7 +13,7 @@ import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class BrandReferenceAnnotation extends OutputAnnotation<Content> {
+public class BrandReferenceAnnotation extends OutputAnnotation<Content, ResolvedContent> {
 
     private static final String CONTAINER_FIELD = "container";
 
@@ -24,16 +25,16 @@ public class BrandReferenceAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content content, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if (content instanceof Item) {
-            Item item = (Item) content;
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        if (entity.getContent() instanceof Item) {
+            Item item = (Item) entity.getContent();
             if (item.getContainerRef() == null) {
                 writer.writeField(CONTAINER_FIELD, null);
             } else {
                 writer.writeObject(brandRefWriter, item.getContainerRef(), ctxt);
             }
-        } else if (content instanceof Series) {
-            Series series = (Series) content;
+        } else if (entity.getContent() instanceof Series) {
+            Series series = (Series) entity.getContent();
             if (series.getBrandRef() == null) {
                 writer.writeField(CONTAINER_FIELD, null);
             } else {

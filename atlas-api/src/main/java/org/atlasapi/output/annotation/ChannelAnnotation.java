@@ -10,7 +10,7 @@ import org.atlasapi.query.v4.channel.ChannelWriter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelAnnotation extends OutputAnnotation<ResolvedChannel> {
+public class ChannelAnnotation extends OutputAnnotation<ResolvedChannel, ResolvedChannel> {
 
     private final ChannelWriter channelWriter;
 

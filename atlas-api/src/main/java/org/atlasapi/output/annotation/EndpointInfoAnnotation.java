@@ -12,8 +12,7 @@ import org.atlasapi.query.v4.meta.LinkCreator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class EndpointInfoAnnotation<T extends EndpointClassInfo> extends
-        OutputAnnotation<T> {
+public class EndpointInfoAnnotation<T extends EndpointClassInfo> extends OutputAnnotation<T, T> {
 
     private final EntityListWriter<? super Operation> operationWriter;
     private final LinkCreator linkCreator;

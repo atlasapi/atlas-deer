@@ -17,9 +17,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class LegacyChannelListWriter implements EntityListWriter<Channel> {
 
-    private AnnotationRegistry<Channel> annotationRegistry;
+    private AnnotationRegistry<Channel, Channel> annotationRegistry;
 
-    public LegacyChannelListWriter(AnnotationRegistry<Channel> annotationRegistry) {
+    public LegacyChannelListWriter(AnnotationRegistry<Channel, Channel> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
@@ -27,7 +27,7 @@ public final class LegacyChannelListWriter implements EntityListWriter<Channel> 
     public void write(Channel entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
         ctxt.startResource(Resource.CHANNEL);
-        List<OutputAnnotation<? super Channel>> annotations = ctxt
+        List<OutputAnnotation<? super Channel, Channel>> annotations = ctxt
                 .getAnnotations(annotationRegistry);
         for (int i = 0; i < annotations.size(); i++) {
             annotations.get(i).write(entity, writer, ctxt);

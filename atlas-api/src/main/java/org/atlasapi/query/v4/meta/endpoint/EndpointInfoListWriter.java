@@ -15,9 +15,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EndpointInfoListWriter implements EntityListWriter<EndpointClassInfo> {
 
-    private final AnnotationRegistry<EndpointClassInfo> annotationRegistry;
+    private final AnnotationRegistry<EndpointClassInfo, EndpointClassInfo> annotationRegistry;
 
-    public EndpointInfoListWriter(AnnotationRegistry<EndpointClassInfo> annotationRegistry) {
+    public EndpointInfoListWriter(AnnotationRegistry<EndpointClassInfo, EndpointClassInfo> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
@@ -25,9 +25,9 @@ public class EndpointInfoListWriter implements EntityListWriter<EndpointClassInf
     public void write(EndpointClassInfo entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
         ctxt.startResource(Resource.ENDPOINT_INFO);
-        List<OutputAnnotation<? super EndpointClassInfo>> annotations = ctxt
+        List<OutputAnnotation<? super EndpointClassInfo, EndpointClassInfo>> annotations = ctxt
                 .getAnnotations(annotationRegistry);
-        for (OutputAnnotation<? super EndpointClassInfo> annotation : annotations) {
+        for (OutputAnnotation<? super EndpointClassInfo, EndpointClassInfo> annotation : annotations) {
             annotation.write(entity, writer, ctxt);
         }
         ctxt.endResource();

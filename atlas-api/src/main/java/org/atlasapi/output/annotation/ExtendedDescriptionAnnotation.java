@@ -13,6 +13,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.Film;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemSummary;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.CertificateWriter;
@@ -28,7 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
-public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
+public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content, ResolvedContent> {
 
     private final LanguageWriter languageWriter;
     private final CertificateWriter certificateWriter;
@@ -56,7 +57,8 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content desc, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        Content desc = entity.getContent();
         writer.writeList("genres", "genre", desc.getGenres(), ctxt);
         writer.writeField("presentation_channel", desc.getPresentationChannel());
         writer.writeField(

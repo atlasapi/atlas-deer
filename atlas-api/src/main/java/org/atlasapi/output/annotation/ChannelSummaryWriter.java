@@ -3,6 +3,7 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.atlasapi.content.Image;
 import org.atlasapi.entity.Alias;
@@ -18,7 +19,7 @@ import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 
-public class ChannelSummaryWriter extends OutputAnnotation<Channel> {
+public class ChannelSummaryWriter extends OutputAnnotation<Channel, Channel> {
 
     private final NumberToShortStringCodec codec;
 
@@ -26,13 +27,7 @@ public class ChannelSummaryWriter extends OutputAnnotation<Channel> {
     private final EntityListWriter<Image> imageWriter = new ImageListWriter();
 
     private static final Function<org.atlasapi.media.entity.Alias, Alias> toV4Alias =
-            new Function<org.atlasapi.media.entity.Alias, Alias>() {
-
-                @Override
-                public Alias apply(org.atlasapi.media.entity.Alias input) {
-                    return new Alias(input.getNamespace(), input.getValue());
-                }
-            };
+            input -> new Alias(input.getNamespace(), input.getValue());
 
     public ChannelSummaryWriter(NumberToShortStringCodec codec) {
         super();
@@ -49,26 +44,22 @@ public class ChannelSummaryWriter extends OutputAnnotation<Channel> {
     }
 
     private Iterable<Image> transform(Set<org.atlasapi.media.entity.Image> images) {
-        return Iterables.transform(images, new Function<org.atlasapi.media.entity.Image, Image>() {
-
-            @Override
-            public Image apply(org.atlasapi.media.entity.Image input) {
-                Image image = new Image(input.getCanonicalUri());
-                image.setType(transformEnum(input.getType(), Image.Type.class));
-                image.setColor(transformEnum(input.getColor(), Image.Color.class));
-                image.setTheme(transformEnum(input.getTheme(), Image.Theme.class));
-                image.setHeight(input.getHeight());
-                image.setWidth(input.getWidth());
-                image.setAspectRatio(transformEnum(
-                        input.getAspectRatio(),
-                        Image.AspectRatio.class
-                ));
-                image.setMimeType(input.getMimeType());
-                image.setAvailabilityStart(input.getAvailabilityStart());
-                image.setAvailabilityEnd(input.getAvailabilityEnd());
-                return image;
-            }
-        });
+        return images.stream().map(input -> {
+            Image image = new Image(input.getCanonicalUri());
+            image.setType(transformEnum(input.getType(), Image.Type.class));
+            image.setColor(transformEnum(input.getColor(), Image.Color.class));
+            image.setTheme(transformEnum(input.getTheme(), Image.Theme.class));
+            image.setHeight(input.getHeight());
+            image.setWidth(input.getWidth());
+            image.setAspectRatio(transformEnum(
+                    input.getAspectRatio(),
+                    Image.AspectRatio.class
+            ));
+            image.setMimeType(input.getMimeType());
+            image.setAvailabilityStart(input.getAvailabilityStart());
+            image.setAvailabilityEnd(input.getAvailabilityEnd());
+            return image;
+        }).collect(Collectors.toList());
     }
 
     protected <E extends Enum<E>> E transformEnum(Enum<?> from, Class<E> to) {

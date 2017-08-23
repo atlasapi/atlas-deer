@@ -10,6 +10,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.MoreObjects;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.entity.Review;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityListWriter;
@@ -17,7 +18,7 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
 
-public class ReviewsAnnotation extends OutputAnnotation<Content> {
+public class ReviewsAnnotation extends OutputAnnotation<Content, ResolvedContent> {
 
     private EntityListWriter<Review> reviewsWriter;
 
@@ -27,10 +28,13 @@ public class ReviewsAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         writer.writeList(
                 reviewsWriter,
-                populateMissingReviewSources(entity.getReviews(), entity.getSource()),
+                populateMissingReviewSources(
+                        entity.getContent().getReviews(),
+                        entity.getContent().getSource()
+                ),
                 ctxt
         );
     }

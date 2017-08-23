@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ItemSummary;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.SubItemSummaryListWriter;
@@ -17,7 +18,7 @@ import com.google.common.collect.Ordering;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SubItemSummariesAnnotations extends OutputAnnotation<Content> {
+public class SubItemSummariesAnnotations extends OutputAnnotation<Content, ResolvedContent> {
 
     private static final String SUB_ITEM_OFFSET = "sub_items_summaries.offset";
     private static final String SUB_ITEM_LIMIT = "sub_items_summaries.limit";
@@ -30,9 +31,9 @@ public class SubItemSummariesAnnotations extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if (entity instanceof Container) {
-            Container container = (Container) entity;
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        if (entity.getContent() instanceof Container) {
+            Container container = (Container) entity.getContent();
 
             Integer offset = 0;
             Integer limit = Integer.MAX_VALUE;

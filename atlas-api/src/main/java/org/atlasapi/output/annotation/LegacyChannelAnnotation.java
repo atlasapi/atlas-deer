@@ -12,7 +12,7 @@ import org.atlasapi.output.OutputContext;
 import static org.atlasapi.output.writers.SourceWriter.sourceListWriter;
 import static org.atlasapi.output.writers.SourceWriter.sourceWriter;
 
-public class LegacyChannelAnnotation extends OutputAnnotation<Channel> {
+public class LegacyChannelAnnotation extends OutputAnnotation<Channel, Channel> {
 
     private static final EntityListWriter<Publisher> AVAILABLE_FROM_WRITER = sourceListWriter(
             "available_from");

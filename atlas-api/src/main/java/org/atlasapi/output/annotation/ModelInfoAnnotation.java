@@ -10,8 +10,7 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.FieldInfoWriter;
 import org.atlasapi.query.v4.meta.LinkCreator;
 
-public class ModelInfoAnnotation<T extends ModelClassInfo> extends
-        OutputAnnotation<T> {
+public class ModelInfoAnnotation<T extends ModelClassInfo> extends OutputAnnotation<T, T> {
 
     private final EntityListWriter<? super FieldInfo> fieldInfoWriter;
 

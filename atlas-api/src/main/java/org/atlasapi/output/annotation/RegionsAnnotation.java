@@ -11,7 +11,7 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ChannelGroupWriter;
 import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
 
-public class RegionsAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
+public class RegionsAnnotation extends OutputAnnotation<ResolvedChannelGroup, ResolvedChannelGroup> {
 
     private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter(
             "regions",

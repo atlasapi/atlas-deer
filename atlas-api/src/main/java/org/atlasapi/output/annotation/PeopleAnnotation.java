@@ -5,18 +5,19 @@ import java.io.IOException;
 import org.atlasapi.content.Actor;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.CrewMember;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
-public class PeopleAnnotation extends OutputAnnotation<Content> {
+public class PeopleAnnotation extends OutputAnnotation<Content, ResolvedContent> {
 
     public PeopleAnnotation() {
         super();
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         writer.writeList(new EntityListWriter<CrewMember>() {
 
             @Override
@@ -52,7 +53,7 @@ public class PeopleAnnotation extends OutputAnnotation<Content> {
             public String fieldName(CrewMember entity) {
                 return "person";
             }
-        }, entity.people(), ctxt);
+        }, entity.getContent().people(), ctxt);
     }
 
 }

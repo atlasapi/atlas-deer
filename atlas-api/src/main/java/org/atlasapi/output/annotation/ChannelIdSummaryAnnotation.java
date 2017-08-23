@@ -9,7 +9,7 @@ import org.atlasapi.output.writers.IdSummaryWriter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelIdSummaryAnnotation extends OutputAnnotation<ResolvedChannel> {
+public class ChannelIdSummaryAnnotation extends OutputAnnotation<ResolvedChannel, ResolvedChannel> {
 
     private final IdSummaryWriter idSummaryWriter;
 

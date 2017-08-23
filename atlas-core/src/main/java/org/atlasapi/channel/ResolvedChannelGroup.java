@@ -1,5 +1,7 @@
 package org.atlasapi.channel;
 
+import org.atlasapi.output.Resolved;
+
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;

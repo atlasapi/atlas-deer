@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Broadcast;
@@ -11,7 +12,9 @@ import org.atlasapi.content.ChannelsBroadcastFilter;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.output.FieldWriter;
@@ -24,7 +27,7 @@ import com.google.common.util.concurrent.Futures;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
+public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content, ResolvedContent> { //TODO: add resolution
 
     private final MergingEquivalentsResolver<Content> contentResolver;
     private final UpcomingContentDetailWriter upcomingContentDetailWriter;
@@ -40,12 +43,12 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if (!(entity instanceof Container)) {
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        if (!(entity.getContent() instanceof Container)) {
             return;
         }
 
-        Container container = (Container) entity;
+        Container container = (Container) entity.getContent();
         if (container.getUpcomingContent().isEmpty()) {
             writer.writeList(upcomingContentDetailWriter, ImmutableList.of(), ctxt);
             return;
@@ -53,7 +56,7 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
 
         Set<Id> contentIds = container.getUpcomingContent().keySet()
                 .stream()
-                .map(i -> i.getId())
+                .map(ResourceRef::getId)
                 .collect(Collectors.toSet());
 
         final ResolvedEquivalents<Content> resolvedEquivalents = Futures.get(
@@ -90,7 +93,11 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
                 .filter(i -> !i.getBroadcasts().isEmpty())
                 .collect(Collectors.toList());
 
-        writer.writeList(upcomingContentDetailWriter, items, ctxt);
+        Iterable<ResolvedContent> resolved = StreamSupport.stream(items.spliterator(), false)
+                .map(ResolvedContent::wrap)
+                .collect(Collectors.toList());
+
+        writer.writeList(upcomingContentDetailWriter, resolved, ctxt);
 
     }
 }

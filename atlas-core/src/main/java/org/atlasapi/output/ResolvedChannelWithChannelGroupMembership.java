@@ -1,6 +1,5 @@
 package org.atlasapi.output;
 
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ResolvedChannel;
 

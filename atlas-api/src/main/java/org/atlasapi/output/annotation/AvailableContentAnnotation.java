@@ -4,13 +4,14 @@ import java.io.IOException;
 
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ItemRefWriter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class AvailableContentAnnotation extends OutputAnnotation<Content> {
+public class AvailableContentAnnotation extends OutputAnnotation<Content, ResolvedContent> {
 
     private final ItemRefWriter itemRefWriter;
 
@@ -19,12 +20,12 @@ public class AvailableContentAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if (!(entity instanceof Container)) {
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        if (!(entity.getContent() instanceof Container)) {
             return;
         }
 
-        Container container = (Container) entity;
+        Container container = (Container) entity.getContent();
         writer.writeList(
                 itemRefWriter,
                 container.getAvailableContent().keySet(),

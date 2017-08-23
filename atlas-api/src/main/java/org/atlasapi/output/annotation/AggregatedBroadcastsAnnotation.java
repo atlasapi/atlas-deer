@@ -8,6 +8,7 @@ import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.BroadcastAggregator;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.output.FieldWriter;
@@ -18,7 +19,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
+public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content, ResolvedContent> { //TODO: check this out
 
     private final BroadcastWriter broadcastWriter;
     private final BroadcastAggregator broadcastAggregator;
@@ -51,12 +52,12 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
 
     @Override
     public void write(
-            Content entity,
+            ResolvedContent entity,
             FieldWriter writer,
             OutputContext ctxt
     ) throws IOException {
-        if(entity instanceof Item) {
-            writeAggregatedBroadcasts((Item)entity, writer, ctxt);
+        if(entity.getContent() instanceof Item) {
+            writeAggregatedBroadcasts((Item)entity.getContent(), writer, ctxt);
         }
     }
 

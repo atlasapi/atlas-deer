@@ -25,6 +25,7 @@ import org.atlasapi.content.ChannelsBroadcastFilter;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ResolvedBroadcast;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.FieldWriter;
@@ -40,7 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-public class BroadcastsAnnotation extends OutputAnnotation<Content> {
+public class BroadcastsAnnotation extends OutputAnnotation<Content, ResolvedContent> { //TODO: add resolution
 
     private static final Logger log = LoggerFactory.getLogger(BroadcastsAnnotation.class);
 
@@ -74,17 +75,18 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     }
 
     @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if (entity instanceof Item) {
-            writeBroadcasts(writer, (Item) entity, ctxt);
+    public void write(ResolvedContent entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        if (entity.getContent() instanceof Item) {
+            writeBroadcasts(writer, entity, ctxt);
         }
     }
 
     private void writeBroadcasts(
             FieldWriter writer,
-            Item item,
+            ResolvedContent entity,
             OutputContext ctxt
     ) throws IOException {
+        Item item = (Item) entity.getContent();
         Stream<Broadcast> broadcastStream = item.getBroadcasts().stream()
                 .filter(Broadcast::isActivelyPublished);
 

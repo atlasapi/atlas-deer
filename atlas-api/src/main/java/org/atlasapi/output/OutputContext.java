@@ -62,7 +62,7 @@ public class OutputContext {
         return annotations.forPath(resources);
     }
 
-    public <T> List<OutputAnnotation<? super T>> getAnnotations(AnnotationRegistry<T> registry) {
+    public <T, W> List<OutputAnnotation<? super T, W>> getAnnotations(AnnotationRegistry<T, W> registry) {
         ImmutableSet<Annotation> active = annotations.forPath(resources);
         if (active == null || active.isEmpty()) {
             return registry.defaultAnnotations();

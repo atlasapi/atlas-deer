@@ -6,6 +6,7 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import org.atlasapi.content.Item;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -15,10 +16,10 @@ import org.atlasapi.output.annotation.LocationsAnnotation;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ItemDetailWriter implements EntityListWriter<Item> {
+public class ItemDetailWriter implements EntityListWriter<ResolvedContent> {
 
     private final IdentificationSummaryAnnotation identificationSummaryAnnotation;
-    private final DescriptionAnnotation<Item> descriptionAnnotation = new DescriptionAnnotation<>();
+    private final DescriptionAnnotation<Item, ResolvedContent> descriptionAnnotation = new DescriptionAnnotation<>();
     private final Optional<LocationsAnnotation> locationsAnnotation;
     private final String listName;
 
@@ -34,7 +35,7 @@ public class ItemDetailWriter implements EntityListWriter<Item> {
     }
 
     @Override
-    public void write(@Nonnull Item entity, @Nonnull FieldWriter writer,
+    public void write(@Nonnull ResolvedContent entity, @Nonnull FieldWriter writer,
             @Nonnull OutputContext ctxt) throws IOException {
         identificationSummaryAnnotation.write(entity, writer, ctxt);
         descriptionAnnotation.write(entity, writer, ctxt);
@@ -45,7 +46,7 @@ public class ItemDetailWriter implements EntityListWriter<Item> {
 
     @Nonnull
     @Override
-    public String fieldName(Item entity) {
+    public String fieldName(ResolvedContent entity) {
         return "item";
     }
 

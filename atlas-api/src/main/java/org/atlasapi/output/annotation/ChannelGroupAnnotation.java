@@ -7,7 +7,7 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ChannelGroupWriter;
 
-public class ChannelGroupAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
+public class ChannelGroupAnnotation extends OutputAnnotation<ResolvedChannelGroup, ResolvedChannelGroup> {
 
     private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter(
             "channel_groups",

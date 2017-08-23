@@ -5,6 +5,7 @@ import java.util.Iterator;
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.content.EpisodeRef;
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.content.Series;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -55,7 +56,7 @@ public class SubItemAnnotationTest {
         ArgumentCaptor<Iterable> captor = ArgumentCaptor.forClass(Iterable.class);
         MockHttpServletRequest httpReq = new MockHttpServletRequest("GET", "");
         httpReq.setParameter("sub_item.ordering", "reverse");
-        anno.write(series, writer, OutputContext.valueOf(
+        anno.write(ResolvedContent.wrap(series), writer, OutputContext.valueOf(
                 QueryContext.create(application, ActiveAnnotations.standard(), httpReq))
         );
         verify(writer).writeList(any(), captor.capture(), any());
@@ -91,7 +92,7 @@ public class SubItemAnnotationTest {
         MockHttpServletRequest httpReq = new MockHttpServletRequest("GET", "");
         httpReq.setParameter("sub_items.ordering", "reverse");
 
-        anno.write(series, writer, OutputContext.valueOf(
+        anno.write(ResolvedContent.wrap(series), writer, OutputContext.valueOf(
                 QueryContext.create(application, ActiveAnnotations.standard(), httpReq))
         );
         verify(writer).writeList(any(), captor.capture(), any());
