@@ -127,6 +127,7 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         format.writeList(ALIAS_WRITER, channel.getAliases(), ctxt);
         format.writeList("genres", "genres", channel.getGenres(), ctxt);
         format.writeField("high_definition", channel.getHighDefinition());
+        format.writeField("timeshifted", channel.getTimeshifted());
         format.writeField("regional", channel.getRegional());
         format.writeList(RELATED_LINKS_WRITER, channel.getRelatedLinks(), ctxt);
         format.writeField("start_date", channel.getStartDate());
