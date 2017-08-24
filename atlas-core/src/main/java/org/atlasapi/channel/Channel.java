@@ -1,6 +1,8 @@
 package org.atlasapi.channel;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.Nullable;
 
@@ -15,7 +17,6 @@ import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -33,6 +34,7 @@ public class Channel extends Identified implements Sourced {
     private final MediaType mediaType;
     private final String key;
     private final Boolean highDefinition;
+    private final Boolean timeshifted;
     private final Boolean regional;
     private final Publisher broadcaster;
     private final ImmutableSet<Publisher> availableFrom;
@@ -64,6 +66,7 @@ public class Channel extends Identified implements Sourced {
             MediaType mediaType,
             String key,
             Boolean highDefinition,
+            Boolean timeshifted,
             Boolean regional,
             Publisher broadcaster,
             Set<Publisher> availableFrom,
@@ -94,6 +97,7 @@ public class Channel extends Identified implements Sourced {
         this.mediaType = mediaType;
         this.key = key;
         this.highDefinition = highDefinition;
+        this.timeshifted = timeshifted;
         this.regional = regional;
         this.broadcaster = broadcaster;
         this.availableFrom = ImmutableSet.copyOf(availableFrom);
@@ -140,6 +144,11 @@ public class Channel extends Identified implements Sourced {
     @FieldName("high_definition")
     public Boolean getHighDefinition() {
         return highDefinition;
+    }
+
+    @FieldName("timeshifted")
+    public Boolean getTimeshifted() {
+        return timeshifted;
     }
 
     @FieldName("regional")
@@ -281,6 +290,7 @@ public class Channel extends Identified implements Sourced {
         private MediaType mediaType;
         private String key;
         private Boolean highDefinition;
+        private Boolean timeshifted;
         private Boolean regional;
         private Boolean adult;
         private Publisher broadcaster;
@@ -335,6 +345,11 @@ public class Channel extends Identified implements Sourced {
 
         public Builder withHighDefinition(Boolean highDefinition) {
             this.highDefinition = highDefinition;
+            return this;
+        }
+
+        public Builder withTimeshifted(Boolean timeshifted) {
+            this.timeshifted = timeshifted;
             return this;
         }
 
@@ -404,16 +419,9 @@ public class Channel extends Identified implements Sourced {
 
             Iterables.addAll(
                     this.variations,
-                    Iterables.transform(
-                            variations,
-                            new Function<Long, ChannelRef>() {
-
-                                @Override
-                                public ChannelRef apply(Long input) {
-                                    return buildChannelRef(input);
-                                }
-                            }
-                    )
+                    StreamSupport.stream(variations.spliterator(), false)
+                            .map(this::buildChannelRef)
+                            .collect(Collectors.toList())
             );
             return this;
         }
@@ -462,6 +470,7 @@ public class Channel extends Identified implements Sourced {
             this.mediaType = channel.getMediaType();
             this.key = channel.getKey();
             this.highDefinition = channel.getHighDefinition();
+            this.timeshifted = channel.getTimeshifted();
             this.regional = channel.getRegional();
             this.broadcaster = channel.getBroadcaster();
             this.availableFrom = channel.availableFrom;
@@ -532,6 +541,7 @@ public class Channel extends Identified implements Sourced {
                     mediaType,
                     key,
                     highDefinition,
+                    timeshifted,
                     regional,
                     broadcaster,
                     availableFrom,

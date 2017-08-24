@@ -78,6 +78,7 @@ public class BroadcastAggregator {
                         broadcast,
                         ResolvedChannel.builder(resolveChannel(broadcast.getChannelId())).build())
                 )
+                .filter(resolved -> isNotTimeshiftedOrHd(resolved.getResolvedChannel().getChannel()))
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         resolvedBroadcast -> resolvedBroadcast.getBroadcast().getTransmissionTime(),
                         resolvedBroadcast -> resolvedBroadcast
@@ -215,6 +216,7 @@ public class BroadcastAggregator {
         Map<Id, String> channelIdAndTitles = broadcasts.stream()
                 .map(ResolvedBroadcast::getResolvedChannel)
                 .map(ResolvedChannel::getChannel)
+                .filter(this::isNotTimeshiftedOrHd)
                 .collect(Collectors.toMap(
                         Channel::getId,
                         Channel::getTitle,
@@ -342,6 +344,7 @@ public class BroadcastAggregator {
                 .filter(channelRef -> !ids.contains(channelRef.getId()))
                 .filter(channelRef -> platformIds.isEmpty() || platformIds.contains(channelRef.getId()))
                 .map(channelRef -> resolveChannel(channelRef.getId()))
+                .filter(this::isNotTimeshiftedOrHd)
                 .map(channel -> ChannelVariantRef.create(
                         parseChildTitle(parent.getTitle(), channel.getTitle()),
                         channel.getId())
@@ -368,6 +371,13 @@ public class BroadcastAggregator {
                 .collect(MoreCollectors.toImmutableList());
 
         return downweighedIds.stream().noneMatch(includedVariantIds::contains);
+    }
+
+    boolean isNotTimeshiftedOrHd(Channel channel) {
+        boolean timeshifted = MoreObjects.firstNonNull(channel.getTimeshifted(), false);
+        boolean hd = MoreObjects.firstNonNull(channel.getHighDefinition(), false);
+
+        return !(timeshifted || hd);
     }
 
 }
