@@ -1,6 +1,6 @@
 package org.atlasapi.system.bootstrap;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import org.atlasapi.content.Content;
 
@@ -76,7 +76,7 @@ public class ColumbusTelescopeReporter {
                 .withType(Event.Type.MIGRATION)
                 .withStatus(eventStatus)
                 .withEntityState(entityState)
-                .withTimestamp(LocalDateTime.now())
+                .withTimestamp(Instant.now())
                 .build();
     }
 
