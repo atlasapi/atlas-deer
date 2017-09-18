@@ -2,7 +2,6 @@ package org.atlasapi.output.annotation;
 
 import java.io.IOException;
 
-import com.sun.tools.javac.comp.Resolve;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.ResolvedContent;
 import org.atlasapi.media.entity.Publisher;
