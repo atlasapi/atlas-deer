@@ -10,6 +10,8 @@ public class ResolvedContent {
 
     private ResolvedContent(Builder builder) {
         content = builder.content;
+        described = builder.described;
+        event = builder.event;
     }
 
     public Content getContent() {
