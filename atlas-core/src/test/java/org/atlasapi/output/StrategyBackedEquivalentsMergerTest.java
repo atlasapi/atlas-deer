@@ -50,7 +50,7 @@ public class StrategyBackedEquivalentsMergerTest {
                 .thenReturn(getConfig(ImmutableList.of()));
 
         when(mergingApplication.getConfiguration())
-                .thenReturn(getConfig(ImmutableList.of(Publisher.TED)));
+                .thenReturn(getConfig(ImmutableList.of(Publisher.BBC, Publisher.TED)));
     }
 
     @Test
