@@ -1,15 +1,12 @@
 package org.atlasapi.system.bootstrap.workers;
 
 import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import com.metabroadcast.columbus.telescope.client.TelescopeReporterFactory;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.media.entity.Publisher;
@@ -99,12 +96,6 @@ public class BootstrapWorkersModule {
     private final String columbusTelescopeHost =
             Configurer.get("reporting.columbus-telescope.host").get();
     private final String reportingEnvironment = Configurer.getPlatform();
-    private final Integer columbusTelescopeThreadCapacity =
-            Configurer.get("reporting.columbus-telescope.thread.capacity").toInt();
-    private final Integer columbusTelescopeThreadPoolSize =
-            Configurer.get("reporting.columbus-telescope.thread.pool.size").toInt();
-    private final Integer columbusTelescopeThreadPoolSizeMax =
-            Configurer.get("reporting.columbus-telescope.thread.pool.size.max").toInt();
 
     private final Set<Publisher> ignoredScheduleSources = Sets.difference(
             Publisher.all(),
@@ -139,12 +130,7 @@ public class BootstrapWorkersModule {
                 WORKER_METRIC_PREFIX + workerName + ".",
                 metricsModule.metrics(),
                 ColumbusTelescopeReporter.create(
-                        TelescopeClientImpl.create(
-                                columbusTelescopeHost,
-                                getTelescopeExecutor(),
-                                null,
-                                null
-                        ),
+                        TelescopeClientImpl.create(columbusTelescopeHost),
                         reportingEnvironment,
                         getObjectMapper()
                 )
@@ -176,12 +162,7 @@ public class BootstrapWorkersModule {
                 WORKER_METRIC_PREFIX + workerName + ".",
                 metricsModule.metrics(),
                 ColumbusTelescopeReporter.create(
-                        TelescopeClientImpl.create(
-                                columbusTelescopeHost,
-                                getTelescopeExecutor(),
-                                null,
-                                null
-                        ),
+                        TelescopeClientImpl.create(columbusTelescopeHost),
                         reportingEnvironment,
                         getObjectMapper()
                 )
@@ -446,15 +427,5 @@ public class BootstrapWorkersModule {
         mapper.registerModule(new JacksonMessageSerializer.MessagingModule());
 
         return mapper;
-    }
-
-    private ThreadPoolExecutor getTelescopeExecutor() {
-        return new ThreadPoolExecutor(
-                columbusTelescopeThreadPoolSize, columbusTelescopeThreadPoolSizeMax,
-                500,
-                TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(columbusTelescopeThreadCapacity),
-                new TelescopeReporterFactory.RejectedExecutionHandlerImpl()
-        );
     }
 }
