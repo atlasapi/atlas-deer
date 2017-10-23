@@ -111,6 +111,9 @@ CMD java \
     -Dredux.password="$REDUX_PASSWORD" \
     -Dredux.username="$REDUX_USERNAME" \
     -Dreporting.columbus-telescope.host="$REPORTING_COLUMBUS_TELESCOPE_HOST" \
+    -Dreporting.columbus-telescope.thread.capacity="$REPORTING_COLUMBUS_TELESCOPE_THREAD_CAPACITY" \
+    -Dreporting.columbus-telescope.thread.pool.size="$REPORTING_COLUMBUS_TELESCOPE_THREAD_POOL_SIZE" \
+    -Dreporting.columbus-telescope.thread.pool.size.max="$REPORTING_COLUMBUS_TELESCOPE_THREAD_POOL_SIZE_MAX" \
     -Drp.password.unique="$RP_PASSWORD_UNIQUE" \
     -Ds3.access="$S3_ACCESS" \
     -Ds3.secret="$S3_SECRET" \
