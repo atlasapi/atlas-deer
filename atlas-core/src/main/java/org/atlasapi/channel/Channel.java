@@ -383,11 +383,6 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
-        public Builder replaceChannelGroups(Iterable<ChannelGroupMembership> channelGroups) {
-            this.channelGroups = ImmutableSet.copyOf(channelGroups);
-            return this;
-        }
-
         public Builder withGenre(String genre) {
             this.genres.add(genre);
             return this;
