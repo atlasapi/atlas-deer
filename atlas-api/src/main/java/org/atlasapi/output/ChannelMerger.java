@@ -120,7 +120,7 @@ public class ChannelMerger {
                 .filter(membership -> publishers.contains(membership.getChannelGroup().getSource()))
                 .collect(MoreCollectors.toImmutableList());
 
-        mergedChannel.withReplacementChannelGroups(filteredMemberships);
+        mergedChannel.replaceChannelGroups(filteredMemberships);
     }
 
 }

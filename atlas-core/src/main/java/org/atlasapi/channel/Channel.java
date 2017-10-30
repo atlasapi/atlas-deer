@@ -383,7 +383,7 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
-        public Builder withReplacementChannelGroups(Iterable<ChannelGroupMembership> channelGroups) {
+        public Builder replaceChannelGroups(Iterable<ChannelGroupMembership> channelGroups) {
             this.channelGroups = ImmutableSet.copyOf(channelGroups);
             return this;
         }
