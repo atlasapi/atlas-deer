@@ -1,11 +1,13 @@
 package org.atlasapi.output;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.media.entity.Publisher;
 
 import java.util.List;
@@ -49,6 +51,8 @@ public class ChannelMerger {
         mergeAdvertiseFrom(orderedPublishers, channelMap, mergedChannel);
         mergeAdvertiseTo(orderedPublishers, channelMap, mergedChannel);
         mergeAliases(orderedPublishers, channelMap, mergedChannel);
+
+        filterChannelGroups(orderedPublishers, channel, mergedChannel);
 
         return mergedChannel.build();
     }
@@ -105,4 +109,18 @@ public class ChannelMerger {
             }
         }
     }
+
+    @VisibleForTesting
+    void filterChannelGroups(
+            List<Publisher> publishers,
+            Channel channel,
+            Channel.Builder mergedChannel
+    ) {
+        List<ChannelGroupMembership> filteredMemberships = channel.getChannelGroups().stream()
+                .filter(membership -> publishers.contains(membership.getChannelGroup().getSource()))
+                .collect(MoreCollectors.toImmutableList());
+
+        mergedChannel.withReplacementChannelGroups(filteredMemberships);
+    }
+
 }
