@@ -59,15 +59,18 @@ public class ChannelGroupMembershipListWriter implements EntityListWriter<Channe
                         }
                 ), 1, TimeUnit.MINUTES, IOException.class
         );
-        format.writeObject(CHANNEL_GROUP_WRITER, "channel_group", channelGroup, ctxt);
-        if (entity instanceof ChannelNumbering) {
-            ChannelNumbering channelNumbering = ((ChannelNumbering) entity);
-            format.writeField("channel_number", channelNumbering.getChannelNumber().orElse(null));
-            format.writeField("start_date", channelNumbering.getStartDate());
+
+        if (ctxt.getApplication().getConfiguration().isReadEnabled(channelGroup.getSource())) {
+            format.writeObject(CHANNEL_GROUP_WRITER, "channel_group", channelGroup, ctxt);
+            if (entity instanceof ChannelNumbering) {
+                ChannelNumbering channelNumbering = ((ChannelNumbering) entity);
+                format.writeField("channel_number",
+                        channelNumbering.getChannelNumber().orElse(null));
+                format.writeField("start_date", channelNumbering.getStartDate());
+            }
+
+            format.writeObject(PUBLISHER_WRITER, entity.getChannelGroup().getSource(), ctxt);
         }
-
-        format.writeObject(PUBLISHER_WRITER, entity.getChannelGroup().getSource(), ctxt);
-
     }
 
     @Override
