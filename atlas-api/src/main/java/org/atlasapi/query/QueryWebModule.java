@@ -59,6 +59,7 @@ import org.atlasapi.output.annotation.EventDetailsAnnotation;
 import org.atlasapi.output.annotation.ExtendedDescriptionAnnotation;
 import org.atlasapi.output.annotation.ExtendedIdentificationAnnotation;
 import org.atlasapi.output.annotation.FirstBroadcastAnnotation;
+import org.atlasapi.output.annotation.FullyResolvingChannelGroupMerger;
 import org.atlasapi.output.annotation.IdentificationAnnotation;
 import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
 import org.atlasapi.output.annotation.KeyPhrasesAnnotation;
@@ -1205,7 +1206,8 @@ public class QueryWebModule {
                                                 "channel_groups",
                                                 "channel_group",
                                                 channelGroupResolver
-                                        )
+                                        ),
+                                        FullyResolvingChannelGroupMerger.create(channelResolver)
                                 ),
                                 CHANNEL
                         )

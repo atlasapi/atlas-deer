@@ -27,6 +27,10 @@ public class FullyResolvingChannelGroupMerger {
         this.channelResolver = checkNotNull(channelResolver);
     }
 
+    public static FullyResolvingChannelGroupMerger create(ChannelResolver channelResolver) {
+        return new FullyResolvingChannelGroupMerger(channelResolver);
+    }
+
     public ImmutableSet<ChannelGroupMembership> resolveAndMergeChannelGroups(
             OutputContext ctxt,
             Channel channel
