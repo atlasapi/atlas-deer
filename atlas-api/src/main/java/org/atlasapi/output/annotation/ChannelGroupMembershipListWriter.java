@@ -52,7 +52,7 @@ public class ChannelGroupMembershipListWriter implements EntityListWriter<Channe
             throws IOException {
         ChannelGroup channelGroup = Futures.get(
                 Futures.transform(
-                        this.channelGroupResolver.resolveIds(ImmutableSet.of(entity.getChannel()
+                        this.channelGroupResolver.resolveIds(ImmutableSet.of(entity.getChannelGroup()
                                 .getId())),
                         (Resolved<ChannelGroup<?>> input) -> {
                             return input.getResources().first().get();
@@ -66,7 +66,7 @@ public class ChannelGroupMembershipListWriter implements EntityListWriter<Channe
             format.writeField("start_date", channelNumbering.getStartDate());
         }
 
-        format.writeObject(PUBLISHER_WRITER, entity.getChannel().getSource(), ctxt);
+        format.writeObject(PUBLISHER_WRITER, entity.getChannelGroup().getSource(), ctxt);
 
     }
 
