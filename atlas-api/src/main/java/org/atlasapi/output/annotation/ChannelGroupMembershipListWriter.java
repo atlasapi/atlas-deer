@@ -50,16 +50,17 @@ public class ChannelGroupMembershipListWriter implements EntityListWriter<Channe
     @Override
     public void write(ChannelGroupMembership entity, FieldWriter format, OutputContext ctxt)
             throws IOException {
-        ChannelGroup channelGroup = Futures.get(
+        ChannelGroup channelGroup = Futures.getChecked(
                 Futures.transform(
-                        this.channelGroupResolver.resolveIds(ImmutableSet.of(entity.getChannelGroup()
-                                .getId())),
-                        (Resolved<ChannelGroup<?>> input) -> {
-                            return input.getResources().first().get();
-                        }
-                ), 1, TimeUnit.MINUTES, IOException.class
+                        this.channelGroupResolver.resolveIds(
+                                ImmutableSet.of(entity.getChannelGroup().getId())
+                        ),
+                        (Resolved<ChannelGroup<?>> input) -> input.getResources().first().get()
+                ), IOException.class, 1, TimeUnit.MINUTES
         );
 
+        // need to resolve before filtering,
+        // as the entity.getChannelGroup().getSource() is always metabroadcast.com
         if (ctxt.getApplication().getConfiguration().isReadEnabled(channelGroup.getSource())) {
             format.writeObject(CHANNEL_GROUP_WRITER, "channel_group", channelGroup, ctxt);
             if (entity instanceof ChannelNumbering) {
