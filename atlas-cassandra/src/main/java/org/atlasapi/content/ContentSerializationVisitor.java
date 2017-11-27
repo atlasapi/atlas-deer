@@ -3,7 +3,10 @@ package org.atlasapi.content;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.AwardSerializer;
@@ -292,12 +295,14 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
             );
         }
 
-        builder.addAllItemSummaries(
-                Iterables.transform(
-                        container.getItemSummaries(),
-                        is -> itemSummarySerializer.serialize(is).build()
-                )
-        );
+        if (container.getItemSummaries() != null) {
+            builder.addAllItemSummaries(
+                    container.getItemSummaries().stream()
+                            .filter(is -> !Strings.isNullOrEmpty(is.getTitle()))    // Summaries without titles cannot be serialized
+                            .map(is -> itemSummarySerializer.serialize(is).build()) // which causes the brand to fail to update.
+                            .collect(Collectors.toList())
+            );
+        }
 
         if (container.getCertificates() != null) {
             builder.addAllCertificates(container.getCertificates().stream()
