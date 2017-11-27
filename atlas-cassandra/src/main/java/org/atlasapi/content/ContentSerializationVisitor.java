@@ -2,8 +2,11 @@ package org.atlasapi.content;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.google.common.base.MoreObjects;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.AwardSerializer;
@@ -24,8 +27,15 @@ import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.Iterables;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
 
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
+
+    private static final Logger log = LoggerFactory.getLogger(ContentSerializationVisitor.class);
 
     private final BroadcastSerializer broadcastSerializer = BroadcastSerializer.create();
     private final ImageSerializer imageSerializer = new ImageSerializer();
@@ -291,13 +301,15 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
                     )
             );
         }
-
-        builder.addAllItemSummaries(
-                Iterables.transform(
-                        container.getItemSummaries(),
-                        is -> itemSummarySerializer.serialize(is).build()
-                )
-        );
+        
+        if (container.getItemSummaries() != null) {
+            builder.addAllItemSummaries(
+                    container.getItemSummaries().stream()
+                            .map(this::serializeItemSummary)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList())
+            );
+        }
 
         if (container.getCertificates() != null) {
             builder.addAllCertificates(container.getCertificates().stream()
@@ -310,6 +322,16 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
 
         return builder;
+    }
+
+    @Nullable
+    private ContentProtos.ItemSummary serializeItemSummary(ItemSummary itemSummary) {
+        try {
+            return itemSummarySerializer.serialize(itemSummary).build();
+        } catch (Exception e) {
+            log.error("Failed to serialize ItemSummary: {}", itemSummary.getItemRef().getId(), e);
+            return null;
+        }
     }
 
     @Override
