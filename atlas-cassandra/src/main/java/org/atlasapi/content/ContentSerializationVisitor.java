@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,8 +28,12 @@ import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.Iterables;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
+
+    private static final Logger log = LoggerFactory.getLogger(ContentSerializationVisitor.class);
 
     private final BroadcastSerializer broadcastSerializer = BroadcastSerializer.create();
     private final ImageSerializer imageSerializer = new ImageSerializer();
@@ -294,12 +299,19 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
                     )
             );
         }
-
+        
         if (container.getItemSummaries() != null) {
             builder.addAllItemSummaries(
                     container.getItemSummaries().stream()
-                            .filter(is -> !Strings.isNullOrEmpty(is.getTitle()))    // Summaries without titles cannot be serialized
-                            .map(is -> itemSummarySerializer.serialize(is).build()) // which causes the brand to fail to update.
+                            .map(is -> {
+                                try {
+                                    return itemSummarySerializer.serialize(is).build();
+                                } catch (Exception e) {
+                                    log.error("ItemSummary without title: {}", is.getItemRef().getId(), e);
+                                    return null;
+                                }
+                            })
+                            .filter(Objects::nonNull)
                             .collect(Collectors.toList())
             );
         }
