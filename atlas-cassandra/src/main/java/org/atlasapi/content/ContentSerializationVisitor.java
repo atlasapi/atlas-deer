@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.google.common.base.MoreObjects;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.AwardSerializer;
@@ -28,6 +29,9 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
 
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
 
@@ -301,14 +305,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         if (container.getItemSummaries() != null) {
             builder.addAllItemSummaries(
                     container.getItemSummaries().stream()
-                            .map(is -> {
-                                try {
-                                    return itemSummarySerializer.serialize(is).build();
-                                } catch (Exception e) {
-                                    log.error("ItemSummary without title: {}", is.getItemRef().getId(), e);
-                                    return null;
-                                }
-                            })
+                            .map(this::serializeItemSummary)
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList())
             );
@@ -325,6 +322,16 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
 
         return builder;
+    }
+
+    @Nullable
+    private ContentProtos.ItemSummary serializeItemSummary(ItemSummary itemSummary) {
+        try {
+            return itemSummarySerializer.serialize(itemSummary).build();
+        } catch (Exception e) {
+            log.error("Failed to serialize ItemSummary: {}", itemSummary.getItemRef().getId(), e);
+            return null;
+        }
     }
 
     @Override
