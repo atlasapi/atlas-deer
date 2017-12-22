@@ -354,8 +354,33 @@ public class ContentDebugController {
         }
     }
 
-    @RequestMapping("/system/debug/content/migrate")
+    @RequestMapping("/system/debug/content/{id}/migrate")
     public void forceEquivUpdate(
+            @PathVariable("id") String id,
+            @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
+            final HttpServletResponse response
+    ) throws IOException {
+        try {
+            Long decodedId = lowercase.decode(id).longValue();
+
+            Content content = resolveLegacyContent(decodedId);
+
+            ContentBootstrapListener listener = migrateEquivalents
+                                                ? contentAndEquivalentsBootstrapListener
+                                                : contentBootstrapListener;
+
+            ContentBootstrapListener.Result result = content.accept(listener);
+
+            response.setStatus(HttpStatus.OK.value());
+            response.getWriter().println(result.toString());
+            response.flushBuffer();
+        } catch (Throwable t) {
+            t.printStackTrace(response.getWriter());
+        }
+    }
+
+    @RequestMapping("/system/debug/content/migrate")
+    public void forceListEquivUpdate(
             @RequestParam(name = "ids", defaultValue = "") String ids,
             @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
             final HttpServletResponse response
