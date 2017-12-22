@@ -41,7 +41,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -70,6 +72,7 @@ public class ContentDebugController {
 
     private final NumberToShortStringCodec uppercase = new SubstitutionTableNumberCodec();
     private final NumberToShortStringCodec lowercase = SubstitutionTableNumberCodec.lowerCaseOnly();
+    private final Splitter commaSplitter = Splitter.on(',').trimResults().omitEmptyStrings();
 
     private final Gson gson;
     private final ObjectMapper jackson;
@@ -351,28 +354,34 @@ public class ContentDebugController {
         }
     }
 
-    @RequestMapping("/system/debug/content/{id}/migrate")
+    @RequestMapping("/system/debug/content/migrate")
     public void forceEquivUpdate(
-            @PathVariable("id") String id,
+            @RequestParam(name = "ids", defaultValue = "") String ids,
             @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
             final HttpServletResponse response
     ) throws IOException {
-        try {
-            Long decodedId = lowercase.decode(id).longValue();
+        if (Strings.isNullOrEmpty(ids)) {
+            throw new IllegalArgumentException("Must specify at least one content ID to migrate");
+        }
+        Iterable<String> requestedIds = commaSplitter.split(ids);
+        for (String id : requestedIds) {
+            try {
+                Long decodedId = lowercase.decode(id).longValue();
 
-            Content content = resolveLegacyContent(decodedId);
+                Content content = resolveLegacyContent(decodedId);
 
-            ContentBootstrapListener listener = migrateEquivalents
-                                                ? contentAndEquivalentsBootstrapListener
-                                                : contentBootstrapListener;
+                ContentBootstrapListener listener = migrateEquivalents
+                                                    ? contentAndEquivalentsBootstrapListener
+                                                    : contentBootstrapListener;
 
-            ContentBootstrapListener.Result result = content.accept(listener);
+                ContentBootstrapListener.Result result = content.accept(listener);
 
-            response.setStatus(HttpStatus.OK.value());
-            response.getWriter().println(result.toString());
-            response.flushBuffer();
-        } catch (Throwable t) {
-            t.printStackTrace(response.getWriter());
+                response.setStatus(HttpStatus.OK.value());
+                response.getWriter().println(result.toString());
+                response.flushBuffer();
+            } catch (Throwable t) {
+                t.printStackTrace(response.getWriter());
+            }
         }
     }
 
