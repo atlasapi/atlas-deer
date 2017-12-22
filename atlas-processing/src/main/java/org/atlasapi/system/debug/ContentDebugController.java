@@ -360,6 +360,29 @@ public class ContentDebugController {
             @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
             final HttpServletResponse response
     ) throws IOException {
+        migrateContentById(migrateEquivalents, response, id);
+    }
+
+    @RequestMapping("/system/debug/content/migrate")
+    public void forceListEquivUpdate(
+            @RequestParam(name = "ids", defaultValue = "") String ids,
+            @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
+            final HttpServletResponse response
+    ) throws IOException {
+        if (Strings.isNullOrEmpty(ids)) {
+            throw new IllegalArgumentException("Must specify at least one content ID to migrate");
+        }
+        Iterable<String> requestedIds = commaSplitter.split(ids);
+        for (String id : requestedIds) {
+            migrateContentById(migrateEquivalents, response, id);
+        }
+    }
+
+    private void migrateContentById(
+            Boolean migrateEquivalents,
+            HttpServletResponse response,
+            String id
+    ) throws IOException {
         try {
             Long decodedId = lowercase.decode(id).longValue();
 
@@ -376,37 +399,6 @@ public class ContentDebugController {
             response.flushBuffer();
         } catch (Throwable t) {
             t.printStackTrace(response.getWriter());
-        }
-    }
-
-    @RequestMapping("/system/debug/content/migrate")
-    public void forceListEquivUpdate(
-            @RequestParam(name = "ids", defaultValue = "") String ids,
-            @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
-            final HttpServletResponse response
-    ) throws IOException {
-        if (Strings.isNullOrEmpty(ids)) {
-            throw new IllegalArgumentException("Must specify at least one content ID to migrate");
-        }
-        Iterable<String> requestedIds = commaSplitter.split(ids);
-        for (String id : requestedIds) {
-            try {
-                Long decodedId = lowercase.decode(id).longValue();
-
-                Content content = resolveLegacyContent(decodedId);
-
-                ContentBootstrapListener listener = migrateEquivalents
-                                                    ? contentAndEquivalentsBootstrapListener
-                                                    : contentBootstrapListener;
-
-                ContentBootstrapListener.Result result = content.accept(listener);
-
-                response.setStatus(HttpStatus.OK.value());
-                response.getWriter().println(result.toString());
-                response.flushBuffer();
-            } catch (Throwable t) {
-                t.printStackTrace(response.getWriter());
-            }
         }
     }
 
