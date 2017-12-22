@@ -1,7 +1,6 @@
 package org.atlasapi.system.bootstrap;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -48,8 +47,6 @@ import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.api.client.repackaged.com.google.common.base.Strings;
-import com.google.common.base.Splitter;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -90,8 +87,6 @@ public class ContentBootstrapController {
     private final ContentResolver legacyResolver;
     private final ContentStore contentStore;
     private final Function<Worker<ResourceUpdatedMessage>, KafkaConsumer> replayConsumerFactory;
-
-    private final Splitter commaSplitter = Splitter.on(',').trimResults().omitEmptyStrings();
 
     private KafkaConsumer replayBootstrapListener;
 
@@ -260,37 +255,30 @@ public class ContentBootstrapController {
 
     @RequestMapping(value = "/system/bootstrap/content", method = RequestMethod.POST)
     public void bootstrapContent(
-            @RequestParam("ids") final String ids,
+            @RequestParam("id") final String id,
             final HttpServletResponse resp
     ) throws IOException {
-        if (Strings.isNullOrEmpty(ids)) {
-            throw new IllegalArgumentException("Must specify at least one content ID to bootstrap");
+        log.info("Bootstrapping: {}", id);
+        Identified identified = Iterables.getOnlyElement(
+                resolve(ImmutableList.of(Id.valueOf(id))),
+                null
+        );
+        log.info("Bootstrapping: {} {}", id, identified);
+        if (!(identified instanceof Content)) {
+            resp.sendError(500, "Resolved not content");
+            return;
+        }
+        Content content = (Content) identified;
+
+        ContentBootstrapListener.Result result = content.accept(contentBootstrapListener);
+
+        if (result.getSucceeded()) {
+            resp.setStatus(HttpStatus.OK.value());
+        } else {
+            resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
 
-        Iterable<String> requestedIds = commaSplitter.split(ids);
-        for (String id : requestedIds) {
-            log.info("Bootstrapping: {}", id);
-            Identified identified = Iterables.getOnlyElement(
-                    resolve(ImmutableList.of(Id.valueOf(id))),
-                    null
-            );
-            log.info("Bootstrapping: {} {}", id, identified);
-            if (!(identified instanceof Content)) {
-                resp.sendError(500, "Resolved not content");
-                continue;
-            }
-            Content content = (Content) identified;
-
-            ContentBootstrapListener.Result result = content.accept(contentBootstrapListener);
-
-            if (result.getSucceeded()) {
-                resp.setStatus(HttpStatus.OK.value());
-            } else {
-                resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            }
-
-            resp.getWriter().println(result.toString());
-        }
+        resp.getWriter().println(result.toString());
         resp.getWriter().flush();
     }
 
