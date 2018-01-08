@@ -74,7 +74,9 @@ public class ScheduleBootstrapController {
             @RequestParam(value = "migrateContent", required = false,
                     defaultValue = "false") boolean migrateContent,
             @RequestParam(value = "writeEquivalences", required = false,
-                    defaultValue = "false") boolean writeEquivs
+                    defaultValue = "false") boolean writeEquivs,
+            @RequestParam(value = "forwarding", required = false,
+                    defaultValue = "false") boolean forwarding
     ) throws Exception {
 
         Maybe<Publisher> source = Publisher.fromKey(src);
@@ -95,8 +97,13 @@ public class ScheduleBootstrapController {
         }
 
         try {
-            boolean success = scheduleBootstrapper.bootstrapSchedules(ImmutableList.of(channel.get()),
-                    interval(date), source.requireValue(), migrateContent, writeEquivs
+            boolean success = scheduleBootstrapper.bootstrapSchedules(
+                    ImmutableList.of(channel.get()),
+                    interval(date),
+                    source.requireValue(),
+                    migrateContent,
+                    writeEquivs,
+                    forwarding
             );
             resp.setStatus((success ? HttpStatusCode.OK : HttpStatusCode.CONFLICT).code());
             resp.getWriter().write(success ?
@@ -117,7 +124,9 @@ public class ScheduleBootstrapController {
             @RequestParam(value = "migrateContent", required = false,
                     defaultValue = "false") boolean migrateContent,
             @RequestParam(value = "writeEquivalences", required = false,
-                    defaultValue = "false") boolean writeEquivs
+                    defaultValue = "false") boolean writeEquivs,
+            @RequestParam(value = "forwarding", required = false,
+                    defaultValue = "false") boolean forwarding
     )
             throws Exception {
 
@@ -158,7 +167,8 @@ public class ScheduleBootstrapController {
                         interval,
                         source.requireValue(),
                         migrateContent,
-                        writeEquivs
+                        writeEquivs,
+                        forwarding
                 );
                 if (!bootstrapping) {
                     log.warn(

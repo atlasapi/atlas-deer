@@ -168,7 +168,8 @@ public class BootstrapModule {
                 executorService(NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS, "ScheduleBootstrapper"),
                 workers.scheduleBootstrapTaskFactory(),
                 workers.scheduleBootstrapWithContentMigrationTaskFactory(),
-                workers.equivalenceWritingChannelIntervalScheduleBootstrapTaskFactory()
+                workers.equivalenceWritingChannelIntervalScheduleBootstrapTaskFactory(),
+                workers.forwardingScheduleBootstrapTaskFactory()
         );
     }
 

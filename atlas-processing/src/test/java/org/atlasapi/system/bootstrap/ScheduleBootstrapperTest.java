@@ -36,7 +36,8 @@ public class ScheduleBootstrapperTest {
                 executorService,
                 taskFactory,
                 bootstrapWithMigrationTaskFactory,
-                equivTaskFactory
+                equivTaskFactory,
+                taskFactory
         );
     }
 
