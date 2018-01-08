@@ -1,33 +1,5 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
-import com.metabroadcast.columbus.telescope.client.TelescopeReporterFactory;
-import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.ElasticSearchContentIndexModule;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.messaging.KafkaMessagingModule;
-import org.atlasapi.messaging.v3.JacksonMessageSerializer;
-import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
-import org.atlasapi.system.ProcessingHealthModule;
-import org.atlasapi.system.ProcessingMetricsModule;
-import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
-import org.atlasapi.system.bootstrap.ColumbusTelescopeReporter;
-import org.atlasapi.system.bootstrap.EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory;
-import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
-
-import com.metabroadcast.columbus.telescope.client.TelescopeClientImpl;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.queue.kafka.KafkaConsumer;
-import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
@@ -37,12 +9,38 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
+import com.metabroadcast.columbus.telescope.client.TelescopeClientImpl;
+import com.metabroadcast.columbus.telescope.client.TelescopeReporterFactory;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.queue.kafka.KafkaConsumer;
+import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
+import org.atlasapi.AtlasPersistenceModule;
+import org.atlasapi.ElasticSearchContentIndexModule;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.EquivalentScheduleStoreScheduleUpdateWorker;
+import org.atlasapi.messaging.KafkaMessagingModule;
+import org.atlasapi.messaging.v3.JacksonMessageSerializer;
+import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
+import org.atlasapi.system.ProcessingHealthModule;
+import org.atlasapi.system.ProcessingMetricsModule;
+import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
+import org.atlasapi.system.bootstrap.ColumbusTelescopeReporter;
+import org.atlasapi.system.bootstrap.EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory;
+import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Configuration
 @Import({
@@ -426,6 +424,25 @@ public class BootstrapWorkersModule {
                 ),
                 persistence.getEquivalentScheduleStore(),
                 persistence.getContentEquivalenceGraphStore()
+        );
+    }
+
+    @Bean
+    public ChannelIntervalScheduleBootstrapTaskFactory
+    forwardingScheduleBootstrapTaskFactory() {
+        return new ChannelIntervalScheduleBootstrapTaskFactory(
+                persistence.legacyScheduleStore(),
+                persistence.persistenceModule().getForwardingScheduleStore(ImmutableList.of(
+                        EquivalentScheduleStoreScheduleUpdateWorker.create(
+                                persistence.getEquivalentScheduleStore(),
+                                WORKER_METRIC_PREFIX + "ForwardingScheduleStore.Schedule",
+                                metricsModule.metrics()
+                        )
+                )),
+                new DelegatingContentStore(
+                        persistence.legacyContentResolver(),
+                        persistence.contentStore()
+                )
         );
     }
 

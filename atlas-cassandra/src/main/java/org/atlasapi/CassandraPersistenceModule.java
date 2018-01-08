@@ -2,6 +2,8 @@ package org.atlasapi;
 
 import java.util.UUID;
 
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
@@ -55,6 +57,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ConsistencyLevel;
+import org.mortbay.util.MultiException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -167,9 +170,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     protected void startUp() throws Exception {
         com.datastax.driver.core.ConsistencyLevel read = getReadConsistencyLevel();
         com.datastax.driver.core.ConsistencyLevel write = getWriteConsistencyLevel();
-        ConsistencyLevel readConsistency = processing
-                                           ? ConsistencyLevel.CL_QUORUM
-                                           : ConsistencyLevel.CL_ONE;
+        ConsistencyLevel readConsistency = getAstyanaxReadConsistencyLevel();
+        ConsistencyLevel writeConsistency = getAstyanaxWriteConsistencyLevel();
 
         this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
                 sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class),
@@ -235,18 +237,13 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                         "topic")
         )
                 .withReadConsistency(readConsistency)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
+                .withWriteConsistency(writeConsistency)
                 .withMetricRegistry(metrics)
                 .withMetricPrefix(METRIC_PREFIX + "CassandraTopicStore.")
                 .build();
-        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule",
-                cqlContentStore, sender(scheduleChanges, ScheduleUpdateMessage.class)
-        )
-                .withReadConsistency(readConsistency)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .withMetricRegistry(metrics)
-                .withMetricPrefix(METRIC_PREFIX + "AstyanaxCassandraScheduleStore.")
-                .build();
+        this.scheduleStore = makeAstyanaxScheduleStore(
+                sender(scheduleChanges, ScheduleUpdateMessage.class)
+        );
 
         this.segmentStore = CassandraSegmentStore.builder()
                 .withKeyspace(keyspace)
@@ -279,6 +276,22 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .withMetricRegistry(metrics)
                 .withMetricPrefix(METRIC_PREFIX + "AstyanaxCassandraContentStore.")
+                .build();
+    }
+
+    private AstyanaxCassandraScheduleStore makeAstyanaxScheduleStore(
+            MessageSender<ScheduleUpdateMessage> sender
+    ) {
+        return AstyanaxCassandraScheduleStore.builder(
+                context,
+                "schedule",
+                cqlContentStore,
+                sender
+        )
+                .withReadConsistency(getAstyanaxReadConsistencyLevel())
+                .withWriteConsistency(getAstyanaxWriteConsistencyLevel())
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "AstyanaxCassandraScheduleStore.")
                 .build();
     }
 
@@ -375,6 +388,37 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return this.scheduleStore;
     }
 
+    public AstyanaxCassandraScheduleStore getForwardingScheduleStore(
+            Iterable<Worker<ScheduleUpdateMessage>> consumers
+    ) {
+        return makeAstyanaxScheduleStore(
+                new MessageSender<ScheduleUpdateMessage>() {
+                    @Override public void sendMessage(ScheduleUpdateMessage scheduleUpdateMessage)
+                            throws MessagingException {
+                        MessagingException ex = new MessagingException("An exception occurred processing message");
+                        for (Worker<ScheduleUpdateMessage> consumer : consumers) {
+                            try {
+                                consumer.process(scheduleUpdateMessage);
+                            } catch (MessagingException e) {
+                                ex.addSuppressed(e);
+                            }
+                        }
+                        if (ex.getSuppressed().length > 0) throw ex;
+                    }
+
+                    @Override public void sendMessage(ScheduleUpdateMessage scheduleUpdateMessage,
+                            byte[] bytes)
+                            throws MessagingException {
+                        sendMessage(scheduleUpdateMessage);
+                    }
+
+                    @Override public void close() throws Exception {
+                        // nothing to do
+                    }
+                }
+        );
+    }
+
     @Override
     public ScheduleStore v2ScheduleStore() {
         return v2ScheduleStore;
@@ -432,6 +476,15 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     public com.datastax.driver.core.ConsistencyLevel getWriteConsistencyLevel() {
         return com.datastax.driver.core.ConsistencyLevel.QUORUM;
+    }
+
+    public ConsistencyLevel getAstyanaxReadConsistencyLevel() {
+        return processing ? ConsistencyLevel.CL_QUORUM
+                          : ConsistencyLevel.CL_ONE;
+    }
+
+    public ConsistencyLevel getAstyanaxWriteConsistencyLevel() {
+        return ConsistencyLevel.CL_QUORUM;
     }
 
     public EquivalentScheduleStore equivalentScheduleStore() {

@@ -35,22 +35,29 @@ public class ScheduleBootstrapper {
     private final ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
     private final ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory;
     private final EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory equivTaskFactory;
+    private final ChannelIntervalScheduleBootstrapTaskFactory forwardingBootstrapTaskFactory;
 
     public ScheduleBootstrapper(
             ListeningExecutorService executor,
             ChannelIntervalScheduleBootstrapTaskFactory taskFactory,
             ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory,
-            EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory bootstrapWithEquiv
+            EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory bootstrapWithEquiv,
+            ChannelIntervalScheduleBootstrapTaskFactory forwardingBootstrapTaskFactory
     ) {
         this.executor = checkNotNull(executor);
         this.taskFactory = checkNotNull(taskFactory);
         this.bootstrapWithMigrationTaskFactory = checkNotNull(bootstrapWithMigrationTaskFactory);
         this.equivTaskFactory = checkNotNull(bootstrapWithEquiv);
+        this.forwardingBootstrapTaskFactory = checkNotNull(forwardingBootstrapTaskFactory);
     }
 
     public boolean bootstrapSchedules(
-            Iterable<Channel> channels, Interval interval,
-            Publisher source, boolean migrateContent, boolean writeEquivalences
+            Iterable<Channel> channels,
+            Interval interval,
+            Publisher source,
+            boolean migrateContent,
+            boolean writeEquivalences,
+            boolean forwarding
     ) {
         if (!bootstrapLock.tryLock()) {
             return false;
@@ -74,7 +81,8 @@ public class ScheduleBootstrapper {
                         interval,
                         source,
                         migrateContent,
-                        writeEquivalences
+                        writeEquivalences,
+                        forwarding
                 ));
             }
             Futures.get(Futures.allAsList(futures), Exception.class);
@@ -89,18 +97,25 @@ public class ScheduleBootstrapper {
 
     public boolean bootstrapSchedules(Iterable<Channel> channels, Interval interval,
             Publisher source, boolean migrateContent) {
-        return bootstrapSchedules(channels, interval, source, migrateContent, false);
+        return bootstrapSchedules(channels, interval, source, migrateContent, false, false);
     }
 
-    private ListenableFuture<UpdateProgress> bootstrapChannel(final Channel channel,
+    private ListenableFuture<UpdateProgress> bootstrapChannel(
+            final Channel channel,
             Interval interval,
-            Publisher source, boolean migrateContent, boolean writeEquivalences) {
+            Publisher source,
+            boolean migrateContent,
+            boolean writeEquivalences,
+            boolean forwarding
+    ) {
         log.info("Bootstrapping channel {}/{}", channel.getId(), channel.getTitle());
         ChannelIntervalScheduleBootstrapTask task;
         if (migrateContent) {
             task = bootstrapWithMigrationTaskFactory.create(source, channel, interval);
         } else if (writeEquivalences) {
             task = equivTaskFactory.create(source, channel, interval);
+        } else if (forwarding) {
+            task = forwardingBootstrapTaskFactory.create(source, channel, interval);
         } else {
             task = taskFactory.create(source, channel, interval);
         }
