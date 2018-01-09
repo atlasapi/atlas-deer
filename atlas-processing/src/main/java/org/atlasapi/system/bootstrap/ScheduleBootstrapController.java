@@ -65,6 +65,17 @@ public class ScheduleBootstrapController {
         this.channelResolver = checkNotNull(channelResvoler);
     }
 
+    /**
+     * Bootstrap a single channel for a single day.
+     * <p><em>Note:</em> {@code migrateContent}, {@code writeEquivs} and {@code forwarding}
+     * are mutually exclusive, and have that respective precedence.</p>
+     * @param src   the source/publisher
+     * @param day   the day to bootstrap
+     * @param channelId     the channel id (lowercase encoded string form)
+     * @param migrateContent    true to migrate content hierachy as well
+     * @param writeEquivs       true to migrate content equivalences as well
+     * @param forwarding        true to forward to the schedule equivalence writer as well
+     */
     @RequestMapping(value = "/system/bootstrap/schedule", method = RequestMethod.POST)
     public Void bootstrapSchedule(
             HttpServletResponse resp,
@@ -115,6 +126,17 @@ public class ScheduleBootstrapController {
         }
     }
 
+    /**
+     * Bootstrap all channels for a date range.
+     * <p><em>Note:</em> {@code migrateContent}, {@code writeEquivs} and {@code forwarding}
+     * are mutually exclusive, and have that respective precedence.</p>
+     * @param src   the source/publisher
+     * @param from  the date to migrate from
+     * @param to    the date to migrate to
+     * @param migrateContent    true to migrate content hierachy as well
+     * @param writeEquivs       true to migrate content equivalences as well
+     * @param forwarding        true to forward to the schedule equivalence writer as well
+     */
     @RequestMapping(value = "/system/bootstrap/schedule/all", method = RequestMethod.POST)
     public void bootstrapAllSchedules(
             HttpServletResponse resp,
