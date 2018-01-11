@@ -1,25 +1,5 @@
 package org.atlasapi.system.bootstrap;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.servlet.http.HttpServletResponse;
-
-import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelResolver;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.media.channel.ChannelQuery;
-import org.atlasapi.media.entity.Publisher;
-
-import com.metabroadcast.common.base.Maybe;
-import com.metabroadcast.common.http.HttpStatusCode;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.time.DateTimeZones;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -27,6 +7,15 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.time.DateTimeZones;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.channel.ChannelQuery;
+import org.atlasapi.media.entity.Publisher;
 import org.elasticsearch.common.base.Throwables;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
@@ -39,9 +28,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.metabroadcast.common.http.HttpStatusCode.BAD_REQUEST;
-import static com.metabroadcast.common.http.HttpStatusCode.SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_CONFLICT;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 @Controller
 public class ScheduleBootstrapController {
@@ -88,41 +85,41 @@ public class ScheduleBootstrapController {
                     defaultValue = "false") boolean writeEquivs,
             @RequestParam(value = "forwarding", required = false,
                     defaultValue = "false") boolean forwarding
-    ) throws Exception {
+    ) throws IOException {
 
-        Maybe<Publisher> source = Publisher.fromKey(src);
-        if (!source.hasValue()) {
-            return failure(resp, BAD_REQUEST, "Unknown source " + src);
+        Optional<Publisher> source = Publisher.fromKey(src).toGuavaOptional();
+        if (!source.isPresent()) {
+            return failure(resp, SC_BAD_REQUEST, "Unknown source " + src);
         }
 
         Optional<Channel> channel = resolve(channelId);
         if (!channel.isPresent()) {
-            return failure(resp, BAD_REQUEST, "Unknown channel " + channelId);
+            return failure(resp, SC_BAD_REQUEST, "Unknown channel " + channelId);
         }
 
         LocalDate date;
         try {
             date = dateParser.parseLocalDate(day);
         } catch (IllegalArgumentException iae) {
-            return failure(resp, BAD_REQUEST, "Failed to parse " + day + ", expected yyyy-MM-dd");
+            return dateParseFailure(resp, day);
         }
 
         try {
             boolean success = scheduleBootstrapper.bootstrapSchedules(
                     ImmutableList.of(channel.get()),
                     interval(date),
-                    source.requireValue(),
+                    source.get(),
                     migrateContent,
                     writeEquivs,
                     forwarding
             );
-            resp.setStatus((success ? HttpStatusCode.OK : HttpStatusCode.CONFLICT).code());
+            resp.setStatus((success ? SC_OK : SC_CONFLICT));
             resp.getWriter().write(success ?
                                    scheduleBootstrapper.getProgress().toString() :
                                    "Another schedule bootstrap is already running");
             return null;
         } catch (Exception e) {
-            return failure(resp, SERVER_ERROR, Throwables.getStackTraceAsString(e));
+            return failure(resp, SC_INTERNAL_SERVER_ERROR, Throwables.getStackTraceAsString(e));
         }
     }
 
@@ -149,19 +146,18 @@ public class ScheduleBootstrapController {
                     defaultValue = "false") boolean writeEquivs,
             @RequestParam(value = "forwarding", required = false,
                     defaultValue = "false") boolean forwarding
-    )
-            throws Exception {
+    ) throws IOException {
 
-        final Maybe<Publisher> source = Publisher.fromKey(src);
-        if (!source.hasValue()) {
-            failure(resp, BAD_REQUEST, "Unknown source " + src);
+        final Optional<Publisher> source = Publisher.fromKey(src).toGuavaOptional();
+        if (!source.isPresent()) {
+            failure(resp, SC_BAD_REQUEST, "Unknown source " + src);
             return;
         }
 
         final Iterable<Channel> channels =
-                Futures.get(channelResolver.resolveChannels(ChannelQuery.builder().build()),
-                        1, TimeUnit.MINUTES,
-                        Exception.class
+                Futures.getChecked(channelResolver.resolveChannels(ChannelQuery.builder().build()),
+                        IllegalStateException.class,
+                        1, TimeUnit.MINUTES
                 ).getResources();
 
         final LocalDate dateFrom;
@@ -169,33 +165,29 @@ public class ScheduleBootstrapController {
         try {
             dateFrom = dateParser.parseLocalDate(from);
         } catch (IllegalArgumentException iae) {
-            failure(resp, BAD_REQUEST, "Failed to parse " + from + ", expected yyyy-MM-dd");
+            dateParseFailure(resp, from);
             return;
         }
 
         try {
             dateTo = dateParser.parseLocalDate(to);
         } catch (IllegalArgumentException iae) {
-            failure(resp, BAD_REQUEST, "Failed to parse " + to + ", expected yyyy-MM-dd");
+            failure(resp, SC_BAD_REQUEST, "Failed to parse " + to + ", expected yyyy-MM-dd");
             return;
         }
         final Interval interval = interval(dateFrom, dateTo);
-        executor.submit(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean bootstrapping = scheduleBootstrapper.bootstrapSchedules(
-                        channels,
-                        interval,
-                        source.requireValue(),
-                        migrateContent,
-                        writeEquivs,
-                        forwarding
-                );
-                if (!bootstrapping) {
-                    log.warn(
-                            "Bootstrapping failed because apparently busy bootstrapping something else.");
-                }
+        executor.submit(() -> {
+            boolean bootstrapping = scheduleBootstrapper.bootstrapSchedules(
+                    channels,
+                    interval,
+                    source.get(),
+                    migrateContent,
+                    writeEquivs,
+                    forwarding
+            );
+            if (!bootstrapping) {
+                log.warn(
+                        "Bootstrapping failed because apparently busy bootstrapping something else.");
             }
         });
     }
@@ -225,15 +217,14 @@ public class ScheduleBootstrapController {
         );
     }
 
-    private Optional<Channel> resolve(String channelId) throws Exception {
+    private Optional<Channel> resolve(String channelId) {
         Id cid = Id.valueOf(idCodec.decode(channelId));
         ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList
                 .of(cid));
-        Resolved<Channel> resolvedChannel = Futures.get(
+        Resolved<Channel> resolvedChannel = Futures.getChecked(
                 channelFuture,
-                1,
-                TimeUnit.MINUTES,
-                Exception.class
+                IllegalStateException.class,
+                1, TimeUnit.MINUTES
         );
 
         if (resolvedChannel.getResources().isEmpty()) {
@@ -242,9 +233,13 @@ public class ScheduleBootstrapController {
         return Optional.of(Iterables.getOnlyElement(resolvedChannel.getResources()));
     }
 
-    private Void failure(HttpServletResponse resp, HttpStatusCode status, String msg)
+    private Void dateParseFailure(HttpServletResponse resp, String day)
             throws IOException {
-        resp.setStatus(status.code());
+        return failure(resp, SC_BAD_REQUEST, "Failed to parse " + day + ", expected yyyy-MM-dd");
+    }
+    private Void failure(HttpServletResponse resp, int statusCode, String msg)
+            throws IOException {
+        resp.setStatus(statusCode);
         resp.getWriter().write(msg);
         return null;
     }

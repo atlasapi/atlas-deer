@@ -132,11 +132,16 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
         Session session = cassandraService.getCluster().connect();
         CassandraInit.createTables(session, context);
 
-        CassandraPersistenceModule persistenceModule = new CassandraPersistenceModule(
-                messageSenderFactory, context, cassandraService, keyspace, idGeneratorBuilder(),
-                content -> UUID.randomUUID().toString(), eventv2 -> UUID.randomUUID().toString(),
-                seeds, new MetricRegistry()
-        );
+        CassandraPersistenceModule persistenceModule = CassandraPersistenceModule.builder()
+                .withMessageSenderFactory(messageSenderFactory)
+                .withAstyanaxContext(context)
+                .withDatastaxCassandraService(cassandraService)
+                .withKeyspace(keyspace)
+                .withIdGeneratorBuilder(idGeneratorBuilder())
+                .withContentHasher(content -> UUID.randomUUID().toString())
+                .withEventHasher(eventv2 -> UUID.randomUUID().toString())
+                .withMetrics(new MetricRegistry())
+                .build();
         persistenceModule.startAsync().awaitRunning();
         return persistenceModule;
     }

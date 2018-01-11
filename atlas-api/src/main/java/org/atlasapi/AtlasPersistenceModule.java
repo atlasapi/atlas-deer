@@ -223,21 +223,20 @@ public class AtlasPersistenceModule {
                 .build();
 
         cassandraService.startAsync().awaitRunning();
-        return new CassandraPersistenceModule(
-                messaging.messageSenderFactory(),
-                context,
-                cassandraService,
-                cassandraKeyspace,
-                idGeneratorBuilder(),
-                ContentHashGenerator.create(
+        return CassandraPersistenceModule.builder()
+                .withMessageSenderFactory(messaging.messageSenderFactory())
+                .withAstyanaxContext(context)
+                .withDatastaxCassandraService(cassandraService)
+                .withKeyspace(cassandraKeyspace)
+                .withIdGeneratorBuilder(idGeneratorBuilder())
+                .withContentHasher(ContentHashGenerator.create(
                         HashGenerator.create(),
                         UTIL_METRIC_PREFIX,
                         metricsModule.metrics()
-                ),
-                eventV2 -> UUID.randomUUID().toString(),
-                seeds,
-                metricsModule.metrics()
-        );
+                ))
+                .withEventHasher(eventV2 -> UUID.randomUUID().toString())
+                .withMetrics(metricsModule.metrics())
+                .build();
     }
 
     @Bean

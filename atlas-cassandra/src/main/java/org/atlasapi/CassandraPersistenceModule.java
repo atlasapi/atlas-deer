@@ -1,9 +1,24 @@
 package org.atlasapi;
 
-import java.util.UUID;
-
-import com.metabroadcast.common.queue.RecoverableException;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.datastax.driver.core.Session;
+import com.google.common.base.Equivalence;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.ids.IdGeneratorBuilder;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.properties.Parameter;
+import com.metabroadcast.common.queue.Message;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessageSenderFactory;
+import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.SystemClock;
+import com.netflix.astyanax.AstyanaxContext;
+import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.model.ConsistencyLevel;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
@@ -37,27 +52,8 @@ import org.atlasapi.segment.Segment;
 import org.atlasapi.topic.CassandraTopicStore;
 import org.atlasapi.topic.Topic;
 
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.ids.IdGeneratorBuilder;
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.properties.Parameter;
-import com.metabroadcast.common.queue.Message;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessageSenderFactory;
-import com.metabroadcast.common.queue.MessagingException;
-import com.metabroadcast.common.time.SystemClock;
-
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.datastax.driver.core.Session;
-import com.google.common.base.Equivalence;
-import com.google.common.base.Objects;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.netflix.astyanax.AstyanaxContext;
-import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.model.ConsistencyLevel;
-import org.mortbay.util.MultiException;
+import java.util.Optional;
+import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -75,12 +71,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
             "60"
     ).toInt();
 
-    private Boolean processing = Objects.firstNonNull(
-            Configurer.get("processing.config"),
-            Parameter.valueOf("false")
-    ).toBoolean();
+    private Boolean processing = Optional.ofNullable(Configurer.get("processing.config"))
+            .map(Parameter::toBoolean)
+            .orElse(false);
 
-    private final String ORGANISATION = "organisation";
+    private static final String ORGANISATION = "organisation";
 
     private final String keyspace;
     private final Session session;
@@ -112,25 +107,16 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private MessageSenderFactory messageSenderFactory;
     private CqlContentStore nullMessageSendingCqlContentStore;
 
-    public CassandraPersistenceModule(
-            MessageSenderFactory messageSenderFactory,
-            AstyanaxContext<Keyspace> context,
-            DatastaxCassandraService datastaxCassandraService,
-            String keyspace,
-            IdGeneratorBuilder idGeneratorBuilder,
-            ContentHasher contentHasher,
-            EventHasher eventHasher,
-            Iterable<String> cassNodes,
-            MetricRegistry metrics) {
-        this.contentHasher = contentHasher;
-        this.eventHasher = checkNotNull(eventHasher);
-        this.idGeneratorBuilder = idGeneratorBuilder;
-        this.contentIdGenerator = idGeneratorBuilder.generator("content");
-        this.messageSenderFactory = messageSenderFactory;
-        this.dataStaxService = datastaxCassandraService;
-        this.keyspace = keyspace;
-        this.context = context;
-        this.metrics = checkNotNull(metrics);
+    private CassandraPersistenceModule(Builder builder) {
+        this.contentHasher = builder.contentHasher;
+        this.eventHasher = checkNotNull(builder.eventHasher);
+        this.idGeneratorBuilder = builder.idGeneratorBuilder;
+        this.contentIdGenerator = builder.idGeneratorBuilder.generator("content");
+        this.messageSenderFactory = builder.messageSenderFactory;
+        this.dataStaxService = builder.datastaxCassandraService;
+        this.keyspace = builder.keyspace;
+        this.context = builder.astyanaxContext;
+        this.metrics = checkNotNull(builder.metrics);
         this.session = dataStaxService.getSession(keyspace);
     }
 
@@ -149,25 +135,19 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         };
     }
 
-    public <T extends Message> MessageSender<T> nullMessageSender(Class<T> msgType) {
+    public <T extends Message> MessageSender<T> nullMessageSender(Class<T> msgType) {   // NOSONAR
         return new MessageSender<T>() {
 
-            @Override
-            public void sendMessage(T resourceUpdatedMessage) throws MessagingException {
-            }
+            @Override public void sendMessage(T resourceUpdatedMessage) { /* don't do anything */ }
 
-            @Override
-            public void sendMessage(T message, byte[] partitionKey) throws MessagingException {
-            }
+            @Override public void sendMessage(T message, byte[] partitionKey) { /* don't do anything */ }
 
-            @Override
-            public void close() throws Exception {
-            }
+            @Override public void close() { /* don't do anything */ }
         };
     }
 
     @Override
-    protected void startUp() throws Exception {
+    protected void startUp() {
         com.datastax.driver.core.ConsistencyLevel read = getReadConsistencyLevel();
         com.datastax.driver.core.ConsistencyLevel write = getWriteConsistencyLevel();
         ConsistencyLevel readConsistency = getAstyanaxReadConsistencyLevel();
@@ -518,7 +498,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withReadConsistency(getReadConsistencyLevel())
                 .build();
 
-        DatastaxCassandraOrganisationStore organisationStore = DatastaxCassandraOrganisationStore.builder()
+        return DatastaxCassandraOrganisationStore.builder()
                 .withSession(session)
                 .withWriteConsistency(getWriteConsistencyLevel())
                 .withReadConsistency(getReadConsistencyLevel())
@@ -526,11 +506,70 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withMetricRegistry(metrics)
                 .withMetricPrefix(METRIC_PREFIX + "DatastaxCassandraOrganisationStore.")
                 .build();
-
-        return organisationStore;
     }
 
     private OrganisationStore getIdSettingOrganisationStore(Session session) {
         return new IdSettingOrganisationStore(getOrganisationStore(session),idGeneratorBuilder.generator(ORGANISATION));
     }
+
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private MessageSenderFactory messageSenderFactory;
+        private AstyanaxContext<Keyspace> astyanaxContext;
+        private DatastaxCassandraService datastaxCassandraService;
+        private String keyspace;
+        private IdGeneratorBuilder idGeneratorBuilder;
+        private ContentHasher contentHasher;
+        private EventHasher eventHasher;
+        private MetricRegistry metrics;
+
+        public Builder withMessageSenderFactory(MessageSenderFactory messageSenderFactory) {
+            this.messageSenderFactory = messageSenderFactory;
+            return this;
+        }
+
+        public Builder withAstyanaxContext(AstyanaxContext<Keyspace> astyanaxContext) {
+            this.astyanaxContext = astyanaxContext;
+            return this;
+        }
+
+        public Builder withDatastaxCassandraService(DatastaxCassandraService datastaxCassandraService) {
+            this.datastaxCassandraService = datastaxCassandraService;
+            return this;
+        }
+
+        public Builder withKeyspace(String keyspace) {
+            this.keyspace = keyspace;
+            return this;
+        }
+
+        public Builder withIdGeneratorBuilder(IdGeneratorBuilder idGeneratorBuilder) {
+            this.idGeneratorBuilder = idGeneratorBuilder;
+            return this;
+        }
+
+        public Builder withContentHasher(ContentHasher contentHasher) {
+            this.contentHasher = contentHasher;
+            return this;
+        }
+
+        public Builder withEventHasher(EventHasher eventHasher) {
+            this.eventHasher = eventHasher;
+            return this;
+        }
+
+        public Builder withMetrics(MetricRegistry metrics) {
+            this.metrics = metrics;
+            return this;
+        }
+
+        public CassandraPersistenceModule build() {
+            return new CassandraPersistenceModule(this);
+        }
+    }
+
 }

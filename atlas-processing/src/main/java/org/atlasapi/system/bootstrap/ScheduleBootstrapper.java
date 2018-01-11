@@ -85,7 +85,7 @@ public class ScheduleBootstrapper {
                         forwarding
                 ));
             }
-            Futures.get(Futures.allAsList(futures), Exception.class);
+            Futures.getChecked(Futures.allAsList(futures), Exception.class);
         } catch (Exception e) {
             //this is already logged in the callback
         } finally {
