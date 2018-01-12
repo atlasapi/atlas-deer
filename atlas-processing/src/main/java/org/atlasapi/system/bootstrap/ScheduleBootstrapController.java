@@ -85,7 +85,7 @@ public class ScheduleBootstrapController {
                     defaultValue = "false") boolean writeEquivs,
             @RequestParam(value = "forwarding", required = false,
                     defaultValue = "false") boolean forwarding
-    ) throws IOException {
+    ) throws Exception {
 
         Optional<Publisher> source = Publisher.fromKey(src).toGuavaOptional();
         if (!source.isPresent()) {
@@ -146,7 +146,7 @@ public class ScheduleBootstrapController {
                     defaultValue = "false") boolean writeEquivs,
             @RequestParam(value = "forwarding", required = false,
                     defaultValue = "false") boolean forwarding
-    ) throws IOException {
+    ) throws Exception {        // NOSONAR
 
         final Optional<Publisher> source = Publisher.fromKey(src).toGuavaOptional();
         if (!source.isPresent()) {
@@ -156,7 +156,7 @@ public class ScheduleBootstrapController {
 
         final Iterable<Channel> channels =
                 Futures.getChecked(channelResolver.resolveChannels(ChannelQuery.builder().build()),
-                        IllegalStateException.class,
+                        Exception.class,
                         1, TimeUnit.MINUTES
                 ).getResources();
 
@@ -217,13 +217,13 @@ public class ScheduleBootstrapController {
         );
     }
 
-    private Optional<Channel> resolve(String channelId) {
+    private Optional<Channel> resolve(String channelId) throws Exception {  // NOSONAR
         Id cid = Id.valueOf(idCodec.decode(channelId));
         ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList
                 .of(cid));
         Resolved<Channel> resolvedChannel = Futures.getChecked(
                 channelFuture,
-                IllegalStateException.class,
+                Exception.class,
                 1, TimeUnit.MINUTES
         );
 
