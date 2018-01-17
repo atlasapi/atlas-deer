@@ -1,8 +1,16 @@
 package org.atlasapi.query.v4.topic;
 
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Ordering;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.IndexQueryResult;
+import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.NotFoundException;
@@ -14,13 +22,9 @@ import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicIndex;
 import org.atlasapi.topic.TopicResolver;
 
-import com.metabroadcast.common.query.Selection;
-
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Ordering;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -36,12 +40,35 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
 
     @Override
     public QueryResult<Topic> execute(Query<Topic> query) throws QueryExecutionException {
-        IndexQueryResult result = Futures.get(
-                getResults(query),
-                1,
-                TimeUnit.MINUTES,
-                QueryExecutionException.class
-        );
+        ImmutableList<Id> topicIds = ImmutableList.of();
+        boolean queryOnlyIds = false;
+        if(query.isListQuery()) {
+            AttributeQuerySet set = query.getOperands();
+            if (set.size() == 1) {
+                AttributeQuery<?> attribute = set.iterator().next();
+                if (attribute.getAttributeName().equalsIgnoreCase("id")) {
+                    topicIds = attribute.getValue().stream()
+                            .filter(Id.class::isInstance)
+                            .map(Id.class::cast)
+                            .collect(MoreCollectors.toImmutableList());
+                    queryOnlyIds = true;
+                }
+            }
+        } else {
+            topicIds = ImmutableList.of(query.getOnlyId());
+            queryOnlyIds = true;
+        }
+        IndexQueryResult result;
+        if(!queryOnlyIds) {
+            result = Futures.get(
+                    getResults(query),
+                    1,
+                    TimeUnit.MINUTES,
+                    QueryExecutionException.class
+            );
+        } else {
+            result = IndexQueryResult.withIds(topicIds, topicIds.size());
+        }
         Resolved<Topic> resolved = Futures.get(
                 resolve(result.getIds()),
                 1,
