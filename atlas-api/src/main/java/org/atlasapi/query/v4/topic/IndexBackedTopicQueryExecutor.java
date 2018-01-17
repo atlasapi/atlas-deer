@@ -50,6 +50,7 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
                     topicIds = attribute.getValue().stream()
                             .filter(Id.class::isInstance)
                             .map(Id.class::cast)
+                            .distinct()
                             .collect(MoreCollectors.toImmutableList());
                     queryOnlyIds = true;
                 }
