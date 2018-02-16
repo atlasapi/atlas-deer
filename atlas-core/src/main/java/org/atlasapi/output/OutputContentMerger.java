@@ -3,6 +3,7 @@ package org.atlasapi.output;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,12 +22,14 @@ import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Encoding;
+import org.atlasapi.content.Episode;
 import org.atlasapi.content.Film;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.ReleaseDate;
+import org.atlasapi.content.Series;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
@@ -299,6 +302,30 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 notChosen,
                 Identified::getAliases
         ));
+
+        if (chosen instanceof Episode && ((Episode) chosen).getEpisodeNumber() == null) {
+            Episode chosenEpisode = (Episode) chosen;
+            StreamSupport.stream(notChosen.spliterator(), false)
+                    .filter(Episode.class::isInstance)
+                    .map(Episode.class::cast)
+                    .filter(e -> e.getSeriesNumber() != null && e.getEpisodeNumber() != null)
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .ifPresent(e -> {
+                        chosenEpisode.setSeriesNumber(e.getSeriesNumber());
+                        chosenEpisode.setEpisodeNumber(e.getEpisodeNumber());
+                    });
+            if(chosenEpisode.getEpisodeNumber() == null) {
+                StreamSupport.stream(notChosen.spliterator(), false)
+                        .filter(Episode.class::isInstance)
+                        .map(Episode.class::cast)
+                        .map(Episode::getEpisodeNumber)
+                        .filter(Objects::nonNull)
+                        .findFirst()
+                        .ifPresent(chosenEpisode::setEpisodeNumber);
+            }
+        }
+
         mergeEncodings(application, chosen, notChosen);
 
         mergeReviews(chosen, notChosen);
@@ -721,6 +748,16 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         if (chosen instanceof Brand && ((Brand) chosen).getSeriesRefs() == null) {
             ((Brand) chosen).setSeriesRefs(ImmutableList.of());
+        }
+
+        if (chosen instanceof Series && ((Series) chosen).getSeriesNumber() == null) {
+            StreamSupport.stream(notChosen.spliterator(), false)
+                    .filter(Series.class::isInstance)
+                    .map(Series.class::cast)
+                    .map(Series::getSeriesNumber)
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .ifPresent(((Series) chosen)::withSeriesNumber);
         }
 
         Map<ItemRef, Iterable<LocationSummary>> availableContent = Maps.newHashMap();
