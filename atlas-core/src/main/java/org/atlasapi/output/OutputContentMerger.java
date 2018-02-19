@@ -308,22 +308,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             StreamSupport.stream(notChosen.spliterator(), false)
                     .filter(Episode.class::isInstance)
                     .map(Episode.class::cast)
-                    .filter(e -> e.getSeriesNumber() != null && e.getEpisodeNumber() != null)
-                    .filter(Objects::nonNull)
+                    .filter(e -> e.getEpisodeNumber() != null)
                     .findFirst()
                     .ifPresent(e -> {
-                        chosenEpisode.setSeriesNumber(e.getSeriesNumber());
                         chosenEpisode.setEpisodeNumber(e.getEpisodeNumber());
+                        if(e.getSeriesNumber() != null) {
+                            chosenEpisode.setSeriesNumber(e.getSeriesNumber());
+                        }
                     });
-            if(chosenEpisode.getEpisodeNumber() == null) {
-                StreamSupport.stream(notChosen.spliterator(), false)
-                        .filter(Episode.class::isInstance)
-                        .map(Episode.class::cast)
-                        .map(Episode::getEpisodeNumber)
-                        .filter(Objects::nonNull)
-                        .findFirst()
-                        .ifPresent(chosenEpisode::setEpisodeNumber);
-            }
         }
 
         mergeEncodings(application, chosen, notChosen);
