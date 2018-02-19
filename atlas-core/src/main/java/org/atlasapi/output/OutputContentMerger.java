@@ -743,13 +743,18 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
 
         if (chosen instanceof Series && ((Series) chosen).getSeriesNumber() == null) {
+            Series chosenSeries = (Series) chosen;
             StreamSupport.stream(notChosen.spliterator(), false)
                     .filter(Series.class::isInstance)
                     .map(Series.class::cast)
-                    .map(Series::getSeriesNumber)
-                    .filter(Objects::nonNull)
+                    .filter(s -> s.getSeriesNumber() != null)
                     .findFirst()
-                    .ifPresent(((Series) chosen)::withSeriesNumber);
+                    .ifPresent(s -> {
+                        chosenSeries.withSeriesNumber(s.getSeriesNumber());
+                        if(s.getTotalEpisodes() != null) {
+                            chosenSeries.setTotalEpisodes(s.getTotalEpisodes());
+                        }
+                    });
         }
 
         Map<ItemRef, Iterable<LocationSummary>> availableContent = Maps.newHashMap();
