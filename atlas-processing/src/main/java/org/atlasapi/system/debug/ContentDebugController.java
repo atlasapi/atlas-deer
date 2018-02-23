@@ -354,6 +354,7 @@ public class ContentDebugController {
         }
     }
 
+
     @RequestMapping("/system/debug/content/{id}/migrate")
     public void forceEquivUpdate(
             @PathVariable("id") String id,
