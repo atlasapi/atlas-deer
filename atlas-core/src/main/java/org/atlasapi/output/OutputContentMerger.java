@@ -1,14 +1,15 @@
 package org.atlasapi.output;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
@@ -59,10 +60,16 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import org.joda.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
+
+    private static final Logger log = LoggerFactory.getLogger(OutputContentMerger.class);
 
     private static final long BROADCAST_START_TIME_TOLERANCE_IN_MS = Duration.standardMinutes(5)
             .getMillis();
@@ -106,7 +113,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         this.hierarchyChooser = checkNotNull(hierarchyChooser);
     }
 
-    @SuppressWarnings("unchecked")
     @Deprecated
     public <T extends Described> List<T> merge(Application application, List<T> contents) {
         Ordering<Sourced> publisherComparator = application.getConfiguration()
@@ -135,13 +141,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             List<T> notChosen = same.subList(1, same.size());
 
             if (chosen instanceof Container) {
-                mergeIn(application, (Container) chosen, (List<Container>) notChosen);
+                mergeIn(application, (Container) chosen, filterEquivs(notChosen, Container.class));
             }
             if (chosen instanceof Item) {
-                mergeIn(application, (Item) chosen, (List<Item>) notChosen);
+                mergeIn(application, (Item) chosen, filterEquivs(notChosen, Item.class));
             }
             if (chosen instanceof ContentGroup) {
-                mergeIn(application, (ContentGroup) chosen, (List<ContentGroup>) notChosen);
+                mergeIn(application, (ContentGroup) chosen, filterEquivs(notChosen, ContentGroup.class));
             }
             merged.add(chosen);
         }
@@ -158,7 +164,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends Content> T merge(T chosen, final Iterable<? extends T> equivalents,
             final Application application) {
         chosen.setId(lowestId(chosen));
@@ -166,33 +171,50 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
             @Override
             protected T visitContainer(Container container) {
-
-                Iterable<Container> equivs = StreamSupport.stream(equivalents.spliterator(), false)
-                        .filter(Container.class::isInstance)
-                        .map(Container.class::cast)
-                        .collect(Collectors.toList());
-
-                mergeIn(application, container, equivs);
-                return (T) container;
+                mergeIn(application, container, filterEquivs(equivalents, Container.class));
+                return uncheckedCast(container);
             }
 
             @Override
             protected T visitItem(Item item) {
-                mergeIn(application, item, (Iterable<Item>) equivalents);
-                return (T) item;
+                mergeIn(application, item, filterEquivs(equivalents, Item.class));
+                return uncheckedCast(item);
+            }
+
+            @SuppressWarnings("unchecked")
+            private T uncheckedCast(Content c) {
+                return (T) c;
             }
         });
     }
 
-    @SuppressWarnings("unchecked")
-    private <T extends Described> List<T> findSame(T brand, Iterable<T> contents) {
-        List<T> same = Lists.newArrayList(brand);
-        for (T possiblyEquivalent : contents) {
-            if (!brand.equals(possiblyEquivalent) && possiblyEquivalent.isEquivalentTo(brand)) {
-                same.add(possiblyEquivalent);
+    private <T extends Described> List<T> filterEquivs(
+            Iterable<? extends Described> equivs,
+            Class<T> type
+    ) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        for (Described equiv : equivs) {
+            try {
+                builder.add(type.cast(equiv));
+            } catch (ClassCastException e) {
+                log.warn(String.format(
+                        "Equiv content (%s: %s) is not a %s",
+                        equiv.getId(), e.getClass().getSimpleName(), type.getSimpleName()
+                ), e);
             }
         }
-        return same;
+        return builder.build();
+    }
+
+    private <T extends Described> List<T> findSame(T brand, Iterable<T> contents) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        builder.add(brand);
+        for (T possiblyEquivalent : contents) {
+            if (!brand.equals(possiblyEquivalent) && possiblyEquivalent.isEquivalentTo(brand)) {
+                builder.add(possiblyEquivalent);
+            }
+        }
+        return builder.build();
     }
 
     private <T extends ContentGroup> void mergeIn(Application application, T chosen,
@@ -267,7 +289,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <I extends Described, O> O first(Iterable<I> is,
-            Function<? super I, ? extends O> transform, O defaultValue) {
+            Function<? super I, ? extends O> transform, @Nullable O defaultValue) {
         return Iterables.getFirst(Iterables.filter(
                 Iterables.transform(is, transform),
                 Predicates.notNull()
