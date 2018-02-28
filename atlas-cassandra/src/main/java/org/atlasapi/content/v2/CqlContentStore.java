@@ -467,9 +467,9 @@ public class CqlContentStore implements ContentStore {
 
         if (content instanceof Container) {
             Container container = (Container) content;
-            Container previousContainer = (Container) previous;
 
-            if (previousContainer != null) {
+            if (previous != null && previous instanceof Container) {
+                Container previousContainer = (Container) previous;
                 ContainerSummary currentSummary = container.toSummary();
                 ContainerSummary previousSummary = previousContainer.toSummary();
 
@@ -673,7 +673,10 @@ public class CqlContentStore implements ContentStore {
 
         if (content instanceof Item) {
             Item item = (Item) content;
-            Item previousItem = (Item) previous;
+            Item previousItem = null;
+            if (previous instanceof Item) {
+                previousItem = (Item) previous;
+            }
 
             ContainerRef containerRef = item.getContainerRef();
             ContainerRef previousContainerRef = previousItem != null
