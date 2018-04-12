@@ -56,13 +56,23 @@ public class Song extends Item {
         );
     }
 
-    @Override
-    public Song copy() {
-        Song song = new Song();
-        Item.copyTo(this, song);
-        song.isrc = isrc;
-        song.duration = duration;
-        return song;
+    public static Song copyTo(Song from, Song to) {
+        Item.copyTo(from, to);
+        to.isrc = from.isrc;
+        to.duration = from.duration;
+        return to;
+    }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Song) {
+            copyTo(this, (Song) to);
+            return to;
+        }
+        return super.copyTo(to);
+    }
+
+    @Override public Song copy() {
+        return copyTo(this, new Song());
     }
 
     public <V> V accept(ItemVisitor<V> visitor) {

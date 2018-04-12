@@ -2,11 +2,21 @@ package org.atlasapi.content;
 
 public class Player extends Described {
 
-    @Override
-    public Player copy() {
-        Player player = new Player();
-        copyTo(this, player);
-        return player;
+    public static Player copyTo(Player from, Player to) {
+        Described.copyTo(from, to);
+        return to;
+    }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Player) {
+            copyTo(this, (Player) to);
+            return to;
+        }
+        return super.copyTo(to);
+    }
+
+    @Override public Player copy() {
+        return copyTo(this, new Player());
     }
 
 }

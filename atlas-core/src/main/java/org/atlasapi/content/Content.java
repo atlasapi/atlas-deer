@@ -53,7 +53,7 @@ public abstract class Content extends Described
     private Set<String> languages = ImmutableSet.of();
     private Set<Certificate> certificates = ImmutableSet.of();
     private Integer year = null;
-    private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
+    @Nullable private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
     private Boolean genericDescription = Boolean.FALSE;
     private ImmutableSet<EventRef> eventRefs = ImmutableSet.of();
 
@@ -169,20 +169,29 @@ public abstract class Content extends Described
         return genericDescription;
     }
 
-    public static void copyTo(Content from, Content to) {
+    public static Content copyTo(Content from, Content to) {
         Described.copyTo(from, to);
-        to.clips = ImmutableList.copyOf(Iterables.transform(from.clips, Clip.COPIES));
+        to.clips = ImmutableList.copyOf(Iterables.transform(from.clips, Clip::copy));
         to.keyPhrases = from.keyPhrases;
         to.relatedLinks = from.relatedLinks;
         to.tags = from.tags;
         to.readHash = from.readHash;
-        to.people = Lists.newArrayList(Iterables.transform(from.people, CrewMember.COPY));
+        to.people = Lists.newArrayList(Iterables.transform(from.people, CrewMember::copy));
         to.languages = from.languages;
         to.certificates = from.certificates;
         to.year = from.year;
-        to.manifestedAs = Sets.newHashSet(from.manifestedAs);
+        to.manifestedAs = from.manifestedAs == null ? null : Sets.newLinkedHashSet(from.manifestedAs);
         to.genericDescription = from.genericDescription;
         to.eventRefs = from.eventRefs;
+        return to;
+    }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Content) {
+            copyTo(this, (Content) to);
+            return to;
+        }
+        return super.copyTo(to);
     }
 
     public void setReadHash(@Nullable String readHash) {

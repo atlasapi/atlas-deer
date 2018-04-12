@@ -57,21 +57,23 @@ public class Clip extends Item {
                                          : getCanonicalUri().hashCode();
     }
 
-    @Override
-    public Clip copy() {
-        Clip clip = new Clip();
-        Item.copyTo(this, clip);
-        clip.clipOf = clipOf;
-        return clip;
+    public static Clip copyTo(Clip from, Clip to) {
+        Item.copyTo(from, to);
+        to.clipOf = from.clipOf;
+        return to;
     }
 
-    public final static Function<Clip, Clip> COPIES = new Function<Clip, Clip>() {
-
-        @Override
-        public Clip apply(Clip input) {
-            return input.copy();
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Clip) {
+            copyTo(this, (Clip) to);
+            return to;
         }
-    };
+        return super.copyTo(to);
+    }
+
+    @Override public Clip copy() {
+        return copyTo(this, new Clip());
+    }
 
     @Override
     public <V> V accept(ItemVisitor<V> visitor) {

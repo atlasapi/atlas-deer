@@ -53,20 +53,23 @@ public class Brand extends Container {
         return ContainerSummary.from(this);
     }
 
-    @Override
-    public Container copy() {
-        Brand copy = new Brand();
-        Container.copyTo(this, copy);
-        return copy;
+    public static Brand copyTo(Brand from, Brand to) {
+        Container.copyTo(from, to);
+        to.seriesRefs = ImmutableList.copyOf(from.seriesRefs);
+        return to;
     }
 
-    public static final Function<Brand, Brand> COPY = new Function<Brand, Brand>() {
-
-        @Override
-        public Brand apply(Brand input) {
-            return (Brand) input.copy();
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Brand) {
+            copyTo(this, (Brand) to);
+            return to;
         }
-    };
+        return super.copyTo(to);
+    }
+
+    @Override public Brand copy() {
+        return Brand.copyTo(this, new Brand());
+    }
 
     public <V> V accept(ContainerVisitor<V> visitor) {
         return visitor.visit(this);

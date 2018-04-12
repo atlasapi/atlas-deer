@@ -35,17 +35,25 @@ public class Segment extends Described {
         this.duration = duration;
     }
 
-    @Override
-    public Described copy() {
-        throw new UnsupportedOperationException();
+    public static Segment copyTo(Segment from, Segment to) {
+        Described.copyTo(from, to);
+        to.type = from.type;
+        to.duration = from.duration;
+        return to;
     }
 
-    public static final Function<Segment, SegmentRef> TO_REF = new Function<Segment, SegmentRef>() {
-
-        @Override
-        public SegmentRef apply(Segment input) {
-            return input.toRef();
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Segment) {
+            copyTo(this, (Segment) to);
+            return to;
         }
-    };
+        return super.copyTo(to);
+    }
+
+    @Override public Segment copy() {
+        return copyTo(this, new Segment());
+    }
+
+    public static final Function<Segment, SegmentRef> TO_REF = Segment::toRef;
 
 }
