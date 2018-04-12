@@ -1,9 +1,12 @@
 package org.atlasapi.output;
 
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -65,6 +68,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
@@ -129,7 +133,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             List<T> same = publisherComparator.sortedCopy(findSame(content, contents));
             processed.addAll(same);
 
-            T chosen = same.get(0);
+            Map.Entry<T, List<T>> chosenAndRest = getChosenAndRest(same);
+            T chosen = chosenAndRest.getKey();
+            List<T> notChosen = chosenAndRest.getValue();
 
             chosen.setId(lowestId(chosen));
 
@@ -137,8 +143,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             if (merged.contains(chosen)) {
                 continue;
             }
-
-            List<T> notChosen = same.subList(1, same.size());
 
             if (chosen instanceof Container) {
                 mergeIn(application, (Container) chosen, filterEquivs(notChosen, Container.class));
@@ -154,11 +158,39 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         return merged;
     }
 
+    private <T extends Described> Map.Entry<T, List<T>> getChosenAndRest(
+            List<? extends T> orderedSame
+    ) {
+        List<T> rest = ImmutableList.copyOf(orderedSame.subList(1, orderedSame.size()));
+        return new SimpleImmutableEntry<>(
+                createChosen(orderedSame.get(0), rest),
+                rest
+        );
+    }
+
+    private <T extends Described> T createChosen(
+            T chosen,
+            Iterable<? extends T> rest
+    ) {
+        // We need to get the most specific type in the equiv set
+        T best = chosen;
+        for (T next : rest) {
+            if (!best.getClass().equals(next.getClass())
+                    && best.getClass().isAssignableFrom(next.getClass())) {
+                best = next;
+            }
+        }
+        // But then we need as many settings as possible from the most precedent source.
+        chosen.copyTo(best);
+        return best;
+    }
+
+    private static final Ordering<Id> ID_ORDERING = Ordering.natural().nullsLast();
     private <T extends Described> Id lowestId(T chosen) {
         Id lowest = chosen.getId();
         for (EquivalenceRef ref : chosen.getEquivalentTo()) {
             Id candidate = ref.getId();
-            lowest = Ordering.natural().nullsLast().min(lowest, candidate);
+            lowest = ID_ORDERING.min(lowest, candidate);
         }
         return lowest;
     }
@@ -166,6 +198,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     @Override
     public <T extends Content> T merge(T chosen, final Iterable<? extends T> equivalents,
             final Application application) {
+        chosen = createChosen(chosen, equivalents);
         chosen.setId(lowestId(chosen));
         return chosen.accept(new ContentVisitorAdapter<T>() {
 
@@ -206,11 +239,11 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         return builder.build();
     }
 
-    private <T extends Described> List<T> findSame(T brand, Iterable<T> contents) {
+    private <T extends Described> List<T> findSame(T content, Iterable<T> contents) {
         ImmutableList.Builder<T> builder = ImmutableList.builder();
-        builder.add(brand);
+        builder.add(content);
         for (T possiblyEquivalent : contents) {
-            if (!brand.equals(possiblyEquivalent) && possiblyEquivalent.isEquivalentTo(brand)) {
+            if (!content.equals(possiblyEquivalent) && possiblyEquivalent.isEquivalentTo(content)) {
                 builder.add(possiblyEquivalent);
             }
         }

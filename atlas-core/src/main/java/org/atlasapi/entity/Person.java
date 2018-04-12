@@ -3,6 +3,7 @@ package org.atlasapi.entity;
 import java.util.Set;
 
 import org.atlasapi.content.ContentGroup;
+import org.atlasapi.content.Described;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
@@ -115,16 +116,27 @@ public class Person extends ContentGroup {
         return UrlEncoding.encode(key.toLowerCase().replace(' ', '_'));
     }
 
-    @Override
-    public Person copy() {
-        Person copy = new Person();
-        ContentGroup.copyTo(this, copy);
-        copy.setGivenName(givenName);
-        copy.setFamilyName(familyName);
-        copy.setGender(gender);
-        copy.setBirthDate(birthDate);
-        copy.setBirthPlace(birthPlace);
-        copy.setQuotes(quotes);
-        return copy;
+    public static Person copyTo(Person from, Person to) {
+        ContentGroup.copyTo(from, to);
+        to.givenName = from.givenName;
+        to.familyName = from.familyName;
+        to.gender = from.gender;
+        to.birthDate = from.birthDate;
+        to.birthPlace = from.birthPlace;
+        to.quotes = from.quotes;
+        return to;
     }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Person) {
+            copyTo(this, (Person) to);
+            return to;
+        }
+        return super.copyTo(to);
+    }
+
+    @Override public Person copy() {
+        return copyTo(this, new Person());
+    }
+
 }

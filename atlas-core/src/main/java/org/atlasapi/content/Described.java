@@ -320,7 +320,7 @@ public abstract class Described extends Identified implements Sourced {
         this.awards = awards;
     }
 
-    public static void copyTo(Described from, Described to) {
+    public static Described copyTo(Described from, Described to) {
         Identified.copyTo(from, to);
         to.description = from.description;
         to.firstSeen = from.firstSeen;
@@ -343,16 +343,25 @@ public abstract class Described extends Identified implements Sourced {
         to.reviews = from.reviews;
         to.ratings = from.ratings;
         to.awards = from.awards;
+        return to;
+    }
+
+    public <T extends Described> T copyTo(T to) {
+        copyTo(this, to);
+        return to;
     }
 
     public abstract Described copy();
 
     public <T extends Described> boolean isEquivalentTo(T content) {
         return getEquivalentTo().contains(EquivalenceRef.valueOf(content))
-                || Iterables.contains(Iterables.transform(
-                content.getEquivalentTo(),
-                Identifiables.toId()
-        ), getId());
+                || Iterables.contains(
+                        Iterables.transform(
+                                content.getEquivalentTo(),
+                                Identifiables.toId()
+                        ),
+                        getId()
+                );
     }
 
 }

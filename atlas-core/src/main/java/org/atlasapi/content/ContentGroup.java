@@ -74,10 +74,21 @@ public class ContentGroup extends Described
         return readHash == null || !this.readHash.equals(newHash);
     }
 
-    public ContentGroup copy() {
-        ContentGroup copy = new ContentGroup();
-        copyTo(this, copy);
-        return copy;
+    public static ContentGroup copyTo(ContentGroup from, ContentGroup to) {
+        Described.copyTo(from, to);
+        return to;
+    }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof ContentGroup) {
+            copyTo(this, (ContentGroup) to);
+            return to;
+        }
+        return super.copyTo(to);
+    }
+
+    @Override public ContentGroup copy() {
+        return copyTo(this, new ContentGroup());
     }
 
     public ContentGroupRef contentGroupRef() {

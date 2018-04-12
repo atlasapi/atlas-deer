@@ -1,6 +1,7 @@
 package org.atlasapi.organisation;
 
 import org.atlasapi.content.ContentGroup;
+import org.atlasapi.content.Described;
 import org.atlasapi.entity.Person;
 
 import com.google.common.base.Objects;
@@ -14,7 +15,7 @@ public class Organisation extends ContentGroup {
     private ImmutableSet<String> alternativeTitles;
 
     public Organisation() {
-        this(ImmutableList.<Person>of());
+        this(ImmutableList.of());
     }
 
     public Organisation(Iterable<Person> members) {
@@ -46,10 +47,21 @@ public class Organisation extends ContentGroup {
                 .toString();
     }
 
-    @Override
-    public Organisation copy() {
-        Organisation copy = new Organisation(this.members);
-        ContentGroup.copyTo(this, copy);
-        return copy;
+    public static Organisation copyTo(Organisation from, Organisation to) {
+        ContentGroup.copyTo(from, to);
+        to.members = from.members;
+        return to;
+    }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Organisation) {
+            copyTo(this, (Organisation) to);
+            return to;
+        }
+        return super.copyTo(to);
+    }
+
+    @Override public Organisation copy() {
+        return copyTo(this, new Organisation());
     }
 }

@@ -126,12 +126,24 @@ public class Topic extends Described implements Sourced, Aliased {
         return new TopicRef(getId(), getSource());
     }
 
-    @Override
-    public Topic copy() {
-        Topic topic = new Topic(getId(), namespace, value);
-        topic.type = type;
-        Described.copyTo(this, topic);
-        return topic;
+    public static Topic copyTo(Topic from, Topic to) {
+        Described.copyTo(from, to);
+        to.type = from.type;
+        to.namespace = from.namespace;
+        to.value = from.value;
+        return to;
+    }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Topic) {
+            copyTo(this, (Topic) to);
+            return to;
+        }
+        return super.copyTo(to);
+    }
+
+    @Override public Topic copy() {
+        return copyTo(this, new Topic());
     }
 
     @FieldName("type")

@@ -108,18 +108,26 @@ public class Episode extends Item {
         );
     }
 
-    @Override
-    public Episode copy() {
-        return copyTo(this, new Episode());
-    }
-
     public static Episode copyTo(Episode from, Episode to) {
         Item.copyTo(from, to);
         to.episodeNumber = from.episodeNumber;
         to.seriesNumber = from.seriesNumber;
-        to.seriesRef = from.seriesRef;
         to.special = from.special;
+        to.partNumber = from.partNumber;
+        to.seriesRef = from.seriesRef;
         return to;
+    }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Episode) {
+            copyTo(this, (Episode) to);
+            return to;
+        }
+        return super.copyTo(to);
+    }
+
+    @Override public Episode copy() {
+        return copyTo(this, new Episode());
     }
 
     @Override

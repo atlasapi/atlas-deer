@@ -55,21 +55,25 @@ public class Series extends Container {
         return this.brandRef;
     }
 
-    @Override
-    public Container copy() {
-        Series copy = new Series();
-        Container.copyTo(this, copy);
-        copy.seriesNumber = seriesNumber;
-        return copy;
+    public static Series copyTo(Series from, Series to) {
+        Container.copyTo(from, to);
+        to.seriesNumber = from.seriesNumber;
+        to.totalEpisodes = from.totalEpisodes;
+        to.brandRef = from.brandRef;
+        return to;
     }
 
-    public final static Function<Series, Series> COPY = new Function<Series, Series>() {
-
-        @Override
-        public Series apply(Series input) {
-            return (Series) input.copy();
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Series) {
+            copyTo(this, (Series) to);
+            return to;
         }
-    };
+        return super.copyTo(to);
+    }
+
+    @Override public Series copy() {
+        return copyTo(this, new Series());
+    }
 
     public SeriesRef toRef() {
         return new SeriesRef(getId(), getSource(), Strings.nullToEmpty(this.getTitle()),

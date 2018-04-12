@@ -580,11 +580,4 @@ public class CrewMember extends Identified implements Hashable {
         to.role = from.role;
     }
 
-    public final static Function<CrewMember, CrewMember> COPY = new Function<CrewMember, CrewMember>() {
-
-        @Override
-        public CrewMember apply(CrewMember input) {
-            return input.copy();
-        }
-    };
 }

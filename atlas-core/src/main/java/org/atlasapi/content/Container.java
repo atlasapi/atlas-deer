@@ -50,9 +50,18 @@ public abstract class Container extends Content {
         this.itemRefs = ImmutableList.copyOf(itemRefs);
     }
 
-    public final static <T extends Item> void copyTo(Container from, Container to) {
+    public static Container copyTo(Container from, Container to) {
         Content.copyTo(from, to);
         to.itemRefs = ImmutableList.copyOf(from.itemRefs);
+        return to;
+    }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Container) {
+            copyTo(this, (Container) to);
+            return to;
+        }
+        return super.copyTo(to);
     }
 
     public abstract <V> V accept(ContainerVisitor<V> visitor);

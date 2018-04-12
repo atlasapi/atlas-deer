@@ -164,16 +164,9 @@ public class Item extends Content {
                 .addAll(this.segmentEvents).build());
     }
 
-    @Override
-    public Item copy() {
-        return Item.copyTo(this, new Item());
-    }
-
     public static Item copyTo(Item from, Item to) {
         Content.copyTo(from, to);
-        if (from.containerRef != null) {
-            to.containerRef = from.containerRef;
-        }
+        to.containerRef = from.containerRef;
         to.containerSummary = from.containerSummary;
         to.isLongForm = from.isLongForm;
         to.broadcasts = Sets.newHashSet(from.broadcasts);
@@ -182,6 +175,18 @@ public class Item extends Content {
         to.blackAndWhite = from.blackAndWhite;
         to.countriesOfOrigin = Sets.newHashSet(from.countriesOfOrigin);
         return to;
+    }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Item) {
+            copyTo(this, (Item) to);
+            return to;
+        }
+        return super.copyTo(to);
+    }
+
+    @Override public Item copy() {
+        return copyTo(this, new Item());
     }
 
     public Item withSortKey(String sortKey) {

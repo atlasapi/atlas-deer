@@ -64,17 +64,24 @@ public class Film extends Item {
         );
     }
 
-    @Override
-    public Film copy() {
-        return copyTo(this, new Film());
-    }
-
     public static Film copyTo(Film from, Film to) {
         Item.copyTo(from, to);
-        to.setWebsiteUrl(from.getWebsiteUrl());
-        to.setSubtitles(from.getSubtitles());
-        to.setReleaseDates(from.getReleaseDates());
+        to.websiteUrl = from.websiteUrl;
+        to.subtitles = from.subtitles;
+        to.releaseDates = from.releaseDates;
         return to;
+    }
+
+    @Override public <T extends Described> T copyTo(T to) {
+        if (to instanceof Film) {
+            copyTo(this, (Film) to);
+            return to;
+        }
+        return super.copyTo(to);
+    }
+
+    @Override public Film copy() {
+        return copyTo(this, new Film());
     }
 
     public <V> V accept(ItemVisitor<V> visitor) {
