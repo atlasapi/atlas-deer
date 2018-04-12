@@ -1,5 +1,7 @@
 package org.atlasapi.content;
 
+import com.google.common.base.Predicate;
+import com.metabroadcast.common.media.MimeType;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.ImageAspectRatio;
@@ -8,10 +10,6 @@ import org.atlasapi.media.entity.ImageTheme;
 import org.atlasapi.media.entity.ImageType;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.metabroadcast.common.media.MimeType;
-
-import com.google.common.base.Predicate;
 import org.joda.time.DateTime;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -61,7 +59,8 @@ public class Image implements Sourced, Hashable {
         LIGHT_TRANSPARENT("light_transparent"),
         DARK_MONOCHROME("dark_monochrome"),
         LIGHT_MONOCHROME("light_monochrome"),
-        YV_MONOCHROME("yv_monochrome");
+        YV_MONOCHROME("yv_monochrome"),
+        BT_SPORT_COLOR_TRANSPARENT("bt_sport_color_transparent");
 
         private final String name;
 
