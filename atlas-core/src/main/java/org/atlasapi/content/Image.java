@@ -37,7 +37,8 @@ public class Image implements Sourced, Hashable {
         COLOR("color"),
         BLACK_AND_WHITE("black_and_white"),
         SINGLE_COLOR("single_color"),
-        MONOCHROME("monochrome");
+        MONOCHROME("monochrome")
+        ;
 
         private final String name;
 
