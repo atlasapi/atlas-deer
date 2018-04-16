@@ -1,13 +1,11 @@
 package org.atlasapi.content;
 
-import javax.annotation.Nullable;
-
+import com.google.common.base.Strings;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
-import com.google.common.base.Function;
-import com.google.common.base.Strings;
+import javax.annotation.Nullable;
 
 public class Series extends Container {
 

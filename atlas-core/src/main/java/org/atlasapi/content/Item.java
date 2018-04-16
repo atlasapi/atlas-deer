@@ -14,24 +14,20 @@
  permissions and limitations under the License. */
 package org.atlasapi.content;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.metabroadcast.common.intl.Country;
 import org.atlasapi.entity.Id;
 import org.atlasapi.hashing.ExcludeFromHash;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.segment.SegmentEvent;
 
-import com.metabroadcast.common.intl.Country;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -100,10 +96,7 @@ public class Item extends Content {
     }
 
     public void setCountriesOfOrigin(Set<Country> countries) {
-        this.countriesOfOrigin = Sets.newHashSet();
-        for (Country country : countries) {
-            countriesOfOrigin.add(country);
-        }
+        this.countriesOfOrigin = Sets.newHashSet(countries);
     }
 
     @FieldName("people")
@@ -136,7 +129,7 @@ public class Item extends Content {
     }
 
     public void setRestrictions(Set<Restriction> restrictions) {
-        this.restrictions = restrictions;
+        this.restrictions = restrictions == null ? Sets.newHashSet() : restrictions;
     }
 
     public void addRestriction(Restriction restriction) {
@@ -169,8 +162,8 @@ public class Item extends Content {
         to.containerRef = from.containerRef;
         to.containerSummary = from.containerSummary;
         to.isLongForm = from.isLongForm;
-        to.broadcasts = Sets.newHashSet(from.broadcasts);
-        to.segmentEvents = Lists.newArrayList(from.segmentEvents);
+        to.broadcasts = from.broadcasts == null ? null : Sets.newLinkedHashSet(from.broadcasts);
+        to.segmentEvents = SegmentEvent.ORDERING.immutableSortedCopy(from.segmentEvents);
         to.restrictions = Sets.newHashSet(from.restrictions);
         to.blackAndWhite = from.blackAndWhite;
         to.countriesOfOrigin = Sets.newHashSet(from.countriesOfOrigin);

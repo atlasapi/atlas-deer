@@ -4,10 +4,15 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Currency;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
@@ -264,7 +269,7 @@ public class HashValueExtractorTest {
         setContentFields(content, true);
         setItemFields(content);
 
-        verifyAllFieldsAreSet(content);
+        verifyAllFieldsAreSet(content, "Item");
 
         Optional<String> hash = hashValueExtractor.getValueToHash(content);
 
@@ -282,7 +287,7 @@ public class HashValueExtractorTest {
         setItemFields(content);
         setSongFields(content);
 
-        verifyAllFieldsAreSet(content);
+        verifyAllFieldsAreSet(content, "Song");
 
         Optional<String> hash = hashValueExtractor.getValueToHash(content);
 
@@ -300,7 +305,7 @@ public class HashValueExtractorTest {
         setItemFields(content);
         setClipFields(content);
 
-        verifyAllFieldsAreSet(content);
+        verifyAllFieldsAreSet(content, "Clip");
 
         Optional<String> hash = hashValueExtractor.getValueToHash(content);
 
@@ -318,7 +323,7 @@ public class HashValueExtractorTest {
         setItemFields(content);
         setEpisodeFields(content);
 
-        verifyAllFieldsAreSet(content);
+        verifyAllFieldsAreSet(content, "Episode");
 
         Optional<String> hash = hashValueExtractor.getValueToHash(content);
 
@@ -336,7 +341,7 @@ public class HashValueExtractorTest {
         setItemFields(content);
         setFilmFields(content);
 
-        verifyAllFieldsAreSet(content);
+        verifyAllFieldsAreSet(content, "Film");
 
         Optional<String> hash = hashValueExtractor.getValueToHash(content);
 
@@ -354,7 +359,7 @@ public class HashValueExtractorTest {
         setContainerFields(content);
         setBrandFields(content);
 
-        verifyAllFieldsAreSet(content);
+        verifyAllFieldsAreSet(content, "Brand");
 
         Optional<String> hash = hashValueExtractor.getValueToHash(content);
 
@@ -372,7 +377,7 @@ public class HashValueExtractorTest {
         setContainerFields(content);
         setSeriesFields(content);
 
-        verifyAllFieldsAreSet(content);
+        verifyAllFieldsAreSet(content, "Series");
 
         Optional<String> hash = hashValueExtractor.getValueToHash(content);
 
@@ -729,9 +734,36 @@ public class HashValueExtractorTest {
     // that we catch new fields that may have been added to the tested object so as to cover
     // them with tests here.
     @SuppressWarnings("ThrowFromFinallyBlock")
-    private void verifyAllFieldsAreSet(Object object) throws Exception {
-        for (Field field : getFields(object)) {
-            try {
+    private void verifyAllFieldsAreSet(Object object, String path) throws Exception {
+        if (object == null) {
+            failWithUnsetField(path);
+
+        } else if (object instanceof Iterable) {
+            Iterable<?> iterable = (Iterable<?>) object;
+            if (Iterables.isEmpty(iterable)) {
+                failWithUnsetField(path);
+            }
+            int idx = 0;
+            for (Object o : iterable) {
+                verifyAllFieldsAreSet(o, path + " [" + idx + "]");
+            }
+        } else if (object.getClass().isArray()) {
+            for (int i = 0; i < Array.getLength(object); i++) {
+                Object arrayObject = Array.get(object, i);
+                verifyAllFieldsAreSet(arrayObject, path + " [" + i + "]");
+            }
+
+        } else if (object instanceof Map) {
+            verifyAllFieldsAreSet(((Map<?, ?>) object).entrySet(), path + " -> .entrySet()");
+        } else if (object instanceof Multimap) {
+            verifyAllFieldsAreSet(((Multimap<?, ?>) object).entries(), path + " -> .entries()");
+        } else if (object instanceof Map.Entry) {
+            Map.Entry<?, ?> e = (Map.Entry<?, ?>) object;
+            verifyAllFieldsAreSet(e.getKey(), path + "<key>");
+            verifyAllFieldsAreSet(e.getValue(), path + "<val>[" + e.getKey() + "]");
+
+        } else if (object instanceof Hashable) {
+            for (Field field : getFields(object)) {
                 if (Clip.class.isAssignableFrom(field.getType())
                         || field.getName().equals("clips")) {
                     // Clips are items which contain clips... This is to avoid an infinite loop
@@ -745,65 +777,17 @@ public class HashValueExtractorTest {
                 if (field.isAnnotationPresent(ExcludeFromHash.class)) {
                     continue;
                 }
-
                 field.setAccessible(true);
                 Object fieldObject = field.get(object);
 
-                if (fieldObject == null) {
-                    failWithUnsetField(field);
-                }
-
-                if (Hashable.class.isAssignableFrom(field.getType())) {
-                    verifyAllFieldsAreSet(fieldObject);
-                }
-
-                if (field.getType().isArray()) {
-                    for (int i = 0; i < Array.getLength(fieldObject); i++) {
-                        Object arrayObject = Array.get(fieldObject, i);
-
-                        if (arrayObject != null) {
-                            verifyAllFieldsAreSet(arrayObject);
-                        }
-                    }
-                }
-
-                if (Iterable.class.isAssignableFrom(field.getType())) {
-                    Iterable iterable = (Iterable) fieldObject;
-
-                    if (!iterable.iterator().hasNext()) {
-                        failWithUnsetField(field);
-                    } else {
-                        for (Object entry : iterable) {
-                            verifyAllFieldsAreSet(entry);
-                        }
-                    }
-                }
-
-                if (Map.class.isAssignableFrom(field.getType())) {
-                    Map map = (Map) fieldObject;
-                    if (map.isEmpty()) {
-                        failWithUnsetField(field);
-                    } else {
-                        for (Object key : map.keySet()) {
-                            verifyAllFieldsAreSet(key);
-                        }
-                        for (Object value : map.values()) {
-                            verifyAllFieldsAreSet(value);
-                        }
-                    }
-                }
-            } finally {
-                field.setAccessible(true);
+                verifyAllFieldsAreSet(fieldObject,
+                        path + " -> " + field.getName() + ":" + field.getType().getCanonicalName());
             }
         }
     }
 
-    private void failWithUnsetField(Field field) {
-        fail("Found null field or empty iterable ("
-                + field.getName()
-                + ":"
-                + field.getType().getCanonicalName()
-                + ") in test object. "
+    private void failWithUnsetField(String path) {
+        fail("Found null field or empty iterable (" + path + ") in test object. "
                 + "This probably means that a new "
                 + "field has been added to the class, but a value has not been set "
                 + "for it in this test suite. This could result in changes to the "

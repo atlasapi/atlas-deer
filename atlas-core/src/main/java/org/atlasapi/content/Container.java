@@ -1,22 +1,17 @@
 package org.atlasapi.content;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.StreamSupport;
 
 public abstract class Container extends Content {
 
@@ -52,7 +47,11 @@ public abstract class Container extends Content {
 
     public static Container copyTo(Container from, Container to) {
         Content.copyTo(from, to);
-        to.itemRefs = ImmutableList.copyOf(from.itemRefs);
+        // they're either null or immutable, so straight copy is safe
+        to.itemRefs = from.itemRefs;
+        to.upcomingContent = from.upcomingContent;
+        to.availableContent = from.availableContent;
+        to.itemSummaries = from.itemSummaries;
         return to;
     }
 
@@ -89,21 +88,11 @@ public abstract class Container extends Content {
                 Maps.filterValues(
                         Maps.transformValues(
                                 upcomingContent,
-                                new Function<Iterable<BroadcastRef>, Iterable<BroadcastRef>>() {
-
-                                    @Nullable
-                                    @Override
-                                    public Iterable<BroadcastRef> apply(
-                                            Iterable<BroadcastRef> input) {
-                                        return ImmutableList.copyOf(input)
-                                                .stream()
-                                                .filter(BroadcastRef.IS_UPCOMING)
-                                                .collect(Collectors.toList());
-                                    }
-
-                                }
+                                input -> input == null ? null : StreamSupport.stream(input.spliterator(), false)
+                                            .filter(BroadcastRef.IS_UPCOMING)
+                                            .collect(MoreCollectors.toImmutableList())
                         ),
-                        input -> !Iterables.isEmpty(input)
+                        input -> input != null && !input.isEmpty()
                 )
         );
     }
@@ -122,21 +111,11 @@ public abstract class Container extends Content {
                 Maps.filterValues(
                         Maps.transformValues(
                                 availableContent,
-                                new Function<Iterable<LocationSummary>, Iterable<LocationSummary>>() {
-
-                                    @Nullable
-                                    @Override
-                                    public Iterable<LocationSummary> apply(
-                                            Iterable<LocationSummary> input) {
-                                        return ImmutableList.copyOf(input)
-                                                .stream()
-                                                .filter(LocationSummary::isAvailable)
-                                                .collect(Collectors.toList());
-                                    }
-
-                                }
+                                input -> input == null ? null : StreamSupport.stream(input.spliterator(), false)
+                                        .filter(LocationSummary::isAvailable)
+                                        .collect(MoreCollectors.toImmutableList())
                         ),
-                        input -> !Iterables.isEmpty(input)
+                        input -> input != null && !input.isEmpty()
                 )
         );
     }

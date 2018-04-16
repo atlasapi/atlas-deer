@@ -15,12 +15,10 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
 
 /**
  * @author Robert Chatley (robert@metabroadcast.com)
@@ -55,7 +53,7 @@ public class Brand extends Container {
 
     public static Brand copyTo(Brand from, Brand to) {
         Container.copyTo(from, to);
-        to.seriesRefs = ImmutableList.copyOf(from.seriesRefs);
+        to.seriesRefs = from.seriesRefs;    // immutable so no need to copy
         return to;
     }
 

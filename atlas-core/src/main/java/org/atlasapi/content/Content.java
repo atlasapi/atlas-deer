@@ -143,7 +143,7 @@ public abstract class Content extends Described
     }
 
     public void setPeople(List<CrewMember> people) {
-        this.people = people;
+        this.people = people == null ? Lists.newArrayList() : people;
     }
 
     @FieldName("genericDescription")
