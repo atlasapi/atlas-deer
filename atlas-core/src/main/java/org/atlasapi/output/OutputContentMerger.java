@@ -1,18 +1,19 @@
 package org.atlasapi.output;
 
-import java.util.AbstractMap;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import com.metabroadcast.common.stream.MoreCollectors;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
@@ -36,7 +37,6 @@ import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
-import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Rating;
@@ -46,29 +46,21 @@ import org.atlasapi.entity.Sourceds;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
-
-import com.metabroadcast.applications.client.model.internal.Application;
-
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
@@ -137,7 +129,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             T chosen = chosenAndRest.getKey();
             List<T> notChosen = chosenAndRest.getValue();
 
-            chosen.setId(lowestId(chosen));
+            chosen = mergeIdAndEquivTo(chosen);
 
             // defend against broken transitive equivalence
             if (merged.contains(chosen)) {
@@ -185,21 +177,42 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         return best;
     }
 
-    private static final Ordering<Id> ID_ORDERING = Ordering.natural().nullsLast();
-    private <T extends Described> Id lowestId(T chosen) {
-        Id lowest = chosen.getId();
+    private static final Ordering<EquivalenceRef> EQUIV_ID_ORDERING =
+            Ordering.from(Comparator.comparing(EquivalenceRef::getId)).nullsLast();
+    private <T extends Described> EquivalenceRef lowestEquivRef(T chosen) {
+        EquivalenceRef lowest = EquivalenceRef.valueOf(chosen);
         for (EquivalenceRef ref : chosen.getEquivalentTo()) {
-            Id candidate = ref.getId();
-            lowest = ID_ORDERING.min(lowest, candidate);
+            lowest = EQUIV_ID_ORDERING.min(lowest, ref);
         }
         return lowest;
+    }
+
+    private <T extends Described> T mergeIdAndEquivTo(T chosen) {
+        EquivalenceRef chosenRef = EquivalenceRef.valueOf(chosen);
+        EquivalenceRef lowestRef = lowestEquivRef(chosen);
+        if (chosenRef.equals(lowestRef)) {
+            return chosen;
+        }
+        Set<EquivalenceRef> equivs = chosen.getEquivalentTo();
+        Set<EquivalenceRef> newEquivs = new LinkedHashSet<>(equivs.size() + 1);
+        newEquivs.add(chosenRef);
+        newEquivs.addAll(equivs);
+        newEquivs.remove(lowestRef);
+        if (equivs.size() != newEquivs.size()) {
+            log.warn("Problem merging equivs: OLD{id: {}, equivTo: {}} NEW{id: {}, equivTo: {}}",
+                    chosenRef, equivs, lowestRef, newEquivs);
+        }
+        chosen.setId(lowestRef.getId());
+        chosen.setPublisher(lowestRef.getSource());
+        chosen.setEquivalentTo(newEquivs);
+        return chosen;
     }
 
     @Override
     public <T extends Content> T merge(T chosen, final Iterable<? extends T> equivalents,
             final Application application) {
         chosen = createChosen(chosen, equivalents);
-        chosen.setId(lowestId(chosen));
+        chosen = mergeIdAndEquivTo(chosen);
         return chosen.accept(new ContentVisitorAdapter<T>() {
 
             @Override
