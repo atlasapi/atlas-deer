@@ -4,15 +4,13 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Currency;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import com.metabroadcast.common.intl.Country;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
@@ -733,10 +731,28 @@ public class HashValueExtractorTest {
     // Ensure the test has set a value for all fields of the tested object. This is to ensure
     // that we catch new fields that may have been added to the tested object so as to cover
     // them with tests here.
-    @SuppressWarnings("ThrowFromFinallyBlock")
     private void verifyAllFieldsAreSet(Object object, String path) throws Exception {
         if (object == null) {
             failWithUnsetField(path);
+
+        } else if (object instanceof java.util.Optional) {
+            java.util.Optional<?> optional = (Optional<?>) object;
+            if (!optional.isPresent()) {
+                failWithUnsetField(path);
+            }
+            verifyAllFieldsAreSet(optional.get(), path + " -> .get()");
+        } else if (object instanceof com.google.common.base.Optional) {
+            com.google.common.base.Optional<?> optional = (com.google.common.base.Optional<?>) object;
+            if (!optional.isPresent()) {
+                failWithUnsetField(path);
+            }
+            verifyAllFieldsAreSet(optional.get(), path + " -> .get()");
+        } else if (object instanceof com.metabroadcast.common.base.Maybe) {
+            com.metabroadcast.common.base.Maybe<?> maybe = (com.metabroadcast.common.base.Maybe<?>) object;
+            if (!maybe.hasValue()) {
+                failWithUnsetField(path);
+            }
+            verifyAllFieldsAreSet(maybe.requireValue(), path + " -> .get()");
 
         } else if (object instanceof Iterable) {
             Iterable<?> iterable = (Iterable<?>) object;
@@ -771,17 +787,37 @@ public class HashValueExtractorTest {
                     return;
                 }
 
-                if (Modifier.isStatic(field.getModifiers())) {
-                    continue;
+                if (field.getType().isPrimitive()) {
+                    continue;   // impossible to say whether it's 'missing'
                 }
+
                 if (field.isAnnotationPresent(ExcludeFromHash.class)) {
                     continue;
                 }
-                field.setAccessible(true);
-                Object fieldObject = field.get(object);
 
-                verifyAllFieldsAreSet(fieldObject,
+                verifyAllFieldsAreSet(getFieldObject(object, field),
                         path + " -> " + field.getName() + ":" + field.getType().getCanonicalName());
+            }
+        } else if (object.getClass().isPrimitive()
+                || object instanceof Enum
+                || object instanceof String
+                || object instanceof Number
+                || object instanceof Boolean
+                || object.getClass().getPackage().getName().equals("org.joda.time")
+                || object.getClass().getPackage().getName().equals("java.time")
+                ){
+            // normal field
+        } else {
+            for (Field field : getFields(object)) {
+                if (field.getType().isPrimitive()) {
+                    continue;   // impossible to say whether it's 'missing'
+                }
+                String fieldPath = path + " -?> " + field.getName() + ":" + field.getType().getCanonicalName();
+                try {
+                    verifyAllFieldsAreSet(getFieldObject(object, field), fieldPath);
+                } catch (StackOverflowError e) {
+                    fail("Stack overflow on field: " + path);
+                }
             }
         }
     }
@@ -806,11 +842,18 @@ public class HashValueExtractorTest {
             }
 
             for (Field field : clazz.getDeclaredFields()) {
+                if (field.isSynthetic()) continue;
+                if (Modifier.isStatic(field.getModifiers())) continue;
                 fieldsBuilder.add(field);
             }
         }
 
         return fieldsBuilder.build();
+    }
+
+    private Object getFieldObject(Object object, Field field) throws Exception {
+        field.setAccessible(true);
+        return field.get(object);
     }
 
     @SuppressWarnings("unused")
