@@ -22,20 +22,19 @@ import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
 @Controller
 public class ScheduleBootstrapController {
@@ -58,7 +57,6 @@ public class ScheduleBootstrapController {
         this.scheduleBootstrapper = checkNotNull(scheduleBootstrapper);
         this.channelResolver = checkNotNull(channelResvoler);
     }
-
     /**
      * Bootstrap a single channel for a single day.
      * <p><em>Note:</em> {@code migrateContent}, {@code writeEquivs} and {@code forwarding}
@@ -70,9 +68,8 @@ public class ScheduleBootstrapController {
      * @param writeEquivs       true to migrate content equivalences as well
      * @param forwarding        true to forward to the schedule equivalence writer as well
      */
-    @RequestMapping(value = "/system/bootstrap/schedule", method = RequestMethod.POST)
-    public Void bootstrapSchedule(
-            HttpServletResponse resp,
+    @RequestMapping(value = "/system/bootstrap/schedule", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> bootstrapSchedule(
             @RequestParam("source") String src,
             @RequestParam("day") String day,
             @RequestParam("channel") String channelId,
@@ -86,23 +83,23 @@ public class ScheduleBootstrapController {
 
         Optional<Publisher> source = Publisher.fromKey(src).toGuavaOptional();
         if (!source.isPresent()) {
-            return failure(resp, SC_BAD_REQUEST, "Unknown source " + src);
+            return failure(HttpStatus.BAD_REQUEST, "Unknown source " + src);
         }
 
         Optional<Channel> channel = resolve(channelId);
         if (!channel.isPresent()) {
-            return failure(resp, SC_BAD_REQUEST, "Unknown channel " + channelId);
+            return failure(HttpStatus.BAD_REQUEST, "Unknown channel " + channelId);
         }
 
         LocalDate date;
         try {
             date = dateParser.parseLocalDate(day);
         } catch (IllegalArgumentException iae) {
-            return dateParseFailure(resp, day);
+            return dateParseFailure(day);
         }
 
         try {
-            scheduleBootstrapper.bootstrapSchedules(
+            ScheduleBootstrapper.Status status = scheduleBootstrapper.bootstrapSchedules(
                     ImmutableList.of(channel.get()),
                     interval(date),
                     source.get(),
@@ -111,13 +108,9 @@ public class ScheduleBootstrapController {
                     forwarding
 
             );
-//            resp.setStatus((success ? SC_OK : SC_CONFLICT));
-//            resp.getWriter().write(success ?
-//                                   scheduleBootstrapper.getProgress(bootstrapName).toString() :
-//                                   "Another schedule bootstrap is already running");
-            return null;
+            return ResponseEntity.status(HttpStatus.OK).body(new ScheduleBootstrapResponse(status));
         } catch (Exception e) {
-            return failure(resp, SC_INTERNAL_SERVER_ERROR, Throwables.getStackTraceAsString(e));
+            return failure(HttpStatus.INTERNAL_SERVER_ERROR, Throwables.getStackTraceAsString(e));
         }
     }
 
@@ -132,9 +125,8 @@ public class ScheduleBootstrapController {
      * @param writeEquivs       true to migrate content equivalences as well
      * @param forwarding        true to forward to the schedule equivalence writer as well
      */
-    @RequestMapping(value = "/system/bootstrap/schedule/all", method = RequestMethod.POST)
-    public void bootstrapAllSchedules(
-            HttpServletResponse resp,
+    @RequestMapping(value = "/system/bootstrap/schedule/all", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> bootstrapAllSchedules(
             @RequestParam("source") String src,
             @RequestParam("from") String from,
             @RequestParam("to") String to,
@@ -148,8 +140,7 @@ public class ScheduleBootstrapController {
 
         final Optional<Publisher> source = Publisher.fromKey(src).toGuavaOptional();
         if (!source.isPresent()) {
-            failure(resp, SC_BAD_REQUEST, "Unknown source " + src);
-            return;
+            return failure(HttpStatus.BAD_REQUEST, "Unknown source " + src);
         }
 
         final Iterable<Channel> channels =
@@ -163,39 +154,31 @@ public class ScheduleBootstrapController {
         try {
             dateFrom = dateParser.parseLocalDate(from);
         } catch (IllegalArgumentException iae) {
-            dateParseFailure(resp, from);
-            return;
+            return dateParseFailure(from);
         }
 
         try {
             dateTo = dateParser.parseLocalDate(to);
         } catch (IllegalArgumentException iae) {
-            failure(resp, SC_BAD_REQUEST, "Failed to parse " + to + ", expected yyyy-MM-dd");
-            return;
+            return failure(HttpStatus.BAD_REQUEST, "Failed to parse " + to + ", expected yyyy-MM-dd");
         }
         final Interval interval = interval(dateFrom, dateTo);
-        executor.submit(() -> {
-            scheduleBootstrapper.bootstrapSchedules(
-                    channels,
-                    interval,
-                    source.get(),
-                    migrateContent,
-                    writeEquivs,
-                    forwarding
-            );
-//            if (!bootstrapping) {
-//                log.warn(
-//                        "Bootstrapping failed because apparently busy bootstrapping something else.");
-//            }
-        });
+        ScheduleBootstrapper.Status status = scheduleBootstrapper.bootstrapSchedules(
+                channels,
+                interval,
+                source.get(),
+                migrateContent,
+                writeEquivs,
+                forwarding
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(new ScheduleBootstrapResponse(status));
     }
 
     @RequestMapping(value = "/system/bootstrap/schedule/all/status.json",
-            method = RequestMethod.GET)
-    public void checkScheduleBootstrapStatus(HttpServletResponse response) throws IOException {
+            method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> checkScheduleBootstrapStatus() throws IOException {
         Collection<ScheduleBootstrapper.Status> status = scheduleBootstrapper.getProgress();
-        jsonMapper.writeValue(response.getOutputStream(), status);
-        response.flushBuffer();
+        return ResponseEntity.status(HttpStatus.OK).body(new ScheduleBootstrapResponse(status));
     }
 
     private Interval interval(LocalDate from, LocalDate to) {
@@ -228,15 +211,35 @@ public class ScheduleBootstrapController {
         return Optional.of(Iterables.getOnlyElement(resolvedChannel.getResources()));
     }
 
-    private Void dateParseFailure(HttpServletResponse resp, String day)
+    private ResponseEntity<?> dateParseFailure(String day)
             throws IOException {
-        return failure(resp, SC_BAD_REQUEST, "Failed to parse " + day + ", expected yyyy-MM-dd");
+        return failure(HttpStatus.BAD_REQUEST, "Failed to parse " + day + ", expected yyyy-MM-dd");
     }
-    private Void failure(HttpServletResponse resp, int statusCode, String msg)
+    private ResponseEntity<?> failure(HttpStatus status, String msg)
             throws IOException {
-        resp.setStatus(statusCode);
-        resp.getWriter().write(msg);
-        return null;
+        return ResponseEntity.status(status).body(msg);
+    }
+
+    public class ScheduleBootstrapResponse {
+        private Collection<ScheduleBootstrapper.Status> status;
+
+        public ScheduleBootstrapResponse(ScheduleBootstrapper.Status status) {
+            if(status == null) {
+                this.status = ImmutableList.of();
+            }
+            else {
+                this.status = ImmutableList.of(status);
+            }
+        }
+
+        public ScheduleBootstrapResponse(Collection<ScheduleBootstrapper.Status> status) {
+            this.status = ImmutableList.copyOf(checkNotNull(status));
+        }
+
+        public Collection<ScheduleBootstrapper.Status> getStatus() {
+            return status;
+        }
+
     }
 
 }
