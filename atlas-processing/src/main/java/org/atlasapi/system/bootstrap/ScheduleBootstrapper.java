@@ -1,6 +1,7 @@
 package org.atlasapi.system.bootstrap;
 
 import com.google.api.client.util.Sets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -14,12 +15,14 @@ import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -27,7 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ScheduleBootstrapper {
 
     private static final Logger log = LoggerFactory.getLogger(ScheduleBootstrapper.class);
-    private final ConcurrentHashMap<String, Status> bootstrappingStatuses = new ConcurrentHashMap<>();
+    private final ConcurrentMultimap<String, Status> bootstrappingStatuses = new ConcurrentMultimap<>();
     private final ScheduleBootstrapLock bootstrapLock = new ScheduleBootstrapLock();
     private final ListeningExecutorService executor;
     private final ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
@@ -154,16 +157,12 @@ public class ScheduleBootstrapper {
         return updateFuture;
     }
 
-    public Optional<Status> getProgress(String bootstrapName) {
-        return Optional.ofNullable(bootstrappingStatuses.get(bootstrapName));
+    public Iterable<Status> getProgress(String bootstrapName) {
+        return bootstrappingStatuses.get(bootstrapName);
     }
 
-    public Map<String, Status> getProgress() {
-        return Collections.unmodifiableMap(bootstrappingStatuses);
-    }
-
-    public boolean isBootstrapping() {
-        return !bootstrappingStatuses.isEmpty();
+    public Map<String, Collection<Status>> getProgress() {
+        return bootstrappingStatuses.getMap();
     }
 
     public class Status {
@@ -186,6 +185,40 @@ public class ScheduleBootstrapper {
 
         public int getTotal() {
             return total.get();
+        }
+    }
+
+    private class ConcurrentMultimap<K, V> {
+        private ConcurrentHashMap<K, Queue<V>> map;
+
+        ConcurrentMultimap() {
+            map = new ConcurrentHashMap<>();
+        }
+
+        Collection<V> get(K key) {
+            Queue<V> queue = map.get(key);
+            if(queue == null) {
+                return Collections.unmodifiableCollection(ImmutableList.of());
+            }
+            return Collections.unmodifiableCollection(queue);
+        }
+
+        Collection<V> put(K key, V value) {
+            Queue<V> queue = map.computeIfAbsent(key, (k) -> new ConcurrentLinkedQueue<>());
+            queue.add(value);
+            return Collections.unmodifiableCollection(queue);
+        }
+
+        boolean remove(K key, V value) {
+            Queue<V> queue = map.get(key);
+            if(queue == null) {
+                return false;
+            }
+            return queue.remove(value);
+        }
+
+        Map<K, Collection<V>> getMap() {
+            return Collections.unmodifiableMap(map);
         }
     }
 
