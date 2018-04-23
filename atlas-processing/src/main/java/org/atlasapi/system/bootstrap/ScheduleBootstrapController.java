@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
@@ -36,9 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_CONFLICT;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 @Controller
 public class ScheduleBootstrapController {
@@ -105,18 +102,21 @@ public class ScheduleBootstrapController {
         }
 
         try {
-            boolean success = scheduleBootstrapper.bootstrapSchedules(
+            String bootstrapName = String.format("%s:%s", channel.get().getId(), date.toString());
+            scheduleBootstrapper.bootstrapSchedules(
                     ImmutableList.of(channel.get()),
                     interval(date),
                     source.get(),
                     migrateContent,
                     writeEquivs,
-                    forwarding
+                    forwarding,
+                    bootstrapName
+
             );
-            resp.setStatus((success ? SC_OK : SC_CONFLICT));
-            resp.getWriter().write(success ?
-                                   scheduleBootstrapper.getProgress().toString() :
-                                   "Another schedule bootstrap is already running");
+//            resp.setStatus((success ? SC_OK : SC_CONFLICT));
+//            resp.getWriter().write(success ?
+//                                   scheduleBootstrapper.getProgress(bootstrapName).toString() :
+//                                   "Another schedule bootstrap is already running");
             return null;
         } catch (Exception e) {
             return failure(resp, SC_INTERNAL_SERVER_ERROR, Throwables.getStackTraceAsString(e));
@@ -176,30 +176,33 @@ public class ScheduleBootstrapController {
             return;
         }
         final Interval interval = interval(dateFrom, dateTo);
+        String bootstrapName = String.format("all:%s", interval.toString());
         executor.submit(() -> {
-            boolean bootstrapping = scheduleBootstrapper.bootstrapSchedules(
+            scheduleBootstrapper.bootstrapSchedules(
                     channels,
                     interval,
                     source.get(),
                     migrateContent,
                     writeEquivs,
-                    forwarding
+                    forwarding,
+                    bootstrapName
             );
-            if (!bootstrapping) {
-                log.warn(
-                        "Bootstrapping failed because apparently busy bootstrapping something else.");
-            }
+//            if (!bootstrapping) {
+//                log.warn(
+//                        "Bootstrapping failed because apparently busy bootstrapping something else.");
+//            }
         });
     }
 
     @RequestMapping(value = "/system/bootstrap/schedule/all/status.json",
             method = RequestMethod.GET)
     public void checkScheduleBootstrapStatus(HttpServletResponse response) throws IOException {
-        Map<String, Object> result = Maps.newHashMap();
-        result.put("bootstrapping", scheduleBootstrapper.isBootstrapping());
-        result.put("processed", scheduleBootstrapper.getProgress().getProcessed());
-        result.put("failures", scheduleBootstrapper.getProgress().getFailures());
-        jsonMapper.writeValue(response.getOutputStream(), result);
+        Map<String, ScheduleBootstrapper.Status> status = scheduleBootstrapper.getProgress();
+//        Map<String, Object> result = Maps.newHashMap();
+//        result.put("bootstrapping", scheduleBootstrapper.isBootstrapping());
+//        result.put("processed", scheduleBootstrapper.getProgress().getProcessed());
+//        result.put("failures", scheduleBootstrapper.getProgress().getFailures());
+        jsonMapper.writeValue(response.getOutputStream(), status);
         response.flushBuffer();
     }
 
