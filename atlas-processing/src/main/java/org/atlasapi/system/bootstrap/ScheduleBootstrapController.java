@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -198,11 +197,7 @@ public class ScheduleBootstrapController {
     @RequestMapping(value = "/system/bootstrap/schedule/all/status.json",
             method = RequestMethod.GET)
     public void checkScheduleBootstrapStatus(HttpServletResponse response) throws IOException {
-        Map<String, Collection<ScheduleBootstrapper.Status>> status = scheduleBootstrapper.getProgress();
-//        Map<String, Object> result = Maps.newHashMap();
-//        result.put("bootstrapping", scheduleBootstrapper.isBootstrapping());
-//        result.put("processed", scheduleBootstrapper.getProgress().getProcessed());
-//        result.put("failures", scheduleBootstrapper.getProgress().getFailures());
+        Collection<ScheduleBootstrapper.Status> status = scheduleBootstrapper.getProgress();
         jsonMapper.writeValue(response.getOutputStream(), status);
         response.flushBuffer();
     }

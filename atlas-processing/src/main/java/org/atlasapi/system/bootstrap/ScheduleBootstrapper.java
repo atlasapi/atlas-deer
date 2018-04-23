@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.metabroadcast.common.scheduling.UpdateProgress;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.locks.ScheduleBootstrapLock;
 import org.atlasapi.media.entity.Publisher;
@@ -61,7 +62,7 @@ public class ScheduleBootstrapper {
             boolean forwarding,
             String bootstrapName
     ) {
-        Status status = new Status();
+        Status status = new Status(bootstrapName);
         status.total.set(Iterables.size(channels));
         bootstrappingStatuses.put(bootstrapName, status);
         Set<ListenableFuture<UpdateProgress>> futures = Sets.newHashSet();
@@ -157,19 +158,28 @@ public class ScheduleBootstrapper {
         return updateFuture;
     }
 
-    public Iterable<Status> getProgress(String bootstrapName) {
+    public Collection<Status> getProgress(String bootstrapName) {
         return bootstrappingStatuses.get(bootstrapName);
     }
 
-    public Map<String, Collection<Status>> getProgress() {
-        return bootstrappingStatuses.getMap();
+    public Collection<Status> getProgress() {
+        return bootstrappingStatuses.getMap().values().stream().flatMap(Collection::stream).collect(MoreCollectors.toImmutableList());
     }
 
     public class Status {
+        private final String name;
         private AtomicInteger processed = new AtomicInteger(0);
         private AtomicInteger failures = new AtomicInteger(0);
         private AtomicInteger progress = new AtomicInteger(0);
         private AtomicInteger total = new AtomicInteger(0);
+
+        public Status(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
 
         public int getProcessed() {
             return processed.get();
