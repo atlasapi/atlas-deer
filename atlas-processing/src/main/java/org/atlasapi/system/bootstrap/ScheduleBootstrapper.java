@@ -1,7 +1,7 @@
 package org.atlasapi.system.bootstrap;
 
+import com.codepoetics.protonpack.StreamUtils;
 import com.google.api.client.util.Sets;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -18,12 +18,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
-import java.util.Queue;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -31,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ScheduleBootstrapper {
 
     private static final Logger log = LoggerFactory.getLogger(ScheduleBootstrapper.class);
-    private final ConcurrentMultimap<String, Status> bootstrappingStatuses = new ConcurrentMultimap<>();
+    private final ConcurrentSkipListSet<Status> bootstrappingStatuses = new ConcurrentSkipListSet<>();
     private final ScheduleBootstrapLock bootstrapLock = new ScheduleBootstrapLock();
     private final ListeningExecutorService executor;
     private final ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
@@ -59,12 +57,12 @@ public class ScheduleBootstrapper {
             Publisher source,
             boolean migrateContent,
             boolean writeEquivalences,
-            boolean forwarding,
-            String bootstrapName
+            boolean forwarding
     ) {
-        Status status = new Status(bootstrapName);
+        Status status = new Status(StreamUtils.stream(channels).map(c -> c.getId().toString()).collect(MoreCollectors.toImmutableList()),
+                source.key(), interval);
         status.total.set(Iterables.size(channels));
-        bootstrappingStatuses.put(bootstrapName, status);
+        bootstrappingStatuses.add(status);
         Set<ListenableFuture<UpdateProgress>> futures = Sets.newHashSet();
         log.info(
                 "Bootstrapping {} channels for interval from {} to {}",
@@ -88,7 +86,7 @@ public class ScheduleBootstrapper {
         } catch (Exception e) {
             //this is already logged in the callback
         } finally {
-            bootstrappingStatuses.remove(bootstrapName, status);
+            bootstrappingStatuses.remove(status);
         }
         return status;
     }
@@ -158,27 +156,35 @@ public class ScheduleBootstrapper {
         return updateFuture;
     }
 
-    public Collection<Status> getProgress(String bootstrapName) {
-        return bootstrappingStatuses.get(bootstrapName);
-    }
-
     public Collection<Status> getProgress() {
-        return bootstrappingStatuses.getMap().values().stream().flatMap(Collection::stream).collect(MoreCollectors.toImmutableList());
+        return Collections.unmodifiableCollection(bootstrappingStatuses);
     }
 
     public class Status {
-        private final String name;
+        private final List<String> channels;
+        private final String source;
+        private final Interval interval;
         private AtomicInteger processed = new AtomicInteger(0);
         private AtomicInteger failures = new AtomicInteger(0);
         private AtomicInteger progress = new AtomicInteger(0);
         private AtomicInteger total = new AtomicInteger(0);
 
-        public Status(String name) {
-            this.name = name;
+        public Status(List<String> channels, String source, Interval interval) {
+            this.channels = checkNotNull(channels);
+            this.source = checkNotNull(source);
+            this.interval = checkNotNull(interval);
         }
 
-        public String getName() {
-            return name;
+        public List<String> getChannels() {
+            return channels;
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public String getInterval() {
+            return interval.toString();
         }
 
         public int getProcessed() {
@@ -195,40 +201,6 @@ public class ScheduleBootstrapper {
 
         public int getTotal() {
             return total.get();
-        }
-    }
-
-    private class ConcurrentMultimap<K, V> {
-        private ConcurrentHashMap<K, Queue<V>> map;
-
-        ConcurrentMultimap() {
-            map = new ConcurrentHashMap<>();
-        }
-
-        Collection<V> get(K key) {
-            Queue<V> queue = map.get(key);
-            if(queue == null) {
-                return Collections.unmodifiableCollection(ImmutableList.of());
-            }
-            return Collections.unmodifiableCollection(queue);
-        }
-
-        Collection<V> put(K key, V value) {
-            Queue<V> queue = map.computeIfAbsent(key, (k) -> new ConcurrentLinkedQueue<>());
-            queue.add(value);
-            return Collections.unmodifiableCollection(queue);
-        }
-
-        boolean remove(K key, V value) {
-            Queue<V> queue = map.get(key);
-            if(queue == null) {
-                return false;
-            }
-            return queue.remove(value);
-        }
-
-        Map<K, Collection<V>> getMap() {
-            return Collections.unmodifiableMap(map);
         }
     }
 

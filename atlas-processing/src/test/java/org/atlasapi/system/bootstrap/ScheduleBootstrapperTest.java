@@ -77,8 +77,7 @@ public class ScheduleBootstrapperTest {
                 source,
                 false,
                 false,
-                false,
-                "test"
+                false
         );
 
         assertThat(progress.getProcessed(), is(3));

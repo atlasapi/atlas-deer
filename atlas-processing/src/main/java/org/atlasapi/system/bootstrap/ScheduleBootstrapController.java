@@ -102,15 +102,13 @@ public class ScheduleBootstrapController {
         }
 
         try {
-            String bootstrapName = String.format("%s:%s", channel.get().getId(), date.toString());
             scheduleBootstrapper.bootstrapSchedules(
                     ImmutableList.of(channel.get()),
                     interval(date),
                     source.get(),
                     migrateContent,
                     writeEquivs,
-                    forwarding,
-                    bootstrapName
+                    forwarding
 
             );
 //            resp.setStatus((success ? SC_OK : SC_CONFLICT));
@@ -176,7 +174,6 @@ public class ScheduleBootstrapController {
             return;
         }
         final Interval interval = interval(dateFrom, dateTo);
-        String bootstrapName = String.format("all:%s", interval.toString());
         executor.submit(() -> {
             scheduleBootstrapper.bootstrapSchedules(
                     channels,
@@ -184,8 +181,7 @@ public class ScheduleBootstrapController {
                     source.get(),
                     migrateContent,
                     writeEquivs,
-                    forwarding,
-                    bootstrapName
+                    forwarding
             );
 //            if (!bootstrapping) {
 //                log.warn(
