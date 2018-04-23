@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ScheduleBootstrapper {
 
     private static final Logger log = LoggerFactory.getLogger(ScheduleBootstrapper.class);
-    private final ConcurrentSkipListSet<Status> bootstrappingStatuses = new ConcurrentSkipListSet<>();
+    private final Set<Status> bootstrappingStatuses = ConcurrentHashMap.newKeySet();
     private final ScheduleBootstrapLock bootstrapLock = new ScheduleBootstrapLock();
     private final ListeningExecutorService executor;
     private final ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
