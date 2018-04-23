@@ -47,15 +47,14 @@ public class ScheduleBootstrapLock {
         }
     }
 
-    //TODO do we need to lock a day either side?
-    //All days in the interval and a day either side
+    //All days in the interval
     private SortedSet<Key> getKeys(Channel channel, Interval interval) {
         String channelId = channel.getId().toString();
-        LocalDate date = interval.getStart().toLocalDate().minusDays(1);
+        LocalDate date = interval.getStart().toLocalDate();
         Set<Key> keys = new HashSet<>();
-        while(date.compareTo(interval.getEnd().toLocalDate().plusDays(1)) <= 0) {
+        while(date.compareTo(interval.getEnd().toLocalDate()) <= 0) {
             keys.add(new Key(channelId, date));
-            date.plusDays(1);
+            date = date.plusDays(1);
         }
         return ImmutableSortedSet.copyOf(keys);
     }
