@@ -103,7 +103,7 @@ public class ScheduleBootstrapLock {
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(channelId, date);
+            return Objects.hashCode(channelId, source, date);
         }
 
         @Override
