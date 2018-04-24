@@ -108,7 +108,7 @@ public class ScheduleBootstrapController {
                     forwarding
 
             );
-            return ResponseEntity.status(HttpStatus.OK).body(new ScheduleBootstrapResponse(status));
+            return ResponseEntity.<ScheduleBootstrapResponse>ok().body(new ScheduleBootstrapResponse(status));
         } catch (Exception e) {
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, Throwables.getStackTraceAsString(e));
         }
@@ -171,7 +171,7 @@ public class ScheduleBootstrapController {
                 writeEquivs,
                 forwarding
         );
-        return ResponseEntity.status(HttpStatus.OK).body(new ScheduleBootstrapResponse(status));
+        return ResponseEntity.<ScheduleBootstrapResponse>ok().body(new ScheduleBootstrapResponse(status));
     }
 
     @RequestMapping(value = "/system/bootstrap/schedule/all/status.json",
@@ -217,7 +217,7 @@ public class ScheduleBootstrapController {
     }
     private ResponseEntity<?> failure(HttpStatus status, String msg)
             throws IOException {
-        return ResponseEntity.status(status).body(msg);
+        return ResponseEntity.<String>status(status).body(msg);
     }
 
     public class ScheduleBootstrapResponse {
