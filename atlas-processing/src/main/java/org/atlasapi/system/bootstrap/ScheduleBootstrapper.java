@@ -7,9 +7,11 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.scheduling.UpdateProgress;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.entity.Id;
 import org.atlasapi.locks.ScheduleBootstrapLock;
 import org.atlasapi.media.entity.Publisher;
 import org.joda.time.Interval;
@@ -36,6 +38,7 @@ public class ScheduleBootstrapper {
     private final ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory;
     private final EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory equivTaskFactory;
     private final ChannelIntervalScheduleBootstrapTaskFactory forwardingBootstrapTaskFactory;
+    private final SubstitutionTableNumberCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
 
     public ScheduleBootstrapper(
             ListeningExecutorService executor,
@@ -59,9 +62,14 @@ public class ScheduleBootstrapper {
             boolean writeEquivalences,
             boolean forwarding
     ) {
-        Status status = new Status(StreamUtils.stream(channels).map(c -> c.getId().toString()).collect(MoreCollectors.toImmutableList()),
-                source.key(), interval);
-        status.total.set(Iterables.size(channels));
+        Status status = new Status(StreamUtils.stream(channels)
+                    .map(Channel::getId)
+                    .map(Id::toBigInteger)
+                    .map(codec::encode)
+                    .collect(MoreCollectors.toImmutableList()),
+                    source.key(),
+                interval,
+                Iterables.size(channels));
         bootstrappingStatuses.add(status);
         Set<ListenableFuture<UpdateProgress>> futures = Sets.newHashSet();
         log.info(
@@ -114,14 +122,12 @@ public class ScheduleBootstrapper {
         ListenableFuture<UpdateProgress> updateFuture = executor.submit(new Callable<UpdateProgress>() {
             @Override
             public UpdateProgress call() throws Exception {
-                bootstrapLock.lock(channel, interval);
+                bootstrapLock.lock(channel, source.key(), interval);
                 try {
                     UpdateProgress progress = task.call();
-                    bootstrapLock.unlock(channel, interval);
                     return progress;
-                } catch(Exception e) {
-                    bootstrapLock.unlock(channel, interval);
-                    throw e;
+                } finally {
+                    bootstrapLock.unlock(channel, source.key(), interval);
                 }
         }});
         Futures.addCallback(updateFuture, new FutureCallback<UpdateProgress>() {
@@ -134,7 +140,7 @@ public class ScheduleBootstrapper {
                         channel.getTitle(),
                         result,
                         status.progress.incrementAndGet(),
-                        status.total.get(),
+                        status.getTotal(),
                         status.processed.incrementAndGet(),
                         status.failures.get()
 
@@ -146,7 +152,7 @@ public class ScheduleBootstrapper {
                 log.error("Error while processing schedules for channel "
                                 + channel.getId() + "/" + channel.getTitle()
                                 + ", bootstrap progress: "
-                                + status.progress.incrementAndGet() + "/" + status.total.get()
+                                + status.progress.incrementAndGet() + "/" + status.getTotal()
                                 + ", success: " + status.processed.get()
                                 + ", failure: " + status.failures.incrementAndGet(),
                         t
@@ -164,15 +170,17 @@ public class ScheduleBootstrapper {
         private final List<String> channels;
         private final String source;
         private final Interval interval;
+        private final int total;
+        //these are updated on Future callbacks
         private AtomicInteger processed = new AtomicInteger(0);
         private AtomicInteger failures = new AtomicInteger(0);
         private AtomicInteger progress = new AtomicInteger(0);
-        private AtomicInteger total = new AtomicInteger(0);
 
-        public Status(List<String> channels, String source, Interval interval) {
+        public Status(List<String> channels, String source, Interval interval, int total) {
             this.channels = checkNotNull(channels);
             this.source = checkNotNull(source);
             this.interval = checkNotNull(interval);
+            this.total = total;
         }
 
         public List<String> getChannels() {
@@ -200,7 +208,7 @@ public class ScheduleBootstrapper {
         }
 
         public int getTotal() {
-            return total.get();
+            return total;
         }
     }
 

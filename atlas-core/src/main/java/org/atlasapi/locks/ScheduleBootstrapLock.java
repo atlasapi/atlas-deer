@@ -6,11 +6,12 @@ import org.atlasapi.channel.Channel;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.NavigableSet;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ScheduleBootstrapLock {
     private ConcurrentHashMap<Key, ReentrantLock> lockMap = new ConcurrentHashMap<>();
@@ -19,54 +20,68 @@ public class ScheduleBootstrapLock {
         return lockMap.computeIfAbsent(key, (k) -> new ReentrantLock());
     }
 
-    public void lock(Channel channel, Interval interval) {
-        for(Key k : getKeys(channel, interval)) {
+    //Locks keys in a sorted order to prevent deadlocking
+    public void lock(Channel channel, String source, Interval interval) {
+        for(Key k : getKeys(channel, source, interval)) {
             getLock(k).lock();
         }
     }
 
-    public boolean tryLock(Channel channel, Interval interval) {
-        SortedSet<Key> keys = getKeys(channel, interval);
+    public boolean tryLock(Channel channel, String source, Interval interval) {
+        NavigableSet<Key> keys = getKeys(channel, source, interval);
         for(Key key : keys) {
             if(!getLock(key).tryLock()) {
-                for(Key k : keys) {
-                    if(k.equals(key)) {
-                        break;
-                    }
-                    getLock(k).unlock();
-                }
+                unlockInternal(keys.headSet(key));
                 return false;
             }
         }
         return true;
     }
 
-    public void unlock(Channel channel, Interval interval) {
-        for(Key k : getKeys(channel, interval)) {
-            getLock(k).unlock();
+    public void unlock(Channel channel, String source, Interval interval) {
+        unlockInternal(getKeys(channel, source, interval));
+    }
+
+    private void unlockInternal(SortedSet<Key> keys) {
+        IllegalMonitorStateException ex = null;
+        for(Key key : keys) {
+            try {
+                getLock(key).unlock();
+            } catch(IllegalMonitorStateException e) {
+                if(ex == null) {
+                    ex = e;
+                } else {
+                    ex.addSuppressed(e);
+                }
+            }
+        }
+        if(ex != null) {
+            throw ex;
         }
     }
 
     //All days in the interval
-    private SortedSet<Key> getKeys(Channel channel, Interval interval) {
-        String channelId = channel.getId().toString();
-        LocalDate date = interval.getStart().toLocalDate();
-        Set<Key> keys = new HashSet<>();
-        while(date.compareTo(interval.getEnd().toLocalDate()) <= 0) {
-            keys.add(new Key(channelId, date));
-            date = date.plusDays(1);
+    private NavigableSet<Key> getKeys(Channel channel, String source, Interval interval) {
+        long channelId = channel.getId().longValue();
+        LocalDate startDate = interval.getStart().toLocalDate();
+        LocalDate endDate = interval.getEnd().toLocalDate();
+        ImmutableSortedSet.Builder<Key> keys = new ImmutableSortedSet.Builder<>(Key::compareTo);
+        for(LocalDate date = startDate; !startDate.isAfter(endDate); date = date.plusDays(1)) {
+            keys.add(new Key(channelId, source, date));
         }
-        return ImmutableSortedSet.copyOf(keys);
+        return keys.build();
     }
 
 
     private class Key implements Comparable<Key> {
-        private final String channelId;
+        private final Long channelId;
+        private final String source;
         private final LocalDate date;
 
-        Key(String channelId, LocalDate date) {
-            this.channelId = channelId;
-            this.date = date;
+        Key(Long channelId, String source, LocalDate date) {
+            this.channelId = checkNotNull(channelId);
+            this.source = checkNotNull(source);
+            this.date = checkNotNull(date);
 
         }
 
@@ -78,6 +93,7 @@ public class ScheduleBootstrapLock {
             if(that != null && getClass().equals(that.getClass())) {
                 Key key = (Key) that;
                 if(this.channelId.equals(key.channelId) &&
+                        this.source.equals(key.source) &&
                         this.date.equals(key.date)) {
                     return true;
                 }
@@ -92,7 +108,13 @@ public class ScheduleBootstrapLock {
 
         @Override
         public int compareTo(Key that) {
-            return this.date.compareTo(that.date);
+            int comp = this.channelId.compareTo(that.channelId);
+            if (comp != 0) return comp;
+            comp = this.source.compareTo(that.source);
+            if (comp != 0) return comp;
+            comp = this.date.compareTo(that.date);
+            if (comp != 0) return comp;
+            return 0;
         }
     }
 

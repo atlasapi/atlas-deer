@@ -345,6 +345,8 @@ public class ScheduleBootstrapController {
             return status;
         }
 
+        public boolean isBootstrapping() { return !status.isEmpty(); }
+
     }
 
 }
