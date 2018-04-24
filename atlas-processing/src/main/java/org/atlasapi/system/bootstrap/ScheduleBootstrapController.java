@@ -23,6 +23,7 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -68,7 +69,7 @@ public class ScheduleBootstrapController {
      * @param writeEquivs       true to migrate content equivalences as well
      * @param forwarding        true to forward to the schedule equivalence writer as well
      */
-    @RequestMapping(value = "/system/bootstrap/schedule", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/system/bootstrap/schedule", method = RequestMethod.POST)
     public ResponseEntity<?> bootstrapSchedule(
             @RequestParam("source") String src,
             @RequestParam("day") String day,
@@ -108,7 +109,73 @@ public class ScheduleBootstrapController {
                     forwarding
 
             );
-            return ResponseEntity.<ScheduleBootstrapResponse>ok().body(new ScheduleBootstrapResponse(status));
+            return ResponseEntity.<ScheduleBootstrapResponse>ok().contentType(MediaType.APPLICATION_JSON).body(new ScheduleBootstrapResponse(status));
+        } catch (Exception e) {
+            return failure(HttpStatus.INTERNAL_SERVER_ERROR, Throwables.getStackTraceAsString(e));
+        }
+    }
+
+    /**
+     * Bootstrap a single channel for a a date range.
+     * <p><em>Note:</em> {@code migrateContent}, {@code writeEquivs} and {@code forwarding}
+     * are mutually exclusive, and have that respective precedence.</p>
+     * @param src   the source/publisher
+     * @param from  the date to migrate from
+     * @param to    the date to migrate to
+     * @param channelId     the channel id (lowercase encoded string form)
+     * @param migrateContent    true to migrate content hierachy as well
+     * @param writeEquivs       true to migrate content equivalences as well
+     * @param forwarding        true to forward to the schedule equivalence writer as well
+     */
+    @RequestMapping(value = "/system/bootstrap/schedule", method = RequestMethod.POST)
+    public ResponseEntity<?> bootstrapSchedule(
+            @RequestParam("source") String src,
+            @RequestParam("from") String from,
+            @RequestParam("to") String to,
+            @RequestParam("channel") String channelId,
+            @RequestParam(value = "migrateContent", required = false,
+                    defaultValue = "false") boolean migrateContent,
+            @RequestParam(value = "writeEquivalences", required = false,
+                    defaultValue = "false") boolean writeEquivs,
+            @RequestParam(value = "forwarding", required = false,
+                    defaultValue = "false") boolean forwarding
+    ) throws Exception {
+
+        Optional<Publisher> source = Publisher.fromKey(src).toGuavaOptional();
+        if (!source.isPresent()) {
+            return failure(HttpStatus.BAD_REQUEST, "Unknown source " + src);
+        }
+
+        Optional<Channel> channel = resolve(channelId);
+        if (!channel.isPresent()) {
+            return failure(HttpStatus.BAD_REQUEST, "Unknown channel " + channelId);
+        }
+
+        final LocalDate dateFrom;
+        final LocalDate dateTo;
+        try {
+            dateFrom = dateParser.parseLocalDate(from);
+        } catch (IllegalArgumentException iae) {
+            return dateParseFailure(from);
+        }
+
+        try {
+            dateTo = dateParser.parseLocalDate(to);
+        } catch (IllegalArgumentException iae) {
+            return failure(HttpStatus.BAD_REQUEST, "Failed to parse " + to + ", expected yyyy-MM-dd");
+        }
+        final Interval interval = interval(dateFrom, dateTo);
+        try {
+            ScheduleBootstrapper.Status status = scheduleBootstrapper.bootstrapSchedules(
+                    ImmutableList.of(channel.get()),
+                    interval,
+                    source.get(),
+                    migrateContent,
+                    writeEquivs,
+                    forwarding
+
+            );
+            return ResponseEntity.<ScheduleBootstrapResponse>ok().contentType(MediaType.APPLICATION_JSON).body(new ScheduleBootstrapResponse(status));
         } catch (Exception e) {
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, Throwables.getStackTraceAsString(e));
         }
@@ -171,14 +238,14 @@ public class ScheduleBootstrapController {
                 writeEquivs,
                 forwarding
         );
-        return ResponseEntity.<ScheduleBootstrapResponse>ok().body(new ScheduleBootstrapResponse(status));
+        return ResponseEntity.<ScheduleBootstrapResponse>ok().contentType(MediaType.APPLICATION_JSON).body(new ScheduleBootstrapResponse(status));
     }
 
     @RequestMapping(value = "/system/bootstrap/schedule/all/status.json",
-            method = RequestMethod.GET, produces = "application/json")
+            method = RequestMethod.GET)
     public ResponseEntity<?> checkScheduleBootstrapStatus() throws IOException {
         Collection<ScheduleBootstrapper.Status> status = scheduleBootstrapper.getProgress();
-        return ResponseEntity.status(HttpStatus.OK).body(new ScheduleBootstrapResponse(status));
+        return ResponseEntity.<ScheduleBootstrapResponse>ok().contentType(MediaType.APPLICATION_JSON).body(new ScheduleBootstrapResponse(status));
     }
 
     private Interval interval(LocalDate from, LocalDate to) {
