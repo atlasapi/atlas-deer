@@ -1,9 +1,11 @@
 package org.atlasapi.system.bootstrap;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.queue.kafka.StartPoint;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.messaging.MessagingModule;
@@ -15,18 +17,14 @@ import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrato
 import org.atlasapi.system.bootstrap.workers.EntityUpdatedLegacyMessageSerializer;
 import org.atlasapi.system.legacy.MongoProgressStore;
 import org.atlasapi.system.legacy.ProgressStore;
-
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.queue.kafka.StartPoint;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("PublicConstructor")
 @Configuration
@@ -37,13 +35,10 @@ import org.springframework.context.annotation.Import;
 })
 public class BootstrapModule {
 
-    // We only need 2 here, one to run the bootstrap and one to be able to return quickly
-    // when it's running
-    private static final Integer NUMBER_OF_SCHECHULE_CONTROLLER_THREADS = 2;
     private static final Integer NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS = Configurer.get(
-            "boootstrap.schedule.numThreads").toInt();
+            "bootstrap.schedule.numThreads").toInt();
     private static final Integer NUMBER_OF_SOURCE_BOOTSTRAP_THREADS = Configurer.get(
-            "boootstrap.source.numThreads").toInt();
+            "bootstrap.source.numThreads").toInt();
 
     private final Integer contentChangesReplayNumOfConsumers =
             Configurer.get("messaging.bootstrap.content.changes.consumers").toInt();
@@ -154,10 +149,6 @@ public class BootstrapModule {
     public ScheduleBootstrapController scheduleBootstrapController() {
         return new ScheduleBootstrapController(
                 persistence.channelResolver(),
-                executorService(
-                        NUMBER_OF_SCHECHULE_CONTROLLER_THREADS,
-                        "ScheduleBootstrapController"
-                ),
                 scheduleBootstrapper()
         );
     }

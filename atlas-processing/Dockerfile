@@ -17,6 +17,7 @@ ENV SERVER_PORT="8080" \
     MESSAGING_DEER_TOPIC_INDEXER_ENABLED="false" \
     MESSAGING_DEER_CONTENT_NEO4J_CONTENT_CHANGES_ENABLED="false" \
     MESSAGING_DEER_CONTENT_NEO4J_GRAPH_CHANGES_ENABLED="false" \
+    BOOTSTRAP_SCHEDULE_NUMTHREADS="60" \
     LOG4J_CONFIGURATION="file:////usr/local/jetty/log4j.properties" \
     NIMROD_LOG_LEVEL="INFO" \
     ROOT_LOG_LEVEL="INFO" \
@@ -93,6 +94,7 @@ CMD java \
     -Dmessaging.deer.content.neo4j.content.changes.enabled="$MESSAGING_DEER_CONTENT_NEO4J_CONTENT_CHANGES_ENABLED" \
     -Dmessaging.deer.content.neo4j.graph.changes.consumers="$MESSAGING_DEER_CONTENT_NEO4J_GRAPH_CHANGES_CONSUMERS" \
     -Dmessaging.deer.content.neo4j.graph.changes.enabled="$MESSAGING_DEER_CONTENT_NEO4J_GRAPH_CHANGES_ENABLED" \
+    -Dbootstrap.schedule.numThreads="$BOOTSTRAP_SCHEDULE_NUMTHREADS" \
     -Dmessaging.broker.url="$MESSAGING_BROKER_URL" \
     -Dmessaging.zookeeper="$MESSAGING_ZOOKEEPER" \
     -Dmetrics.environment.prefix="$METRICS_ENVIRONMENT_PREFIX" \
