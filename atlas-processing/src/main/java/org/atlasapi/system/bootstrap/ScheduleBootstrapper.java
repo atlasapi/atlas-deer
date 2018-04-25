@@ -249,7 +249,7 @@ public class ScheduleBootstrapper {
         }
 
         public void addError(Throwable t) {
-            errors.add(t);
+            errors.add(checkNotNull(t));
         }
 
         @JsonIgnore
