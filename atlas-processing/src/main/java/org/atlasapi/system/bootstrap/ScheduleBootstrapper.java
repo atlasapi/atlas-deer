@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -31,6 +33,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ScheduleBootstrapper {
 
     private static final Logger log = LoggerFactory.getLogger(ScheduleBootstrapper.class);
+    private static final long DEFAULT_LOCK_TIMEOUT = 60;
+    private static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
     private final Set<Status> bootstrappingStatuses = ConcurrentHashMap.newKeySet();
     private final ScheduleBootstrapLock bootstrapLock = new ScheduleBootstrapLock();
     private final ListeningExecutorService executor;
@@ -122,7 +126,12 @@ public class ScheduleBootstrapper {
         ListenableFuture<UpdateProgress> updateFuture = executor.submit(new Callable<UpdateProgress>() {
             @Override
             public UpdateProgress call() throws Exception {
-                bootstrapLock.lock(channel, source.key(), interval);
+                if(!bootstrapLock.tryLock(channel, source.key(), interval, DEFAULT_LOCK_TIMEOUT, DEFAULT_TIMEOUT_UNIT)) {
+                    throw new TimeoutException(String.format("Failed to acquire lock for %s %s %s",
+                            codec.encode(channel.getId().toBigInteger()),
+                            source.key(),
+                            interval.toString()));
+                }
                 try {
                     UpdateProgress progress = task.call();
                     return progress;
@@ -157,6 +166,7 @@ public class ScheduleBootstrapper {
                                 + ", failure: " + status.failures.incrementAndGet(),
                         t
                 );
+                status.addError(t);
             }
         });
         return updateFuture;
@@ -175,6 +185,7 @@ public class ScheduleBootstrapper {
         private AtomicInteger processed = new AtomicInteger(0);
         private AtomicInteger failures = new AtomicInteger(0);
         private AtomicInteger progress = new AtomicInteger(0);
+        private Set<Throwable> errors = ConcurrentHashMap.newKeySet();
 
         public Status(List<String> channels, String source, Interval interval, int total) {
             this.channels = checkNotNull(channels);
@@ -209,6 +220,14 @@ public class ScheduleBootstrapper {
 
         public int getTotal() {
             return total;
+        }
+
+        public void addError(Throwable t) {
+            errors.add(t);
+        }
+
+        public Set<Throwable> getErrors() {
+            return Collections.unmodifiableSet(errors);
         }
     }
 

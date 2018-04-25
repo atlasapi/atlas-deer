@@ -9,6 +9,7 @@ import org.joda.time.LocalDate;
 import java.util.NavigableSet;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -27,15 +28,32 @@ public class ScheduleBootstrapLock {
         }
     }
 
-    public boolean tryLock(Channel channel, String source, Interval interval) {
+    public boolean tryLock(Channel channel,
+                           String source,
+                           Interval interval,
+                           long perLockTimeout,
+                           TimeUnit timeUnit
+    ) throws InterruptedException {
+        long timeoutNanos = timeUnit.toNanos(perLockTimeout);
+        long startTime = System.nanoTime();
         NavigableSet<Key> keys = getKeys(channel, source, interval);
         for(Key key : keys) {
-            if(!getLock(key).tryLock()) {
+            try {
+                if (!getLock(key).tryLock(timeoutNanos - (System.nanoTime() - startTime),
+                        TimeUnit.NANOSECONDS)) { //does not wait if remaining <= 0
+                    unlockInternal(keys.headSet(key));
+                    return false;
+                }
+            } catch(Exception e) {
                 unlockInternal(keys.headSet(key));
-                return false;
+                throw e;
             }
         }
         return true;
+    }
+
+    public boolean tryLock(Channel channel, String source, Interval interval) throws InterruptedException {
+        return tryLock(channel, source, interval, -1, TimeUnit.SECONDS); //don't wait
     }
 
     public void unlock(Channel channel, String source, Interval interval) {

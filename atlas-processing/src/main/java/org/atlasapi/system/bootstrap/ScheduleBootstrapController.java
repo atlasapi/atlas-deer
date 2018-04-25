@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -194,8 +195,18 @@ public class ScheduleBootstrapController {
                     migrateContent,
                     writeEquivs,
                     forwarding
-
             );
+            if(status.getFailures() > 0) {
+                Set<Throwable> errors = status.getErrors();
+                if(errors.isEmpty()) {
+                    failure(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to migrate channel");
+                    return;
+                }
+                Throwable t = errors.iterator().next();
+                failure(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, String.format("%s: %s",
+                        t.getMessage(), Throwables.getStackTraceAsString(t)));
+                return;
+            }
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             jsonMapper.writeValue(response.getOutputStream(), new ScheduleBootstrapResponse(status));
