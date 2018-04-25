@@ -31,21 +31,21 @@ public class ScheduleBootstrapLock {
     public boolean tryLock(Channel channel,
                            String source,
                            Interval interval,
-                           long perLockTimeout,
+                           long timeout,
                            TimeUnit timeUnit
     ) throws InterruptedException {
-        long timeoutNanos = timeUnit.toNanos(perLockTimeout);
+        long timeoutNanos = timeUnit.toNanos(timeout);
         long startTime = System.nanoTime();
         NavigableSet<Key> keys = getKeys(channel, source, interval);
         for(Key key : keys) {
             try {
                 if (!getLock(key).tryLock(timeoutNanos - (System.nanoTime() - startTime),
                         TimeUnit.NANOSECONDS)) { //does not wait if remaining <= 0
-                    unlockInternal(keys.headSet(key));
+                    unlockInternal(keys.headSet(key, false));
                     return false;
                 }
             } catch(Exception e) {
-                unlockInternal(keys.headSet(key));
+                unlockInternal(keys.headSet(key, false));
                 throw e;
             }
         }
@@ -84,7 +84,7 @@ public class ScheduleBootstrapLock {
         LocalDate startDate = interval.getStart().toLocalDate();
         LocalDate endDate = interval.getEnd().toLocalDate();
         ImmutableSortedSet.Builder<Key> keys = new ImmutableSortedSet.Builder<>(Key::compareTo);
-        for(LocalDate date = startDate; !startDate.isAfter(endDate); date = date.plusDays(1)) {
+        for(LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
             keys.add(new Key(channelId, source, date));
         }
         return keys.build();
