@@ -195,7 +195,7 @@ public class ScheduleBootstrapController {
                     false
             );
             if(status.getFailures() > 0) {
-                Set<Throwable> errors = status.getErrors();
+                Set<Throwable> errors = status.getThrowables();
                 if(errors.isEmpty()) {
                     failure(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to migrate channel");
                     return;

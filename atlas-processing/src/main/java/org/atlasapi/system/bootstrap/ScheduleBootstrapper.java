@@ -1,6 +1,7 @@
 package org.atlasapi.system.bootstrap;
 
 import com.codepoetics.protonpack.StreamUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -13,6 +14,7 @@ import org.atlasapi.channel.Channel;
 import org.atlasapi.entity.Id;
 import org.atlasapi.locks.ScheduleBootstrapLock;
 import org.atlasapi.media.entity.Publisher;
+import org.elasticsearch.common.base.Throwables;
 import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -250,8 +252,34 @@ public class ScheduleBootstrapper {
             errors.add(t);
         }
 
-        public Set<Throwable> getErrors() {
+        @JsonIgnore
+        public Set<Throwable> getThrowables() {
             return Collections.unmodifiableSet(errors);
+        }
+
+        //For serialization
+        public List<Error> getErrors() {
+            return errors.stream().map(Error::new).collect(MoreCollectors.toImmutableList());
+        }
+
+
+        private class Error {
+            private String message;
+            private String stackTrace;
+
+            Error(Throwable t) {
+                checkNotNull(t);
+                message = t.getMessage();
+                stackTrace = Throwables.getStackTraceAsString(t);
+            }
+
+            public String getMessage() {
+                return message;
+            }
+
+            public String getStackTrace() {
+                return stackTrace;
+            }
         }
     }
 
