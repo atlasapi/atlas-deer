@@ -15,7 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ScheduleBootstrapLock {
-    private ConcurrentHashMap<Key, ReentrantLock> lockMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Key, ReentrantLock> lockMap = new ConcurrentHashMap<>();
 
     private ReentrantLock getLock(Key key) {
         return lockMap.computeIfAbsent(key, (k) -> new ReentrantLock());

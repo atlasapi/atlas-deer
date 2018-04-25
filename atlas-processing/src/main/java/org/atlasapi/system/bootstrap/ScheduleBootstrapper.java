@@ -208,10 +208,10 @@ public class ScheduleBootstrapper {
         private final Interval interval;
         private final int total;
         //these are updated on Future callbacks
-        private AtomicInteger processed = new AtomicInteger(0);
-        private AtomicInteger failures = new AtomicInteger(0);
-        private AtomicInteger progress = new AtomicInteger(0);
-        private Set<Throwable> errors = ConcurrentHashMap.newKeySet();
+        private final AtomicInteger processed = new AtomicInteger(0);
+        private final AtomicInteger failures = new AtomicInteger(0);
+        private final AtomicInteger progress = new AtomicInteger(0);
+        private final Set<Throwable> errors = ConcurrentHashMap.newKeySet();
 
         public Status(List<String> channels, String source, Interval interval, int total) {
             this.channels = checkNotNull(channels);
@@ -263,9 +263,9 @@ public class ScheduleBootstrapper {
         }
 
 
-        private class Error {
-            private String message;
-            private String stackTrace;
+        public class Error {
+            private final String message;
+            private final String stackTrace;
 
             Error(Throwable t) {
                 checkNotNull(t);
