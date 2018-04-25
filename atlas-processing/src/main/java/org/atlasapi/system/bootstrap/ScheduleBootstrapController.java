@@ -336,7 +336,7 @@ public class ScheduleBootstrapController {
     }
 
     public class ScheduleBootstrapResponse {
-        private Collection<ScheduleBootstrapper.Status> status;
+        private final Collection<ScheduleBootstrapper.Status> status;
 
         public ScheduleBootstrapResponse(ScheduleBootstrapper.Status status) {
             if(status == null) {
