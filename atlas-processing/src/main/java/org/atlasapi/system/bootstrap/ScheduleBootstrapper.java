@@ -1,7 +1,6 @@
 package org.atlasapi.system.bootstrap;
 
 import com.codepoetics.protonpack.StreamUtils;
-import com.google.api.client.util.Sets;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -18,6 +17,7 @@ import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -64,7 +64,8 @@ public class ScheduleBootstrapper {
             Publisher source,
             boolean migrateContent,
             boolean writeEquivalences,
-            boolean forwarding
+            boolean forwarding,
+            boolean async
     ) {
         Status status = new Status(StreamUtils.stream(channels)
                     .map(Channel::getId)
@@ -75,7 +76,7 @@ public class ScheduleBootstrapper {
                 interval,
                 Iterables.size(channels));
         bootstrappingStatuses.add(status);
-        Set<ListenableFuture<UpdateProgress>> futures = Sets.newHashSet();
+        Set<ListenableFuture<UpdateProgress>> futures = ConcurrentHashMap.newKeySet();
         log.info(
                 "Bootstrapping {} channels for interval from {} to {}",
                 Iterables.size(channels),
@@ -93,12 +94,35 @@ public class ScheduleBootstrapper {
                         status
                 ));
         }
-        try {
-            Futures.getChecked(Futures.allAsList(futures), Exception.class);
-        } catch (Exception e) {
-            //this is already logged in the callback
-        } finally {
-            bootstrappingStatuses.remove(status);
+        if(!async) {
+            try {
+                Futures.getChecked(Futures.allAsList(futures), Exception.class);
+            } catch (Exception e) {
+                //this is already logged in the callback
+            } finally {
+                bootstrappingStatuses.remove(status);
+            }
+        } else {
+            futures.forEach(f ->
+                Futures.addCallback(f, new FutureCallback<UpdateProgress>() {
+                    @Override
+                    public void onSuccess(@Nullable UpdateProgress result) {
+                        updateProgress();
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        updateProgress();
+                    }
+
+                    private void updateProgress() {
+                        futures.remove(f);
+                        if(futures.isEmpty()) {
+                            bootstrappingStatuses.remove(status);
+                        }
+                    }
+                })
+            );
         }
         return status;
     }

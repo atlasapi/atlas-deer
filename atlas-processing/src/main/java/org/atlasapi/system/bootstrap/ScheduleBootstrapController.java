@@ -36,7 +36,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -45,7 +44,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ScheduleBootstrapController {
 
     private final ChannelResolver channelResolver;
-    private final ExecutorService executor;
     private final ScheduleBootstrapper scheduleBootstrapper;
     private final ObjectMapper jsonMapper;
 
@@ -55,10 +53,8 @@ public class ScheduleBootstrapController {
 
     public ScheduleBootstrapController(
             ChannelResolver channelResvoler,
-            ExecutorService executor,
             ScheduleBootstrapper scheduleBootstrapper
     ) {
-        this.executor = checkNotNull(executor);
         this.scheduleBootstrapper = checkNotNull(scheduleBootstrapper);
         this.channelResolver = checkNotNull(channelResvoler);
         jsonMapper = new ObjectMapper();
@@ -120,7 +116,8 @@ public class ScheduleBootstrapController {
                     source.get(),
                     migrateContent,
                     writeEquivs,
-                    forwarding
+                    forwarding,
+                    false
 
             );
             response.setStatus(HttpServletResponse.SC_OK);
@@ -194,7 +191,8 @@ public class ScheduleBootstrapController {
                     source.get(),
                     migrateContent,
                     writeEquivs,
-                    forwarding
+                    forwarding,
+                    false
             );
             if(status.getFailures() > 0) {
                 Set<Throwable> errors = status.getErrors();
@@ -275,7 +273,8 @@ public class ScheduleBootstrapController {
                 source.get(),
                 migrateContent,
                 writeEquivs,
-                forwarding
+                forwarding,
+                true
         );
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
