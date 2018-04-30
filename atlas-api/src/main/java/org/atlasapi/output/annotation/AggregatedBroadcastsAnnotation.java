@@ -4,6 +4,7 @@ import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.BroadcastAggregator;
 import org.atlasapi.content.Content;
@@ -85,7 +86,8 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
                 broadcastAggregator.aggregateBroadcasts(
                         item.getBroadcasts(),
                         ctxt.getPlatform(),
-                        downweighChannelIds
+                        downweighChannelIds,
+                        ctxt.getActiveAnnotations().contains(Annotation.ALL_AGGREGATED_BROADCASTS)
                 ),
                 ctxt
         );

@@ -60,7 +60,8 @@ public class BroadcastAggregator {
     public Set<ResolvedBroadcast> aggregateBroadcasts(
             Set<Broadcast> broadcasts,
             Optional<Platform> platformOptional,
-            List<Id> downweighChannelIds
+            List<Id> downweighChannelIds,
+            boolean includePastBroadcasts
     ) {
 
         // Remove broadcasts we don't care about
@@ -72,8 +73,13 @@ public class BroadcastAggregator {
         Set<Broadcast> mergedContinuations = mergeBroadcastContinuations(platformBroadcasts);
 
         // Filter out previous broadcasts and collect by transmission time
+        if (!includePastBroadcasts) {
+            mergedContinuations = mergedContinuations.stream()
+                    .filter(broadcast -> broadcast.getTransmissionEndTime().isAfterNow())
+                    .collect(Collectors.toSet());
+        }
+
         Multimap<DateTime, ResolvedBroadcast> broadcastMap = mergedContinuations.stream()
-                .filter(broadcast -> broadcast.getTransmissionEndTime().isAfterNow())
                 .map(broadcast -> ResolvedBroadcast.create(
                         broadcast,
                         ResolvedChannel.builder(resolveChannel(broadcast.getChannelId())).build())

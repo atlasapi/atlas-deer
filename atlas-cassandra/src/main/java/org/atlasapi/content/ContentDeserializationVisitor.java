@@ -33,6 +33,7 @@ import com.google.common.collect.Ordering;
 import org.joda.time.Duration;
 
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.ALL_AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
@@ -75,6 +76,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             CURRENT_AND_FUTURE_BROADCASTS,
             FIRST_BROADCASTS,
             NEXT_BROADCASTS,
+            ALL_AGGREGATED_BROADCASTS,
             AGGREGATED_BROADCASTS
     );
     private static final Annotation SUB_ITEMS_ANNOTATIONS = SUB_ITEMS;
