@@ -305,7 +305,8 @@ public class BroadcastAggregatorTest {
 
         Set<Broadcast> broadcasts = ImmutableSet.of(pastBroadcast, currentBroadcast, futureBroadcast);
 
-        Set<Broadcast> resolved = broadcastAggregator.removePastBroadcasts(broadcasts);
+        Set<Broadcast> resolved = broadcastAggregator.removePastBroadcasts(broadcasts.stream())
+                .collect(Collectors.toSet());
 
         assertThat(resolved.size(), is(2));
         assertTrue(resolved.containsAll(ImmutableSet.of(currentBroadcast, futureBroadcast)));

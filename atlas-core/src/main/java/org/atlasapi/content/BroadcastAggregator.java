@@ -39,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class BroadcastAggregator {
@@ -70,15 +71,15 @@ public class BroadcastAggregator {
                 : broadcasts;
 
         // Merge broadcast continuations
-        Set<Broadcast> mergedContinuations = mergeBroadcastContinuations(platformBroadcasts);
+        Stream<Broadcast> mergedContinuations = mergeBroadcastContinuations(platformBroadcasts).stream();
 
         // Filter out previous broadcasts and collect by transmission time
         if (!includePastBroadcasts) {
             mergedContinuations = removePastBroadcasts(mergedContinuations);
         }
 
-        Multimap<DateTime, ResolvedBroadcast> broadcastMap = mergedContinuations.stream()
-                .map(broadcast -> ResolvedBroadcast.create(
+        Multimap<DateTime, ResolvedBroadcast> broadcastMap = mergedContinuations.map(
+                broadcast -> ResolvedBroadcast.create(
                         broadcast,
                         ResolvedChannel.builder(resolveChannel(broadcast.getChannelId())).build())
                 )
@@ -110,10 +111,8 @@ public class BroadcastAggregator {
 
     }
 
-    Set<Broadcast> removePastBroadcasts(Set<Broadcast> mergedContinuations) {
-        return mergedContinuations.stream()
-                .filter(broadcast -> broadcast.getTransmissionEndTime().isAfterNow())
-                .collect(Collectors.toSet());
+    Stream<Broadcast> removePastBroadcasts(Stream<Broadcast> mergedContinuations) {
+        return mergedContinuations.filter(broadcast -> broadcast.getTransmissionEndTime().isAfterNow());
     }
 
     private Set<ResolvedBroadcast> aggregateBroadcastsInternal(
