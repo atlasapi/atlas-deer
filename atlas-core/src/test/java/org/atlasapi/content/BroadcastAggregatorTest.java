@@ -88,7 +88,8 @@ public class BroadcastAggregatorTest {
         Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
                 ImmutableSet.of(broadcast),
                 Optional.empty(),
-                ImmutableList.of()
+                ImmutableList.of(),
+                false
         );
 
         assertThat(Iterables.getOnlyElement(resolvedBroadcasts).getBroadcast(), is(broadcast));
@@ -103,7 +104,8 @@ public class BroadcastAggregatorTest {
         Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
                 ImmutableSet.of(firstBroadcast, secondBroadcast),
                 Optional.empty(),
-                ImmutableList.of()
+                ImmutableList.of(),
+                false
         );
 
         assertThat(resolvedBroadcasts.size(), is(2));
@@ -119,7 +121,8 @@ public class BroadcastAggregatorTest {
         Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
                 ImmutableSet.of(firstBroadcast, secondBroadcast),
                 Optional.empty(),
-                ImmutableList.of()
+                ImmutableList.of(),
+                false
         );
 
         assertThat(resolvedBroadcasts.size(), is(1));
@@ -137,7 +140,8 @@ public class BroadcastAggregatorTest {
         Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
                 ImmutableSet.of(firstBroadcast, secondBroadcast),
                 Optional.empty(),
-                ImmutableList.of()
+                ImmutableList.of(),
+                false
         );
 
         assertThat(resolvedBroadcasts.size(), is(1));
@@ -156,7 +160,8 @@ public class BroadcastAggregatorTest {
                 // enforce out of order broadcasts, so we can ensure this doesn't break things
                 new LinkedHashSet<>(Arrays.asList(secondBroadcast, firstBroadcast)),
                 Optional.empty(),
-                ImmutableList.of()
+                ImmutableList.of(),
+                false
         );
 
         assertThat(resolvedBroadcasts.size(), is(1));
@@ -176,7 +181,8 @@ public class BroadcastAggregatorTest {
         Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
                 ImmutableSet.of(firstBroadcast, firstBroadcastCont, secondBroadcast, secondBroadcastCont),
                 Optional.empty(),
-                ImmutableList.of()
+                ImmutableList.of(),
+                false
         );
 
         assertThat(resolvedBroadcasts.size(), is(2));
@@ -289,6 +295,22 @@ public class BroadcastAggregatorTest {
 
         assertThat(filteredBroadcasts.size(), is(1));
         assertThat(Iterables.getOnlyElement(filteredBroadcasts), is(broadcastOnPlatform));
+    }
+
+    @Test
+    public void broadcastsAreRemovedIfInThePast() throws Exception {
+        Broadcast pastBroadcast = getFutureBroadcast(10L, -3, -2);
+        Broadcast currentBroadcast = getFutureBroadcast(20L, -1, 1);
+        Broadcast futureBroadcast = getFutureBroadcast(30L, 2, 3);
+
+        Set<Broadcast> broadcasts = ImmutableSet.of(pastBroadcast, currentBroadcast, futureBroadcast);
+
+        Set<Broadcast> resolved = broadcastAggregator.removePastBroadcasts(broadcasts.stream())
+                .collect(Collectors.toSet());
+
+        assertThat(resolved.size(), is(2));
+        assertTrue(resolved.containsAll(ImmutableSet.of(currentBroadcast, futureBroadcast)));
+        assertFalse(resolved.contains(pastBroadcast));
     }
 
     @Test

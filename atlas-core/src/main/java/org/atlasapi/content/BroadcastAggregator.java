@@ -39,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class BroadcastAggregator {
@@ -60,7 +61,8 @@ public class BroadcastAggregator {
     public Set<ResolvedBroadcast> aggregateBroadcasts(
             Set<Broadcast> broadcasts,
             Optional<Platform> platformOptional,
-            List<Id> downweighChannelIds
+            List<Id> downweighChannelIds,
+            boolean includePastBroadcasts
     ) {
 
         // Remove broadcasts we don't care about
@@ -69,12 +71,15 @@ public class BroadcastAggregator {
                 : broadcasts;
 
         // Merge broadcast continuations
-        Set<Broadcast> mergedContinuations = mergeBroadcastContinuations(platformBroadcasts);
+        Stream<Broadcast> mergedContinuations = mergeBroadcastContinuations(platformBroadcasts).stream();
 
         // Filter out previous broadcasts and collect by transmission time
-        Multimap<DateTime, ResolvedBroadcast> broadcastMap = mergedContinuations.stream()
-                .filter(broadcast -> broadcast.getTransmissionEndTime().isAfterNow())
-                .map(broadcast -> ResolvedBroadcast.create(
+        if (!includePastBroadcasts) {
+            mergedContinuations = removePastBroadcasts(mergedContinuations);
+        }
+
+        Multimap<DateTime, ResolvedBroadcast> broadcastMap = mergedContinuations.map(
+                broadcast -> ResolvedBroadcast.create(
                         broadcast,
                         ResolvedChannel.builder(resolveChannel(broadcast.getChannelId())).build())
                 )
@@ -104,6 +109,10 @@ public class BroadcastAggregator {
                 sortBroadcastsByDateTime(aggregatedBroadcasts.build())
         );
 
+    }
+
+    Stream<Broadcast> removePastBroadcasts(Stream<Broadcast> mergedContinuations) {
+        return mergedContinuations.filter(broadcast -> broadcast.getTransmissionEndTime().isAfterNow());
     }
 
     private Set<ResolvedBroadcast> aggregateBroadcastsInternal(
