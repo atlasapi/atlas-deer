@@ -74,9 +74,7 @@ public class BroadcastAggregator {
 
         // Filter out previous broadcasts and collect by transmission time
         if (!includePastBroadcasts) {
-            mergedContinuations = mergedContinuations.stream()
-                    .filter(broadcast -> broadcast.getTransmissionEndTime().isAfterNow())
-                    .collect(Collectors.toSet());
+            mergedContinuations = removePastBroadcasts(mergedContinuations);
         }
 
         Multimap<DateTime, ResolvedBroadcast> broadcastMap = mergedContinuations.stream()
@@ -110,6 +108,12 @@ public class BroadcastAggregator {
                 sortBroadcastsByDateTime(aggregatedBroadcasts.build())
         );
 
+    }
+
+    Set<Broadcast> removePastBroadcasts(Set<Broadcast> mergedContinuations) {
+        return mergedContinuations.stream()
+                .filter(broadcast -> broadcast.getTransmissionEndTime().isAfterNow())
+                .collect(Collectors.toSet());
     }
 
     private Set<ResolvedBroadcast> aggregateBroadcastsInternal(
