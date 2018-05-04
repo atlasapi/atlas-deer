@@ -2,6 +2,8 @@ package org.atlasapi;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Host;
 import com.datastax.driver.core.Session;
 import com.google.common.base.Equivalence;
 import com.google.common.util.concurrent.AbstractIdleService;
@@ -51,6 +53,8 @@ import org.atlasapi.segment.CassandraSegmentStore;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.topic.CassandraTopicStore;
 import org.atlasapi.topic.Topic;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -58,6 +62,7 @@ import java.util.UUID;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
+    private static final Logger log = LoggerFactory.getLogger(CassandraPersistenceModule.class);
 
     private static final String METRIC_PREFIX = "persistence.store.";
 
@@ -118,6 +123,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         this.context = builder.astyanaxContext;
         this.metrics = checkNotNull(builder.metrics);
         this.session = dataStaxService.getSession(keyspace);
+        addClusterListener(this.session.getCluster());
     }
 
     private Equivalence<Segment> segmentEquivalence() {
@@ -510,6 +516,41 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     private OrganisationStore getIdSettingOrganisationStore(Session session) {
         return new IdSettingOrganisationStore(getOrganisationStore(session),idGeneratorBuilder.generator(ORGANISATION));
+    }
+
+    private void addClusterListener(Cluster cluster) {
+        cluster.register(new Host.StateListener() {
+
+            @Override
+            public void onAdd(Host host) {
+                log.info("Host {} has been added", host.getAddress());
+            }
+
+            @Override
+            public void onUp(Host host) {
+                log.info("Host {} has come up", host.getAddress());
+            }
+
+            @Override
+            public void onDown(Host host) {
+                log.error("Host {} has gone down", host.getAddress());
+            }
+
+            @Override
+            public void onRemove(Host host) {
+                log.error("Host {} has been removed", host.getAddress());
+            }
+
+            @Override
+            public void onRegister(Cluster cluster) {
+                log.info("Cluster {} has been registered", cluster.getClusterName());
+            }
+
+            @Override
+            public void onUnregister(Cluster cluster) {
+                log.error("Cluster {} has been unregistered", cluster.getClusterName());
+            }
+        });
     }
 
 
