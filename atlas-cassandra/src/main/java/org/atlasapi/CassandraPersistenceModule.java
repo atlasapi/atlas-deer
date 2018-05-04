@@ -523,22 +523,22 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
             @Override
             public void onAdd(Host host) {
-                log.info("Host {} has been added", host.getAddress());
+                log.info("Host {} has been added", host);
             }
 
             @Override
             public void onUp(Host host) {
-                log.info("Host {} has come up", host.getAddress());
+                log.info("Host {} has come up", host);
             }
 
             @Override
             public void onDown(Host host) {
-                log.error("Host {} has gone down", host.getAddress());
+                log.error("Host {} has gone down", host);
             }
 
             @Override
             public void onRemove(Host host) {
-                log.error("Host {} has been removed", host.getAddress());
+                log.error("Host {} has been removed", host);
             }
 
             @Override
