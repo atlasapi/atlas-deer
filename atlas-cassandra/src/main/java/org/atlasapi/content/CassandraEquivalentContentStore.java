@@ -1,38 +1,5 @@
 package org.atlasapi.content;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import org.atlasapi.annotation.Annotation;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.equivalence.EquivalenceGraph;
-import org.atlasapi.equivalence.EquivalenceGraphFilter;
-import org.atlasapi.equivalence.EquivalenceGraphSerializer;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.equivalence.EquivalenceGraphUpdate;
-import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
-import org.atlasapi.equivalence.ResolvedEquivalents;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
-import org.atlasapi.segment.SegmentEvent;
-import org.atlasapi.serialization.protobuf.ContentProtos;
-import org.atlasapi.system.legacy.LegacyContentResolver;
-import org.atlasapi.util.CassandraSecondaryIndex;
-import org.atlasapi.util.SecondaryIndex;
-
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.stream.MoreCollectors;
-
 import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
@@ -59,8 +26,39 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
+import org.atlasapi.annotation.Annotation;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphFilter;
+import org.atlasapi.equivalence.EquivalenceGraphSerializer;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceGraphUpdate;
+import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
+import org.atlasapi.equivalence.ResolvedEquivalents;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
+import org.atlasapi.segment.SegmentEvent;
+import org.atlasapi.serialization.protobuf.ContentProtos;
+import org.atlasapi.system.legacy.LegacyContentResolver;
+import org.atlasapi.util.CassandraSecondaryIndex;
+import org.atlasapi.util.SecondaryIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.asc;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
@@ -310,6 +308,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         row -> row.getLong(SET_ID_KEY),
                         row -> row
                 ));
+
+        rows.asMap().forEach((id, rowsForId) -> {
+            if(rowsForId.size() >= 100) {
+                log.info("Large number of rows retrieved for id {}", id);
+            }
+        });
 
         ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs = deserializeGraphs(rows);
         ImmutableSetMultimap<Long, Content> content = deserializeContent(
