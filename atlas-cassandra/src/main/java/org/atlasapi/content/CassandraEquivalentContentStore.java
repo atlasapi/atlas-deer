@@ -311,7 +311,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         rows.asMap().forEach((id, rowsForId) -> {
             if(rowsForId.size() >= 100) {
-                log.info("Large number of rows retrieved for id {}", id);
+                log.info("Large number of rows ({}) retrieved for id {}", rowsForId.size(), id);
             }
         });
 
