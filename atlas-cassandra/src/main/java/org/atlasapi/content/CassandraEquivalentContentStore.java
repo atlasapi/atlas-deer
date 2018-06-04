@@ -85,6 +85,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private static final int GRAPH_SIZE_ALERTING_THRESHOLD = 150;
 
+    private static final int DEFAULT_FETCH_SIZE = 30;
+
     private final LegacyContentResolver legacyContentResolver;
     private final Session session;
     private final ConsistencyLevel writeConsistency;
@@ -140,7 +142,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 .from(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
                 .orderBy(asc(CONTENT_ID_KEY));
-        statement.setFetchSize(Integer.MAX_VALUE);
+        statement.setFetchSize(DEFAULT_FETCH_SIZE); //this will automatically batch when there are too many rows
         statement.setConsistencyLevel(read);
         this.setsSelect = session.prepare(statement);
 
@@ -310,9 +312,16 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 ));
 
         rows.asMap().forEach((id, rowsForId) -> {
-            if(rowsForId.size() >= 100) {
+            long rowBytes = 0;
+            if (rowsForId.size() >= 100) {
                 log.info("Large number of rows ({}) retrieved for id {}", rowsForId.size(), id);
             }
+            for (Row row : rowsForId) {
+                for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
+                    rowBytes += row.getBytesUnsafe(i).remaining();
+                }
+            }
+            log.info("Query for {} returned {} bytes", id, rowBytes);
         });
 
         ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs = deserializeGraphs(rows);
