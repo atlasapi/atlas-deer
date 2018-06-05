@@ -311,18 +311,22 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         row -> row
                 ));
 
-        rows.asMap().forEach((id, rowsForId) -> {
-            long rowBytes = 0;
-            if (rowsForId.size() >= 100) {
-                log.info("Large number of rows ({}) retrieved for id {}", rowsForId.size(), id);
-            }
-            for (Row row : rowsForId) {
-                for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
-                    rowBytes += row.getBytesUnsafe(i).remaining();
+        try {
+            rows.asMap().forEach((id, rowsForId) -> {
+                long rowBytes = 0;
+                if (rowsForId.size() >= 100) {
+                    log.info("Large number of rows ({}) retrieved for id {}", rowsForId.size(), id);
                 }
-            }
-            log.info("Query for {} returned {} bytes", id, rowBytes);
-        });
+                for (Row row : rowsForId) {
+                    for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
+                        rowBytes += row.getBytesUnsafe(i).remaining();
+                    }
+                }
+                log.info("Query for {} returned {} bytes", id, rowBytes);
+            });
+        } catch(Exception e) {
+            log.warn("Byte calculation failed", e);
+        }
 
         ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs = deserializeGraphs(rows);
         ImmutableSetMultimap<Long, Content> content = deserializeContent(
