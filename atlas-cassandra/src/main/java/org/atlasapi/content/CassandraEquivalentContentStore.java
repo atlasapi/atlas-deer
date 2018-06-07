@@ -28,6 +28,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.stream.MoreStreams;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
@@ -56,7 +57,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -99,6 +103,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private final EquivalenceGraphSerializer graphSerializer;
 
     private final PreparedStatement setsSelect;
+    private final PreparedStatement setGraphSelect;
     private final PreparedStatement rowDelete;
     private final PreparedStatement setDelete;
     private final PreparedStatement dataRowUpdate;
@@ -136,8 +141,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         RegularStatement statement = select(
                 SET_ID_KEY,
                 CONTENT_ID_KEY,
-                DATA_KEY,
-                GRAPH_KEY
+                DATA_KEY
         )
                 .from(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
@@ -145,6 +149,17 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         statement.setFetchSize(DEFAULT_FETCH_SIZE); //this will automatically batch when there are too many rows
         statement.setConsistencyLevel(read);
         this.setsSelect = session.prepare(statement);
+
+        RegularStatement setGraphStatement = select(
+                SET_ID_KEY,
+                GRAPH_KEY
+        )
+                .from(EQUIVALENT_CONTENT_TABLE)
+                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
+                .limit(1);
+
+
+        this.setGraphSelect = session.prepare(setGraphStatement);
 
         this.rowDelete = session.prepare(delete()
                 .from(EQUIVALENT_CONTENT_TABLE)
@@ -273,64 +288,70 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         );
     }
 
-    private Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
+    private Function<List<SetSelectResults>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
             Map<Long, Long> index,
             Set<Annotation> activeAnnotations,
             Set<Publisher> selectedSources
     ) {
-        return setsRows -> {
+        return results -> {
             Multimap<Long, Content> sets = deserialize(
-                    setsRows,
+                    results,
                     activeAnnotations,
                     selectedSources,
                     index
             );
 
-            ResolvedEquivalents.Builder<Content> results = ResolvedEquivalents.builder();
+            ResolvedEquivalents.Builder<Content> resolved = ResolvedEquivalents.builder();
             for (Entry<Long, Long> id : index.entrySet()) {
-                results.putEquivalents(
+                resolved.putEquivalents(
                         Id.valueOf(id.getKey()),
                         sets.get(id.getValue())
                 );
             }
-            return Optional.of(results.build());
+            return Optional.of(resolved.build());
         };
     }
 
     private Multimap<Long, Content> deserialize(
-            Iterable<ResultSet> setsRows,
+            List<SetSelectResults> results,
             Set<Annotation> activeAnnotations,
             Set<Publisher> selectedSources,
             Map<Long, Long> index
     ) {
-        ImmutableListMultimap<Long, Row> rows = StreamSupport
-                .stream(setsRows.spliterator(), false)
-                .flatMap(resultSet -> resultSet.all().stream())
+        ImmutableListMultimap<Long, Row> setRows = results.stream()
+                .flatMap(setSelectResults -> setSelectResults.setResult.all().stream())
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         row -> row.getLong(SET_ID_KEY),
                         row -> row
                 ));
 
-        try {
-            rows.asMap().forEach((id, rowsForId) -> {
-                long rowBytes = 0;
-                if (rowsForId.size() >= 100) {
-                    log.info("Large number of rows ({}) retrieved for id {}", rowsForId.size(), id);
-                }
-                for (Row row : rowsForId) {
-                    for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
-                        rowBytes += row.getBytesUnsafe(i).remaining();
-                    }
-                }
-                log.info("Query for {} returned {} bytes", id, rowBytes);
-            });
-        } catch(Exception e) {
-            log.warn("Byte calculation failed", e);
-        }
+        ImmutableListMultimap<Long, Row> graphRows = results.stream()
+                .flatMap(setSelectResults -> setSelectResults.graphResult.all().stream())
+                .collect(MoreCollectors.toImmutableListMultiMap(
+                        row -> row.getLong(SET_ID_KEY),
+                        row -> row
+                ));
 
-        ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs = deserializeGraphs(rows);
+//        try {
+//            rows.asMap().forEach((id, rowsForId) -> {
+//                long rowBytes = 0;
+//                if (rowsForId.size() >= 100) {
+//                    log.info("Large number of rows ({}) retrieved for id {}", rowsForId.size(), id);
+//                }
+//                for (Row row : rowsForId) {
+//                    for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
+//                        rowBytes += row.getBytesUnsafe(i).remaining();
+//                    }
+//                }
+//                log.info("Query for {} returned {} bytes", id, rowBytes);
+//            });
+//        } catch(Exception e) {
+//            log.warn("Byte calculation failed", e);
+//        }
+
+        ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs = deserializeGraphs(graphRows);
         ImmutableSetMultimap<Long, Content> content = deserializeContent(
-                rows,
+                setRows,
                 activeAnnotations
         );
 
@@ -467,18 +488,20 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
     }
 
-    private ListenableFuture<List<ResultSet>> resultOf(Iterable<Statement> queries) {
-        ImmutableList.Builder<ListenableFuture<ResultSet>> resultSets = ImmutableList.builder();
-        for (Statement query : queries) {
-            resultSets.add(session.executeAsync(query));
-        }
-
-        return Futures.allAsList(resultSets.build());
+    private ListenableFuture<List<SetSelectResults>> resultOf(Iterable<SetSelectStatement> queries) {
+        return Futures.allAsList(MoreStreams.stream(queries)
+                .map(query -> new SetSelectFuture(
+                        session.executeAsync(query.graphStatement),
+                        session.executeAsync(query.setStatement)))
+                .collect(MoreCollectors.toImmutableList()));
     }
 
-    private Iterable<Statement> selectSetsQueries(Iterable<Long> keys) {
+    private Iterable<SetSelectStatement> selectSetsQueries(Iterable<Long> keys) {
         return StreamSupport.stream(keys.spliterator(), false)
-                .map(k -> setsSelect.bind().setLong(SET_ID_BIND, k))
+                .map(k -> new SetSelectStatement(
+                        setGraphSelect.bind().setLong(SET_ID_BIND, k),
+                        setsSelect.bind().setLong(SET_ID_BIND, k)
+                        ))
                 .collect(MoreCollectors.toImmutableList());
     }
 
@@ -654,11 +677,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private java.util.Optional<EquivalenceGraph> deserializeGraph(Row row) {
-        if (row.getBytes(GRAPH_KEY) == null) {
+        ByteBuffer graphBytes = row.getBytes(GRAPH_KEY);
+        if (graphBytes == null) {
             return java.util.Optional.empty();
         }
         return java.util.Optional.of(
-                graphSerializer.deserialize(row.getBytes(GRAPH_KEY))
+                graphSerializer.deserialize(graphBytes)
         );
     }
 
@@ -675,5 +699,63 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                             .collect(MoreCollectors.toImmutableSet());
                 }
         );
+    }
+
+    private class SetSelectStatement {
+        final Statement graphStatement;
+        final Statement setStatement;
+
+        SetSelectStatement(Statement graphStatement, Statement setStatement) {
+            this.graphStatement = graphStatement;
+            this.setStatement = setStatement;
+        }
+    }
+
+    private class SetSelectResults {
+        final ResultSet graphResult;
+        final ResultSet setResult;
+
+        SetSelectResults(ResultSet graphResult, ResultSet setResult) {
+            this.graphResult = graphResult;
+            this.setResult = setResult;
+        }
+    }
+
+    private class SetSelectFuture implements ListenableFuture<SetSelectResults> {
+        final ListenableFuture<List<ResultSet>> combinedFuture;
+
+        SetSelectFuture(ListenableFuture<ResultSet> graphResult, ListenableFuture<ResultSet> setResult) {
+            combinedFuture = Futures.allAsList(graphResult, setResult); //order after get is same order as given on input
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return combinedFuture.cancel(mayInterruptIfRunning);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return combinedFuture.isCancelled();
+        }
+
+        @Override
+        public boolean isDone() {
+            return combinedFuture.isDone();
+        }
+
+        @Override
+        public SetSelectResults get() throws InterruptedException, ExecutionException {
+            return new SetSelectResults(combinedFuture.get().get(0), combinedFuture.get().get(1));
+        }
+
+        @Override
+        public SetSelectResults get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return new SetSelectResults(combinedFuture.get(timeout, unit).get(0), combinedFuture.get(timeout, unit).get(0));
+        }
+
+        @Override
+        public void addListener(Runnable listener, Executor executor) {
+            combinedFuture.addListener(listener, executor);
+        }
     }
 }
