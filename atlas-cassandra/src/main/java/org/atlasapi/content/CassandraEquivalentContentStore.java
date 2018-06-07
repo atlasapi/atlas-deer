@@ -157,7 +157,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 .from(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
                 .limit(1);
-
+        setGraphStatement.setConsistencyLevel(read);
 
         this.setGraphSelect = session.prepare(setGraphStatement);
 
