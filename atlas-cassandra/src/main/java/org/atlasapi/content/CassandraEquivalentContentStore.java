@@ -102,8 +102,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private final ContentSerializer contentSerializer;
     private final EquivalenceGraphSerializer graphSerializer;
 
-    private final PreparedStatement setsSelect;
-    private final PreparedStatement setGraphSelect;
+    private final PreparedStatement dataSelect;
+    private final PreparedStatement graphSelect;
     private final PreparedStatement rowDelete;
     private final PreparedStatement setDelete;
     private final PreparedStatement dataRowUpdate;
@@ -138,7 +138,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         this.writeConsistency = write;
         this.index = new CassandraSecondaryIndex(session, EQUIVALENT_CONTENT_INDEX, read);
 
-        RegularStatement statement = select(
+        RegularStatement dataStatement = select(
                 SET_ID_KEY,
                 CONTENT_ID_KEY,
                 DATA_KEY
@@ -146,20 +146,21 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 .from(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
                 .orderBy(asc(CONTENT_ID_KEY));
-        statement.setFetchSize(DEFAULT_FETCH_SIZE); //this will automatically batch when there are too many rows
-        statement.setConsistencyLevel(read);
-        this.setsSelect = session.prepare(statement);
+        dataStatement.setFetchSize(DEFAULT_FETCH_SIZE); //this will automatically batch when there are too many rows
+        dataStatement.setConsistencyLevel(read);
+        this.dataSelect = session.prepare(dataStatement);
 
-        RegularStatement setGraphStatement = select(
+        //Despite being a static column we need to query the graph data separately to prevent fetching a potentially large equiv graph for each member of an equiv set
+        RegularStatement graphStatement = select(
                 SET_ID_KEY,
                 GRAPH_KEY
         )
                 .from(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
                 .limit(1);
-        setGraphStatement.setConsistencyLevel(read);
+        graphStatement.setConsistencyLevel(read);
 
-        this.setGraphSelect = session.prepare(setGraphStatement);
+        this.graphSelect = session.prepare(graphStatement);
 
         this.rowDelete = session.prepare(delete()
                 .from(EQUIVALENT_CONTENT_TABLE)
@@ -288,7 +289,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         );
     }
 
-    private Function<List<SetSelectResults>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
+    private Function<List<GraphAndDataResults>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
             Map<Long, Long> index,
             Set<Annotation> activeAnnotations,
             Set<Publisher> selectedSources
@@ -313,20 +314,20 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private Multimap<Long, Content> deserialize(
-            List<SetSelectResults> results,
+            List<GraphAndDataResults> results,
             Set<Annotation> activeAnnotations,
             Set<Publisher> selectedSources,
             Map<Long, Long> index
     ) {
         ImmutableListMultimap<Long, Row> setRows = results.stream()
-                .flatMap(setSelectResults -> setSelectResults.setResult.all().stream())
+                .flatMap(graphAndDataResults -> graphAndDataResults.dataResult.all().stream())
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         row -> row.getLong(SET_ID_KEY),
                         row -> row
                 ));
 
         ImmutableListMultimap<Long, Row> graphRows = results.stream()
-                .flatMap(setSelectResults -> setSelectResults.graphResult.all().stream())
+                .flatMap(graphAndDataResults -> graphAndDataResults.graphResult.all().stream())
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         row -> row.getLong(SET_ID_KEY),
                         row -> row
@@ -488,19 +489,19 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
     }
 
-    private ListenableFuture<List<SetSelectResults>> resultOf(Iterable<SetSelectStatement> queries) {
+    private ListenableFuture<List<GraphAndDataResults>> resultOf(Iterable<GraphAndDataSelect> queries) {
         return Futures.allAsList(MoreStreams.stream(queries)
                 .map(query -> new SetSelectFuture(
                         session.executeAsync(query.graphStatement),
-                        session.executeAsync(query.setStatement)))
+                        session.executeAsync(query.dataStatement)))
                 .collect(MoreCollectors.toImmutableList()));
     }
 
-    private Iterable<SetSelectStatement> selectSetsQueries(Iterable<Long> keys) {
+    private Iterable<GraphAndDataSelect> selectSetsQueries(Iterable<Long> keys) {
         return StreamSupport.stream(keys.spliterator(), false)
-                .map(k -> new SetSelectStatement(
-                        setGraphSelect.bind().setLong(SET_ID_BIND, k),
-                        setsSelect.bind().setLong(SET_ID_BIND, k)
+                .map(k -> new GraphAndDataSelect(
+                        graphSelect.bind().setLong(SET_ID_BIND, k),
+                        dataSelect.bind().setLong(SET_ID_BIND, k)
                         ))
                 .collect(MoreCollectors.toImmutableList());
     }
@@ -701,27 +702,27 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         );
     }
 
-    private class SetSelectStatement {
+    private class GraphAndDataSelect {
         final Statement graphStatement;
-        final Statement setStatement;
+        final Statement dataStatement;
 
-        SetSelectStatement(Statement graphStatement, Statement setStatement) {
+        GraphAndDataSelect(Statement graphStatement, Statement dataStatement) {
             this.graphStatement = graphStatement;
-            this.setStatement = setStatement;
+            this.dataStatement = dataStatement;
         }
     }
 
-    private class SetSelectResults {
+    private class GraphAndDataResults {
         final ResultSet graphResult;
-        final ResultSet setResult;
+        final ResultSet dataResult;
 
-        SetSelectResults(ResultSet graphResult, ResultSet setResult) {
+        GraphAndDataResults(ResultSet graphResult, ResultSet dataResult) {
             this.graphResult = graphResult;
-            this.setResult = setResult;
+            this.dataResult = dataResult;
         }
     }
 
-    private class SetSelectFuture implements ListenableFuture<SetSelectResults> {
+    private class SetSelectFuture implements ListenableFuture<GraphAndDataResults> {
         final ListenableFuture<List<ResultSet>> combinedFuture;
 
         SetSelectFuture(ListenableFuture<ResultSet> graphResult, ListenableFuture<ResultSet> setResult) {
@@ -744,13 +745,13 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
 
         @Override
-        public SetSelectResults get() throws InterruptedException, ExecutionException {
-            return new SetSelectResults(combinedFuture.get().get(0), combinedFuture.get().get(1));
+        public GraphAndDataResults get() throws InterruptedException, ExecutionException {
+            return new GraphAndDataResults(combinedFuture.get().get(0), combinedFuture.get().get(1));
         }
 
         @Override
-        public SetSelectResults get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return new SetSelectResults(combinedFuture.get(timeout, unit).get(0), combinedFuture.get(timeout, unit).get(0));
+        public GraphAndDataResults get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return new GraphAndDataResults(combinedFuture.get(timeout, unit).get(0), combinedFuture.get(timeout, unit).get(1));
         }
 
         @Override
