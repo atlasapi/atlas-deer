@@ -744,14 +744,19 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             return combinedFuture.isDone();
         }
 
+        private GraphAndDataResults toGraphAndDataResults(List<ResultSet> resultSets) {
+            assert(resultSets.size() == 2);
+            return new GraphAndDataResults(resultSets.get(0), resultSets.get(1));
+        }
+
         @Override
         public GraphAndDataResults get() throws InterruptedException, ExecutionException {
-            return new GraphAndDataResults(combinedFuture.get().get(0), combinedFuture.get().get(1));
+            return toGraphAndDataResults(combinedFuture.get());
         }
 
         @Override
         public GraphAndDataResults get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return new GraphAndDataResults(combinedFuture.get(timeout, unit).get(0), combinedFuture.get(timeout, unit).get(1));
+            return toGraphAndDataResults(combinedFuture.get(timeout, unit));
         }
 
         @Override
