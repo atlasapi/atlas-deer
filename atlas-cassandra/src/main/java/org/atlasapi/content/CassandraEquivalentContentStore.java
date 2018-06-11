@@ -333,22 +333,25 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         row -> row
                 ));
 
-//        try {
-//            rows.asMap().forEach((id, rowsForId) -> {
-//                long rowBytes = 0;
-//                if (rowsForId.size() >= 100) {
-//                    log.info("Large number of rows ({}) retrieved for id {}", rowsForId.size(), id);
-//                }
-//                for (Row row : rowsForId) {
-//                    for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
-//                        rowBytes += row.getBytesUnsafe(i).remaining();
-//                    }
-//                }
-//                log.info("Query for {} returned {} bytes", id, rowBytes);
-//            });
-//        } catch(Exception e) {
-//            log.warn("Byte calculation failed", e);
-//        }
+        try {
+            setRows.asMap().forEach((id, setRowsForId) -> {
+                long rowBytes = 0;
+                Collection<Row> graphRowsForId = graphRows.get(id);
+                for (Row row : setRowsForId) {
+                    for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
+                        rowBytes += row.getBytesUnsafe(i).remaining();
+                    }
+                }
+                for (Row row : graphRowsForId) {
+                    for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
+                        rowBytes += row.getBytesUnsafe(i).remaining();
+                    }
+                }
+                log.info("Query for {} returned {} bytes", id, rowBytes);
+            });
+        } catch(Exception e) {
+            log.warn("Byte calculation failed for {}", graphRows.values(), e);
+        }
 
         ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs = deserializeGraphs(graphRows);
         ImmutableSetMultimap<Long, Content> content = deserializeContent(
