@@ -7,17 +7,17 @@ option optimize_for = SPEED;
 
 
 message Topic {
-    optional int64 id = 1  [deprecated=true];
-    optional string source = 2;
-    optional string type = 3;
+    int64 id = 1  [deprecated=true];
+    string source = 2;
+    string type = 3;
     repeated common.Alias aliases = 4 [deprecated=true];
     repeated common.LocaleString title = 5  [deprecated=true];
     repeated common.LocaleString description = 6  [deprecated=true];
     repeated string image = 7  [deprecated=true];
     repeated string thumbnail = 8  [deprecated=true];
-    optional string namespace = 9;
-    optional string value = 10;
+    string namespace = 9;
+    string value = 10;
 
-    // Has to be optional due to existing legacy data
-    optional common.Described described = 100;
+    // Has to be due to existing legacy data
+    common.Described described = 100;
 }

@@ -5,175 +5,175 @@ option java_outer_classname = "CommonProtos";
 option optimize_for = SPEED;
 
 message DateTime {
-    required int64 millis = 1;
+    int64 millis = 1;
 }
 
 message LocaleString {
-    required string value = 1;
-    optional string locale = 2;
+    string value = 1;
+    string locale = 2;
 }
 
 message Identification {
-    optional int64 id = 1;
-    optional string source = 2 [deprecated=true];
-    optional string type = 3 [deprecated=true];
+    int64 id = 1;
+    string source = 2 [deprecated=true];
+    string type = 3 [deprecated=true];
     repeated Alias aliases = 4;
     repeated Reference equivs = 5;
-    optional DateTime first_seen = 6 [deprecated=true];
-    optional DateTime last_updated = 7;
-    optional string uri = 9;
-    optional string curie = 10;
-    optional DateTime equivalenceUpdate = 11;
+    DateTime first_seen = 6 [deprecated=true];
+    DateTime last_updated = 7;
+    string uri = 9;
+    string curie = 10;
+    DateTime equivalenceUpdate = 11;
 }
 
 message BroadcastRef {
-    optional string sourceId =1;
-    optional Identification channelId = 2;
-    optional DateTime transmission_time = 3;
-    optional DateTime transmission_end_time = 4;
+    string sourceId =1;
+    Identification channelId = 2;
+    DateTime transmission_time = 3;
+    DateTime transmission_end_time = 4;
 }
 
 message LocationSummary {
-    optional bool available =1;
-    optional string uri =2;
-    optional DateTime availability_start = 3;
-    optional DateTime availability_end = 4;
+    bool available =1;
+    string uri =2;
+    DateTime availability_start = 3;
+    DateTime availability_end = 4;
 }
 
 message Reference {
-    optional int64 id = 1;
-    optional string source = 2;
-    optional string type = 3;
-    optional string sort = 4;
-    optional DateTime updated = 5;
-    optional int64 position = 6;
+    int64 id = 1;
+    string source = 2;
+    string type = 3;
+    string sort = 4;
+    DateTime updated = 5;
+    int64 position = 6;
     repeated Certificate certificates = 7;
-    optional int32 releaseYear = 8;
+    int32 releaseYear = 8;
 }
 
 message Alias {
-    optional string value = 1;
-    optional string namespace = 2;
+    string value = 1;
+    string namespace = 2;
 }
 
 message Certificate {
-    optional string country = 1;
-    optional string classification = 2;
+    string country = 1;
+    string classification = 2;
 }
 
 message Described {
-    optional LocaleString title = 1;
-    optional LocaleString shortDescription = 2;
-    optional LocaleString mediumDescription = 3;
-    optional LocaleString longDescription = 4;
-    optional Synopses synopses = 5;
-    optional LocaleString description = 6;
-    optional string mediaType = 7;
-    optional string specialization = 8;
+    LocaleString title = 1;
+    LocaleString shortDescription = 2;
+    LocaleString mediumDescription = 3;
+    LocaleString longDescription = 4;
+    Synopses synopses = 5;
+    LocaleString description = 6;
+    string mediaType = 7;
+    string specialization = 8;
     repeated string genre = 9;
-    optional string source = 10;
-    optional string image = 11;
+    string source = 10;
+    string image = 11;
     repeated Image images = 12;
-    optional string thumbnail = 13;
-    optional DateTime firstSeen = 14;
-    optional DateTime lastFetched = 15;
-    optional DateTime thisOrChildLastUpdated = 16;
-    optional bool scheduleOnly = 17;
-    optional bool activelyPublished = 18;
-    optional string presentationChannel = 19;
-    optional Priority priority = 20;
+    string thumbnail = 13;
+    DateTime firstSeen = 14;
+    DateTime lastFetched = 15;
+    DateTime thisOrChildLastUpdated = 16;
+    bool scheduleOnly = 17;
+    bool activelyPublished = 18;
+    string presentationChannel = 19;
+    Priority priority = 20;
     repeated RelatedLink relatedLink = 21;
     repeated Rating ratings = 22;
     repeated Review reviews = 23;
 
-    required Identification identified = 100;
+    Identification identified = 100;
 }
 
 message ContentGroup {
-    optional string type = 1;
+    string type = 1;
     repeated Reference content = 2;
 
-    required Described described = 100;
+    Described described = 100;
 }
 
 message Person {
-    optional string givenName = 1;
-    optional string familyName = 2;
-    optional string gender = 3;
-    optional DateTime birthDate = 4;
-    optional string birthPlace = 5;
+    string givenName = 1;
+    string familyName = 2;
+    string gender = 3;
+    DateTime birthDate = 4;
+    string birthPlace = 5;
     repeated string quote = 6;
     repeated Award awards = 7;
-    required ContentGroup contentGroup = 100;
+    ContentGroup contentGroup = 100;
 }
 
 message Organisation {
     repeated Person member = 1;
     repeated string alternativeTitles = 2;
 
-    required ContentGroup contentGroup = 100;
+    ContentGroup contentGroup = 100;
 }
 
 message Synopses {
-    optional LocaleString shortDescription = 1;
-    optional LocaleString mediumDescription = 2;
-    optional LocaleString longDescription = 3;
+    LocaleString shortDescription = 1;
+    LocaleString mediumDescription = 2;
+    LocaleString longDescription = 3;
 }
 
 message Priority {
     repeated string reason = 1 [deprecated = true];
-    optional double priority = 2;
+    double priority = 2;
     repeated string positive_reasons = 3;
     repeated string negative_reasons = 4;
 }
 
 message Image {
-    optional string uri = 1;
-    optional int32 height = 2;
-    optional int32 width = 3;
-    optional string type = 4;
-    optional string caption = 5 [deprecated = false];
-    optional string copyright = 6 [deprecated = false];
-    optional DateTime availability_start = 7;
-    optional DateTime availability_end = 8;
-    optional bool has_title_art = 9;
-    optional string aspect_ratio = 10;
-    optional string color = 11;
-    optional string theme = 12;
-    optional string mime_type = 13;
+    string uri = 1;
+    int32 height = 2;
+    int32 width = 3;
+    string type = 4;
+    string caption = 5 [deprecated = false];
+    string copyright = 6 [deprecated = false];
+    DateTime availability_start = 7;
+    DateTime availability_end = 8;
+    bool has_title_art = 9;
+    string aspect_ratio = 10;
+    string color = 11;
+    string theme = 12;
+    string mime_type = 13;
 }
 
 message RelatedLink {
-    optional string type = 1;
-    optional string url = 2;
-    optional string sourceId = 3;
-    optional string shortName = 4;
-    optional string title = 5;
-    optional string description = 6;
-    optional string image = 7;
-    optional string thumbnail = 8;
+    string type = 1;
+    string url = 2;
+    string sourceId = 3;
+    string shortName = 4;
+    string title = 5;
+    string description = 6;
+    string image = 7;
+    string thumbnail = 8;
 }
 
 message Award {
-    optional string outcome = 1;
-    optional string title = 2;
-    optional string description = 3;
-    optional int32 year = 4;
+    string outcome = 1;
+    string title = 2;
+    string description = 3;
+    int32 year = 4;
 }
 
 message Rating {
-    optional string type = 1;
-    optional float value = 2;
-    optional string source = 3;
+    string type = 1;
+    float value = 2;
+    string source = 3;
 }
 
 message Review {
-    optional LocaleString locale = 1;
-    optional string review = 2;
-    optional string author = 3;
-    optional string authorInitials = 4;
-    optional string rating = 5;
-    optional DateTime date = 6;
-    optional string reviewType = 7;
-    optional string publisherKey = 8;
+    LocaleString locale = 1;
+    string review = 2;
+    string author = 3;
+    string authorInitials = 4;
+    string rating = 5;
+    DateTime date = 6;
+    string reviewType = 7;
+    string publisherKey = 8;
 }

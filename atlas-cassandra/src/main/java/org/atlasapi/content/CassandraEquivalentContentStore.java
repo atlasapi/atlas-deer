@@ -347,7 +347,9 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         rowBytes += row.getBytesUnsafe(i).remaining();
                     }
                 }
-                log.info("Query for {} returned {} bytes", id, rowBytes);
+                if(rowBytes > 10000) {
+                    log.info("Query for {} returned {} bytes", id, rowBytes);
+                }
             });
         } catch(Exception e) {
             log.warn("Byte calculation failed for {}", graphRows.values(), e);
