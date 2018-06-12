@@ -6,23 +6,23 @@ option java_outer_classname = "EquivProtos";
 option optimize_for = SPEED;
 
 message EquivRecord {
-    int64 id = 1;
-    string source = 2;
-    common.DateTime created = 3;
-    common.DateTime updated = 4;
+    optional int64 id = 1;
+    optional string source = 2;
+    optional common.DateTime created = 3;
+    optional common.DateTime updated = 4;
     repeated common.Reference generated = 5;
     repeated common.Reference explicit = 6;
     repeated common.Reference equivalents = 7;
 }
 
 message Adjacency {
-    common.Reference ref = 1;
-    common.DateTime created = 2;
+    optional common.Reference ref = 1;
+    optional common.DateTime created = 2;
     repeated common.Reference efferent = 3;
     repeated common.Reference afferent = 4;
 }
 
 message EquivGraph {
-    common.DateTime updated = 1;
+    optional common.DateTime updated = 1;
     repeated Adjacency adjacency = 2;
 }

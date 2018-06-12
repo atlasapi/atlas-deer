@@ -35,35 +35,35 @@ enum Column {
 }
 
 extend google.protobuf.FieldOptions {
-  Column column = 50002;
+  optional Column column = 50002;
 }
 
 message Content {
-    int64 id = 1 [(column)=IDENT];
+    optional int64 id = 1 [(column)=IDENT];
     repeated common.Alias aliases = 49 [(column)=IDENT];
     repeated common.Reference equivs = 50 [(column)=IDENT];
-    common.DateTime first_seen = 51 [(column)=IDENT];
-    common.DateTime last_updated = 52 [(column)=IDENT];
-    string uri = 53 [(column)=IDENT];
-    common.Reference container_ref = 8 [(column)=CONTAINER_REF];
-    common.Reference series_ref = 9 [(column)=SERIES_REF];
-    bool schedule_only = 42 [(column)=IDENT];
+    optional common.DateTime first_seen = 51 [(column)=IDENT];
+    optional common.DateTime last_updated = 52 [(column)=IDENT];
+    optional string uri = 53 [(column)=IDENT];
+    optional common.Reference container_ref = 8 [(column)=CONTAINER_REF];
+    optional common.Reference series_ref = 9 [(column)=SERIES_REF];
+    optional bool schedule_only = 42 [(column)=IDENT];
 
-    string source = 47 [(column)=SOURCE];
+    optional string source = 47 [(column)=SOURCE];
 
-    string type = 48 [(column)=TYPE];
+    optional string type = 48 [(column)=TYPE];
 
-    common.DateTime child_last_updated = 46 [(column)=CHILD_UPDATED];
+    optional common.DateTime child_last_updated = 46 [(column)=CHILD_UPDATED];
 
     repeated common.LocaleString titles = 2 [(column)=DESC];
-    string description = 38 [(column)=DESC];
+    optional string description = 38 [(column)=DESC];
     repeated Synopsis synopses = 3 [(column)=DESC];
-    string image = 40 [(column)=DESC];
-    string thumb = 41 [(column)=DESC];
+    optional string image = 40 [(column)=DESC];
+    optional string thumb = 41 [(column)=DESC];
     repeated common.Image images = 4 [(column)=DESC];
-    string media_type = 5 [(column)=DESC];
-    string specialization = 6 [(column)=DESC];
-    string sort_key = 7 [(column)=DESC];
+    optional string media_type = 5 [(column)=DESC];
+    optional string specialization = 6 [(column)=DESC];
+    optional string sort_key = 7 [(column)=DESC];
 
     repeated common.Reference children = 10  [(column)=CHILDREN];
     repeated ItemAndBroadcastRef upcoming_content = 55  [(column)=UPCOMING_CONTENT];
@@ -73,23 +73,23 @@ message Content {
     repeated Broadcast broadcasts = 12 [(column)=BROADCASTS];
     repeated Encoding encodings = 13  [(column)=LOCATIONS];
 
-    int32 series_number = 16 [(column)=DESC];
-    int32 episode_number = 17 [(column)=DESC];
-    int32 part_number = 18 [(column)=DESC];
-    int32 total_episodes = 19 [(column)=DESC];
-    bool longform = 20 [(column)=DESC];
-    bool black_and_white = 21 [(column)=DESC];
-    string presentation_channel = 23 [(column)=DESC];
+    optional int32 series_number = 16 [(column)=DESC];
+    optional int32 episode_number = 17 [(column)=DESC];
+    optional int32 part_number = 18 [(column)=DESC];
+    optional int32 total_episodes = 19 [(column)=DESC];
+    optional bool longform = 20 [(column)=DESC];
+    optional bool black_and_white = 21 [(column)=DESC];
+    optional string presentation_channel = 23 [(column)=DESC];
     repeated string countries = 22 [(column)=DESC];
-    int32 year = 30 [(column)=DESC];
+    optional int32 year = 30 [(column)=DESC];
     repeated string language = 31 [(column)=DESC];
-    string isrc = 35 [(column)=DESC];
-    int64 duration = 36 [(column)=DESC];
+    optional string isrc = 35 [(column)=DESC];
+    optional int64 duration = 36 [(column)=DESC];
     repeated string genres = 39 [(column)=DESC];
-    Summary container_summary = 43 [(column)=CONTAINER_SUMMARY];
-    string website_url = 44 [(column)=DESC];
-    double priority = 61 [(column)=DESC];
-    Priority priorities = 66 [(column) = DESC];
+    optional Summary container_summary = 43 [(column)=CONTAINER_SUMMARY];
+    optional string website_url = 44 [(column)=DESC];
+    optional double priority = 61 [(column)=DESC];
+    optional Priority priorities = 66 [(column) = DESC];
 
     repeated Content clips = 24 [(column)=CLIPS];
     repeated KeyPhrase key_phrases = 25 [(column)=KEYPHRASES];
@@ -104,222 +104,222 @@ message Content {
     repeated Restriction restrictions = 60 [(column)=DESC];
     repeated ItemSummary itemSummaries = 62 [(column)=ITEM_SUMMARIES];
     repeated int32 releaseYears = 63 [(column)=DESC];
-    bool activelyPublished = 64 [(column)=ACTIVELY_PUBLISHED];
-    bool genericDescription = 65 [(column)=GENERIC_DESCRIPTION];
+    optional bool activelyPublished = 64 [(column)=ACTIVELY_PUBLISHED];
+    optional bool genericDescription = 65 [(column)=GENERIC_DESCRIPTION];
     repeated EventRef event_refs = 67 [(column)=DESC];
     repeated common.Award awards = 68 [(column)=DESC];
     repeated common.Rating ratings = 69 [(column)=DESC];
     repeated common.Review reviews = 70 [(column)=DESC];
 
-    bool special = 71 [(column)=DESC];
+    optional bool special = 71 [(column)=DESC];
 }
 
 message Restriction {
-    bool restricted = 1;
-    int32 minimum_age = 2;
-    string restriction_message = 3;
-    string authority = 4;
-    string rating = 5;
+    optional bool restricted = 1;
+    optional int32 minimum_age = 2;
+    optional string restriction_message = 3;
+    optional string authority = 4;
+    optional string rating = 5;
 }
 
 message Priority {
-    double score = 1;
+    optional double score = 1;
     repeated string reasons = 2 [deprecated = true];
     repeated string positive_reasons = 3;
     repeated string negative_reasons = 4;
 }
 
 message Summary {
-    string type = 1;
-    string title = 2;
-    string description = 3;
-    int32 series_number = 4;
-    int32 total_episodes = 5;
+    optional string type = 1;
+    optional string title = 2;
+    optional string description = 3;
+    optional int32 series_number = 4;
+    optional int32 total_episodes = 5;
 }
 
 message ItemAndBroadcastRef {
-    common.Reference item = 1;
+    optional common.Reference item = 1;
     repeated common.BroadcastRef broadcast = 2;
 }
 
 message ItemAndLocationSummary {
-    common.Reference item = 1;
+    optional common.Reference item = 1;
     repeated common.LocationSummary location_summary = 2;
 }
 
 
 message Broadcast {
-    common.Identification identification = 1;
-    common.DateTime transmission_time = 2;
-    common.DateTime transmission_end_time = 3;
-    common.Reference channel = 4;
-    common.DateTime schedule_date = 5;
-    string source_id = 19;
-    string version = 17;
-    bool actively_published = 6;
-    bool repeat = 7;
-    bool subtitled = 8;
-    bool signed = 9;
-    bool audio_described = 10;
-    bool high_definition = 11;
-    bool widescreen = 12;
-    bool surround = 13;
-    bool live = 14;
-    bool new_series = 15;
-    bool premiere = 16;
-    string channel_uri = 18;
-    bool is_three_d = 20;
-    BlackoutRestriction blackout_restriction = 21;
-    bool new_episode = 22;
-    bool revised_repeat = 23;
-    bool continuation = 24;
-    bool new_one_off = 25;
+    optional common.Identification identification = 1;
+    optional common.DateTime transmission_time = 2;
+    optional common.DateTime transmission_end_time = 3;
+    optional common.Reference channel = 4;
+    optional common.DateTime schedule_date = 5;
+    optional string source_id = 19;
+    optional string version = 17;
+    optional bool actively_published = 6;
+    optional bool repeat = 7;
+    optional bool subtitled = 8;
+    optional bool signed = 9;
+    optional bool audio_described = 10;
+    optional bool high_definition = 11;
+    optional bool widescreen = 12;
+    optional bool surround = 13;
+    optional bool live = 14;
+    optional bool new_series = 15;
+    optional bool premiere = 16;
+    optional string channel_uri = 18;
+    optional bool is_three_d = 20;
+    optional BlackoutRestriction blackout_restriction = 21;
+    optional bool new_episode = 22;
+    optional bool revised_repeat = 23;
+    optional bool continuation = 24;
+    optional bool new_one_off = 25;
 }
 
 message BlackoutRestriction {
-    bool all = 1;
+    optional bool all = 1;
 }
 
 message Encoding {
     repeated Location location = 1;
-    string version = 20;
-    string video_coding = 2;
-    string audio_coding = 3;
-    int32 bit_rate = 4;
-    int32 audio_bit_rate = 5;
-    int32 video_bit_rate = 6;
-    string video_aspect_ratio = 7;
-    float video_frame_rate = 8;
-    int32 audio_channels = 9;
-    string data_container_format = 10;
-    int64 data_size = 12;
-    string distributor = 11;
-    bool has_dog = 13;
-    string source = 14;
-    int32 video_horizontal_size = 15;
-    bool video_progressive_scan = 16;
-    int32 video_vertical_size = 17;
-    bool contains_advertising = 18;
-    int32 advertising_duration = 19;
-    bool is_three_d = 21;
-    string quality = 22;
-    string quality_detail = 23;
-    int64 duration = 24;
+    optional string version = 20;
+    optional string video_coding = 2;
+    optional string audio_coding = 3;
+    optional int32 bit_rate = 4;
+    optional int32 audio_bit_rate = 5;
+    optional int32 video_bit_rate = 6;
+    optional string video_aspect_ratio = 7;
+    optional float video_frame_rate = 8;
+    optional int32 audio_channels = 9;
+    optional string data_container_format = 10;
+    optional int64 data_size = 12;
+    optional string distributor = 11;
+    optional bool has_dog = 13;
+    optional string source = 14;
+    optional int32 video_horizontal_size = 15;
+    optional bool video_progressive_scan = 16;
+    optional int32 video_vertical_size = 17;
+    optional bool contains_advertising = 18;
+    optional int32 advertising_duration = 19;
+    optional bool is_three_d = 21;
+    optional string quality = 22;
+    optional string quality_detail = 23;
+    optional int64 duration = 24;
 }
 
 message Location {
-    string uri = 1;
-    common.DateTime availability_start = 2;
-    common.DateTime availability_end = 3;
-    int32 availability_length = 17;
-    string transport_type = 4;
+    optional string uri = 1;
+    optional common.DateTime availability_start = 2;
+    optional common.DateTime availability_end = 3;
+    optional int32 availability_length = 17;
+    optional string transport_type = 4;
     repeated string available_countries = 5;
-    string revenue_contract = 6;
-    string transport_sub_type = 7;
-    int32 amount = 8;
-    string currency = 9;
-    string network = 10;
-    string platform = 11;
-    bool transport_is_live = 12;
-    string embed_code = 13;
-    string embed_id = 14;
-    common.DateTime actual_availability_start = 15;
-    common.DateTime drm_playable_from = 16;
-    int64 service_id = 18;
-    int64 player_id = 19;
+    optional string revenue_contract = 6;
+    optional string transport_sub_type = 7;
+    optional int32 amount = 8;
+    optional string currency = 9;
+    optional string network = 10;
+    optional string platform = 11;
+    optional bool transport_is_live = 12;
+    optional string embed_code = 13;
+    optional string embed_id = 14;
+    optional common.DateTime actual_availability_start = 15;
+    optional common.DateTime drm_playable_from = 16;
+    optional int64 service_id = 18;
+    optional int64 player_id = 19;
     repeated string subscription_packages = 20;
     repeated common.Alias aliases = 21 [(column)=IDENT];
     repeated Pricing pricing = 22;
 }
 
 message Pricing {
-    int32 amount = 1;
-    string currency = 2;
-    common.DateTime start = 3;
-    common.DateTime end = 4;
+    required int32 amount = 1;
+    required string currency = 2;
+    optional common.DateTime start = 3;
+    optional common.DateTime end = 4;
 }
 
 message SegmentEvent {
-    string segment = 10;
-    SegmentRef segmentRef = 11;
-    string version = 9;
-    string uri = 1;
-    int32 position = 2;
-    int64 offset = 3;
-    bool chapter = 4;
-    string title = 5;
-    string description = 6;
-    string image = 7;
-    string thumbnail = 8;
+    optional string segment = 10;
+    optional SegmentRef segmentRef = 11;
+    optional string version = 9;
+    optional string uri = 1;
+    optional int32 position = 2;
+    optional int64 offset = 3;
+    optional bool chapter = 4;
+    optional string title = 5;
+    optional string description = 6;
+    optional string image = 7;
+    optional string thumbnail = 8;
 }
 
 message SegmentRef {
-    int64 segmentRef = 1;
-    string source = 2;
+    optional int64 segmentRef = 1;
+    optional string source = 2;
 }
 
 message Synopsis {
-    string short = 1;
-    string medium = 2;
-    string long = 3;
-    string locale = 4;
+    optional string short = 1;
+    optional string medium = 2;
+    optional string long = 3;
+    optional string locale = 4;
 }
 
 //Deprecated
 message Version {
-    string id = 1;
-    int32 published_duration = 2;
-    int32 duration = 3;
-    bool restricted = 4;
-    int32 minimum_age = 5;
-    string restriction_message = 6;
-    bool is_three_d = 7;
+    optional string id = 1;
+    optional int32 published_duration = 2;
+    optional int32 duration = 3;
+    optional bool restricted = 4;
+    optional int32 minimum_age = 5;
+    optional string restriction_message = 6;
+    optional bool is_three_d = 7;
 }
 
 message KeyPhrase {
-    string phrase = 1;
-    double weighting = 2;
+    optional string phrase = 1;
+    optional double weighting = 2;
 }
 
 message CrewMember {
-    string uri = 1;
-    string name = 3;
+    optional string uri = 1;
+    optional string name = 3;
     repeated string profile_links = 2;
-    string role = 4;
-    string character = 5;
+    optional string role = 4;
+    optional string character = 5;
 }
 
 message Subtitle {
-    string language = 1;
+    optional string language = 1;
 }
 
 message ReleaseDate {
-    common.DateTime date = 1;
-    string country = 2;
-    string type = 3;
+    optional common.DateTime date = 1;
+    optional string country = 2;
+    optional string type = 3;
 }
 
 message TopicRef {
-    topic.Topic topic = 1;
-    float weighting = 2;
-    bool supervised = 3;
-    string relationship = 4;
-    int32 offset = 5;
+    optional topic.Topic topic = 1;
+    optional float weighting = 2;
+    optional bool supervised = 3;
+    optional string relationship = 4;
+    optional int32 offset = 5;
 }
 
 message ItemSummary {
-    string type = 1;
-    common.Reference itemRef = 2;
-    string title = 3;
-    string description = 4;
-    string image = 5;
-    int32 episode_number = 6;
-    int32 releaseYear = 7;
+    required string type = 1;
+    required common.Reference itemRef = 2;
+    required string title = 3;
+    optional string description = 4;
+    optional string image = 5;
+    optional int32 episode_number = 6;
+    optional int32 releaseYear = 7;
     repeated common.Certificate certificates = 8;
 }
 
 message EventRef {
-    string id = 1;
-    string source = 2;
+    required string id = 1;
+    required string source = 2;
 }
 
