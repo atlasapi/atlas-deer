@@ -348,12 +348,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         rowBytes += row.getBytesUnsafe(i).remaining();
                     }
                 }
-                if(rowBytes > 10000) {
+                if(rowBytes > 100000) {
                     log.info("Query for {} returned {} bytes", id, rowBytes);
                 }
             });
         } catch(Exception e) {
-            log.warn("Byte calculation failed for {}", graphRows.values(), e);
+            log.warn("Byte calculation failed for {}", graphRows.keys(), e);
         }
 
         ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs = deserializeGraphs(graphRows);
