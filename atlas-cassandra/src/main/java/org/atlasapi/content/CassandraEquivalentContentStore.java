@@ -303,12 +303,13 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             );
 
             ResolvedEquivalents.Builder<Content> resolved = ResolvedEquivalents.builder();
-            for (Entry<Long, Long> id : index.entrySet()) {
-                resolved.putEquivalents(
-                        Id.valueOf(id.getKey()),
-                        sets.get(id.getValue())
-                );
-            }
+
+            index.entrySet().parallelStream().forEach(set ->
+                    resolved.putEquivalents(
+                            Id.valueOf(set.getKey()),
+                            sets.get(set.getValue()))
+            );
+
             return Optional.of(resolved.build());
         };
     }
@@ -347,7 +348,9 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         rowBytes += row.getBytesUnsafe(i).remaining();
                     }
                 }
-                log.info("Query for {} returned {} bytes", id, rowBytes);
+                if(rowBytes > 10000) {
+                    log.info("Query for {} returned {} bytes", id, rowBytes);
+                }
             });
         } catch(Exception e) {
             log.warn("Byte calculation failed for {}", graphRows.values(), e);

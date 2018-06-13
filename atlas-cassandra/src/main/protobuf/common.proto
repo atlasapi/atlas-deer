@@ -1,3 +1,4 @@
+syntax = "proto2";
 package atlas.common;
 
 option java_package = "org.atlasapi.serialization.protobuf";

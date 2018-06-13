@@ -1,23 +1,20 @@
 package org.atlasapi.equivalence;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identifiables;
-
-import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ForwardingSetMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identifiable;
+
+import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Represents a group of resolved sets of equivalents.
@@ -40,20 +37,14 @@ public class ResolvedEquivalents<E extends Equivalable<E>> extends ForwardingSet
         }
 
         public ResolvedEquivalents<E> build() {
-            return new ResolvedEquivalents<E>(entries.build());
+            return new ResolvedEquivalents<>(entries.build());
         }
 
         private Iterable<E> setEquivalentToFields(Iterable<? extends E> equivalents) {
-            Map<Id, EquivalenceRef> refMap = Maps.uniqueIndex(Iterables.transform(
-                    equivalents,
-                    new Function<Equivalable<?>, EquivalenceRef>() {
 
-                        @Override
-                        public EquivalenceRef apply(Equivalable<?> input) {
-                            return EquivalenceRef.valueOf(input);
-                        }
-                    }
-            ), Identifiables.toId());
+            Map<Id, EquivalenceRef> refMap = StreamSupport.stream(equivalents.spliterator(), true)
+                    .collect(Collectors.toMap(Identifiable::getId, EquivalenceRef::valueOf));
+
             Set<EquivalenceRef> allRefs = ImmutableSet.copyOf(refMap.values());
 
             ImmutableSet.Builder<E> equivContents = ImmutableSet.builder();
@@ -63,7 +54,7 @@ public class ResolvedEquivalents<E extends Equivalable<E>> extends ForwardingSet
                         Sets.union(equivalent.getEquivalentTo(), allRefs),
                         Predicates.not(Predicates.equalTo(ref))
                 );
-                equivContents.add(equivalent.copyWithEquivalentTo(ImmutableSet.copyOf(equivs)));
+                equivContents.add(equivalent.copyWithEquivalentTo(equivs));
             }
             return equivContents.build();
         }
@@ -89,13 +80,7 @@ public class ResolvedEquivalents<E extends Equivalable<E>> extends ForwardingSet
     public final Iterable<E> getFirstElems() {
         return Iterables.transform(
                 asMap().values(),
-                new Function<Collection<E>, E>() {
-
-                    @Override
-                    public E apply(Collection<E> input) {
-                        return input.iterator().next();
-                    }
-                }
+                input -> input.iterator().next()
         );
     }
 
