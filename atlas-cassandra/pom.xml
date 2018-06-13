@@ -13,16 +13,6 @@
 
   <properties>
     <protobuf.version>3.5.1</protobuf.version>
-    <!-- protobuf paths -->
-    <protobuf.input.directory>${project.basedir}/src/main/protobuf</protobuf.input.directory>
-    <protobuf.output.directory>${project.build.directory}/generated-sources/protoc</protobuf.output.directory>
-
-    <!-- library versions -->
-    <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
-    <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
-    <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
-    <maven-shade-plugin.version>2.4.2</maven-shade-plugin.version>
-    <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
   </properties>
   <build>
     <plugins>
