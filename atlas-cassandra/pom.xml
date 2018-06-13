@@ -10,25 +10,34 @@
   <packaging>jar</packaging>
   <name>Atlas Cassandra</name>
   <description>Apache Cassandra implementations of core Atlas persistence interfaces.</description>
+
+  <properties>
+    <protobuf.version>3.5.1</protobuf.version>
+    <!-- protobuf paths -->
+    <protobuf.input.directory>${project.basedir}/src/main/protobuf</protobuf.input.directory>
+    <protobuf.output.directory>${project.build.directory}/generated-sources/protoc</protobuf.output.directory>
+
+    <!-- library versions -->
+    <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
+    <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
+    <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
+    <maven-shade-plugin.version>2.4.2</maven-shade-plugin.version>
+    <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
+  </properties>
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.1.1</version>
+        <groupId>com.github.os72</groupId>
+        <artifactId>protoc-jar-maven-plugin</artifactId>
+        <version>${protobuf.version}</version>
         <executions>
           <execution>
-            <id>compile-protos</id>
             <phase>generate-sources</phase>
             <goals>
-              <goal>exec</goal>
+              <goal>run</goal>
             </goals>
             <configuration>
-              <executable>sh</executable>
-              <commandlineArgs>-c "mkdir -p ${project.build.directory}/generated-sources/protoc &amp;&amp;
-               protoc -I ./ -I `dirname $(which protoc)`/../include --java_out=${project.build.directory}/generated-sources/protoc *.proto"</commandlineArgs>
-              <sourceRoot>${project.build.directory}/generated-sources/protoc</sourceRoot>
-              <workingDirectory>${basedir}/src/main/protobuf</workingDirectory>
+              <includeStdTypes>true</includeStdTypes>
             </configuration>
           </execution>
         </executions>
@@ -92,7 +101,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.5.1</version>
+      <version>${protobuf.version}</version>
     </dependency>
     <dependency>
       <groupId>com.datastax.cassandra</groupId>
