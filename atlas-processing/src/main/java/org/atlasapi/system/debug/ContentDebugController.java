@@ -86,9 +86,7 @@ public class ContentDebugController {
     private final Neo4jContentStore neo4jContentStore;
 
     private final ContentBootstrapListener contentBootstrapListener;
-    private final ContentBootstrapListener contentAndHierarchyBootstrapListener;
-    private final ContentBootstrapListener contentAndEquivBootstrapListener;
-    private final ContentBootstrapListener contentEquivAndHierarchyBootstrapListener;
+    private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
     private final ContentNeo4jMigrator contentNeo4jMigrator;
 
     private ContentDebugController(Builder builder) {
@@ -121,16 +119,7 @@ public class ContentDebugController {
         equivalentContentStore = checkNotNull(builder.equivalentContentStore);
         neo4jContentStore = checkNotNull(builder.neo4jContentStore);
 
-
-
         contentBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(builder.persistence.nullMessageSendingContentStore())
-                .withEquivalenceMigrator(builder.equivalenceMigrator)
-                .withEquivalentContentStore(builder.persistence.nullMessageSendingEquivalentContentStore())
-                .withContentIndex(index)
-                .build();
-
-        contentAndHierarchyBootstrapListener = ContentBootstrapListener.builder()
                 .withContentWriter(builder.persistence.nullMessageSendingContentStore())
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(builder.persistence.nullMessageSendingEquivalentContentStore())
@@ -138,15 +127,7 @@ public class ContentDebugController {
                 .withMigrateHierarchies(builder.legacySegmentMigrator, legacyContentResolver)
                 .build();
 
-        contentAndEquivBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(builder.persistence.nullMessageSendingContentStore())
-                .withEquivalenceMigrator(builder.equivalenceMigrator)
-                .withEquivalentContentStore(builder.persistence.nullMessageSendingEquivalentContentStore())
-                .withContentIndex(index)
-                .withMigrateEquivalents(builder.persistence.nullMessageSendingEquivalenceGraphStore())
-                .build();
-
-        contentEquivAndHierarchyBootstrapListener = ContentBootstrapListener.builder()
+        contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
                 .withContentWriter(builder.persistence.nullMessageSendingContentStore())
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(builder.persistence.nullMessageSendingEquivalentContentStore())
@@ -377,18 +358,16 @@ public class ContentDebugController {
     @RequestMapping("/system/debug/content/{id}/migrate")
     public void forceEquivUpdate(
             @PathVariable("id") String id,
-            @RequestParam(name = "equivalents", defaultValue = "false") boolean migrateEquivalents,
-            @RequestParam(name = "hierarchy", defaultValue = "true") boolean migrateHierarchy,
+            @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
             final HttpServletResponse response
     ) throws IOException {
-        migrateContentById(migrateEquivalents, migrateHierarchy, response, id);
+        migrateContentById(migrateEquivalents, response, id);
     }
 
     @RequestMapping("/system/debug/content/migrate")
     public void forceListEquivUpdate(
             @RequestParam(name = "ids", defaultValue = "") String ids,
-            @RequestParam(name = "equivalents", defaultValue = "false") boolean migrateEquivalents,
-            @RequestParam(name = "hierarchy", defaultValue = "true") boolean migrateHierarchy,
+            @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
             final HttpServletResponse response
     ) throws IOException {
         if (Strings.isNullOrEmpty(ids)) {
@@ -396,13 +375,12 @@ public class ContentDebugController {
         }
         Iterable<String> requestedIds = commaSplitter.split(ids);
         for (String id : requestedIds) {
-            migrateContentById(migrateEquivalents, migrateHierarchy, response, id);
+            migrateContentById(migrateEquivalents, response, id);
         }
     }
 
     private void migrateContentById(
-            boolean migrateEquivalents,
-            boolean migrateHierachy,
+            Boolean migrateEquivalents,
             HttpServletResponse response,
             String id
     ) throws IOException {
@@ -411,16 +389,9 @@ public class ContentDebugController {
 
             Content content = resolveLegacyContent(decodedId);
 
-            ContentBootstrapListener listener;
-            if(migrateEquivalents && migrateHierachy){
-                listener = contentEquivAndHierarchyBootstrapListener;
-            } else if(migrateEquivalents){
-                listener = contentAndEquivBootstrapListener;
-            } else if(migrateHierachy){
-                listener = contentAndHierarchyBootstrapListener;
-            } else {
-                listener = contentBootstrapListener;
-            }
+            ContentBootstrapListener listener = migrateEquivalents
+                                                ? contentAndEquivalentsBootstrapListener
+                                                : contentBootstrapListener;
 
             ContentBootstrapListener.Result result = content.accept(listener);
 
