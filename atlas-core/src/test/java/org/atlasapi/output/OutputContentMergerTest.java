@@ -9,6 +9,12 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.content.BlackoutRestriction;
@@ -36,12 +42,6 @@ import org.atlasapi.segment.SegmentEvent;
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.stream.MoreCollectors;
 
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
@@ -50,6 +50,7 @@ import org.joda.time.Interval;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -822,6 +823,27 @@ public class OutputContentMergerTest {
                 );
 
         assertThat(restriction.isPresent(), is(false));
+    }
+
+    @Test
+    public void mergeDescriptionsProperlyForConcludedFix() {
+        Item chosen = item(2, "not relevant", Publisher.PA);
+        chosen.setDescription("Concluded.");
+
+        Item notChosen = item(1, "also not relevant", Publisher.PA);
+        String correctDescription = "this is a full description not just 'Concluded.'";
+        notChosen.setDescription(correctDescription);
+
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.PA,
+                Publisher.BBC,
+                Publisher.RADIO_TIMES
+        );
+
+        Item merged = merger.merge(chosen, ImmutableSet.<Item>builder().add(notChosen).build(), application);
+
+        assertEquals(merged.getDescription(), correctDescription);
     }
 
     private List<Rating> addRatings(Item item, Float... ratingValues) {

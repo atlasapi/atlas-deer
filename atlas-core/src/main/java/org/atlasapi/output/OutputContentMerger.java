@@ -312,6 +312,16 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getDescription() == null) {
             chosen.setDescription(first(notChosen, TO_DESCRIPTION));
         }
+        if (chosen.getSource().compareTo(Publisher.PA) == 0
+                && chosen.getDescription() != null
+                && chosen.getDescription().equals("Concluded.")) {
+            for (Described notChosenDescribed : notChosen) {
+                if (notChosenDescribed.getSource().compareTo(Publisher.PA) == 0
+                        && !notChosenDescribed.getDescription().equals("Concluded.")) {
+                    chosen.setDescription(notChosenDescribed.getDescription());
+                }
+            }
+        }
         if (chosen.getLongDescription() == null) {
             chosen.setLongDescription(first(notChosen, TO_LONG_DESCRIPTION));
         }
