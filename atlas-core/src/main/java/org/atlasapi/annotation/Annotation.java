@@ -1,13 +1,12 @@
 package org.atlasapi.annotation;
 
-import java.util.Map;
-
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+
+import java.util.Map;
 
 public enum Annotation {
     //The order of these entries defines the order of output fields
@@ -74,7 +73,8 @@ public enum Annotation {
     NON_MERGED,
     REVIEWS,
     RATINGS,
-    PRIORITY_REASONS
+    PRIORITY_REASONS,
+    MODIFIED_DATES
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());

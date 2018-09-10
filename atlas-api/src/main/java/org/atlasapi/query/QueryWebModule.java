@@ -1,7 +1,13 @@
 package org.atlasapi.query;
 
-import javax.servlet.http.HttpServletRequest;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.time.SystemClock;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -64,6 +70,7 @@ import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
 import org.atlasapi.output.annotation.KeyPhrasesAnnotation;
 import org.atlasapi.output.annotation.LocationsAnnotation;
 import org.atlasapi.output.annotation.ModelInfoAnnotation;
+import org.atlasapi.output.annotation.ModifiedDatesAnnotation;
 import org.atlasapi.output.annotation.NextBroadcastAnnotation;
 import org.atlasapi.output.annotation.NullWriter;
 import org.atlasapi.output.annotation.ParentChannelAnnotation;
@@ -158,22 +165,14 @@ import org.atlasapi.source.Sources;
 import org.atlasapi.topic.PopularTopicIndex;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
-
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.query.Selection.SelectionBuilder;
-import com.metabroadcast.common.time.SystemClock;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+
+import javax.servlet.http.HttpServletRequest;
 
 import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
@@ -207,6 +206,7 @@ import static org.atlasapi.annotation.Annotation.KEY_PHRASES;
 import static org.atlasapi.annotation.Annotation.LOCATIONS;
 import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
 import static org.atlasapi.annotation.Annotation.META_MODEL;
+import static org.atlasapi.annotation.Annotation.MODIFIED_DATES;
 import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.NON_MERGED;
 import static org.atlasapi.annotation.Annotation.PARENT;
@@ -1124,6 +1124,7 @@ public class QueryWebModule {
                 .register(RATINGS, new RatingsAnnotation(
                         new RatingsWriter(SourceWriter.sourceWriter("source")))
                 )
+                .register(MODIFIED_DATES, new ModifiedDatesAnnotation())
                 .build();
     }
 
