@@ -74,7 +74,7 @@ public enum Annotation {
     REVIEWS,
     RATINGS,
     PRIORITY_REASONS,
-    LAST_UPDATED
+    MODIFIED_DATES
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());

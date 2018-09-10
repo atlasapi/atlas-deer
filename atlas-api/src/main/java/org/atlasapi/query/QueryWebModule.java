@@ -68,9 +68,9 @@ import org.atlasapi.output.annotation.FirstBroadcastAnnotation;
 import org.atlasapi.output.annotation.IdentificationAnnotation;
 import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
 import org.atlasapi.output.annotation.KeyPhrasesAnnotation;
-import org.atlasapi.output.annotation.LastUpdatedAnnotation;
 import org.atlasapi.output.annotation.LocationsAnnotation;
 import org.atlasapi.output.annotation.ModelInfoAnnotation;
+import org.atlasapi.output.annotation.ModifiedDatesAnnotation;
 import org.atlasapi.output.annotation.NextBroadcastAnnotation;
 import org.atlasapi.output.annotation.NullWriter;
 import org.atlasapi.output.annotation.ParentChannelAnnotation;
@@ -203,10 +203,10 @@ import static org.atlasapi.annotation.Annotation.ID;
 import static org.atlasapi.annotation.Annotation.ID_SUMMARY;
 import static org.atlasapi.annotation.Annotation.IMAGES;
 import static org.atlasapi.annotation.Annotation.KEY_PHRASES;
-import static org.atlasapi.annotation.Annotation.LAST_UPDATED;
 import static org.atlasapi.annotation.Annotation.LOCATIONS;
 import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
 import static org.atlasapi.annotation.Annotation.META_MODEL;
+import static org.atlasapi.annotation.Annotation.MODIFIED_DATES;
 import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.NON_MERGED;
 import static org.atlasapi.annotation.Annotation.PARENT;
@@ -1124,7 +1124,7 @@ public class QueryWebModule {
                 .register(RATINGS, new RatingsAnnotation(
                         new RatingsWriter(SourceWriter.sourceWriter("source")))
                 )
-                .register(LAST_UPDATED, new LastUpdatedAnnotation())
+                .register(MODIFIED_DATES, new ModifiedDatesAnnotation())
                 .build();
     }
 

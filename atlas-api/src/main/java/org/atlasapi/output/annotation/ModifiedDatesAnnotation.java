@@ -6,7 +6,7 @@ import org.atlasapi.output.OutputContext;
 
 import java.io.IOException;
 
-public class LastUpdatedAnnotation extends OutputAnnotation<Identified> {
+public class ModifiedDatesAnnotation extends OutputAnnotation<Identified> {
 
     @Override
     public void write(Identified entity, FieldWriter writer, OutputContext ctxt)
