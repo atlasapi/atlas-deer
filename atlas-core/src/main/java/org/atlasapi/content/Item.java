@@ -95,7 +95,7 @@ public class Item extends Content {
         return countriesOfOrigin;
     }
 
-    public void setCountriesOfOrigin(Set<Country> countries) {
+    public void setCountriesOfOrigin(Iterable<Country> countries) {
         this.countriesOfOrigin = Sets.newHashSet(countries);
     }
 
