@@ -567,7 +567,6 @@ public class LegacyContentTransformer
     private <C extends org.atlasapi.content.Content> C setContentFields(C c, Content input) {
         c.setYear(input.getYear());
         c.setLanguages(input.getLanguages());
-
         c.setCountriesOfOrigin(input.getCountriesOfOrigin());
 
         c.setTags(
@@ -580,7 +579,10 @@ public class LegacyContentTransformer
         c.setGenericDescription(input.getGenericDescription());
         c.setEventRefs(translateEventRefs(input.events()));
         c.setCertificates(input.getCertificates().stream()
-                .map(input1 -> new Certificate(input1.classification(), input1.country()))
+                .map(certificate -> new Certificate(
+                        certificate.classification(),
+                        certificate.country()
+                ))
                 .collect(Collectors.toList()));
 
         c.setClips(transformClipsOfContent(input));

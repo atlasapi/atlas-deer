@@ -58,7 +58,7 @@ public abstract class Content extends Described
     @Nullable private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
     private Boolean genericDescription = Boolean.FALSE;
     private ImmutableSet<EventRef> eventRefs = ImmutableSet.of();
-    private Set<Country> countriesOfOrigin = Sets.newHashSet();
+    private Set<Country> countriesOfOrigin = ImmutableSet.of();
 
     public Content(String uri, String curie, Publisher publisher) {
         super(uri, curie, publisher);
@@ -174,7 +174,7 @@ public abstract class Content extends Described
     }
 
     public void setCountriesOfOrigin(Iterable<Country> countries) {
-        this.countriesOfOrigin = Sets.newHashSet(countries);
+        this.countriesOfOrigin = ImmutableSet.copyOf(countries);
     }
 
     public void addCountryOfOrigin(Country country) {
@@ -199,7 +199,7 @@ public abstract class Content extends Described
         to.manifestedAs = from.manifestedAs == null ? null : Sets.newLinkedHashSet(from.manifestedAs);
         to.genericDescription = from.genericDescription;
         to.eventRefs = from.eventRefs;
-        to.countriesOfOrigin = Sets.newHashSet(from.countriesOfOrigin);
+        to.countriesOfOrigin = ImmutableSet.copyOf(from.countriesOfOrigin);
         return to;
     }
 
