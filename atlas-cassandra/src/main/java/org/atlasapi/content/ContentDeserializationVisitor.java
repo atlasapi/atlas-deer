@@ -289,6 +289,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.hasGenericDescription()) {
             content.setGenericDescription(msg.getGenericDescription());
         }
+
+        content.setCountriesOfOrigin(Countries.fromCodes(msg.getCountriesList()));
+
         return content;
     }
 
@@ -440,7 +443,6 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.hasBlackAndWhite()) {
             item.setBlackAndWhite(msg.getBlackAndWhite());
         }
-        item.setCountriesOfOrigin(Countries.fromCodes(msg.getCountriesList()));
         if (msg.hasLongform()) {
             item.setIsLongForm(msg.getLongform());
         }

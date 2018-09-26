@@ -36,7 +36,6 @@ public class Item extends Content {
     private ContainerRef containerRef;
     private boolean isLongForm = false;
     private Boolean blackAndWhite;
-    private Set<Country> countriesOfOrigin = Sets.newHashSet();
 
     @ExcludeFromHash
     private String sortKey;
@@ -88,15 +87,6 @@ public class Item extends Content {
 
     public void setIsLongForm(boolean isLongForm) {
         this.isLongForm = isLongForm;
-    }
-
-    @FieldName("countries_of_origin")
-    public Set<Country> getCountriesOfOrigin() {
-        return countriesOfOrigin;
-    }
-
-    public void setCountriesOfOrigin(Iterable<Country> countries) {
-        this.countriesOfOrigin = Sets.newHashSet(countries);
     }
 
     @FieldName("people")
@@ -166,7 +156,6 @@ public class Item extends Content {
         to.segmentEvents = SegmentEvent.ORDERING.immutableSortedCopy(from.segmentEvents);
         to.restrictions = Sets.newHashSet(from.restrictions);
         to.blackAndWhite = from.blackAndWhite;
-        to.countriesOfOrigin = Sets.newHashSet(from.countriesOfOrigin);
         return to;
     }
 

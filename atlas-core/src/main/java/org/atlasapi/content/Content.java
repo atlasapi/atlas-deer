@@ -30,6 +30,8 @@ import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
+import com.metabroadcast.common.intl.Country;
+
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -56,6 +58,7 @@ public abstract class Content extends Described
     @Nullable private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
     private Boolean genericDescription = Boolean.FALSE;
     private ImmutableSet<EventRef> eventRefs = ImmutableSet.of();
+    private Set<Country> countriesOfOrigin = Sets.newHashSet();
 
     public Content(String uri, String curie, Publisher publisher) {
         super(uri, curie, publisher);
@@ -165,6 +168,19 @@ public abstract class Content extends Described
         eventRefs = ImmutableSet.<EventRef>builder().add(eventRef).addAll(eventRefs).build();
     }
 
+    @FieldName("countries_of_origin")
+    public Set<Country> getCountriesOfOrigin() {
+        return countriesOfOrigin;
+    }
+
+    public void setCountriesOfOrigin(Iterable<Country> countries) {
+        this.countriesOfOrigin = Sets.newHashSet(countries);
+    }
+
+    public void addCountryOfOrigin(Country country) {
+        countriesOfOrigin = ImmutableSet.<Country>builder().add(country).addAll(countriesOfOrigin).build();
+    }
+
     public Boolean isGenericDescription() {
         return genericDescription;
     }
@@ -183,6 +199,7 @@ public abstract class Content extends Described
         to.manifestedAs = from.manifestedAs == null ? null : Sets.newLinkedHashSet(from.manifestedAs);
         to.genericDescription = from.genericDescription;
         to.eventRefs = from.eventRefs;
+        to.countriesOfOrigin = Sets.newHashSet(from.countriesOfOrigin);
         return to;
     }
 

@@ -16,6 +16,7 @@ import org.atlasapi.content.ItemSummary;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.CertificateWriter;
+import org.atlasapi.output.writers.CountryWriter;
 import org.atlasapi.output.writers.LanguageWriter;
 import org.atlasapi.output.writers.PriorityReasonsWriter;
 import org.atlasapi.output.writers.ReleaseDateWriter;
@@ -36,6 +37,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
     private final ReleaseDateWriter releaseDateWriter;
     private final RestrictionWriter restrictionWriter;
     private final PriorityReasonsWriter priorityReasonsWriter;
+    private final CountryWriter countryWriter;
 
     public ExtendedDescriptionAnnotation() {
         super();
@@ -45,6 +47,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
         releaseDateWriter = new ReleaseDateWriter();
         this.restrictionWriter = new RestrictionWriter();
         this.priorityReasonsWriter = new PriorityReasonsWriter();
+        this.countryWriter = new CountryWriter("countries_of_origin", "country");
     }
 
     private Map<String, Locale> initLocalMap() {
@@ -79,7 +82,6 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
         if (desc instanceof Item) {
             Item item = (Item) desc;
             writer.writeField("black_and_white", item.getBlackAndWhite());
-            writer.writeList("countries_of_origin", "country", item.getCountriesOfOrigin(), ctxt);
             writer.writeField("schedule_only", item.isScheduleOnly());
             writer.writeList(restrictionWriter, item.getRestrictions(), ctxt);
 
@@ -101,6 +103,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
             writer.writeList(certificateWriter, desc.getCertificates(), ctxt);
         }
         writer.writeList(languageWriter, desc.getLanguages(), ctxt);
+        writer.writeList(countryWriter, desc.getCountriesOfOrigin(), ctxt);
 
         if (desc instanceof Film) {
             Film film = (Film) desc;

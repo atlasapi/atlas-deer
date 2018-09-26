@@ -42,11 +42,6 @@ public class ItemSetter {
         internal.setContainerRef(containerRef.serialize(item.getContainerRef()));
         internal.setIsLongForm(item.getIsLongForm());
         internal.setBlackAndWhite(item.getBlackAndWhite());
-        internal.setCountriesOfOrigin(
-                item.getCountriesOfOrigin().stream()
-                        .map(Country::code)
-                        .collect(Collectors.toSet())
-        );
         internal.setSortKey(item.sortKey());
 
         internal.setContainerSummary(containerSummary.serialize(item.getContainerSummary()));
@@ -84,13 +79,6 @@ public class ItemSetter {
         }
 
         item.setBlackAndWhite(internal.getBlackAndWhite());
-
-        Set<String> countriesOfOrigin = internal.getCountriesOfOrigin();
-        if (countriesOfOrigin != null) {
-            item.setCountriesOfOrigin(countriesOfOrigin.stream()
-                    .map(Countries::fromCode)
-                    .collect(Collectors.toSet()));
-        }
 
         item = item.withSortKey(internal.getSortKey());
 

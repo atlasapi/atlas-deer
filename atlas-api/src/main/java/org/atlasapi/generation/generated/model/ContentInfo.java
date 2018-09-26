@@ -491,6 +491,16 @@ public class ContentInfo implements ModelClassInfo {
                             .withJsonType(JsonType.NUMBER)
                             .build()
             )
+            .add(
+                    FieldInfo.builder()
+                            .withName("countries_of_origin")
+                            .withDescription("")
+                            .withType("Country")
+                            .withIsMultiple(true)
+                            .withIsModelType(false)
+                            .withJsonType(JsonType.ARRAY)
+                            .build()
+            )
             .build();
 
     @Override
