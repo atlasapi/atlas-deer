@@ -372,7 +372,6 @@ public class ContentSerializerTest {
         assertThat(actual.getYear(), is(expected.getYear()));
         assertThat(actual.getManifestedAs().isEmpty(), is(false));
         assertThat(actual.isGenericDescription(), is(expected.isGenericDescription()));
-        assertThat(actual.getCountriesOfOrigin(), is(expected.getCountriesOfOrigin()));
     }
 
     private void checkDescribedProperties(Described actual, Described expected) {
