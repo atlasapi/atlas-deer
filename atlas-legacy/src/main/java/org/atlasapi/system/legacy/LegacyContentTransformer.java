@@ -579,22 +579,9 @@ public class LegacyContentTransformer
 
         c.setGenericDescription(input.getGenericDescription());
         c.setEventRefs(translateEventRefs(input.events()));
-        c.setCertificates(Iterables.transform(
-                input.getCertificates(),
-                new Function<Certificate, org.atlasapi.content.Certificate>() {
-
-                    @Override
-                    public org.atlasapi.content.Certificate apply(Certificate input) {
-                        return new org.atlasapi.content.Certificate(
-                                input.classification(),
-                                input.country()
-                        );
-                    }
-
-                }
-        ));
-
-
+        c.setCertificates(input.getCertificates().stream()
+                .map(input1 -> new Certificate(input1.classification(), input1.country()))
+                .collect(Collectors.toList()));
 
         c.setClips(transformClipsOfContent(input));
 
