@@ -37,7 +37,6 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
     private final ReleaseDateWriter releaseDateWriter;
     private final RestrictionWriter restrictionWriter;
     private final PriorityReasonsWriter priorityReasonsWriter;
-    private final CountryWriter countryWriter;
 
     public ExtendedDescriptionAnnotation() {
         super();
@@ -47,7 +46,6 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
         releaseDateWriter = new ReleaseDateWriter();
         this.restrictionWriter = new RestrictionWriter();
         this.priorityReasonsWriter = new PriorityReasonsWriter();
-        this.countryWriter = new CountryWriter("countries_of_origin", "country");
     }
 
     private Map<String, Locale> initLocalMap() {
@@ -103,7 +101,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
             writer.writeList(certificateWriter, desc.getCertificates(), ctxt);
         }
         writer.writeList(languageWriter, desc.getLanguages(), ctxt);
-        writer.writeList(countryWriter, desc.getCountriesOfOrigin(), ctxt);
+        writer.writeList("countries_of_origin", "country", desc.getCountriesOfOrigin(), ctxt);
 
         if (desc instanceof Film) {
             Film film = (Film) desc;
