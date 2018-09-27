@@ -10,6 +10,8 @@ import org.atlasapi.content.v2.model.udt.KeyPhrase;
 import org.atlasapi.content.v2.model.udt.Ref;
 import org.atlasapi.content.v2.model.udt.Tag;
 
+import com.metabroadcast.common.intl.Country;
+
 public interface ContentIface extends Described {
 
     Set<KeyPhrase> getKeyPhrases();
@@ -55,4 +57,8 @@ public interface ContentIface extends Described {
     Encoding.Wrapper getEncodings();
 
     void setEncodings(Encoding.Wrapper encodings);
+
+    Set<String> getCountriesOfOrigin();
+
+    void setCountriesOfOrigin(Set<String> countriesOfOrigin);
 }

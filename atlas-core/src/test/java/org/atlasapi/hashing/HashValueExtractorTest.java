@@ -513,6 +513,7 @@ public class HashValueExtractorTest {
         content.setEventRefs(ImmutableSet.of(
                 new EventRef(Id.valueOf(1L), Publisher.METABROADCAST)
         ));
+        content.setCountriesOfOrigin(ImmutableSet.of(Countries.GB));
 
         Encoding encoding = new Encoding();
 
@@ -579,7 +580,6 @@ public class HashValueExtractorTest {
         item.setContainerRef(new BrandRef(Id.valueOf(10L), Publisher.METABROADCAST));
         item.setIsLongForm(true);
         item.setBlackAndWhite(false);
-        item.setCountriesOfOrigin(ImmutableSet.of(Countries.GB));
         item.setContainerSummary(ContainerSummary.create(
                 "type", "title", "description", 5, 5
         ));

@@ -188,6 +188,8 @@ public class CqlContentGenerator {
                 .withSource(Optional.of(Publisher.BBC_KIWI))
                 .build()
         ));
+
+        c.setCountriesOfOrigin(ImmutableSet.of(Countries.GB));
     }
 
     private static void setContainerFields(Container container) {

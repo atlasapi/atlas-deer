@@ -28,6 +28,9 @@ import org.atlasapi.content.v2.serialization.ReviewSerialization;
 import org.atlasapi.content.v2.serialization.TagSerialization;
 import org.atlasapi.source.Sources;
 
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.intl.Country;
+
 public class ContentSetter {
 
     private final ClipSerialization clip;
@@ -103,6 +106,12 @@ public class ContentSetter {
                 .stream()
                 .map(encoding::serialize)
                 .collect(Collectors.toSet())));
+
+        internal.setCountriesOfOrigin(content.getCountriesOfOrigin()
+                .stream()
+                .map(Country::code)
+                .collect(Collectors.toSet())
+        );
     }
 
     public void deserialize(Content content, ContentIface internal) {
@@ -197,6 +206,13 @@ public class ContentSetter {
         if (encodings != null) {
             content.setManifestedAs(encodings.getEncodings().stream()
                     .map(encoding::deserialize)
+                    .collect(Collectors.toSet()));
+        }
+
+        Set<String> countriesOfOrigin = internal.getCountriesOfOrigin();
+        if (countriesOfOrigin != null) {
+            content.setCountriesOfOrigin(countriesOfOrigin.stream()
+                    .map(Countries::fromCode)
                     .collect(Collectors.toSet()));
         }
     }

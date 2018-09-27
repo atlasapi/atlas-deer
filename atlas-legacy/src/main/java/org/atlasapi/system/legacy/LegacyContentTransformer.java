@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.Certificate;
 import org.atlasapi.content.ClipRef;
 import org.atlasapi.content.Description;
 import org.atlasapi.content.Encoding;
@@ -35,7 +36,6 @@ import org.atlasapi.event.EventRef;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Brand;
-import org.atlasapi.media.entity.Certificate;
 import org.atlasapi.media.entity.ChildRef;
 import org.atlasapi.media.entity.Clip;
 import org.atlasapi.media.entity.Container;
@@ -222,7 +222,6 @@ public class LegacyContentTransformer
         transformVersions(i, input.getVersions());
         i.setIsLongForm(input.getIsLongForm());
         i.setBlackAndWhite(input.getBlackAndWhite());
-        i.setCountriesOfOrigin(input.getCountriesOfOrigin());
         i.withSortKey(input.sortKey());
         return i;
     }
@@ -568,6 +567,7 @@ public class LegacyContentTransformer
     private <C extends org.atlasapi.content.Content> C setContentFields(C c, Content input) {
         c.setYear(input.getYear());
         c.setLanguages(input.getLanguages());
+        c.setCountriesOfOrigin(input.getCountriesOfOrigin());
 
         c.setTags(
                 translateTopicRefs(
@@ -578,22 +578,12 @@ public class LegacyContentTransformer
 
         c.setGenericDescription(input.getGenericDescription());
         c.setEventRefs(translateEventRefs(input.events()));
-        c.setCertificates(Iterables.transform(
-                input.getCertificates(),
-                new Function<Certificate, org.atlasapi.content.Certificate>() {
-
-                    @Override
-                    public org.atlasapi.content.Certificate apply(Certificate input) {
-                        return new org.atlasapi.content.Certificate(
-                                input.classification(),
-                                input.country()
-                        );
-                    }
-
-                }
-        ));
-
-
+        c.setCertificates(input.getCertificates().stream()
+                .map(certificate -> new Certificate(
+                        certificate.classification(),
+                        certificate.country()
+                ))
+                .collect(Collectors.toList()));
 
         c.setClips(transformClipsOfContent(input));
 

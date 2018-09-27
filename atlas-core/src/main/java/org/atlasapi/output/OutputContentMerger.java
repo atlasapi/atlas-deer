@@ -400,6 +400,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         mergeReviews(chosen, notChosen);
         mergeRatings(chosen, notChosen);
+
+        chosen.setCountriesOfOrigin(projectFieldFromEquivalents(
+                chosen,
+                notChosen,
+                Content::getCountriesOfOrigin
+        ));
     }
 
     private <T extends Content> void mergeReviews(T chosen, Iterable<T> notChosen) {
@@ -436,11 +442,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<T> notChosen) {
         mergeContent(application, chosen, notChosen);
         mergeVersions(application, chosen, notChosen);
-        chosen.setCountriesOfOrigin(projectFieldFromEquivalents(
-                chosen,
-                notChosen,
-                Item::getCountriesOfOrigin
-        ));
+
         if (chosen instanceof Film) {
             mergeFilmProperties(application, (Film) chosen, Iterables.filter(notChosen, Film.class));
         }

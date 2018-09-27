@@ -220,6 +220,11 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         if (content.isGenericDescription() != null) {
             builder.setGenericDescription(content.isGenericDescription());
         }
+
+        if (!content.getCountriesOfOrigin().isEmpty()) {
+            builder.addAllCountries(Countries.toCodes(content.getCountriesOfOrigin()));
+        }
+
         return builder;
     }
 
@@ -234,9 +239,6 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
         if (item.getBlackAndWhite() != null) {
             builder.setBlackAndWhite(item.getBlackAndWhite());
-        }
-        if (!item.getCountriesOfOrigin().isEmpty()) {
-            builder.addAllCountries(Countries.toCodes(item.getCountriesOfOrigin()));
         }
         if (item.getIsLongForm()) {
             builder.setLongform(item.getIsLongForm());

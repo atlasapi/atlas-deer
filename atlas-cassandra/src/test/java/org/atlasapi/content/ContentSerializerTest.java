@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -576,6 +577,7 @@ public class ContentSerializerTest {
         content.setManifestedAs(ImmutableSet.of(encoding("one")));
         content.setYear(1234);
         content.setGenericDescription(true);
+        content.setCountriesOfOrigin(ImmutableSet.of(Countries.GB));
     }
 
     private void setDescribedProperties(Described described) {
