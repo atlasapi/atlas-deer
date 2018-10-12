@@ -13,8 +13,11 @@ import org.atlasapi.media.entity.Publisher;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EpisodeSetter {
+    private static final Logger log = LoggerFactory.getLogger(EpisodeSetter.class);
 
     private final SeriesRefSerialization seriesRefSerialization = new SeriesRefSerialization();
     private final RefSerialization refSerialization = new RefSerialization();
@@ -49,6 +52,9 @@ public class EpisodeSetter {
 
         Map<Ref, SeriesRef> seriesRefs = internal.getSeriesRefs();
         if (seriesRefs != null && !seriesRefs.isEmpty()) {
+            if(seriesRefs.size() > 1) {
+                log.error("Episode with id {} has more than one series ref", internal.getId());
+            }
             Map.Entry<Ref, SeriesRef> entry = Iterables.getOnlyElement(seriesRefs.entrySet());
 
             Ref ref = entry.getKey();
