@@ -49,7 +49,7 @@ public class BroadcastIdAliasMapping implements Function<Broadcast, Alias> {
     }
 
     private ImmutableList<AliasMapper> mappers = ImmutableList.<AliasMapper>builder()
-            .add(new GroupAliasMapper("^gb:bt:sport:(.+)$", "ebs:slot", 1))
+            .add(new GroupAliasMapper("^gb:bt:sport:([A-Z0-9]*-[a-zA-Z0-9\\s]*)?$", "ebs:slot", 1))
             .add(new GroupAliasMapper("^pa:([0-9]*)$", "pa:slot", 1))
             .add(new GroupAliasMapper("^bbc:([0-9a-z]*)$", "bbc:pid", 1))
             .add(new GroupAliasMapper("^bbc:([0-9a-z]*.imi:bds.tv/[0-9]*)?$", "bbc:bds", 1))
