@@ -1,5 +1,6 @@
 package org.atlasapi.query.v4.topic;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.atlasapi.annotation.Annotation;
@@ -123,7 +124,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
     private ListenableFuture<ResolvedEquivalents<Content>> resolveContent(
             ListenableFuture<IndexQueryResult> queryHits,
             final Application application, final Set<Annotation> annotations) {
-        return Futures.transform(
+        return Futures.transformAsync(
                 queryHits,
                 (IndexQueryResult ids) ->
                         contentResolver.resolveIds(ids.getIds(), application, annotations)
