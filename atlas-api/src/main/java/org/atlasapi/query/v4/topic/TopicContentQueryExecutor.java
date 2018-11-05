@@ -127,7 +127,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         return Futures.transformAsync(
                 queryHits,
                 (IndexQueryResult ids) ->
-                        contentResolver.resolveIds(ids.getIds(), application, annotations)
+                        contentResolver.resolveIds(Objects.requireNonNull(ids).getIds(), application, annotations)
         );
     }
 
