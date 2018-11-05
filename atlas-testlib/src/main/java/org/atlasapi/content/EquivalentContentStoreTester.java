@@ -151,7 +151,9 @@ public final class EquivalentContentStoreTester
                         ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC)
                 );
 
-        getSubjectGenerator().getEquivalentContentStore().updateEquivalences(update.get());
+        if(update.isPresent()){
+            getSubjectGenerator().getEquivalentContentStore().updateEquivalences(update.get());
+        }
 
         ResolvedEquivalents<Content> resolved
                 = get(getSubjectGenerator().getEquivalentContentStore()
