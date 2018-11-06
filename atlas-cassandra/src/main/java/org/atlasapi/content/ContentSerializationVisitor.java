@@ -332,7 +332,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
             return itemSummarySerializer.serialize(itemSummary).build();
         } catch (Exception e) {
             log.error(
-                    "Failed to serialize ItemSummary: {}",
+                    "Failed to serialize ItemSummary: {}\n{}",
                     itemSummary.getItemRef().getId(),
                     e.getMessage()
             );
