@@ -32,6 +32,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scala.xml.Null;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -39,6 +42,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
 
     private final ContentIndex index;
     private final MergingEquivalentsResolver<Content> resolver;
+    private static final Logger log = LoggerFactory.getLogger(IndexBackedEquivalentContentQueryExecutor.class);
 
     private IndexBackedEquivalentContentQueryExecutor(
             ContentIndex contentIndex,
@@ -78,6 +82,10 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
                     QueryExecutionException.class
             );
             throw Throwables.propagate(ee);
+        } catch (NullPointerException npe) {
+            // this shouldn't really ever happen I think
+            log.error("There is no future to get for query with ID {}", query.getOnlyId().toString(), npe);
+            throw Throwables.propagate(npe);
         }
     }
 
@@ -91,8 +99,16 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         return Futures.transform(
                 resolve(query, contentId),
                 (ResolvedEquivalents<Content> input) -> {
+                    log.info("Executing single query for contentId {}", contentId);
+                    if (input == null) {
+                        log.error("No content for the contentId {}", contentId);
+                        throw new UncheckedQueryExecutionException(
+                                new NotFoundException(contentId)
+                        );
+                    }
                     List<Content> equivs = input.get(contentId).asList();
                     if (equivs.isEmpty()) {
+                        log.error("No resolved equivalents for the contentId {}", contentId);
                         throw new UncheckedQueryExecutionException(
                                 new NotFoundException(contentId)
                         );
