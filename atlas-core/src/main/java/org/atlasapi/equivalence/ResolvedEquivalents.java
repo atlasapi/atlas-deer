@@ -78,10 +78,10 @@ public class ResolvedEquivalents<E extends Equivalable<E>> extends ForwardingSet
     }
 
     public final Iterable<E> getFirstElems() {
-        return Iterables.transform(
-                asMap().values(),
-                input -> input.iterator().next()
-        );
+        return asMap().values()
+                .stream()
+                .map(input -> input.iterator().next())
+                .collect(Collectors.toList());
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
