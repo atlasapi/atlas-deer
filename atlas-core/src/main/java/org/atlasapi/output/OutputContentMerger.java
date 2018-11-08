@@ -46,6 +46,8 @@ import org.atlasapi.entity.Sourceds;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
+
+import jdk.internal.joptsimple.internal.Strings;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -316,6 +318,11 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 && chosen.getDescription() != null
                 && chosen.getDescription().equals("Concluded.")) {
             for (Described notChosenDescribed : notChosen) {
+                //we want a better description than "Concluded."; there was an NPE happening when
+                //we equiv'd to things without a description, so we add this check to avoid it
+                if(Strings.isNullOrEmpty(notChosenDescribed.getDescription())){
+                    continue;
+                }
                 if (notChosenDescribed.getSource().compareTo(Publisher.PA) == 0
                         && !notChosenDescribed.getDescription().equals("Concluded.")) {
                     chosen.setDescription(notChosenDescribed.getDescription());
