@@ -32,6 +32,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.util.Optional.ofNullable;
+
 public abstract class Described extends Identified implements Sourced {
 
     private String title;
@@ -346,8 +349,45 @@ public abstract class Described extends Identified implements Sourced {
         return to;
     }
 
+
+    /**
+     * Same as above except would prefer any value over nulls when copying
+     * Needed in the case of barb overrides as they overwrite their equivs
+     * data with nulls.
+     */
+    public static Described copyToPreferNonNulls(Described from, Described to) {
+        Identified.copyToPreferNonNull(from, to);
+        to.description = isNullOrEmpty(from.description) ? to.description : from.description;
+        to.firstSeen = ofNullable(from.firstSeen).orElse(to.firstSeen);
+        to.genres = from.genres.isEmpty() ? to.genres : ImmutableSet.copyOf(from.genres);
+        to.image = isNullOrEmpty(from.image) ? to.image : from.image;
+        to.lastFetched = ofNullable(from.lastFetched).orElse(to.lastFetched);
+        to.mediaType = ofNullable(from.mediaType).orElse(to.mediaType);
+        to.publisher = ofNullable(from.publisher).orElse(to.publisher);
+        to.specialization = ofNullable(from.specialization).orElse(to.specialization);
+        to.thisOrChildLastUpdated = ofNullable(from.thisOrChildLastUpdated).orElse(to.thisOrChildLastUpdated);
+        to.thumbnail = isNullOrEmpty(from.thumbnail) ? to.thumbnail : from.thumbnail;
+        to.title = isNullOrEmpty(from.title) ? to.title : from.title;
+        to.scheduleOnly = from.scheduleOnly;
+        to.presentationChannel = isNullOrEmpty(from.presentationChannel) ? to.presentationChannel : from.presentationChannel;
+        to.images = from.images.isEmpty() ? to.images : from.images;
+        to.shortDescription = isNullOrEmpty(from.shortDescription) ? to.shortDescription : from.shortDescription;
+        to.mediumDescription = isNullOrEmpty(from.mediumDescription) ? to.mediumDescription : from.mediumDescription;
+        to.longDescription = isNullOrEmpty(from.longDescription) ? to.longDescription : from.longDescription;
+        to.activelyPublished = from.activelyPublished;
+        to.reviews = from.reviews.isEmpty() ? to.reviews : from.reviews;
+        to.ratings = from.ratings.isEmpty() ? to.ratings : from.ratings;
+        to.awards = from.awards.isEmpty() ? to.awards : from.awards;
+        return to;
+    }
+
     public <T extends Described> T copyTo(T to) {
         copyTo(this, to);
+        return to;
+    }
+
+    public <T extends Described> T copyToPreferNonNulls(T to) {
+        copyToPreferNonNulls(this, to);
         return to;
     }
 

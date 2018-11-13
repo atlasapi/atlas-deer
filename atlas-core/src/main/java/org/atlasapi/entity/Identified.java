@@ -21,6 +21,8 @@ import com.google.common.primitives.Ints;
 import org.joda.time.DateTime;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.util.Optional.ofNullable;
 
 /**
  * Base type for descriptions of resources.
@@ -243,6 +245,22 @@ public class Identified implements Identifiable, Aliased {
         to.equivalentTo = Sets.newHashSet(from.equivalentTo);
         to.lastUpdated = from.lastUpdated;
         to.equivalenceUpdate = from.equivalenceUpdate;
+    }
+
+    /**
+     * Same as above except would prefer any value over nulls when copying
+     * Needed in the case of barb overrides as they overwrite their equivs
+     * data with nulls.
+     */
+    public static void copyToPreferNonNull(Identified from, Identified to) {
+        to.id = ofNullable(from.id).orElse(to.id);
+        to.canonicalUri = isNullOrEmpty(from.canonicalUri) ? to.canonicalUri : from.canonicalUri;
+        to.curie = isNullOrEmpty(from.curie) ? to.curie : from.curie;
+        to.aliasUrls = from.aliasUrls.isEmpty() ? to.aliasUrls : ImmutableSet.copyOf(from.aliasUrls);
+        to.aliases = from.aliases.isEmpty() ? to.aliases : ImmutableSet.copyOf(from.aliases);
+        to.equivalentTo = from.equivalentTo.isEmpty() ? to.equivalentTo : Sets.newHashSet(from.equivalentTo);
+        to.lastUpdated = ofNullable(from.lastUpdated).orElse(to.lastUpdated);
+        to.equivalenceUpdate = ofNullable(from.equivalenceUpdate).orElse(to.lastUpdated);
     }
 
     public static <T extends Identified> List<T> sort(List<T> content,
