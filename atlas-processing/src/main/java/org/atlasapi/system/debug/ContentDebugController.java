@@ -402,7 +402,7 @@ public class ContentDebugController {
 
     private void migrateContentById(
             boolean migrateEquivalents,
-            boolean migrateHierachy,
+            boolean migrateHierarchy,
             HttpServletResponse response,
             String id
     ) throws IOException {
@@ -412,11 +412,11 @@ public class ContentDebugController {
             Content content = resolveLegacyContent(decodedId);
 
             ContentBootstrapListener listener;
-            if(migrateEquivalents && migrateHierachy){
+            if(migrateEquivalents && migrateHierarchy){
                 listener = contentEquivAndHierarchyBootstrapListener;
             } else if(migrateEquivalents){
                 listener = contentAndEquivBootstrapListener;
-            } else if(migrateHierachy){
+            } else if(migrateHierarchy){
                 listener = contentAndHierarchyBootstrapListener;
             } else {
                 listener = contentBootstrapListener;

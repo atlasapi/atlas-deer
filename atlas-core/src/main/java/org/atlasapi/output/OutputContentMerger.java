@@ -175,7 +175,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             }
         }
         // But then we need as many settings as possible from the most precedent source.
-        chosen.copyTo(best);
+        // But without overwriting with nulls
+        chosen.copyToPreferNonNulls(best);
         return best;
     }
 
