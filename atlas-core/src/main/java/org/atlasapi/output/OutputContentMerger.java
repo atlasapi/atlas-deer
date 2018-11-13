@@ -168,7 +168,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     ) {
         // We need to get the most specific type in the equiv set
         T best = chosen;
-        for (T next : rest) {
+        for (T next : ImmutableSet.copyOf(rest)) {
             if (!best.getClass().equals(next.getClass())
                     && best.getClass().isAssignableFrom(next.getClass())) {
                 best = next;
@@ -176,7 +176,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         // But then we need as many settings as possible from the most precedent source.
         // But without overwriting with nulls
-        chosen.copyToPreferNonNulls(best);
+        chosen.copyToPreferNonNull(best);
         return best;
     }
 

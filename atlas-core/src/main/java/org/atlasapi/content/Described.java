@@ -355,7 +355,7 @@ public abstract class Described extends Identified implements Sourced {
      * Needed in the case of barb overrides as they overwrite their equivs
      * data with nulls.
      */
-    public static Described copyToPreferNonNulls(Described from, Described to) {
+    public static Described copyToPreferNonNull(Described from, Described to) {
         Identified.copyToPreferNonNull(from, to);
         to.description = isNullOrEmpty(from.description) ? to.description : from.description;
         to.firstSeen = ofNullable(from.firstSeen).orElse(to.firstSeen);
@@ -386,8 +386,8 @@ public abstract class Described extends Identified implements Sourced {
         return to;
     }
 
-    public <T extends Described> T copyToPreferNonNulls(T to) {
-        copyToPreferNonNulls(this, to);
+    public <T extends Described> T copyToPreferNonNull(T to) {
+        copyToPreferNonNull(this, to);
         return to;
     }
 

@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Optional.ofNullable;
 
 public class Item extends Content {
 
@@ -159,12 +160,32 @@ public class Item extends Content {
         return to;
     }
 
+    public static Item copyToPreferNonNull(Item from, Item to) {
+        Content.copyToPreferNonNull(from, to);
+        to.containerRef = ofNullable(from.containerRef).orElse(to.containerRef);
+        to.containerSummary = ofNullable(from.containerSummary).orElse(to.containerSummary);
+        to.isLongForm = from.isLongForm;
+        to.broadcasts = from.broadcasts == null || from.broadcasts.isEmpty() ? to.broadcasts : Sets.newLinkedHashSet(from.broadcasts);
+        to.segmentEvents = from.segmentEvents.isEmpty() ? to.segmentEvents : SegmentEvent.ORDERING.immutableSortedCopy(from.segmentEvents);
+        to.restrictions = from.restrictions.isEmpty() ? to.restrictions : Sets.newHashSet(from.restrictions);
+        to.blackAndWhite = ofNullable(from.blackAndWhite).orElse(to.blackAndWhite);
+        return to;
+    }
+
     @Override public <T extends Described> T copyTo(T to) {
         if (to instanceof Item) {
             copyTo(this, (Item) to);
             return to;
         }
         return super.copyTo(to);
+    }
+
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Item) {
+            copyToPreferNonNull(this, (Item) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
     }
 
     @Override public Item copy() {

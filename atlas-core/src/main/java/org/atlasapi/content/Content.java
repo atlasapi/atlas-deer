@@ -40,6 +40,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.util.Optional.ofNullable;
 
 public abstract class Content extends Described
         implements Aliased, Sourced, Equivalable<Content>, Hashable {
@@ -203,12 +205,38 @@ public abstract class Content extends Described
         return to;
     }
 
+    public static Content copyToPreferNonNull(Content from, Content to) {
+        Described.copyToPreferNonNull(from, to);
+        to.clips = from.clips.isEmpty() ? to.clips : ImmutableList.copyOf(Iterables.transform(from.clips, Clip::copy));
+        to.keyPhrases = from.keyPhrases.isEmpty() ? to.keyPhrases : from.keyPhrases;
+        to.relatedLinks = from.relatedLinks.isEmpty() ? to.relatedLinks : from.relatedLinks;
+        to.tags = from.tags.isEmpty() ? to.tags : from.tags;
+        to.readHash = isNullOrEmpty(from.readHash) ? to.readHash : from.readHash;
+        to.people = from.people.isEmpty() ? to.people : Lists.newArrayList(Iterables.transform(from.people, CrewMember::copy));
+        to.languages = from.languages.isEmpty() ? to.languages : from.languages;
+        to.certificates = from.certificates.isEmpty() ? to.certificates : from.certificates;
+        to.year = ofNullable(from.year).orElse(to.year);
+        to.manifestedAs = from.manifestedAs == null || from.manifestedAs.isEmpty() ? to.manifestedAs : Sets.newLinkedHashSet(from.manifestedAs);
+        to.genericDescription = ofNullable(from.genericDescription).orElse(to.genericDescription);
+        to.eventRefs = from.eventRefs.isEmpty() ? to.eventRefs : from.eventRefs;
+        to.countriesOfOrigin = from.countriesOfOrigin.isEmpty() ? to.countriesOfOrigin : ImmutableSet.copyOf(from.countriesOfOrigin);
+        return to;
+    }
+
     @Override public <T extends Described> T copyTo(T to) {
         if (to instanceof Content) {
             copyTo(this, (Content) to);
             return to;
         }
         return super.copyTo(to);
+    }
+
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Content) {
+            copyToPreferNonNull(this, (Content) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
     }
 
     public void setReadHash(@Nullable String readHash) {
