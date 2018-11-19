@@ -99,14 +99,9 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     channelGroup
                             );
 
-
-                            if (!query.getOperands().isEmpty()) {
+                            boolean queryHasOperands = !Objects.isNull(query.getOperands());
+                            if (queryHasOperands) {
                                 for (AttributeQuery<?> attributeQuery : query.getOperands()) {
-                                    if (attributeQuery.getAttributeName()
-                                            .equals(Attributes.SOURCE.externalName())) {
-                                        filterBySource(channelGroup, attributeQuery);
-                                    }
-
                                     if (attributeQuery.getAttributeName()
                                             .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
                                         List<String> dttIds = getChannelIdsFromQuery(attributeQuery);
@@ -136,23 +131,25 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     .getTitle()
                                     .equals("BT TVE Prod")) {
 
-                                for (AttributeQuery<?> attributeQuery : query.getOperands()) {
-                                    if (attributeQuery.getAttributeName()
-                                            .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
-                                        if (!Boolean.getBoolean(attributeQuery.getValue()
-                                                .get(0)
-                                                .toString())) {
-                                            return QueryResult.singleResult(
-                                                    resolvedChannelGroup,
-                                                    query.getContext()
-                                            );
+                                if (queryHasOperands) {
+                                    for (AttributeQuery<?> attributeQuery : query.getOperands()) {
+                                        if (attributeQuery.getAttributeName()
+                                                .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
+                                            if (!Boolean.getBoolean(attributeQuery.getValue()
+                                                    .get(0)
+                                                    .toString())) {
+                                                return QueryResult.singleResult(
+                                                        resolvedChannelGroup,
+                                                        query.getContext()
+                                                );
+                                            }
                                         }
                                     }
-                                }
 
-                                Iterable<? extends ChannelGroupMembership> availableChannels =
-                                        channelGroup.getChannelsAvailable(LocalDate.now());
-                                channelGroup.setChannels(Collections.singleton(availableChannels));
+                                    Iterable<? extends ChannelGroupMembership> availableChannels =
+                                            channelGroup.getChannelsAvailable(LocalDate.now());
+                                    channelGroup.setChannels(Collections.singleton(availableChannels));
+                                }
                             }
 
                             return QueryResult.singleResult(
@@ -222,7 +219,12 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
             if (attributeQuery.getAttributeName()
                     .equals(Attributes.SOURCE.externalName())) {
-                channelGroups.forEach(channelGroup -> filterBySource(channelGroup, attributeQuery));
+                channelGroups = StreamSupport.stream(channelGroups.spliterator(), false)
+                        .filter(channelGroup -> channelGroup.getSource()
+                                .key()
+                                .equals(attributeQuery.getValue().get(0).toString())
+                        )
+                        .collect(Collectors.toList());
             }
 
             if (attributeQuery.getAttributeName()
