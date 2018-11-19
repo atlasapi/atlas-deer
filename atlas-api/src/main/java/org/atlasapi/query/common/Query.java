@@ -8,6 +8,7 @@ import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.context.QueryContext;
 
+import com.google.common.collect.ImmutableSet;
 import org.w3c.dom.Attr;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -72,8 +73,7 @@ public abstract class Query<T> {
         @Override
         public AttributeQuerySet getOperands() {
             if (Objects.isNull(operands)) {
-                throw new IllegalStateException(
-                        "Query.getOperands() cannot be called on a single query");
+                return AttributeQuerySet.create(ImmutableSet.of());
             }
 
             return operands;

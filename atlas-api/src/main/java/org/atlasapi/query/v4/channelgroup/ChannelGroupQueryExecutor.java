@@ -31,6 +31,7 @@ import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryExecutor;
