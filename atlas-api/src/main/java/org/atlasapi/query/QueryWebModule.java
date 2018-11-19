@@ -685,6 +685,18 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_CHANNEL_GENRES,
                                 StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.CHANNEL_GROUP_DTT_CHANNELS,
+                                StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.CHANNEL_GROUP_IP_CHANNELS,
+                                StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.CHANNEL_GROUP_FUTURE_CHANNELS,
+                                StringCoercer.create()
                         )
                 )
         );

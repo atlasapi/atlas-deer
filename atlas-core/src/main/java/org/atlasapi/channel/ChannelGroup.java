@@ -20,7 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ChannelGroup<T extends ChannelGroupMembership> extends Identified implements Sourced {
 
     private final Publisher publisher;
-    private final ImmutableSet<T> channels;
+    private Set<T> channels;
     private final ImmutableSet<Country> availableCountries;
     private final ImmutableSet<TemporalField<String>> titles;
 
@@ -32,7 +32,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
             Set<TemporalField<String>> titles
     ) {
         super(id);
-        this.channels = ImmutableSet.copyOf(channels);
+        this.channels = channels;
         this.availableCountries = ImmutableSet.copyOf(availableCountries);
         this.titles = ImmutableSet.copyOf(titles);
         this.publisher = checkNotNull(publisher);
@@ -46,6 +46,10 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
 
     public Iterable<T> getChannels() {
         return channels;
+    }
+
+    public void setChannels(Set<T> channels) {
+        this.channels = channels;
     }
 
     public Iterable<T> getChannelsAvailable(LocalDate date) {
