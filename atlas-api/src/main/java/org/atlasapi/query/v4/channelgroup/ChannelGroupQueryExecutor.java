@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.channelgroup;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -98,27 +99,30 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     channelGroup
                             );
 
-                            for (AttributeQuery<?> attributeQuery : query.getOperands()) {
-                                if (attributeQuery.getAttributeName()
-                                        .equals(Attributes.SOURCE.externalName())) {
-                                    filterBySource(channelGroup, attributeQuery);
-                                }
 
-                                if (attributeQuery.getAttributeName()
-                                        .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
-                                    List<String> dttIds = getChannelIdsFromQuery(attributeQuery);
-                                    if (!dttIds.isEmpty() && dttIds.contains(idCodec.encode(
-                                            channelGroup.getId().toBigInteger()))) {
-                                        filterDttChannels(channelGroup);
+                            if (!query.getOperands().isEmpty()) {
+                                for (AttributeQuery<?> attributeQuery : query.getOperands()) {
+                                    if (attributeQuery.getAttributeName()
+                                            .equals(Attributes.SOURCE.externalName())) {
+                                        filterBySource(channelGroup, attributeQuery);
                                     }
-                                }
 
-                                if (attributeQuery.getAttributeName()
-                                        .equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
-                                    List<String> ipIds = getChannelIdsFromQuery(attributeQuery);
-                                    if (!ipIds.isEmpty() && ipIds.contains(idCodec.encode(
-                                            channelGroup.getId().toBigInteger()))) {
-                                        filterIpChannels(channelGroup);
+                                    if (attributeQuery.getAttributeName()
+                                            .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
+                                        List<String> dttIds = getChannelIdsFromQuery(attributeQuery);
+                                        if (!dttIds.isEmpty() && dttIds.contains(idCodec.encode(
+                                                channelGroup.getId().toBigInteger()))) {
+                                            filterDttChannels(channelGroup);
+                                        }
+                                    }
+
+                                    if (attributeQuery.getAttributeName()
+                                            .equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
+                                        List<String> ipIds = getChannelIdsFromQuery(attributeQuery);
+                                        if (!ipIds.isEmpty() && ipIds.contains(idCodec.encode(
+                                                channelGroup.getId().toBigInteger()))) {
+                                            filterIpChannels(channelGroup);
+                                        }
                                     }
                                 }
                             }

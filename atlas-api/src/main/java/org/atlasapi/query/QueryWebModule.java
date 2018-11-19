@@ -697,6 +697,10 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_FUTURE_CHANNELS,
                                 StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.SOURCE,
+                                EnumCoercer.create(Sources.fromKey())
                         )
                 )
         );
