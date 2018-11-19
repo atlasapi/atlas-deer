@@ -1,8 +1,14 @@
 package org.atlasapi.query.common;
 
+import java.util.Objects;
+
+import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.context.QueryContext;
+
+import org.w3c.dom.Attr;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -10,6 +16,10 @@ public abstract class Query<T> {
 
     public static final <T> SingleQuery<T> singleQuery(Id id, QueryContext context) {
         return new SingleQuery<T>(id, context);
+    }
+
+    public static final <T> SingleQuery<T> singleQuery(Id id, QueryContext context, AttributeQuerySet queryAttributes) {
+        return new SingleQuery<T>(id, context, queryAttributes);
     }
 
     public static final <T> ListQuery<T> listQuery(AttributeQuerySet operands,
@@ -36,10 +46,18 @@ public abstract class Query<T> {
     public static final class SingleQuery<T> extends Query<T> {
 
         private final Id id;
+        private final AttributeQuerySet operands;
 
         public SingleQuery(Id id, QueryContext context) {
             super(context);
             this.id = checkNotNull(id);
+            this.operands = null;
+        }
+
+        public SingleQuery(Id id, QueryContext context, AttributeQuerySet operands) {
+            super(context);
+            this.id = checkNotNull(id);
+            this.operands = checkNotNull(operands);
         }
 
         public Id getOnlyId() {
@@ -53,8 +71,12 @@ public abstract class Query<T> {
 
         @Override
         public AttributeQuerySet getOperands() {
-            throw new IllegalStateException(
-                    "Query.getOperands() cannot be called on a single query");
+            if (Objects.isNull(operands)) {
+                throw new IllegalStateException(
+                        "Query.getOperands() cannot be called on a single query");
+            }
+
+            return operands;
         }
 
     }

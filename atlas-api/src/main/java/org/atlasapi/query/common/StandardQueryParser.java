@@ -79,7 +79,12 @@ public class StandardQueryParser<T> implements QueryParser<T> {
 
     private Query<T> singleQuery(HttpServletRequest request, Id singleId)
             throws QueryParseException, ApplicationResolutionException {
-        return Query.singleQuery(singleId, contextParser.parseSingleContext(request));
+        AttributeQuerySet querySet = attributeParser.parse(request);
+        if (querySet.isEmpty()) {
+            return Query.singleQuery(singleId, contextParser.parseSingleContext(request));
+        }
+
+        return Query.singleQuery(singleId, contextParser.parseSingleContext(request), querySet);
     }
 
     private Query<T> listQuery(HttpServletRequest request)
