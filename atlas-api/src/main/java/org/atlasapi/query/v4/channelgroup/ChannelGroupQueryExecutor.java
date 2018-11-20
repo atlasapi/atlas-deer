@@ -1,7 +1,6 @@
 package org.atlasapi.query.v4.channelgroup;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,7 +30,6 @@ import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryExecutor;
@@ -100,8 +98,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     channelGroup
                             );
 
-                            boolean queryHasOperands = !Objects.isNull(query.getOperands());
-                            if (queryHasOperands) {
+                            if (!query.getOperands().isEmpty()) {
                                 for (AttributeQuery<?> attributeQuery : query.getOperands()) {
                                     if (attributeQuery.getAttributeName()
                                             .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
@@ -132,7 +129,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     .getTitle()
                                     .equals("BT TVE Prod")) {
 
-                                if (queryHasOperands) {
+                                if (!query.getOperands().isEmpty()) {
                                     for (AttributeQuery<?> attributeQuery : query.getOperands()) {
                                         if (attributeQuery.getAttributeName()
                                                 .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
@@ -147,9 +144,10 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                         }
                                     }
 
-                                    Iterable<? extends ChannelGroupMembership> availableChannels =
-                                            channelGroup.getChannelsAvailable(LocalDate.now());
-                                    channelGroup.setChannels(Collections.singleton(availableChannels));
+                                    ImmutableSet<? extends ChannelGroupMembership> availableChannels = ImmutableSet.copyOf(
+                                            channelGroup.getChannelsAvailable(LocalDate.now())
+                                    );
+                                    channelGroup.setChannels(availableChannels);
                                 }
                             }
 
@@ -160,20 +158,6 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                         }
                 ), 1, TimeUnit.MINUTES, QueryExecutionException.class
         );
-    }
-
-    private void filterBySource(ChannelGroup channelGroup, AttributeQuery<?> attributeQuery) {
-        ImmutableSet<ChannelGroupMembership> channels = ImmutableSet.copyOf(channelGroup.getChannels());
-        ImmutableSet<ChannelGroupMembership> channelsFromSource = channels
-                .stream()
-                .filter(channel -> channel.getChannel()
-                        .getSource()
-                        .key()
-                        .equals(attributeQuery.getValue()
-                                .get(0)
-                                .toString()))
-                .collect(MoreCollectors.toImmutableSet());
-        channelGroup.setChannels(channelsFromSource);
     }
 
     private void filterIpChannels(ChannelGroup channelGroup) {
