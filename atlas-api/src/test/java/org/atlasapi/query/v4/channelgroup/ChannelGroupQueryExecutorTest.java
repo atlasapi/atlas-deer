@@ -148,6 +148,8 @@ public class ChannelGroupQueryExecutorTest {
 
         when(channelQuery.getOperands()).thenReturn(attributeQueries);
 
+        when(application.getTitle()).thenReturn("nana");
+
         when(channelGroupResolver.allChannels())
                 .thenReturn(
                         Futures.immediateFuture(
@@ -290,6 +292,7 @@ public class ChannelGroupQueryExecutorTest {
 
         when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
         when(application.getConfiguration()).thenReturn(configuration);
+        when(application.getTitle()).thenReturn("nana");
 
         when(request.getParameter("annotations")).thenReturn("regions,channels");
 
