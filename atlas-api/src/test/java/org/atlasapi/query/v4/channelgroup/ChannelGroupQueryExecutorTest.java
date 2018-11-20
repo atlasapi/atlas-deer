@@ -22,6 +22,7 @@ import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attribute;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
@@ -51,6 +52,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
@@ -89,7 +92,7 @@ public class ChannelGroupQueryExecutorTest {
         when(channelQuery.getOperands()).thenReturn(AttributeQuerySet.create(ImmutableSet.of()));
 
         when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
-                channelGroupId))))
+                channelGroupId)), anyBoolean()))
                 .thenReturn(
                         Futures.immediateFuture(
                                 Resolved.valueOf(ImmutableSet.of(result))
@@ -201,7 +204,21 @@ public class ChannelGroupQueryExecutorTest {
                         )
                 );
         when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
+                channelGroupId)), anyBoolean()))
+                .thenReturn(
+                        Futures.immediateFuture(
+                                Resolved.valueOf(ImmutableSet.of(testChannelGroup))
+                        )
+                );
+        when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
                 regionChannelGroupId))))
+                .thenReturn(
+                        Futures.immediateFuture(
+                                Resolved.valueOf(ImmutableSet.of(testRegionChannelGroup))
+                        )
+                );
+        when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
+                regionChannelGroupId)), anyBoolean()))
                 .thenReturn(
                         Futures.immediateFuture(
                                 Resolved.valueOf(ImmutableSet.of(testRegionChannelGroup))
