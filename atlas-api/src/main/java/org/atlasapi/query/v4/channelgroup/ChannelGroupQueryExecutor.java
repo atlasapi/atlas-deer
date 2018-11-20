@@ -2,7 +2,6 @@ package org.atlasapi.query.v4.channelgroup;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -26,7 +25,6 @@ import org.atlasapi.channel.Region;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
@@ -195,6 +193,19 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 QueryExecutionException.class
         );
 
+        channelGroups = query.getContext()
+                .getSelection()
+                .get()
+                .applyTo(channelGroups);
+
+        channelGroups = StreamSupport.stream(channelGroups.spliterator(), false)
+                .filter(input -> query.getContext()
+                        .getApplication()
+                        .getConfiguration()
+                        .isReadEnabled(input.getSource())
+                )
+                .collect(Collectors.toList());
+
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             if (attributeQuery.getAttributeName()
                     .equals(Attributes.CHANNEL_GROUP_TYPE.externalName())) {
@@ -222,7 +233,6 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                         filterDttChannels(channelGroup);
                     }
                 });
-
             }
 
             if (attributeQuery.getAttributeName()
@@ -236,24 +246,8 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             }
         }
 
-        ImmutableList<ChannelGroup<?>> filteredChannelGroups = ImmutableList.copyOf(
-                StreamSupport.stream(
-                    channelGroups.spliterator(),
-                    false
-                ).filter(input -> query.getContext()
-                        .getApplication()
-                        .getConfiguration()
-                        .isReadEnabled(input.getSource())
-                ).collect(Collectors.toList()));
-
-        ImmutableList<ChannelGroup<?>> selectedChannelGroups =
-                query.getContext()
-                        .getSelection()
-                        .get()
-                        .applyTo(filteredChannelGroups);
-
         ImmutableList<ResolvedChannelGroup> resolvedChannelGroups =
-                selectedChannelGroups.stream()
+                StreamSupport.stream(channelGroups.spliterator(), false)
                         .map(channelGroup -> resolveAnnotationData(query.getContext(), channelGroup))
                         .collect(MoreCollectors.toImmutableList());
 
