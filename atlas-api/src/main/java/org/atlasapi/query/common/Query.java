@@ -2,14 +2,11 @@ package org.atlasapi.query.common;
 
 import java.util.Objects;
 
-import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
-import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.context.QueryContext;
 
 import com.google.common.collect.ImmutableSet;
-import org.w3c.dom.Attr;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -23,8 +20,7 @@ public abstract class Query<T> {
         return new SingleQuery<T>(id, context, queryAttributes);
     }
 
-    public static final <T> ListQuery<T> listQuery(AttributeQuerySet operands,
-            QueryContext context) {
+    public static final <T> ListQuery<T> listQuery(AttributeQuerySet operands, QueryContext context) {
         return new ListQuery<T>(operands, context);
     }
 
