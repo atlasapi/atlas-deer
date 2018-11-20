@@ -1,6 +1,5 @@
 package org.atlasapi.query.v4.channelgroup;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -101,7 +100,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                 for (AttributeQuery<?> attributeQuery : query.getOperands()) {
                                     if (attributeQuery.getAttributeName()
                                             .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
-                                        List<String> dttIds = splitAttributeString(attributeQuery);
+                                        List<String> dttIds = getIdsListFromAttribute(attributeQuery);
                                         if (!dttIds.isEmpty() && dttIds.contains(idCodec.encode(
                                                 channelGroup.getId().toBigInteger()))) {
                                             filterDttChannels(channelGroup);
@@ -110,7 +109,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
                                     if (attributeQuery.getAttributeName()
                                             .equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
-                                        List<String> ipIds = splitAttributeString(attributeQuery);
+                                        List<String> ipIds = getIdsListFromAttribute(attributeQuery);
                                         if (!ipIds.isEmpty() && ipIds.contains(idCodec.encode(
                                                 channelGroup.getId().toBigInteger()))) {
                                             filterIpChannels(channelGroup);
@@ -163,7 +162,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             if (attributeQuery.getAttributeName()
                     .equals(Attributes.CHANNEL_GROUP_IDS.externalName())) {
-                List<String> sids = splitAttributeString(attributeQuery);
+                List<String> sids = getIdsListFromAttribute(attributeQuery);
                 lids = sids.stream()
                         .map(id -> Id.valueOf(idCodec.decode(id)))
                         .collect(Collectors.toList());
@@ -228,7 +227,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             if (attributeQuery.getAttributeName()
                     .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
-                List<String> dttIds = splitAttributeString(attributeQuery);
+                List<String> dttIds = getIdsListFromAttribute(attributeQuery);
                 channelGroups.forEach(channelGroup -> {
                     if (dttIds.contains(idCodec.encode(channelGroup.getId().toBigInteger()))) {
                         filterDttChannels(channelGroup);
@@ -238,7 +237,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
             if (attributeQuery.getAttributeName()
                     .equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
-                List<String> ipIds = splitAttributeString(attributeQuery);
+                List<String> ipIds = getIdsListFromAttribute(attributeQuery);
                 channelGroups.forEach(channelGroup -> {
                     if (ipIds.contains(idCodec.encode(channelGroup.getId().toBigInteger()))) {
                         filterIpChannels(channelGroup);
@@ -258,11 +257,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         );
     }
 
-    private List<String> splitAttributeString(AttributeQuery<?> attributeQuery) {
-        return Arrays.asList(attributeQuery.getValue()
-                .get(0)
-                .toString()
-                .split("\\s*,\\s*"));
+    private List<String> getIdsListFromAttribute(AttributeQuery<?> attributeQuery) {
+        return attributeQuery.getValue()
+                .stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
     }
 
     private ResolvedChannelGroup resolveAnnotationData(
