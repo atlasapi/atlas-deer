@@ -120,7 +120,7 @@ public class Attributes {
             ChannelGroup.class
     );
     // Temporary attribute until we go live with the channel grouping tool
-    public static final Attribute<String> CHANNEL_GROUP_FUTURE_CHANNELS = StringAttribute.list(
+    public static final Attribute<Boolean> CHANNEL_GROUP_FUTURE_CHANNELS = BooleanAttribute.single(
             "future_channels",
             ChannelGroup.class
     );
@@ -194,6 +194,10 @@ public class Attributes {
     public static final Attribute<String> REFRESH_CACHE = StringAttribute.single(
             REFRESH_CACHE_PARAM,
             Channel.class
+    );
+    public static final Attribute<String> CHANNEL_GROUP_REFRESH_CACHE = StringAttribute.single(
+            REFRESH_CACHE_PARAM,
+            ChannelGroup.class
     );
 
     // For filtering

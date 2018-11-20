@@ -696,14 +696,14 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_FUTURE_CHANNELS,
-                                StringCoercer.create()
+                                BooleanCoercer.create()
                         ),
                         QueryAtomParser.create(
                                 Attributes.SOURCE,
                                 EnumCoercer.create(Sources.fromKey())
                         ),
                         QueryAtomParser.create(
-                                Attributes.REFRESH_CACHE,
+                                Attributes.CHANNEL_GROUP_REFRESH_CACHE,
                                 StringCoercer.create()
                         )
                 )
