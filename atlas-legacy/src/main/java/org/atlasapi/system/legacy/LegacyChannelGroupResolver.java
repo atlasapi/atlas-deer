@@ -39,4 +39,13 @@ public class LegacyChannelGroupResolver implements ChannelGroupResolver {
         Iterable<ChannelGroup<?>> transformed = transformer.transform(resolvedChannels);
         return Futures.immediateFuture(Resolved.valueOf(transformed));
     }
+
+    @Override
+    public ListenableFuture<Resolved<ChannelGroup<?>>> resolveIds(Iterable<Id> ids, Boolean refreshCache) {
+        if (refreshCache != null && refreshCache) {
+            legacyResolver.invalidateCache(ids.iterator().next().longValue());
+        }
+
+        return resolveIds(ids);
+    }
 }

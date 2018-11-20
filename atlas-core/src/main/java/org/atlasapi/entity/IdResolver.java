@@ -9,7 +9,7 @@ public interface IdResolver<I extends Identifiable> {
     ListenableFuture<Resolved<I>> resolveIds(Iterable<Id> ids);
 
     default ListenableFuture<Resolved<I>> resolveIds(Iterable<Id> ids, Boolean refreshCache) {
-        return resolveIds(ids, refreshCache);
+        return resolveIds(ids);
     }
 
 }
