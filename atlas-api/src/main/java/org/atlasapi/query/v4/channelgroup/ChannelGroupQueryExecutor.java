@@ -121,38 +121,6 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                 }
                             }
 
-                            // This is a temporary hack for testing purposes. We do not want to show
-                            // the new duplicate BT channels that will have a start date somewhere 5
-                            // years in the future. This should be removed once we deliver the
-                            // channel grouping tool
-                            if (query.getContext()
-                                    .getApplication()
-                                    .getTitle()
-                                    .equals("BT TVE Prod")) {
-
-                                boolean includeFutureChannels = false;
-
-                                if (queryHasOperands) {
-                                    for (AttributeQuery<?> attributeQuery : query.getOperands()) {
-                                        if (attributeQuery.getAttributeName()
-                                                .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
-                                            if (Boolean.parseBoolean(attributeQuery.getValue()
-                                                    .get(0)
-                                                    .toString())) {
-                                                includeFutureChannels = true;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (!includeFutureChannels) {
-                                    ImmutableSet<? extends ChannelGroupMembership> availableChannels = ImmutableSet.copyOf(
-                                                    channelGroup.getChannelsAvailable(LocalDate.now())
-                                            );
-                                    channelGroup.setChannels(availableChannels);
-                                }
-                            }
-
                             ResolvedChannelGroup resolvedChannelGroup = resolveAnnotationData(
                                     query.getContext(),
                                     channelGroup
@@ -254,39 +222,6 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                         filterIpChannels(channelGroup);
                     }
                 });
-            }
-        }
-
-        // This is a temporary hack for testing purposes. We do not want to show
-        // the new duplicate BT channels that will have a start date somewhere 5
-        // years in the future. This should be removed once we deliver the
-        // channel grouping tool
-        if (query.getContext()
-                .getApplication()
-                .getTitle()
-                .equals("BT TVE Prod")) {
-
-            boolean includeFutureChannels = false;
-
-            for (AttributeQuery<?> attributeQuery : query.getOperands()) {
-                if (attributeQuery.getAttributeName()
-                        .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
-                    if (Boolean.parseBoolean(attributeQuery.getValue()
-                            .get(0)
-                            .toString())) {
-                        includeFutureChannels = true;
-                    }
-                }
-            }
-
-            if (!includeFutureChannels) {
-                channelGroups.forEach(channelGroup -> {
-                    ImmutableSet<?> availableChannels = ImmutableSet.copyOf(
-                            channelGroup.getChannelsAvailable(LocalDate.now())
-                    );
-                    channelGroup.setChannels(availableChannels);
-                });
-
             }
         }
 
