@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.channelgroup;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -49,7 +50,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.LocalDate;
 
@@ -133,7 +136,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     for (AttributeQuery<?> attributeQuery : query.getOperands()) {
                                         if (attributeQuery.getAttributeName()
                                                 .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
-                                            if (Boolean.getBoolean(attributeQuery.getValue()
+                                            if (Boolean.parseBoolean(attributeQuery.getValue()
                                                     .get(0)
                                                     .toString())) {
                                                 includeFutureChannels = true;
@@ -143,8 +146,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                 }
 
                                 if (!includeFutureChannels) {
-                                    ImmutableSet<? extends ChannelGroupMembership> availableChannels = ImmutableSet
-                                            .copyOf(
+                                    ImmutableSet<? extends ChannelGroupMembership> availableChannels = ImmutableSet.copyOf(
                                                     channelGroup.getChannelsAvailable(LocalDate.now())
                                             );
                                     channelGroup.setChannels(availableChannels);
@@ -189,7 +191,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     private QueryResult<ResolvedChannelGroup> executeListQuery(Query<ResolvedChannelGroup> query)
             throws QueryExecutionException {
-        Iterable<ChannelGroup<?>> channelGroups = Futures.get(
+        Iterable<ChannelGroup<?>> resolvedChannelGroups = Futures.get(
                 Futures.transform(
                         channelGroupResolver.allChannels(),
                         (Resolved<ChannelGroup<?>> input) -> input.getResources()
@@ -198,18 +200,20 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 QueryExecutionException.class
         );
 
+        List<ChannelGroup> channelGroups = Lists.newArrayList(resolvedChannelGroups);
+
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             if (attributeQuery.getAttributeName()
                     .equals(Attributes.CHANNEL_GROUP_TYPE.externalName())) {
                 final String channelGroupType = attributeQuery.getValue().get(0).toString();
-                channelGroups = StreamSupport.stream(channelGroups.spliterator(), false)
+                channelGroups = channelGroups.stream()
                         .filter(channelGroup -> channelGroupType.equals(channelGroup.getType()))
                         .collect(Collectors.toList());
             }
 
             if (attributeQuery.getAttributeName()
                     .equals(Attributes.SOURCE.externalName())) {
-                channelGroups = StreamSupport.stream(channelGroups.spliterator(), false)
+                channelGroups = channelGroups.stream()
                         .filter(channelGroup -> channelGroup.getSource()
                                 .key()
                                 .equals(attributeQuery.getValue().get(0).toString())
@@ -253,15 +257,47 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             }
         }
 
-        ImmutableList<ResolvedChannelGroup> resolvedChannelGroups =
-                StreamSupport.stream(channelGroups.spliterator(), false)
+        // This is a temporary hack for testing purposes. We do not want to show
+        // the new duplicate BT channels that will have a start date somewhere 5
+        // years in the future. This should be removed once we deliver the
+        // channel grouping tool
+        if (query.getContext()
+                .getApplication()
+                .getTitle()
+                .equals("BT TVE Prod")) {
+
+            boolean includeFutureChannels = false;
+
+            for (AttributeQuery<?> attributeQuery : query.getOperands()) {
+                if (attributeQuery.getAttributeName()
+                        .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
+                    if (Boolean.parseBoolean(attributeQuery.getValue()
+                            .get(0)
+                            .toString())) {
+                        includeFutureChannels = true;
+                    }
+                }
+            }
+
+            if (!includeFutureChannels) {
+                channelGroups.forEach(channelGroup -> {
+                    ImmutableSet<?> availableChannels = ImmutableSet.copyOf(
+                            channelGroup.getChannelsAvailable(LocalDate.now())
+                    );
+                    channelGroup.setChannels(availableChannels);
+                });
+
+            }
+        }
+
+        ImmutableList<ResolvedChannelGroup> channelGroupsResults = channelGroups.stream()
                         .map(channelGroup -> resolveAnnotationData(query.getContext(), channelGroup))
                         .collect(MoreCollectors.toImmutableList());
 
         return QueryResult.listResult(
-                resolvedChannelGroups,
+                channelGroupsResults,
                 query.getContext(),
-                resolvedChannelGroups.size()
+                channelGroupsResults.size()
         );
     }
 
