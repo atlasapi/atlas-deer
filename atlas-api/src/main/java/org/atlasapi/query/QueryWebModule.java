@@ -701,6 +701,10 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.SOURCE,
                                 EnumCoercer.create(Sources.fromKey())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.REFRESH_CACHE,
+                                StringCoercer.create()
                         )
                 )
         );

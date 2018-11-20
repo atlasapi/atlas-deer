@@ -80,7 +80,10 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             throws QueryExecutionException {
         return Futures.get(
                 Futures.transform(
-                        channelGroupResolver.resolveIds(ImmutableSet.of(query.getOnlyId())),
+                        channelGroupResolver.resolveIds(
+                                ImmutableSet.of(query.getOnlyId()),
+                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(Attributes.REFRESH_CACHE_PARAM))
+                        ),
                         (Resolved<ChannelGroup<?>> resolved) -> {
                             if (resolved.getResources().isEmpty()) {
                                 throw new UncheckedQueryExecutionException(
