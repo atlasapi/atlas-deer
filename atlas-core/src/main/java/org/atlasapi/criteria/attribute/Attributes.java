@@ -111,6 +111,19 @@ public class Attributes {
             "channel_genres",
             ChannelGroup.class
     );
+    public static final Attribute<String> CHANNEL_GROUP_IP_CHANNELS = StringAttribute.list(
+            "ip_only",
+            ChannelGroup.class
+    );
+    public static final Attribute<String> CHANNEL_GROUP_DTT_CHANNELS = StringAttribute.list(
+            "dtt_only",
+            ChannelGroup.class
+    );
+    // Temporary attribute until we go live with the channel grouping tool
+    public static final Attribute<Boolean> CHANNEL_GROUP_FUTURE_CHANNELS = BooleanAttribute.single(
+            "future_channels",
+            ChannelGroup.class
+    );
     public static final Attribute<String> Q = StringAttribute.single(
             "q",
             Identified.class
@@ -181,6 +194,10 @@ public class Attributes {
     public static final Attribute<String> REFRESH_CACHE = StringAttribute.single(
             REFRESH_CACHE_PARAM,
             Channel.class
+    );
+    public static final Attribute<String> CHANNEL_GROUP_REFRESH_CACHE = StringAttribute.single(
+            REFRESH_CACHE_PARAM,
+            ChannelGroup.class
     );
 
     // For filtering

@@ -1,5 +1,6 @@
 package org.atlasapi.query.v4.channelgroup;
 
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -21,6 +22,7 @@ import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attribute;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
@@ -30,6 +32,7 @@ import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.applications.client.model.internal.Environment;
 import com.metabroadcast.common.query.Selection;
 
 import com.google.common.base.Optional;
@@ -49,8 +52,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -72,13 +78,21 @@ public class ChannelGroupQueryExecutorTest {
         QueryContext context = mock(QueryContext.class);
         Query<ResolvedChannelGroup> channelQuery = mock(Query.class);
         HttpServletRequest request = mock(HttpServletRequest.class);
+        Application application = mock(Application.class);
+
         when(request.getParameter("annotations")).thenReturn("banana");
+
         when(context.getRequest()).thenReturn(request);
+        when(context.getApplication()).thenReturn(application);
+        when(context.getApplication().getTitle()).thenReturn("");
+
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelGroupId);
         when(channelQuery.getContext()).thenReturn(context);
+        when(channelQuery.getOperands()).thenReturn(AttributeQuerySet.create(ImmutableSet.of()));
+
         when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
-                channelGroupId))))
+                channelGroupId)), anyBoolean()))
                 .thenReturn(
                         Futures.immediateFuture(
                                 Resolved.valueOf(ImmutableSet.of(result))
@@ -128,10 +142,13 @@ public class ChannelGroupQueryExecutorTest {
         when(attributeQuery.getAttribute()).thenReturn(attribute);
         when(attribute.getPath()).thenReturn(ImmutableList.of("path"));
 
-        AttributeQuerySet attributeQueries = AttributeQuerySet.create(Sets.<AttributeQuery<Object>>newHashSet(
-                attributeQuery));
+        AttributeQuerySet attributeQueries = AttributeQuerySet.create(
+                Sets.<AttributeQuery<Object>>newHashSet(attributeQuery)
+        );
 
         when(channelQuery.getOperands()).thenReturn(attributeQueries);
+
+        when(application.getTitle()).thenReturn("nana");
 
         when(channelGroupResolver.allChannels())
                 .thenReturn(
@@ -161,16 +178,20 @@ public class ChannelGroupQueryExecutorTest {
         HttpServletRequest request = mock(HttpServletRequest.class);
         Query<ResolvedChannelGroup> channelQuery = mock(Query.class);
         ChannelGroupRef regionChannelGroupRef = mock(ChannelGroupRef.class);
+        Application application = mock(Application.class);
         Set<ChannelGroupRef> regionChannelGroupRefSet = new HashSet<>();
         Id channelGroupId = Id.valueOf(1L);
         Id regionChannelGroupId = Id.valueOf(2L);
 
         when(request.getParameter("annotations")).thenReturn("regions");
         when(context.getRequest()).thenReturn(request);
+        when(context.getApplication()).thenReturn(application);
+        when(context.getApplication().getTitle()).thenReturn("");
 
         when(channelQuery.getContext()).thenReturn(context);
         when(channelQuery.getOnlyId()).thenReturn(channelGroupId);
         when(channelQuery.isListQuery()).thenReturn(false);
+        when(channelQuery.getOperands()).thenReturn(AttributeQuerySet.create(ImmutableSet.of()));
 
         when(testChannelGroup.getType()).thenReturn("platform");
         when(regionChannelGroupRef.getId()).thenReturn(regionChannelGroupId);
@@ -185,7 +206,21 @@ public class ChannelGroupQueryExecutorTest {
                         )
                 );
         when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
+                channelGroupId)), anyBoolean()))
+                .thenReturn(
+                        Futures.immediateFuture(
+                                Resolved.valueOf(ImmutableSet.of(testChannelGroup))
+                        )
+                );
+        when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
                 regionChannelGroupId))))
+                .thenReturn(
+                        Futures.immediateFuture(
+                                Resolved.valueOf(ImmutableSet.of(testRegionChannelGroup))
+                        )
+                );
+        when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
+                regionChannelGroupId)), anyBoolean()))
                 .thenReturn(
                         Futures.immediateFuture(
                                 Resolved.valueOf(ImmutableSet.of(testRegionChannelGroup))
@@ -257,6 +292,7 @@ public class ChannelGroupQueryExecutorTest {
 
         when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
         when(application.getConfiguration()).thenReturn(configuration);
+        when(application.getTitle()).thenReturn("nana");
 
         when(request.getParameter("annotations")).thenReturn("regions,channels");
 

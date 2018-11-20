@@ -1,7 +1,9 @@
 package org.atlasapi.query.v4.channelgroup;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -10,8 +12,6 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.google.common.collect.Iterables;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
@@ -38,6 +38,9 @@ import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.query.common.exceptions.UncheckedQueryExecutionException;
 
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.promise.Promise;
 
@@ -46,7 +49,10 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.LocalDate;
 
@@ -54,6 +60,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelGroup> {
 
+    private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final ChannelGroupResolver channelGroupResolver;
     private final ChannelResolver channelResolver;
 
@@ -76,18 +83,80 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             throws QueryExecutionException {
         return Futures.get(
                 Futures.transform(
-                        channelGroupResolver.resolveIds(ImmutableSet.of(query.getOnlyId())),
-                        (Resolved<ChannelGroup<?>> input) -> {
-                            if (input.getResources().isEmpty()) {
-                                throw new UncheckedQueryExecutionException(new NotFoundException(
-                                        query.getOnlyId()));
+                        channelGroupResolver.resolveIds(
+                                ImmutableSet.of(query.getOnlyId()),
+                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(Attributes.REFRESH_CACHE_PARAM))
+                        ),
+                        (Resolved<ChannelGroup<?>> resolved) -> {
+                            if (resolved.getResources().isEmpty()) {
+                                throw new UncheckedQueryExecutionException(
+                                        new NotFoundException(query.getOnlyId())
+                                );
                             }
 
-                            ResolvedChannelGroup resolvedChannelGroup =
-                                    resolveAnnotationData(
-                                            query.getContext(),
-                                            input.getResources().first().get()
-                                    );
+                            ChannelGroup channelGroup = resolved.getResources()
+                                    .first()
+                                    .get();
+
+                            boolean queryHasOperands = !query.getOperands().isEmpty();
+                            if (queryHasOperands) {
+                                for (AttributeQuery<?> attributeQuery : query.getOperands()) {
+                                    if (attributeQuery.getAttributeName()
+                                            .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
+                                        List<String> dttIds = getChannelIdsFromQuery(attributeQuery);
+                                        if (!dttIds.isEmpty() && dttIds.contains(idCodec.encode(
+                                                channelGroup.getId().toBigInteger()))) {
+                                            filterDttChannels(channelGroup);
+                                        }
+                                    }
+
+                                    if (attributeQuery.getAttributeName()
+                                            .equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
+                                        List<String> ipIds = getChannelIdsFromQuery(attributeQuery);
+                                        if (!ipIds.isEmpty() && ipIds.contains(idCodec.encode(
+                                                channelGroup.getId().toBigInteger()))) {
+                                            filterIpChannels(channelGroup);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // This is a temporary hack for testing purposes. We do not want to show
+                            // the new duplicate BT channels that will have a start date somewhere 5
+                            // years in the future. This should be removed once we deliver the
+                            // channel grouping tool
+                            if (query.getContext()
+                                    .getApplication()
+                                    .getTitle()
+                                    .equals("BT TVE Prod")) {
+
+                                boolean includeFutureChannels = false;
+
+                                if (queryHasOperands) {
+                                    for (AttributeQuery<?> attributeQuery : query.getOperands()) {
+                                        if (attributeQuery.getAttributeName()
+                                                .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
+                                            if (Boolean.parseBoolean(attributeQuery.getValue()
+                                                    .get(0)
+                                                    .toString())) {
+                                                includeFutureChannels = true;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!includeFutureChannels) {
+                                    ImmutableSet<? extends ChannelGroupMembership> availableChannels = ImmutableSet.copyOf(
+                                                    channelGroup.getChannelsAvailable(LocalDate.now())
+                                            );
+                                    channelGroup.setChannels(availableChannels);
+                                }
+                            }
+
+                            ResolvedChannelGroup resolvedChannelGroup = resolveAnnotationData(
+                                    query.getContext(),
+                                    channelGroup
+                            );
 
                             return QueryResult.singleResult(
                                     resolvedChannelGroup,
@@ -98,56 +167,145 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         );
     }
 
+    private void filterIpChannels(ChannelGroup channelGroup) {
+        ImmutableSet<ChannelNumbering> channels = ImmutableSet.copyOf(channelGroup.getChannels());
+
+        ImmutableSet<ChannelNumbering> ipChannels = channels.stream()
+                .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))
+                .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) > 300)
+                .collect(MoreCollectors.toImmutableSet());
+
+        channelGroup.setChannels(ipChannels);
+    }
+
+    private void filterDttChannels(ChannelGroup channelGroup) {
+        ImmutableSet<ChannelNumbering> immutableSet = ImmutableSet.copyOf(channelGroup.getChannels());
+
+        ImmutableSet<ChannelNumbering> dttChannels = immutableSet.stream()
+                .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))
+                .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) <= 300)
+                .collect(MoreCollectors.toImmutableSet());
+
+        channelGroup.setChannels(dttChannels);
+    }
+
     private QueryResult<ResolvedChannelGroup> executeListQuery(Query<ResolvedChannelGroup> query)
             throws QueryExecutionException {
-        Iterable<ChannelGroup<?>> channelGroups = Futures.get(
+        Iterable<ChannelGroup<?>> resolvedChannelGroups = Futures.get(
                 Futures.transform(
                         channelGroupResolver.allChannels(),
-                        (Resolved<ChannelGroup<?>> input) -> {
-                            return input.getResources();
-                        }
+                        (Resolved<ChannelGroup<?>> input) -> input.getResources()
                 ),
                 1, TimeUnit.MINUTES,
                 QueryExecutionException.class
         );
 
+        List<ChannelGroup> channelGroups = Lists.newArrayList(resolvedChannelGroups);
+
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             if (attributeQuery.getAttributeName()
                     .equals(Attributes.CHANNEL_GROUP_TYPE.externalName())) {
                 final String channelGroupType = attributeQuery.getValue().get(0).toString();
-                channelGroups = StreamSupport.stream(channelGroups.spliterator(), false)
+                channelGroups = channelGroups.stream()
                         .filter(channelGroup -> channelGroupType.equals(channelGroup.getType()))
                         .collect(Collectors.toList());
+            }
+
+            if (attributeQuery.getAttributeName()
+                    .equals(Attributes.SOURCE.externalName())) {
+                channelGroups = channelGroups.stream()
+                        .filter(channelGroup -> channelGroup.getSource()
+                                .key()
+                                .equals(attributeQuery.getValue().get(0).toString())
+                        )
+                        .collect(Collectors.toList());
+            }
+        }
+
+        channelGroups = query.getContext()
+                .getSelection()
+                .get()
+                .applyTo(channelGroups);
+
+        channelGroups = StreamSupport.stream(channelGroups.spliterator(), false)
+                .filter(input -> query.getContext()
+                        .getApplication()
+                        .getConfiguration()
+                        .isReadEnabled(input.getSource())
+                )
+                .collect(Collectors.toList());
+
+        for (AttributeQuery<?> attributeQuery : query.getOperands()) {
+            if (attributeQuery.getAttributeName()
+                    .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
+                List<String> dttIds = getChannelIdsFromQuery(attributeQuery);
+                channelGroups.forEach(channelGroup -> {
+                    if (dttIds.contains(idCodec.encode(channelGroup.getId().toBigInteger()))) {
+                        filterDttChannels(channelGroup);
+                    }
+                });
+            }
+
+            if (attributeQuery.getAttributeName()
+                    .equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
+                List<String> ipIds = getChannelIdsFromQuery(attributeQuery);
+                channelGroups.forEach(channelGroup -> {
+                    if (ipIds.contains(idCodec.encode(channelGroup.getId().toBigInteger()))) {
+                        filterIpChannels(channelGroup);
+                    }
+                });
+            }
+        }
+
+        // This is a temporary hack for testing purposes. We do not want to show
+        // the new duplicate BT channels that will have a start date somewhere 5
+        // years in the future. This should be removed once we deliver the
+        // channel grouping tool
+        if (query.getContext()
+                .getApplication()
+                .getTitle()
+                .equals("BT TVE Prod")) {
+
+            boolean includeFutureChannels = false;
+
+            for (AttributeQuery<?> attributeQuery : query.getOperands()) {
+                if (attributeQuery.getAttributeName()
+                        .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
+                    if (Boolean.parseBoolean(attributeQuery.getValue()
+                            .get(0)
+                            .toString())) {
+                        includeFutureChannels = true;
+                    }
+                }
+            }
+
+            if (!includeFutureChannels) {
+                channelGroups.forEach(channelGroup -> {
+                    ImmutableSet<?> availableChannels = ImmutableSet.copyOf(
+                            channelGroup.getChannelsAvailable(LocalDate.now())
+                    );
+                    channelGroup.setChannels(availableChannels);
+                });
 
             }
         }
 
-        ImmutableList<ChannelGroup<?>> filteredChannelGroups = ImmutableList.copyOf(
-                StreamSupport.stream(
-                    channelGroups.spliterator(),
-                    false
-                ).filter(input -> query.getContext()
-                        .getApplication()
-                        .getConfiguration()
-                        .isReadEnabled(input.getSource())
-                ).collect(Collectors.toList()));
-
-        ImmutableList<ChannelGroup<?>> selectedChannelGroups =
-                query.getContext()
-                        .getSelection()
-                        .get()
-                        .applyTo(filteredChannelGroups);
-
-        ImmutableList<ResolvedChannelGroup> resolvedChannelGroups =
-                selectedChannelGroups.stream()
+        ImmutableList<ResolvedChannelGroup> channelGroupsResults = channelGroups.stream()
                         .map(channelGroup -> resolveAnnotationData(query.getContext(), channelGroup))
                         .collect(MoreCollectors.toImmutableList());
 
         return QueryResult.listResult(
-                resolvedChannelGroups,
+                channelGroupsResults,
                 query.getContext(),
-                resolvedChannelGroups.size()
+                channelGroupsResults.size()
         );
+    }
+
+    private List<String> getChannelIdsFromQuery(AttributeQuery<?> attributeQuery) {
+        return Arrays.asList(attributeQuery.getValue()
+                .get(0)
+                .toString()
+                .split("\\s*,\\s*"));
     }
 
     private ResolvedChannelGroup resolveAnnotationData(
