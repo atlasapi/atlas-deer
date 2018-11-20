@@ -1,5 +1,9 @@
 package org.atlasapi.system.legacy;
 
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
@@ -43,7 +47,10 @@ public class LegacyChannelGroupResolver implements ChannelGroupResolver {
     @Override
     public ListenableFuture<Resolved<ChannelGroup<?>>> resolveIds(Iterable<Id> ids, Boolean refreshCache) {
         if (refreshCache != null && refreshCache) {
-            legacyResolver.invalidateCache(ids.iterator().next().longValue());
+            StreamSupport.stream(ids.spliterator(), false)
+                    .map(Id.toLongValue()::apply)
+                    .filter(Objects::nonNull)
+                    .forEach(legacyResolver::invalidateCache);
         }
 
         return resolveIds(ids);
