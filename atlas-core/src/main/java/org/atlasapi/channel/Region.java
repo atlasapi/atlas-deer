@@ -19,6 +19,7 @@ public class Region extends NumberedChannelGroup {
 
     private final ChannelGroupRef platform;
 
+    // TODO: replace current constructor with new one including canonicalUri
     public Region(
             Id id,
             Publisher publisher,

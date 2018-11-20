@@ -38,6 +38,21 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
         this.publisher = checkNotNull(publisher);
     }
 
+    public ChannelGroup(
+            Id id,
+            String canonicalUri,
+            Publisher publisher,
+            Set<T> channels,
+            Set<Country> availableCountries,
+            Set<TemporalField<String>> titles
+    ) {
+        super(Identified.builder().withId(id).withCanonicalUri(canonicalUri));
+        this.channels = channels;
+        this.availableCountries = ImmutableSet.copyOf(availableCountries);
+        this.titles = ImmutableSet.copyOf(titles);
+        this.publisher = checkNotNull(publisher);
+    }
+
     @Override
     @FieldName("source")
     public Publisher getSource() {
