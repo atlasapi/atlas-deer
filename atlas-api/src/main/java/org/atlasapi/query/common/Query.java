@@ -72,7 +72,7 @@ public abstract class Query<T> {
 
         @Override
         public AttributeQuerySet getOperands() {
-            if (operands.isEmpty()) {
+            if (Objects.isNull(operands)) {
                 return AttributeQuerySet.create(ImmutableSet.of());
             }
 

@@ -26,6 +26,7 @@ import org.atlasapi.channel.Region;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
@@ -98,7 +99,8 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     channelGroup
                             );
 
-                            if (!query.getOperands().isEmpty()) {
+                            boolean queryHasOperands = !query.getOperands().isEmpty();
+                            if (queryHasOperands) {
                                 for (AttributeQuery<?> attributeQuery : query.getOperands()) {
                                     if (attributeQuery.getAttributeName()
                                             .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
@@ -129,7 +131,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     .getTitle()
                                     .equals("BT TVE Prod")) {
 
-                                if (!query.getOperands().isEmpty()) {
+                                if (queryHasOperands) {
                                     for (AttributeQuery<?> attributeQuery : query.getOperands()) {
                                         if (attributeQuery.getAttributeName()
                                                 .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
