@@ -143,12 +143,12 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                             }
                                         }
                                     }
-
-                                    ImmutableSet<? extends ChannelGroupMembership> availableChannels = ImmutableSet.copyOf(
-                                            channelGroup.getChannelsAvailable(LocalDate.now())
-                                    );
-                                    channelGroup.setChannels(availableChannels);
                                 }
+
+                                ImmutableSet<? extends ChannelGroupMembership> availableChannels = ImmutableSet.copyOf(
+                                        channelGroup.getChannelsAvailable(LocalDate.now())
+                                );
+                                channelGroup.setChannels(availableChannels);
                             }
 
                             return QueryResult.singleResult(
