@@ -34,6 +34,19 @@ public class Platform extends NumberedChannelGroup {
         this.regions = ImmutableSet.copyOf(regions);
     }
 
+    public Platform(
+            Id id,
+            String canonicalUri,
+            Publisher publisher,
+            Set<ChannelNumbering> channels,
+            Set<Country> availableCountries,
+            Set<TemporalField<String>> titles,
+            Set<ChannelGroupRef> regions
+    ) {
+        super(id, canonicalUri, publisher, channels, availableCountries, titles);
+        this.regions = ImmutableSet.copyOf(regions);
+    }
+
     public Set<ChannelGroupRef> getRegions() {
         return regions;
     }
@@ -50,6 +63,7 @@ public class Platform extends NumberedChannelGroup {
     public static class Builder {
 
         private Id id;
+        private String canonicalUri;
         private Publisher publisher;
         private Set<ChannelNumbering> channels = Sets.newHashSet();
         private Set<Country> availableCountries = Sets.newHashSet();
@@ -63,6 +77,11 @@ public class Platform extends NumberedChannelGroup {
 
         public Builder withId(Long id) {
             this.id = Id.valueOf(id);
+            return this;
+        }
+
+        public Builder withCanonicalUri(String canonicalUri) {
+            this.canonicalUri = canonicalUri;
             return this;
         }
 
@@ -103,6 +122,7 @@ public class Platform extends NumberedChannelGroup {
             );
             Platform platform = new Platform(
                     id,
+                    canonicalUri,
                     publisher,
                     channels,
                     availableCountries,

@@ -42,6 +42,7 @@ public class LegacyChannelGroupTransformer extends
     private Platform transformService(org.atlasapi.media.channel.Platform input) {
         return Platform.builder(input.getPublisher())
                 .withId(input.getId())
+                .withCanonicalUri(input.getCanonicalUri())
                 .withAvailableCountries(input.getAvailableCountries())
                 .withRegionIds(input.getRegions())
                 .withTitles(input.getAllTitles())

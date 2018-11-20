@@ -25,6 +25,11 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
         super(id, publisher, channels, availableCountries, titles);
     }
 
+    protected NumberedChannelGroup(Id id, String canonicalUri, Publisher publisher, Set<ChannelNumbering> channels,
+            Set<Country> availableCountries, Set<TemporalField<String>> titles) {
+        super(id, canonicalUri, publisher, channels, availableCountries, titles);
+    }
+
     @Override
     public Iterable<ChannelNumbering> getChannels() {
         return StreamSupport.stream(super.getChannels().spliterator(), false)
