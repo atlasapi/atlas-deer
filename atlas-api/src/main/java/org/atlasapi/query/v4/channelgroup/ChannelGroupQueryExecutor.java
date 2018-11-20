@@ -92,11 +92,6 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     .first()
                                     .get();
 
-                            ResolvedChannelGroup resolvedChannelGroup = resolveAnnotationData(
-                                    query.getContext(),
-                                    channelGroup
-                            );
-
                             boolean queryHasOperands = !query.getOperands().isEmpty();
                             if (queryHasOperands) {
                                 for (AttributeQuery<?> attributeQuery : query.getOperands()) {
@@ -129,27 +124,34 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     .getTitle()
                                     .equals("BT TVE Prod")) {
 
+                                boolean includeFutureChannels = false;
+
                                 if (queryHasOperands) {
                                     for (AttributeQuery<?> attributeQuery : query.getOperands()) {
                                         if (attributeQuery.getAttributeName()
                                                 .equals(Attributes.CHANNEL_GROUP_FUTURE_CHANNELS.externalName())) {
-                                            if (!Boolean.getBoolean(attributeQuery.getValue()
+                                            if (Boolean.getBoolean(attributeQuery.getValue()
                                                     .get(0)
                                                     .toString())) {
-                                                return QueryResult.singleResult(
-                                                        resolvedChannelGroup,
-                                                        query.getContext()
-                                                );
+                                                includeFutureChannels = true;
                                             }
                                         }
                                     }
                                 }
 
-                                ImmutableSet<? extends ChannelGroupMembership> availableChannels = ImmutableSet.copyOf(
-                                        channelGroup.getChannelsAvailable(LocalDate.now())
-                                );
-                                channelGroup.setChannels(availableChannels);
+                                if (!includeFutureChannels) {
+                                    ImmutableSet<? extends ChannelGroupMembership> availableChannels = ImmutableSet
+                                            .copyOf(
+                                                    channelGroup.getChannelsAvailable(LocalDate.now())
+                                            );
+                                    channelGroup.setChannels(availableChannels);
+                                }
                             }
+
+                            ResolvedChannelGroup resolvedChannelGroup = resolveAnnotationData(
+                                    query.getContext(),
+                                    channelGroup
+                            );
 
                             return QueryResult.singleResult(
                                     resolvedChannelGroup,
