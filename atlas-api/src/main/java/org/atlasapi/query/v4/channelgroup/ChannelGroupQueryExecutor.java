@@ -193,19 +193,6 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 QueryExecutionException.class
         );
 
-        channelGroups = query.getContext()
-                .getSelection()
-                .get()
-                .applyTo(channelGroups);
-
-        channelGroups = StreamSupport.stream(channelGroups.spliterator(), false)
-                .filter(input -> query.getContext()
-                        .getApplication()
-                        .getConfiguration()
-                        .isReadEnabled(input.getSource())
-                )
-                .collect(Collectors.toList());
-
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             if (attributeQuery.getAttributeName()
                     .equals(Attributes.CHANNEL_GROUP_TYPE.externalName())) {
@@ -245,6 +232,19 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 });
             }
         }
+
+        channelGroups = query.getContext()
+                .getSelection()
+                .get()
+                .applyTo(channelGroups);
+
+        channelGroups = StreamSupport.stream(channelGroups.spliterator(), false)
+                .filter(input -> query.getContext()
+                        .getApplication()
+                        .getConfiguration()
+                        .isReadEnabled(input.getSource())
+                )
+                .collect(Collectors.toList());
 
         ImmutableList<ResolvedChannelGroup> resolvedChannelGroups =
                 StreamSupport.stream(channelGroups.spliterator(), false)
