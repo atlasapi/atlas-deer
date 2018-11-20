@@ -119,11 +119,6 @@ public class Attributes {
             "dtt_only",
             ChannelGroup.class
     );
-    // Temporary attribute until we go live with the channel grouping tool
-    public static final Attribute<Boolean> CHANNEL_GROUP_FUTURE_CHANNELS = BooleanAttribute.single(
-            "future_channels",
-            ChannelGroup.class
-    );
     public static final Attribute<String> Q = StringAttribute.single(
             "q",
             Identified.class
