@@ -705,6 +705,10 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_IDS,
                                 StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.CHANNEL_GROUP_REQUEST_TIMESTAMP,
+                                StringCoercer.create()
                         )
                 )
         );
