@@ -181,7 +181,13 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         } else {
             resolvedChannelGroups = Futures.get(
                     Futures.transform(
-                            channelGroupResolver.resolveIds(lids),
+                            channelGroupResolver.resolveIds(
+                                    lids,
+                                    Boolean.parseBoolean(query.getContext()
+                                            .getRequest()
+                                            .getParameter(Attributes.REFRESH_CACHE_PARAM)
+                                    )
+                            ),
                             (Resolved<ChannelGroup<?>> input) -> input.getResources()
                     ),
                     1, TimeUnit.MINUTES,
