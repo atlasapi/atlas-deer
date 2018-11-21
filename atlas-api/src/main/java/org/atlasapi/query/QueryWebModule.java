@@ -701,6 +701,10 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_REFRESH_CACHE,
                                 StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.CHANNEL_GROUP_IDS,
+                                StringCoercer.create()
                         )
                 )
         );

@@ -119,6 +119,10 @@ public class Attributes {
             "dtt_only",
             ChannelGroup.class
     );
+    public static final Attribute<String> CHANNEL_GROUP_IDS = StringAttribute.list(
+            "ids",
+            ChannelGroup.class
+    );
     public static final Attribute<String> Q = StringAttribute.single(
             "q",
             Identified.class
