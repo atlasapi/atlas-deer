@@ -2,6 +2,7 @@ package org.atlasapi.output.annotation;
 
 import java.io.IOException;
 
+import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.output.FieldWriter;
@@ -24,7 +25,7 @@ public class ChannelGroupChannelIdsAnnotation extends OutputAnnotation<ResolvedC
     @Override
     public void write(ResolvedChannelGroup entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
-        ImmutableList<ChannelNumbering> channels = (ImmutableList<ChannelNumbering>) ImmutableList.copyOf(entity.getChannelGroup().getChannels());
+        ImmutableList<ChannelGroupMembership> channels = ImmutableList.copyOf(entity.getChannelGroup().getChannels());
         writer.writeList(channelIdsWriter, channels, ctxt);
     }
 }

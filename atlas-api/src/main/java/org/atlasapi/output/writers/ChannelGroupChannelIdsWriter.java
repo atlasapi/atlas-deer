@@ -4,8 +4,7 @@ import java.io.IOException;
 
 import javax.annotation.Nonnull;
 
-import org.atlasapi.channel.ChannelNumbering;
-import org.atlasapi.channel.ResolvedChannel;
+import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -13,7 +12,7 @@ import org.atlasapi.query.v4.channel.ChannelIdWriter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupChannelIdsWriter implements EntityListWriter<ChannelNumbering> {
+public class ChannelGroupChannelIdsWriter implements EntityListWriter<ChannelGroupMembership> {
 
     private final ChannelIdWriter channelIdWriter;
 
@@ -28,7 +27,7 @@ public class ChannelGroupChannelIdsWriter implements EntityListWriter<ChannelNum
 
     @Override
     public void write(
-            @Nonnull ChannelNumbering entity,
+            @Nonnull ChannelGroupMembership entity,
             @Nonnull FieldWriter format,
             @Nonnull OutputContext ctxt
     ) throws IOException {
@@ -37,7 +36,7 @@ public class ChannelGroupChannelIdsWriter implements EntityListWriter<ChannelNum
 
     @Nonnull
     @Override
-    public String fieldName(ChannelNumbering entity) {
+    public String fieldName(ChannelGroupMembership entity) {
         return "channel";
     }
 }
