@@ -2,10 +2,14 @@ package org.atlasapi.output.annotation;
 
 import java.io.IOException;
 
+import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ChannelGroupChannelIdsWriter;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -20,6 +24,7 @@ public class ChannelGroupChannelIdsAnnotation extends OutputAnnotation<ResolvedC
     @Override
     public void write(ResolvedChannelGroup entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
-        writer.writeList(channelIdsWriter, entity.getChannels().get(), ctxt);
+        ImmutableList<ChannelNumbering> channels = (ImmutableList<ChannelNumbering>) ImmutableList.copyOf(entity.getChannelGroup().getChannels());
+        writer.writeList(channelIdsWriter, channels, ctxt);
     }
 }

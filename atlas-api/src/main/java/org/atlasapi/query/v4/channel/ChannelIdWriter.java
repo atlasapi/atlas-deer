@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.annotation.Nonnull;
 
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
@@ -15,7 +16,7 @@ import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelIdWriter implements EntityListWriter<ResolvedChannel> {
+public class ChannelIdWriter implements EntityListWriter<ChannelNumbering> {
 
     private static final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
 
@@ -39,17 +40,15 @@ public class ChannelIdWriter implements EntityListWriter<ResolvedChannel> {
 
     @Override
     public void write(
-            @Nonnull ResolvedChannel entity,
+            @Nonnull ChannelNumbering entity,
             @Nonnull FieldWriter format,
             @Nonnull OutputContext ctxt
     ) throws IOException {
-        Channel channel = entity.getChannel();
-
-        format.writeField("id", idCodec.encode(channel.getId().toBigInteger()));
+        format.writeField("id", idCodec.encode(entity.getChannel().getId().toBigInteger()));
     }
 
     @Override
-    public String fieldName(ResolvedChannel entity) {
+    public String fieldName(ChannelNumbering entity) {
         return fieldName;
     }
 }
