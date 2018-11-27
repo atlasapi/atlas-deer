@@ -74,7 +74,9 @@ public enum Annotation {
     REVIEWS,
     RATINGS,
     PRIORITY_REASONS,
-    MODIFIED_DATES
+    MODIFIED_DATES,
+    CHANNEL_GROUP_INFO,
+    CHANNEL_IDS
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());

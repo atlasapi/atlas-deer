@@ -1,13 +1,7 @@
 package org.atlasapi.query;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.query.Selection.SelectionBuilder;
-import com.metabroadcast.common.time.SystemClock;
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -47,6 +41,7 @@ import org.atlasapi.output.annotation.BroadcastsAnnotation;
 import org.atlasapi.output.annotation.ChannelAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupAdvertisedChannelsAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupChannelIdsAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupChannelsAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupIdSummaryAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupMembershipAnnotation;
@@ -90,6 +85,7 @@ import org.atlasapi.output.annotation.TopicsAnnotation;
 import org.atlasapi.output.annotation.UpcomingBroadcastsAnnotation;
 import org.atlasapi.output.annotation.UpcomingContentDetailAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
+import org.atlasapi.output.writers.ChannelGroupChannelIdsWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.atlasapi.output.writers.IdSummaryWriter;
 import org.atlasapi.output.writers.ItemDetailWriter;
@@ -123,6 +119,7 @@ import org.atlasapi.query.common.coercers.IdCoercer;
 import org.atlasapi.query.common.coercers.StringCoercer;
 import org.atlasapi.query.common.context.QueryContextParser;
 import org.atlasapi.query.v4.channel.ChannelController;
+import org.atlasapi.query.v4.channel.ChannelIdWriter;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.query.v4.channel.ChannelQueryResultWriter;
 import org.atlasapi.query.v4.channel.ChannelWriter;
@@ -165,14 +162,22 @@ import org.atlasapi.source.Sources;
 import org.atlasapi.topic.PopularTopicIndex;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.time.SystemClock;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-
-import javax.servlet.http.HttpServletRequest;
 
 import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
@@ -188,6 +193,8 @@ import static org.atlasapi.annotation.Annotation.CHANNELS;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS_SUMMARY;
+import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP_INFO;
+import static org.atlasapi.annotation.Annotation.CHANNEL_IDS;
 import static org.atlasapi.annotation.Annotation.CLIPS;
 import static org.atlasapi.annotation.Annotation.CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.CONTENT_SUMMARY;
@@ -618,6 +625,10 @@ public class QueryWebModule {
         );
     }
 
+    private ChannelIdWriter channelIdWriter() {
+        return ChannelIdWriter.create("channels", "channel");
+    }
+
     private ChannelGroupListWriter channelGroupListWriter() {
         return new ChannelGroupListWriter(AnnotationRegistry.<ResolvedChannelGroup>builder()
                 .registerDefault(CHANNEL_GROUP, new ChannelGroupAnnotation())
@@ -645,6 +656,15 @@ public class QueryWebModule {
                         ADVERTISED_CHANNELS,
                         new ChannelGroupAdvertisedChannelsAnnotation(
                                 new ChannelGroupChannelWriter(channelWriter()
+                                )
+                        )
+                )
+                .register(CHANNEL_GROUP_INFO, new ChannelGroupAnnotation())
+                .register(
+                        CHANNEL_IDS,
+                        new ChannelGroupChannelIdsAnnotation(
+                                new ChannelGroupChannelIdsWriter(
+                                        channelIdWriter()
                                 )
                         )
                 )
