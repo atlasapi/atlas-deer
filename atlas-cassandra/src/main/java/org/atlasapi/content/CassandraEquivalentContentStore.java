@@ -304,11 +304,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
             ResolvedEquivalents.Builder<Content> resolved = ResolvedEquivalents.builder();
 
-            index.entrySet().parallelStream().forEach(set ->
-                    resolved.putEquivalents(
-                            Id.valueOf(set.getKey()),
-                            sets.get(set.getValue()))
-            );
+            index.forEach((key, value) -> resolved.putEquivalents(
+                    Id.valueOf(key),
+                    sets.get(value)
+            ));
 
             return Optional.of(resolved.build());
         };
