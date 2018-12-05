@@ -291,23 +291,49 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
         if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ||
                 contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY)) {
-            resolvedChannelGroupBuilder.withAdvertisedChannels(
+            Optional<Iterable<ResolvedChannel>> channels =
+                    contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS) ?
                     resolveChannelsWithChannelGroups(
-                            ctxt.getApplication().getConfiguration(),
+                            ctxt.getApplication()
+                                    .getConfiguration(),
                             channelGroup,
                             contextHasAnnotation(
                                     ctxt,
                                     Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY
                             )
                             ? this::isChannelGroupMembership
-                            : channelGroupMembership -> true
-                    )
-            );
+                            : channelGroupMembership -> true,
+                            true
+                    ) :
+                    resolveChannelsWithChannelGroups(
+                            ctxt.getApplication()
+                                    .getConfiguration(),
+                            channelGroup,
+                            contextHasAnnotation(
+                                    ctxt,
+                                    Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY
+                            )
+                            ? this::isChannelGroupMembership
+                            : channelGroupMembership -> true,
+                            false
+                    );
+            resolvedChannelGroupBuilder.withAdvertisedChannels(channels);
         } else if (contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
             contextHasAnnotation(ctxt, Annotation.CHANNELS)) {
-            resolvedChannelGroupBuilder.withAdvertisedChannels(
-                    resolveAdvertisedChannels(channelGroup)
-            );
+
+            if (contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS)) {
+                Optional<Iterable<ResolvedChannel>> channels =
+                        contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS) ?
+                        resolveAdvertisedChannels(
+                                channelGroup,
+                                true
+                        ) :
+                        resolveAdvertisedChannels(
+                                channelGroup,
+                                false
+                        );
+            resolvedChannelGroupBuilder.withAdvertisedChannels(channels);
+            }
         } else {
             resolvedChannelGroupBuilder.withAdvertisedChannels(Optional.empty());
         }
@@ -349,9 +375,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     private Optional<Iterable<ResolvedChannel>> resolveChannelsWithChannelGroups(
             ApplicationConfiguration conf,
             ChannelGroup<?> entity,
-            Function<ChannelGroupMembership, Boolean> whitelistedChannelGroupPredicate
+            Function<ChannelGroupMembership, Boolean> whitelistedChannelGroupPredicate,
+            boolean withFutureChannels
     ) {
-        Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity);
+
+        Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity, withFutureChannels);
         if (!channels.isPresent()) {
             return Optional.empty();
         }
@@ -408,12 +436,17 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .collect(MoreCollectors.toImmutableList());
     }
 
-    private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannels(ChannelGroup<?> entity) {
-
+    private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannels(
+            ChannelGroup<?> entity,
+            boolean withFutureChannels
+    ) {
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
 
-        Iterable<? extends ChannelGroupMembership> availableChannels = entity.getChannelsAvailable(
-                LocalDate.now());
+        Iterable<? extends ChannelGroupMembership> availableChannels = entity.getChannelsAvailable(LocalDate.now());
+
+        if (withFutureChannels) {
+            availableChannels = entity.getChannels();
+        }
 
         List<Id> orderedIds = StreamSupport.stream(availableChannels.spliterator(), false)
                 //TODO fix channel appearing twice in ordering blowing this thing up
