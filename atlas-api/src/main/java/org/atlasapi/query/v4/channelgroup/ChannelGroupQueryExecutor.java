@@ -291,8 +291,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
         if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ||
                 contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY)) {
-            Optional<Iterable<ResolvedChannel>> channels =
-                    contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS) ?
+            resolvedChannelGroupBuilder.withAdvertisedChannels(
                     resolveChannelsWithChannelGroups(
                             ctxt.getApplication()
                                     .getConfiguration(),
@@ -302,35 +301,24 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY
                             )
                             ? this::isChannelGroupMembership
-                            : channelGroupMembership -> true,
-                            true
-                    ) :
-                    resolveChannelsWithChannelGroups(
-                            ctxt.getApplication()
-                                    .getConfiguration(),
-                            channelGroup,
-                            contextHasAnnotation(
-                                    ctxt,
-                                    Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY
-                            )
-                            ? this::isChannelGroupMembership
-                            : channelGroupMembership -> true,
-                            false
-                    );
-            resolvedChannelGroupBuilder.withAdvertisedChannels(channels);
+                            : channelGroupMembership -> true
+                    )
+            );
         } else if (contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
             contextHasAnnotation(ctxt, Annotation.CHANNELS)) {
-            Optional<Iterable<ResolvedChannel>> channels =
-                    contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS) ?
-                    resolveAdvertisedChannels(
-                            channelGroup,
-                            true
-                    ) :
+            resolvedChannelGroupBuilder.withAdvertisedChannels(
                     resolveAdvertisedChannels(
                             channelGroup,
                             false
-                    );
-            resolvedChannelGroupBuilder.withAdvertisedChannels(channels);
+                    )
+            );
+        } else if (contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS)) {
+            resolvedChannelGroupBuilder.withAdvertisedChannels(
+                    resolveAdvertisedChannels(
+                            channelGroup,
+                            true
+                    )
+            );
         } else {
             resolvedChannelGroupBuilder.withAdvertisedChannels(Optional.empty());
         }
@@ -372,11 +360,10 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     private Optional<Iterable<ResolvedChannel>> resolveChannelsWithChannelGroups(
             ApplicationConfiguration conf,
             ChannelGroup<?> entity,
-            Function<ChannelGroupMembership, Boolean> whitelistedChannelGroupPredicate,
-            boolean withFutureChannels
+            Function<ChannelGroupMembership, Boolean> whitelistedChannelGroupPredicate
     ) {
 
-        Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity, withFutureChannels);
+        Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity, false);
         if (!channels.isPresent()) {
             return Optional.empty();
         }
