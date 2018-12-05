@@ -222,7 +222,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .get()
                 .applyTo(channelGroups);
 
-        channelGroups = StreamSupport.stream(channelGroups.spliterator(), false)
+        channelGroups = channelGroups.stream()
                 .filter(input -> query.getContext()
                         .getApplication()
                         .getConfiguration()
@@ -320,20 +320,17 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             resolvedChannelGroupBuilder.withAdvertisedChannels(channels);
         } else if (contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
             contextHasAnnotation(ctxt, Annotation.CHANNELS)) {
-
-            if (contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS)) {
-                Optional<Iterable<ResolvedChannel>> channels =
-                        contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS) ?
-                        resolveAdvertisedChannels(
-                                channelGroup,
-                                true
-                        ) :
-                        resolveAdvertisedChannels(
-                                channelGroup,
-                                false
-                        );
+            Optional<Iterable<ResolvedChannel>> channels =
+                    contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS) ?
+                    resolveAdvertisedChannels(
+                            channelGroup,
+                            true
+                    ) :
+                    resolveAdvertisedChannels(
+                            channelGroup,
+                            false
+                    );
             resolvedChannelGroupBuilder.withAdvertisedChannels(channels);
-            }
         } else {
             resolvedChannelGroupBuilder.withAdvertisedChannels(Optional.empty());
         }
