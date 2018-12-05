@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
@@ -60,7 +61,7 @@ public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<R
         ImmutableSet.Builder<ResolvedChannelWithChannelGroupMembership> resultBuilder = ImmutableSet.builder();
 
         ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
-        if (ctxt.getApplication().getTitle().equals("BT TVE Prod")) {
+        if (ctxt.getActiveAnnotations().contains(Annotation.FUTURE_CHANNELS)) {
             for (ChannelGroupMembership channelGroupMembership : entity.getChannelGroup().getChannels()) {
                 builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
             }
