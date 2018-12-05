@@ -62,9 +62,15 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ResolvedCha
 
         ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
 
-        for (ChannelGroupMembership channelGroupMembership :
-                entity.getChannelGroup().getChannelsAvailable(LocalDate.now())) {
-            builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
+        if (ctxt.getApplication().getTitle().equals("BT TVE Prod")) {
+            for (ChannelGroupMembership channelGroupMembership : entity.getChannelGroup().getChannels()) {
+                builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
+            }
+        } else {
+            for (ChannelGroupMembership channelGroupMembership :
+                    entity.getChannelGroup().getChannelsAvailable(LocalDate.now())) {
+                builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
+            }
         }
 
         ImmutableMultimap<Id, ChannelGroupMembership> channelGroupMemberships = builder.build();
