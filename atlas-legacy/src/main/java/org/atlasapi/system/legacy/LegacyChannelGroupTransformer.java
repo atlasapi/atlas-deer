@@ -56,6 +56,7 @@ public class LegacyChannelGroupTransformer extends
 
     public Region transformRegion(org.atlasapi.media.channel.Region input) {
         return Region.builder(input.getPublisher())
+                .withCanonicalUri(input.getCanonicalUri())
                 .withId(input.getId())
                 .withAvailableCountries(input.getAvailableCountries())
                 .withPlaformId(input.getPlatform())
