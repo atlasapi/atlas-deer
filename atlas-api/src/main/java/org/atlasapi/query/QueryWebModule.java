@@ -205,6 +205,7 @@ import static org.atlasapi.annotation.Annotation.EVENT_DETAILS;
 import static org.atlasapi.annotation.Annotation.EXTENDED_DESCRIPTION;
 import static org.atlasapi.annotation.Annotation.EXTENDED_ID;
 import static org.atlasapi.annotation.Annotation.FIRST_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.FUTURE_CHANNELS;
 import static org.atlasapi.annotation.Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY;
 import static org.atlasapi.annotation.Annotation.ID;
 import static org.atlasapi.annotation.Annotation.ID_SUMMARY;
@@ -634,6 +635,13 @@ public class QueryWebModule {
                 .registerDefault(CHANNEL_GROUP, new ChannelGroupAnnotation())
                 .register(
                         CHANNELS,
+                        new ChannelGroupChannelsAnnotation(
+                                new ChannelGroupChannelWriter(channelWriter())
+                        ),
+                        CHANNEL_GROUP
+                )
+                .register(
+                        FUTURE_CHANNELS,
                         new ChannelGroupChannelsAnnotation(
                                 new ChannelGroupChannelWriter(channelWriter())
                         ),

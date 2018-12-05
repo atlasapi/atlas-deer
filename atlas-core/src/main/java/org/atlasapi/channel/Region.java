@@ -19,19 +19,6 @@ public class Region extends NumberedChannelGroup {
 
     private final ChannelGroupRef platform;
 
-    // TODO: replace current constructor with new one including canonicalUri
-    public Region(
-            Id id,
-            Publisher publisher,
-            Set<ChannelNumbering> channels,
-            Set<Country> availableCountries,
-            Set<TemporalField<String>> titles,
-            ChannelGroupRef platform
-    ) {
-        super(id, publisher, channels, availableCountries, titles);
-        this.platform = platform;
-    }
-
     public Region(
             Id id,
             String canonicalUri,

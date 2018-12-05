@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
@@ -62,9 +63,15 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ResolvedCha
 
         ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
 
-        for (ChannelGroupMembership channelGroupMembership :
-                entity.getChannelGroup().getChannelsAvailable(LocalDate.now())) {
-            builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
+        if (ctxt.getActiveAnnotations().contains(Annotation.FUTURE_CHANNELS)) {
+            for (ChannelGroupMembership channelGroupMembership : entity.getChannelGroup().getChannels()) {
+                builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
+            }
+        } else {
+            for (ChannelGroupMembership channelGroupMembership :
+                    entity.getChannelGroup().getChannelsAvailable(LocalDate.now())) {
+                builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
+            }
         }
 
         ImmutableMultimap<Id, ChannelGroupMembership> channelGroupMemberships = builder.build();
