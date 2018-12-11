@@ -43,6 +43,7 @@ import org.atlasapi.persistence.content.EquivalentContentResolver;
 import org.atlasapi.persistence.content.KnownTypeContentResolver;
 import org.atlasapi.persistence.content.LookupResolvingContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoContentResolver;
+import org.atlasapi.persistence.content.mongo.MongoContentWriter;
 import org.atlasapi.persistence.content.mongo.MongoPlayerStore;
 import org.atlasapi.persistence.content.mongo.MongoServiceStore;
 import org.atlasapi.persistence.content.mongo.MongoTopicStore;
@@ -94,6 +95,7 @@ import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.properties.Parameter;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
+import com.metabroadcast.common.time.SystemClock;
 
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.joda.InstantCodec;
@@ -600,6 +602,10 @@ public class AtlasPersistenceModule {
                 contentResolver,
                 legacyEquivalenceStore()
         );
+        MongoContentWriter contentWriter =  new MongoContentWriter(
+                db, legacyEquivalenceStore(), persistenceAuditLog,
+                playerResolver(), serviceResolver(), new SystemClock()
+        );
         EquivalentContentResolver equivalentContentResolver = new DefaultEquivalentContentResolver(
                 contentResolver,
                 legacyEquivalenceStore()
@@ -610,6 +616,7 @@ public class AtlasPersistenceModule {
                         db,
                         channelStore(),
                         resolver,
+                        contentWriter,
                         equivalentContentResolver,
                         sender
                 ),
