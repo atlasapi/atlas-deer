@@ -137,14 +137,14 @@ public class IndexQueryParams {
         if (attributes.containsKey(REGION.externalName())) {
             parseRegion(
                     builder,
-                    (StringAttributeQuery) attributes.get(REGION.externalName())
+                    (IdAttributeQuery) attributes.get(REGION.externalName())
             );
         }
 
         if (attributes.containsKey(PLATFORM.externalName())) {
             parsePlatform(
                     builder,
-                    (StringAttributeQuery) attributes.get(PLATFORM.externalName())
+                    (IdAttributeQuery) attributes.get(PLATFORM.externalName())
             );
         }
 
@@ -255,17 +255,13 @@ public class IndexQueryParams {
 
     private static void parseRegion(
             Builder builder,
-            StringAttributeQuery regionQuery
+            IdAttributeQuery regionQuery
     ) {
-        Optional<List<String>> regionIds = extractListValues(regionQuery);
+        Optional<List<Id>> regionIds = extractListValues(regionQuery);
         regionIds.ifPresent(
                 ids -> {
                     validateNumberOfQueryIds(regionQuery, ids);
-                    builder.withRegionIds(
-                            ids.stream()
-                                    .map(id -> Id.valueOf(codec.decode(id)))
-                                    .collect(Collectors.toList())
-                    );
+                    builder.withRegionIds(ids);
                 }
         );
 
@@ -273,24 +269,20 @@ public class IndexQueryParams {
 
     private static void parsePlatform(
             Builder builder,
-            StringAttributeQuery platformQuery
+            IdAttributeQuery platformQuery
     ) {
-        Optional<List<String>> platformIds = extractListValues(platformQuery);
+        Optional<List<Id>> platformIds = extractListValues(platformQuery);
         platformIds.ifPresent(
                 ids -> {
                     validateNumberOfQueryIds(platformQuery, ids);
-                    builder.withPlatformIds(
-                            ids.stream()
-                                    .map(id -> Id.valueOf(codec.decode(id)))
-                                    .collect(Collectors.toList())
-                    );
+                    builder.withPlatformIds(ids);
                 }
         );
     }
 
     private static void validateNumberOfQueryIds(
-            StringAttributeQuery platformQuery,
-            List<String> ids
+            IdAttributeQuery platformQuery,
+            List<Id> ids
     ) {
         if (ids.size() > MAX_NUMBER_OF_IDS) {
             throw new IllegalArgumentException(format(

@@ -18,10 +18,8 @@ import static org.atlasapi.criteria.attribute.Attributes.BROADCAST_WEIGHT;
 import static org.atlasapi.criteria.attribute.Attributes.EPISODE_BRAND_ID;
 import static org.atlasapi.criteria.attribute.Attributes.ORDER_BY;
 import static org.atlasapi.criteria.attribute.Attributes.PLATFORM;
-import static org.atlasapi.criteria.attribute.Attributes.PLATFORM_IDS;
 import static org.atlasapi.criteria.attribute.Attributes.Q;
 import static org.atlasapi.criteria.attribute.Attributes.REGION;
-import static org.atlasapi.criteria.attribute.Attributes.REGION_IDS;
 import static org.atlasapi.criteria.attribute.Attributes.SEARCH_TOPIC_ID;
 import static org.atlasapi.criteria.attribute.Attributes.SERIES_ID;
 import static org.atlasapi.criteria.attribute.Attributes.TITLE_BOOST;
@@ -189,33 +187,9 @@ public class IndexQueryParamsTest {
     }
 
     @Test
-    public void parseWithRegionIdsReturnsExpectedValues() throws Exception {
-        IndexQueryParams params = IndexQueryParams.parse(ImmutableList.of(
-                query(REGION_IDS, "hk7t", "hk68")
-        ));
-
-        assertThat(
-                params.getRegionIds().get(),
-                is(ImmutableList.of(Id.valueOf("104180"), Id.valueOf("104164")))
-        );
-    }
-
-    @Test
     public void parseWithMissingRegionReturnsEmpty() throws Exception {
         IndexQueryParams params = IndexQueryParams.parse(ImmutableList.of(
                 query(REGION)
-        ));
-
-        assertThat(
-                params.getRegionIds().isPresent(),
-                is(false)
-        );
-    }
-
-    @Test
-    public void parseWithMissingRegionIdsReturnsEmpty() throws Exception {
-        IndexQueryParams params = IndexQueryParams.parse(ImmutableList.of(
-                query(REGION_IDS)
         ));
 
         assertThat(
@@ -231,8 +205,8 @@ public class IndexQueryParamsTest {
         ));
 
         assertThat(
-                params.getRegionIds().get().get(0),
-                is(Id.valueOf(1L))
+                params.getRegionIds().get(),
+                is(ImmutableList.of(Id.valueOf(1L), Id.valueOf(2L)))
         );
     }
 
@@ -249,18 +223,6 @@ public class IndexQueryParamsTest {
     }
 
     @Test
-    public void parseWithPlatformIdsReturnsExpectedValues() throws Exception {
-        IndexQueryParams params = IndexQueryParams.parse(ImmutableList.of(
-                query(PLATFORM_IDS, "hmh5", "hmh9")
-        ));
-
-        assertThat(
-                params.getPlatformIds().get(),
-                is(ImmutableList.of(Id.valueOf("104404"), Id.valueOf("104408")))
-        );
-    }
-
-    @Test
     public void parseWithMissingPlatformReturnsEmpty() throws Exception {
         IndexQueryParams params = IndexQueryParams.parse(ImmutableList.of(
                 query(PLATFORM)
@@ -273,26 +235,14 @@ public class IndexQueryParamsTest {
     }
 
     @Test
-    public void parseWithMissingPlatformIdsReturnsEmpty() throws Exception {
-        IndexQueryParams params = IndexQueryParams.parse(ImmutableList.of(
-                query(PLATFORM_IDS)
-        ));
-
-        assertThat(
-                params.getPlatformIds().isPresent(),
-                is(false)
-        );
-    }
-
-    @Test
-    public void parseWithMultiplePlatformsReturnsTheFirstOne() throws Exception {
+    public void parseWithMultiplePlatformsReturnsAllOfThem() throws Exception {
         IndexQueryParams params = IndexQueryParams.parse(ImmutableList.of(
                 query(PLATFORM, Id.valueOf(1L), Id.valueOf(2L))
         ));
 
         assertThat(
-                params.getPlatformIds().get().get(0),
-                is(Id.valueOf(1L))
+                params.getPlatformIds().get(),
+                is(ImmutableList.of(Id.valueOf(1L), Id.valueOf(2L)))
         );
     }
 

@@ -45,11 +45,11 @@ public class Attributes {
             "locations.aliases.value",
             Identified.class
     );
-    public static final Attribute<String> REGION = StringAttribute.list(
+    public static final Attribute<Id> REGION = IdAttribute.list(
             "region",
             Region.class
     );
-    public static final Attribute<String> PLATFORM = StringAttribute.list(
+    public static final Attribute<Id> PLATFORM = IdAttribute.list(
             "platforms",
             Platform.class
     );
@@ -112,15 +112,15 @@ public class Attributes {
             "channel_genres",
             ChannelGroup.class
     );
-    public static final Attribute<String> CHANNEL_GROUP_IP_CHANNELS = StringAttribute.list(
+    public static final Attribute<Id> CHANNEL_GROUP_IP_CHANNELS = IdAttribute.list(
             "ip_only",
             ChannelGroup.class
     );
-    public static final Attribute<String> CHANNEL_GROUP_DTT_CHANNELS = StringAttribute.list(
+    public static final Attribute<Id> CHANNEL_GROUP_DTT_CHANNELS = IdAttribute.list(
             "dtt_only",
             ChannelGroup.class
     );
-    public static final Attribute<String> CHANNEL_GROUP_IDS = StringAttribute.list(
+    public static final Attribute<Id> CHANNEL_GROUP_IDS = IdAttribute.list(
             "ids",
             ChannelGroup.class
     );
