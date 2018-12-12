@@ -179,7 +179,7 @@ public class IndexQueryParamsTest {
         ));
 
         assertThat(
-                params.getRegionIds().get(),
+                params.getRegionIds().get().get(0),
                 is(Id.valueOf(1L))
         );
     }
@@ -203,7 +203,7 @@ public class IndexQueryParamsTest {
         ));
 
         assertThat(
-                params.getRegionIds().get(),
+                params.getRegionIds().get().get(0),
                 is(Id.valueOf(1L))
         );
     }
