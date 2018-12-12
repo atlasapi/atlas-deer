@@ -1,6 +1,7 @@
 package org.atlasapi.util;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -282,7 +283,7 @@ public class FiltersBuilder {
     ) {
         List<ChannelNumbering> channels = Lists.newArrayList();
         channelGroups.forEach(region -> {
-            ImmutableSet<ChannelNumbering> allChannels = (ImmutableSet<ChannelNumbering>) region.getChannels();
+            List<ChannelNumbering> allChannels = (List<ChannelNumbering>) region.getChannels();
 
             if (dttIds.isPresent() && dttIds.get().contains(region.getId())) {
                 ImmutableSet<ChannelNumbering> dttChannels = allChannels.stream()
