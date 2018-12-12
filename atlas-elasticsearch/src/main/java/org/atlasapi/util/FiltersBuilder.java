@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -28,7 +28,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
@@ -244,7 +243,7 @@ public class FiltersBuilder {
             Optional<List<Id>> ipIds,
             ChannelGroupResolver channelGroupResolver
     ) {
-        FluentIterable<ChannelGroup<?>> channelGroups = resolveChannelGroups(
+        List<ChannelGroup> channelGroups = resolveChannelGroups(
                 channelGroupIds,
                 channelGroupResolver
         );
@@ -261,16 +260,21 @@ public class FiltersBuilder {
         ).cache(true);
     }
 
-    private static FluentIterable<ChannelGroup<?>> resolveChannelGroups(
+    private static List<ChannelGroup> resolveChannelGroups(
             List<Id> channelGroupIds,
             ChannelGroupResolver channelGroupResolver
     ) {
-        FluentIterable<ChannelGroup<?>> channelGroups;
+        List<ChannelGroup> channelGroups;
         try {
-            Resolved<ChannelGroup<?>> resolved = Futures.get(
-                    channelGroupResolver.resolveIds(channelGroupIds), IOException.class
+            Iterable<ChannelGroup<?>> resolvedChannelGroups = Futures.get(
+                    Futures.transform(
+                            channelGroupResolver.resolveIds(channelGroupIds),
+                            (Resolved<ChannelGroup<?>> input) -> input.getResources()
+                    ),
+                    1, TimeUnit.MINUTES,
+                    IOException.class
             );
-            channelGroups = resolved.getResources();
+            channelGroups = Lists.newArrayList(resolvedChannelGroups);
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
@@ -280,16 +284,16 @@ public class FiltersBuilder {
     private static List<ChannelNumbering> filterChannelsByDttOrIp(
             Optional<List<Id>> dttIds,
             Optional<List<Id>> ipIds,
-            FluentIterable<ChannelGroup<?>> channelGroups
+            List<ChannelGroup> channelGroups
     ) {
         List<ChannelNumbering> channels = Lists.newArrayList();
         channelGroups.forEach(region -> {
-            ImmutableSet<ChannelNumbering> allChannels = (ImmutableSet<ChannelNumbering>) region.getChannels();
-
+            ImmutableList<ChannelNumbering> allChannels = ImmutableList.copyOf(region.getChannels());
             if (dttIds.isPresent() && dttIds.get().contains(region.getId())) {
                 ImmutableSet<ChannelNumbering> dttChannels = allChannels.stream()
                         .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))
-                        .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) <= 300)
+                        .filter(channel -> Integer.parseInt(channel.getChannelNumber().get())
+                                <= 300)
                         .collect(MoreCollectors.toImmutableSet());
 
                 channels.addAll(dttChannels);
