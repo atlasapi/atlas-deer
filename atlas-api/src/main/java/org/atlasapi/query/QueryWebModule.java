@@ -547,18 +547,10 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.REGION,
-                                IdCoercer.create(idCodec())
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.REGION_IDS,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
                                 Attributes.PLATFORM,
-                                IdCoercer.create(idCodec())
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.PLATFORM_IDS,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(

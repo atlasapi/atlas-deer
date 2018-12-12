@@ -45,19 +45,11 @@ public class Attributes {
             "locations.aliases.value",
             Identified.class
     );
-    public static final Attribute<Id> REGION = IdAttribute.list(
+    public static final Attribute<String> REGION = StringAttribute.list(
             "region",
             Region.class
     );
-    public static final Attribute<String> REGION_IDS = StringAttribute.list(
-            "regions",
-            Region.class
-    );
-    public static final Attribute<Id> PLATFORM = IdAttribute.single(
-            "platform",
-            Identified.class
-    );
-    public static final Attribute<String> PLATFORM_IDS = StringAttribute.list(
+    public static final Attribute<String> PLATFORM = StringAttribute.list(
             "platforms",
             Platform.class
     );

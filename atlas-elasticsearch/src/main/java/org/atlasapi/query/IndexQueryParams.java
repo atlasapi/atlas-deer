@@ -32,10 +32,8 @@ import static org.atlasapi.criteria.attribute.Attributes.CHANNEL_GROUP_IP_CHANNE
 import static org.atlasapi.criteria.attribute.Attributes.EPISODE_BRAND_ID;
 import static org.atlasapi.criteria.attribute.Attributes.ORDER_BY;
 import static org.atlasapi.criteria.attribute.Attributes.PLATFORM;
-import static org.atlasapi.criteria.attribute.Attributes.PLATFORM_IDS;
 import static org.atlasapi.criteria.attribute.Attributes.Q;
 import static org.atlasapi.criteria.attribute.Attributes.REGION;
-import static org.atlasapi.criteria.attribute.Attributes.REGION_IDS;
 import static org.atlasapi.criteria.attribute.Attributes.SEARCH_TOPIC_ID;
 import static org.atlasapi.criteria.attribute.Attributes.SERIES_ID;
 import static org.atlasapi.criteria.attribute.Attributes.TITLE_BOOST;
@@ -57,9 +55,7 @@ public class IndexQueryParams {
             .add(TITLE_BOOST)
             .add(ORDER_BY)
             .add(REGION)
-            .add(REGION_IDS)
             .add(PLATFORM)
-            .add(PLATFORM_IDS)
             .add(CHANNEL_GROUP_DTT_CHANNELS)
             .add(CHANNEL_GROUP_IP_CHANNELS)
             .add(BROADCAST_WEIGHT)
@@ -76,6 +72,7 @@ public class IndexQueryParams {
     private static final String NOT_OPERATOR = "!";
     private static final Splitter TOPIC_ID_SPLITTER = Splitter.on("^");
     private static final Splitter ACTIONABLE_FILTER_PARAM_SPLITTER = Splitter.on(":").limit(2);
+    private static final int MAX_NUMBER_OF_IDS = 10;
 
     private final Optional<FuzzyQueryParams> fuzzyQueryParams;
     private final Optional<QueryOrdering> ordering;
@@ -140,26 +137,14 @@ public class IndexQueryParams {
         if (attributes.containsKey(REGION.externalName())) {
             parseRegion(
                     builder,
-                    (IdAttributeQuery) attributes.get(REGION.externalName())
-            );
-        }
-        if (attributes.containsKey(REGION_IDS.externalName())) {
-            parseRegionIds(
-                    builder,
-                    (StringAttributeQuery) attributes.get(REGION_IDS.externalName())
+                    (StringAttributeQuery) attributes.get(REGION.externalName())
             );
         }
 
         if (attributes.containsKey(PLATFORM.externalName())) {
             parsePlatform(
                     builder,
-                    (IdAttributeQuery) attributes.get(PLATFORM.externalName())
-            );
-        }
-        if (attributes.containsKey(PLATFORM_IDS.externalName())) {
-            parsePlatformIds(
-                    builder,
-                    (StringAttributeQuery) attributes.get(PLATFORM_IDS.externalName())
+                    (StringAttributeQuery) attributes.get(PLATFORM.externalName())
             );
         }
 
@@ -270,46 +255,49 @@ public class IndexQueryParams {
 
     private static void parseRegion(
             Builder builder,
-            IdAttributeQuery regionQuery
+            StringAttributeQuery regionQuery
     ) {
-        extractFirstValue(regionQuery).ifPresent(
-                regionId -> builder.withRegionIds(ImmutableList.of(regionId))
+        Optional<List<String>> regionIds = extractListValues(regionQuery);
+        regionIds.ifPresent(
+                ids -> {
+                    validateNumberOfQueryIds(regionQuery, ids);
+                    builder.withRegionIds(
+                            ids.stream()
+                                    .map(id -> Id.valueOf(codec.decode(id)))
+                                    .collect(Collectors.toList())
+                    );
+                }
         );
-    }
 
-    private static void parseRegionIds(
-            Builder builder,
-            StringAttributeQuery regionIdsQuery
-    ) {
-        extractListValues(regionIdsQuery).ifPresent(
-                regionIds -> builder.withRegionIds(
-                        regionIds.stream()
-                                .map(id -> Id.valueOf(codec.decode(id)))
-                                .collect(Collectors.toList())
-                )
-        );
     }
 
     private static void parsePlatform(
             Builder builder,
-            IdAttributeQuery platformQuery
+            StringAttributeQuery platformQuery
     ) {
-        extractFirstValue(platformQuery).ifPresent(
-                platformId -> builder.withPlatformIds(ImmutableList.of(platformId))
+        Optional<List<String>> platformIds = extractListValues(platformQuery);
+        platformIds.ifPresent(
+                ids -> {
+                    validateNumberOfQueryIds(platformQuery, ids);
+                    builder.withPlatformIds(
+                            ids.stream()
+                                    .map(id -> Id.valueOf(codec.decode(id)))
+                                    .collect(Collectors.toList())
+                    );
+                }
         );
     }
 
-    private static void parsePlatformIds(
-            Builder builder,
-            StringAttributeQuery platformIdsQuery
+    private static void validateNumberOfQueryIds(
+            StringAttributeQuery platformQuery,
+            List<String> ids
     ) {
-        extractListValues(platformIdsQuery).ifPresent(
-                platformIds -> builder.withPlatformIds(
-                        platformIds.stream()
-                                .map(id -> Id.valueOf(codec.decode(id)))
-                                .collect(Collectors.toList())
-                )
-        );
+        if (ids.size() > MAX_NUMBER_OF_IDS) {
+            throw new IllegalArgumentException(format(
+                    "You cannot query more than 10 regions IDs for param %s",
+                    platformQuery.getAttributeName()
+            ));
+        }
     }
 
     private static void parseDttIds(
