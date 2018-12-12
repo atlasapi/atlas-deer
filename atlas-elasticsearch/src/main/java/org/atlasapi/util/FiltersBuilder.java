@@ -188,8 +188,8 @@ public class FiltersBuilder {
         if (maybeRegionIds.isPresent()) {
             FilterBuilder regionFilter = buildChannelGroupFilter(
                     maybeRegionIds.get(),
-                    maybeDttIds.get(),
-                    maybeIpIds.get(),
+                    maybeDttIds,
+                    maybeIpIds,
                     cgResolver
             );
             rangeFilter = rangeFilter.add(regionFilter);
@@ -198,8 +198,8 @@ public class FiltersBuilder {
         if (maybePlatformIds.isPresent()) {
             FilterBuilder platformFilter = buildChannelGroupFilter(
                     maybePlatformIds.get(),
-                    maybeDttIds.get(),
-                    maybeIpIds.get(),
+                    maybeDttIds,
+                    maybeIpIds,
                     cgResolver
             );
             rangeFilter = rangeFilter.add(platformFilter);
@@ -238,8 +238,8 @@ public class FiltersBuilder {
     @SuppressWarnings("unchecked")
     private static FilterBuilder buildChannelGroupFilter(
             List<Id> channelGroupIds,
-            List<Id> dttIds,
-            List<Id> ipIds,
+            Optional<List<Id>> dttIds,
+            Optional<List<Id>> ipIds,
             ChannelGroupResolver channelGroupResolver
     ) {
         FluentIterable<ChannelGroup<?>> channelGroups = resolveChannelGroups(
@@ -276,22 +276,22 @@ public class FiltersBuilder {
     }
 
     private static List<ChannelNumbering> filterChannelsByDttOrIp(
-            List<Id> dttIds,
-            List<Id> ipIds,
+            Optional<List<Id>> dttIds,
+            Optional<List<Id>> ipIds,
             FluentIterable<ChannelGroup<?>> channelGroups
     ) {
         List<ChannelNumbering> channels = Lists.newArrayList();
         channelGroups.forEach(region -> {
             ImmutableSet<ChannelNumbering> allChannels = (ImmutableSet<ChannelNumbering>) region.getChannels();
 
-            if (dttIds.contains(region.getId())) {
+            if (dttIds.isPresent() && dttIds.get().contains(region.getId())) {
                 ImmutableSet<ChannelNumbering> dttChannels = allChannels.stream()
                         .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))
                         .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) <= 300)
                         .collect(MoreCollectors.toImmutableSet());
 
                 channels.addAll(dttChannels);
-            } else if (ipIds.contains(region.getId())) {
+            } else if (ipIds.isPresent() && ipIds.get().contains(region.getId())) {
                 ImmutableSet<ChannelNumbering> ipChannels = channels.stream()
                         .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))
                         .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) > 300)
