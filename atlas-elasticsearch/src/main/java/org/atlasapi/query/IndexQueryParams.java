@@ -12,6 +12,7 @@ import org.atlasapi.criteria.FloatAttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.attribute.Attribute;
+import org.atlasapi.criteria.attribute.IdAttribute;
 import org.atlasapi.entity.Id;
 
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -151,13 +152,13 @@ public class IndexQueryParams {
         if (attributes.containsKey(CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
             parseDttIds(
                     builder,
-                    (StringAttributeQuery) attributes.get(CHANNEL_GROUP_DTT_CHANNELS.externalName())
+                    (IdAttributeQuery) attributes.get(CHANNEL_GROUP_DTT_CHANNELS.externalName())
             );
         }
         if (attributes.containsKey(CHANNEL_GROUP_IP_CHANNELS.externalName())) {
             parseIpIds(
                     builder,
-                    (StringAttributeQuery) attributes.get(CHANNEL_GROUP_IP_CHANNELS.externalName())
+                    (IdAttributeQuery) attributes.get(CHANNEL_GROUP_IP_CHANNELS.externalName())
             );
         }
 
@@ -286,7 +287,7 @@ public class IndexQueryParams {
     ) {
         if (ids.size() > MAX_NUMBER_OF_IDS) {
             throw new IllegalArgumentException(format(
-                    "You cannot query more than 10 regions IDs for param %s",
+                    "You cannot query more than 10 IDs for param %s",
                     platformQuery.getAttributeName()
             ));
         }
@@ -294,27 +295,27 @@ public class IndexQueryParams {
 
     private static void parseDttIds(
             Builder builder,
-            StringAttributeQuery dttIdsQuery
+            IdAttributeQuery dttIdsQuery
     ) {
-        extractListValues(dttIdsQuery).ifPresent(
-                dttIds -> builder.withDttIds(
-                        dttIds.stream()
-                                .map(id -> Id.valueOf(codec.decode(id)))
-                                .collect(Collectors.toList())
-                )
+        Optional<List<Id>> dttIds = extractListValues(dttIdsQuery);
+        dttIds.ifPresent(
+                ids -> {
+                    validateNumberOfQueryIds(dttIdsQuery, ids);
+                    builder.withDttIds(ids);
+                }
         );
     }
 
     private static void parseIpIds(
             Builder builder,
-            StringAttributeQuery ipIdsQuery
+            IdAttributeQuery ipIdsQuery
     ) {
-        extractListValues(ipIdsQuery).ifPresent(
-                ipIds -> builder.withIpIds(
-                        ipIds.stream()
-                                .map(id -> Id.valueOf(codec.decode(id)))
-                                .collect(Collectors.toList())
-                )
+        Optional<List<Id>> ipIds = extractListValues(ipIdsQuery);
+        ipIds.ifPresent(
+                ids -> {
+                    validateNumberOfQueryIds(ipIdsQuery, ids);
+                    builder.withDttIds(ids);
+                }
         );
     }
 
