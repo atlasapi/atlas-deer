@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
@@ -295,10 +296,12 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
             BoolFilterBuilder filterBuilder
     ) {
         if (queryParams.getActionableFilterParams().isPresent()) {
-            Optional<Id> maybeRegionId = queryParams.getRegionId();
             FilterBuilder actionableFilter = FiltersBuilder.buildActionableFilter(
                     queryParams.getActionableFilterParams().get(),
-                    maybeRegionId,
+                    queryParams.getRegionIds(),
+                    queryParams.getPlatformIds(),
+                    queryParams.getDttIds(),
+                    queryParams.getIpIds(),
                     channelGroupResolver
             );
             filterBuilder.must(actionableFilter);

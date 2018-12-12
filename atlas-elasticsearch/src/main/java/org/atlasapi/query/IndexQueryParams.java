@@ -2,6 +2,7 @@ package org.atlasapi.query;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.content.FuzzyQueryParams;
@@ -26,10 +27,15 @@ import static java.lang.String.format;
 import static org.atlasapi.criteria.attribute.Attributes.ACTIONABLE_FILTER_PARAMETERS;
 import static org.atlasapi.criteria.attribute.Attributes.BRAND_ID;
 import static org.atlasapi.criteria.attribute.Attributes.BROADCAST_WEIGHT;
+import static org.atlasapi.criteria.attribute.Attributes.CHANNEL_GROUP_DTT_CHANNELS;
+import static org.atlasapi.criteria.attribute.Attributes.CHANNEL_GROUP_IP_CHANNELS;
 import static org.atlasapi.criteria.attribute.Attributes.EPISODE_BRAND_ID;
 import static org.atlasapi.criteria.attribute.Attributes.ORDER_BY;
+import static org.atlasapi.criteria.attribute.Attributes.PLATFORM;
+import static org.atlasapi.criteria.attribute.Attributes.PLATFORM_IDS;
 import static org.atlasapi.criteria.attribute.Attributes.Q;
 import static org.atlasapi.criteria.attribute.Attributes.REGION;
+import static org.atlasapi.criteria.attribute.Attributes.REGION_IDS;
 import static org.atlasapi.criteria.attribute.Attributes.SEARCH_TOPIC_ID;
 import static org.atlasapi.criteria.attribute.Attributes.SERIES_ID;
 import static org.atlasapi.criteria.attribute.Attributes.TITLE_BOOST;
@@ -51,6 +57,11 @@ public class IndexQueryParams {
             .add(TITLE_BOOST)
             .add(ORDER_BY)
             .add(REGION)
+            .add(REGION_IDS)
+            .add(PLATFORM)
+            .add(PLATFORM_IDS)
+            .add(CHANNEL_GROUP_DTT_CHANNELS)
+            .add(CHANNEL_GROUP_IP_CHANNELS)
             .add(BROADCAST_WEIGHT)
             .add(SEARCH_TOPIC_ID)
             .add(EPISODE_BRAND_ID)
@@ -68,7 +79,10 @@ public class IndexQueryParams {
 
     private final Optional<FuzzyQueryParams> fuzzyQueryParams;
     private final Optional<QueryOrdering> ordering;
-    private final Optional<Id> regionId;
+    private final Optional<List<Id>> regionIds;
+    private final Optional<List<Id>> platformIds;
+    private final Optional<List<Id>> dttIds;
+    private final Optional<List<Id>> ipIds;
     private final Optional<Float> broadcastWeighting;
     private final Optional<ImmutableList<ImmutableList<InclusionExclusionId>>> topicFilterIds;
     private final Optional<Id> brandId;
@@ -78,7 +92,10 @@ public class IndexQueryParams {
     private IndexQueryParams(Builder builder) {
         fuzzyQueryParams = Optional.ofNullable(builder.fuzzyQueryParams);
         ordering = Optional.ofNullable(builder.ordering);
-        regionId = Optional.ofNullable(builder.regionId);
+        regionIds = Optional.ofNullable(builder.regionIds);
+        platformIds = Optional.ofNullable(builder.platformIds);
+        dttIds = Optional.ofNullable(builder.dttIds);
+        ipIds = Optional.ofNullable(builder.ipIds);
         broadcastWeighting = Optional.ofNullable(builder.broadcastWeighting);
         topicFilterIds = Optional.ofNullable(builder.topicFilterIds);
         brandId = Optional.ofNullable(builder.brandId);
@@ -124,6 +141,38 @@ public class IndexQueryParams {
             parseRegion(
                     builder,
                     (IdAttributeQuery) attributes.get(REGION.externalName())
+            );
+        }
+        if (attributes.containsKey(REGION_IDS.externalName())) {
+            parseRegionIds(
+                    builder,
+                    (StringAttributeQuery) attributes.get(REGION_IDS.externalName())
+            );
+        }
+
+        if (attributes.containsKey(PLATFORM.externalName())) {
+            parsePlatform(
+                    builder,
+                    (IdAttributeQuery) attributes.get(PLATFORM.externalName())
+            );
+        }
+        if (attributes.containsKey(PLATFORM_IDS.externalName())) {
+            parsePlatformIds(
+                    builder,
+                    (StringAttributeQuery) attributes.get(PLATFORM_IDS.externalName())
+            );
+        }
+
+        if (attributes.containsKey(CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
+            parseDttIds(
+                    builder,
+                    (StringAttributeQuery) attributes.get(CHANNEL_GROUP_DTT_CHANNELS.externalName())
+            );
+        }
+        if (attributes.containsKey(CHANNEL_GROUP_IP_CHANNELS.externalName())) {
+            parseIpIds(
+                    builder,
+                    (StringAttributeQuery) attributes.get(CHANNEL_GROUP_IP_CHANNELS.externalName())
             );
         }
 
@@ -224,7 +273,68 @@ public class IndexQueryParams {
             IdAttributeQuery regionQuery
     ) {
         extractFirstValue(regionQuery).ifPresent(
-                builder::withRegionId
+                regionId -> builder.withRegionIds(ImmutableList.of(regionId))
+        );
+    }
+
+    private static void parseRegionIds(
+            Builder builder,
+            StringAttributeQuery regionIdsQuery
+    ) {
+        extractListValues(regionIdsQuery).ifPresent(
+                regionIds -> builder.withRegionIds(
+                        regionIds.stream()
+                                .map(id -> Id.valueOf(codec.decode(id)))
+                                .collect(Collectors.toList())
+                )
+        );
+    }
+
+    private static void parsePlatform(
+            Builder builder,
+            IdAttributeQuery platformQuery
+    ) {
+        extractFirstValue(platformQuery).ifPresent(
+                platformId -> builder.withPlatformIds(ImmutableList.of(platformId))
+        );
+    }
+
+    private static void parsePlatformIds(
+            Builder builder,
+            StringAttributeQuery platformIdsQuery
+    ) {
+        extractListValues(platformIdsQuery).ifPresent(
+                platformIds -> builder.withPlatformIds(
+                        platformIds.stream()
+                                .map(id -> Id.valueOf(codec.decode(id)))
+                                .collect(Collectors.toList())
+                )
+        );
+    }
+
+    private static void parseDttIds(
+            Builder builder,
+            StringAttributeQuery dttIdsQuery
+    ) {
+        extractListValues(dttIdsQuery).ifPresent(
+                dttIds -> builder.withDttIds(
+                        dttIds.stream()
+                                .map(id -> Id.valueOf(codec.decode(id)))
+                                .collect(Collectors.toList())
+                )
+        );
+    }
+
+    private static void parseIpIds(
+            Builder builder,
+            StringAttributeQuery ipIdsQuery
+    ) {
+        extractListValues(ipIdsQuery).ifPresent(
+                ipIds -> builder.withIpIds(
+                        ipIds.stream()
+                                .map(id -> Id.valueOf(codec.decode(id)))
+                                .collect(Collectors.toList())
+                )
         );
     }
 
@@ -344,6 +454,18 @@ public class IndexQueryParams {
         return Optional.of(values.get(0));
     }
 
+    private static <T> Optional<List<T>> extractListValues(
+            AttributeQuery<T> query
+    ) {
+        List<T> values = query.getValue();
+
+        if (values.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(values);
+    }
+
     public Optional<Id> getBrandId() {
         return brandId;
     }
@@ -356,8 +478,20 @@ public class IndexQueryParams {
         return ordering;
     }
 
-    public Optional<Id> getRegionId() {
-        return regionId;
+    public Optional<List<Id>> getRegionIds() {
+        return regionIds;
+    }
+
+    public Optional<List<Id>> getPlatformIds() {
+        return platformIds;
+    }
+
+    public Optional<List<Id>> getDttIds() {
+        return dttIds;
+    }
+
+    public Optional<List<Id>> getIpIds() {
+        return ipIds;
     }
 
     public Optional<Float> getBroadcastWeighting() {
@@ -380,7 +514,10 @@ public class IndexQueryParams {
 
         private FuzzyQueryParams fuzzyQueryParams;
         private QueryOrdering ordering;
-        private Id regionId;
+        private List<Id> regionIds;
+        private List<Id> platformIds;
+        private List<Id> dttIds;
+        private List<Id> ipIds;
         private Float broadcastWeighting;
         private ImmutableList<ImmutableList<InclusionExclusionId>> topicFilterIds;
         private Id brandId;
@@ -400,8 +537,23 @@ public class IndexQueryParams {
             return this;
         }
 
-        public Builder withRegionId(Id regionId) {
-            this.regionId = regionId;
+        public Builder withRegionIds(List<Id> regionIds) {
+            this.regionIds = regionIds;
+            return this;
+        }
+
+        public Builder withPlatformIds(List<Id> platformIds) {
+            this.platformIds = platformIds;
+            return this;
+        }
+
+        public Builder withDttIds(List<Id> dttIds) {
+            this.dttIds = dttIds;
+            return this;
+        }
+
+        public Builder withIpIds(List<Id> ipIds) {
+            this.ipIds = ipIds;
             return this;
         }
 

@@ -2,6 +2,7 @@ package org.atlasapi.criteria.attribute;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
@@ -48,9 +49,17 @@ public class Attributes {
             "region",
             Region.class
     );
+    public static final Attribute<String> REGION_IDS = StringAttribute.list(
+            "regions",
+            Region.class
+    );
     public static final Attribute<Id> PLATFORM = IdAttribute.single(
             "platform",
-            Identified.class
+            Platform.class
+    );
+    public static final Attribute<String> PLATFORM_IDS = StringAttribute.list(
+            "platforms",
+            Platform.class
     );
     public static final Attribute<Id> DOWNWEIGH = IdAttribute.list(
             "downweigh",
