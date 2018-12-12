@@ -79,7 +79,7 @@ public class EsQueryParserTest {
 
         assertThat(params.getFuzzyQueryParams().isPresent(), is(false));
         assertThat(params.getOrdering().isPresent(), is(false));
-        assertThat(params.getRegionId().isPresent(), is(false));
+        assertThat(params.getRegionIds().isPresent(), is(false));
         assertThat(params.getBroadcastWeighting().isPresent(), is(false));
         assertThat(params.getTopicFilterIds().isPresent(), is(false));
         assertThat(params.getBrandId().isPresent(), is(false));
@@ -136,7 +136,7 @@ public class EsQueryParserTest {
 
         assertThat(params.getFuzzyQueryParams().isPresent(), is(true));
         assertThat(params.getOrdering().isPresent(), is(true));
-        assertThat(params.getRegionId().isPresent(), is(true));
+        assertThat(params.getRegionIds().isPresent(), is(true));
         assertThat(params.getBroadcastWeighting().isPresent(), is(true));
         assertThat(params.getTopicFilterIds().isPresent(), is(true));
         assertThat(params.getBrandId().isPresent(), is(true));
@@ -162,7 +162,7 @@ public class EsQueryParserTest {
 
         assertThat(params.getFuzzyQueryParams().isPresent(), is(false));
         assertThat(params.getOrdering().isPresent(), is(false));
-        assertThat(params.getRegionId().isPresent(), is(false));
+        assertThat(params.getRegionIds().isPresent(), is(false));
         assertThat(params.getBroadcastWeighting().isPresent(), is(false));
         assertThat(params.getTopicFilterIds().isPresent(), is(false));
         assertThat(params.getBrandId().isPresent(), is(false));

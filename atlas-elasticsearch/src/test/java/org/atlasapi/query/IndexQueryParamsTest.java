@@ -39,7 +39,7 @@ public class IndexQueryParamsTest {
 
         assertThat(params.getFuzzyQueryParams().isPresent(), is(false));
         assertThat(params.getOrdering().isPresent(), is(false));
-        assertThat(params.getRegionId().isPresent(), is(false));
+        assertThat(params.getRegionIds().isPresent(), is(false));
         assertThat(params.getBroadcastWeighting().isPresent(), is(false));
         assertThat(params.getTopicFilterIds().isPresent(), is(false));
         assertThat(params.getBrandId().isPresent(), is(false));
@@ -179,7 +179,7 @@ public class IndexQueryParamsTest {
         ));
 
         assertThat(
-                params.getRegionId().get(),
+                params.getRegionIds().get(),
                 is(Id.valueOf(1L))
         );
     }
@@ -191,7 +191,7 @@ public class IndexQueryParamsTest {
         ));
 
         assertThat(
-                params.getRegionId().isPresent(),
+                params.getRegionIds().isPresent(),
                 is(false)
         );
     }
@@ -203,7 +203,7 @@ public class IndexQueryParamsTest {
         ));
 
         assertThat(
-                params.getRegionId().get(),
+                params.getRegionIds().get(),
                 is(Id.valueOf(1L))
         );
     }
