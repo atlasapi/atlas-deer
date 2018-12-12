@@ -550,6 +550,26 @@ public class QueryWebModule {
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
+                                Attributes.REGION_IDS,
+                                StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.PLATFORM,
+                                IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.PLATFORM_IDS,
+                                StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.CHANNEL_GROUP_DTT_CHANNELS,
+                                StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.CHANNEL_GROUP_IP_CHANNELS,
+                                StringCoercer.create()
+                        ),
+                        QueryAtomParser.create(
                                 Attributes.BROADCAST_WEIGHT,
                                 FloatCoercer.create()
                         ),
