@@ -55,7 +55,7 @@ public class Attributes {
     );
     public static final Attribute<Id> PLATFORM = IdAttribute.single(
             "platform",
-            Platform.class
+            Identified.class
     );
     public static final Attribute<String> PLATFORM_IDS = StringAttribute.list(
             "platforms",

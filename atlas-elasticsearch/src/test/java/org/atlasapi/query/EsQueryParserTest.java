@@ -27,6 +27,7 @@ import static org.atlasapi.criteria.attribute.Attributes.ID;
 import static org.atlasapi.criteria.attribute.Attributes.LOCATIONS_ALIASES_NAMESPACE;
 import static org.atlasapi.criteria.attribute.Attributes.LOCATIONS_ALIASES_VALUE;
 import static org.atlasapi.criteria.attribute.Attributes.ORDER_BY;
+import static org.atlasapi.criteria.attribute.Attributes.PLATFORM;
 import static org.atlasapi.criteria.attribute.Attributes.Q;
 import static org.atlasapi.criteria.attribute.Attributes.REGION;
 import static org.atlasapi.criteria.attribute.Attributes.SEARCH_TOPIC_ID;
@@ -80,6 +81,7 @@ public class EsQueryParserTest {
         assertThat(params.getFuzzyQueryParams().isPresent(), is(false));
         assertThat(params.getOrdering().isPresent(), is(false));
         assertThat(params.getRegionIds().isPresent(), is(false));
+        assertThat(params.getPlatformIds().isPresent(), is(false));
         assertThat(params.getBroadcastWeighting().isPresent(), is(false));
         assertThat(params.getTopicFilterIds().isPresent(), is(false));
         assertThat(params.getBrandId().isPresent(), is(false));
@@ -120,6 +122,7 @@ public class EsQueryParserTest {
                 .add(query(TITLE_BOOST, 5.0F))
                 .add(query(ORDER_BY, "title"))
                 .add(query(REGION, Id.valueOf(1L)))
+                .add(query(PLATFORM, Id.valueOf(1L)))
                 .add(query(BROADCAST_WEIGHT, 5.0F))
                 .add(query(SEARCH_TOPIC_ID, "hk7"))
                 .add(query(EPISODE_BRAND_ID, Id.valueOf(1L)))
@@ -137,6 +140,7 @@ public class EsQueryParserTest {
         assertThat(params.getFuzzyQueryParams().isPresent(), is(true));
         assertThat(params.getOrdering().isPresent(), is(true));
         assertThat(params.getRegionIds().isPresent(), is(true));
+        assertThat(params.getPlatformIds().isPresent(), is(true));
         assertThat(params.getBroadcastWeighting().isPresent(), is(true));
         assertThat(params.getTopicFilterIds().isPresent(), is(true));
         assertThat(params.getBrandId().isPresent(), is(true));
@@ -163,6 +167,7 @@ public class EsQueryParserTest {
         assertThat(params.getFuzzyQueryParams().isPresent(), is(false));
         assertThat(params.getOrdering().isPresent(), is(false));
         assertThat(params.getRegionIds().isPresent(), is(false));
+        assertThat(params.getPlatformIds().isPresent(), is(false));
         assertThat(params.getBroadcastWeighting().isPresent(), is(false));
         assertThat(params.getTopicFilterIds().isPresent(), is(false));
         assertThat(params.getBrandId().isPresent(), is(false));
