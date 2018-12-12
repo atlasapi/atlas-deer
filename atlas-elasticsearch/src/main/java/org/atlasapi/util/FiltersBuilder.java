@@ -1,10 +1,10 @@
 package org.atlasapi.util;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
@@ -283,7 +284,7 @@ public class FiltersBuilder {
     ) {
         List<ChannelNumbering> channels = Lists.newArrayList();
         channelGroups.forEach(region -> {
-            List<ChannelNumbering> allChannels = (List<ChannelNumbering>) region.getChannels();
+            ImmutableSet<ChannelNumbering> allChannels = (ImmutableSet<ChannelNumbering>) region.getChannels();
 
             if (dttIds.isPresent() && dttIds.get().contains(region.getId())) {
                 ImmutableSet<ChannelNumbering> dttChannels = allChannels.stream()
