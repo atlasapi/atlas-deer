@@ -298,7 +298,7 @@ public class FiltersBuilder {
 
                 channels.addAll(dttChannels);
             } else if (ipIds.isPresent() && ipIds.get().contains(region.getId())) {
-                ImmutableSet<ChannelNumbering> ipChannels = channels.stream()
+                ImmutableSet<ChannelNumbering> ipChannels = allChannels.stream()
                         .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))
                         .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) > 300)
                         .collect(MoreCollectors.toImmutableSet());
