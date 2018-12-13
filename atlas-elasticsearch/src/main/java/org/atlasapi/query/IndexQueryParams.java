@@ -281,6 +281,9 @@ public class IndexQueryParams {
         );
     }
 
+    // We currently allow a maximum of 10 IDs to be searched for per channel group type as a default
+    // precaution to avoid any potential performance issues when querying ES. No testing has been
+    // carried in order to confirm that, so make sure to test it properly before increasing it.
     private static void validateNumberOfQueryIds(
             IdAttributeQuery platformQuery,
             List<Id> ids
