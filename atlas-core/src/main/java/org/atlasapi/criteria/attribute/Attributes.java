@@ -50,7 +50,7 @@ public class Attributes {
             Region.class
     );
     public static final Attribute<Id> PLATFORM = IdAttribute.list(
-            "platforms",
+            "platform",
             Platform.class
     );
     public static final Attribute<Id> DOWNWEIGH = IdAttribute.list(

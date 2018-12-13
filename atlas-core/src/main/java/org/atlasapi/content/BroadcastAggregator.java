@@ -1,5 +1,31 @@
 package org.atlasapi.content;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nullable;
+
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.ChannelRef;
+import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.channel.Platform;
+import org.atlasapi.channel.ResolvedChannel;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
+
+import com.metabroadcast.common.stream.MoreCollectors;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -13,34 +39,11 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.stream.MoreCollectors;
-import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelGroupMembership;
-import org.atlasapi.channel.ChannelRef;
-import org.atlasapi.channel.ChannelResolver;
-import org.atlasapi.channel.Platform;
-import org.atlasapi.channel.ResolvedChannel;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeComparator;
 import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class BroadcastAggregator {
 
@@ -60,14 +63,14 @@ public class BroadcastAggregator {
 
     public Set<ResolvedBroadcast> aggregateBroadcasts(
             Set<Broadcast> broadcasts,
-            Optional<Platform> platformOptional,
+            Optional<List<Platform>> platformsOptional,
             List<Id> downweighChannelIds,
             boolean includePastBroadcasts
     ) {
 
         // Remove broadcasts we don't care about
-        Set<Broadcast> platformBroadcasts = platformOptional.isPresent()
-                ? removeBroadcastsNotOnPlatform(broadcasts, platformOptional.get())
+        Set<Broadcast> platformBroadcasts = platformsOptional.isPresent()
+                ? removeBroadcastsNotOnPlatform(broadcasts, platformsOptional.get())
                 : broadcasts;
 
         // Merge broadcast continuations
@@ -97,7 +100,7 @@ public class BroadcastAggregator {
             if (sameTimeBroadcasts.size() > 1) {
                 aggregatedBroadcasts.putAll(
                         dateTime,
-                        aggregateBroadcastsInternal(sameTimeBroadcasts, platformOptional)
+                        aggregateBroadcastsInternal(sameTimeBroadcasts, platformsOptional)
                 );
             } else {
                 aggregatedBroadcasts.put(dateTime, Iterables.getOnlyElement(sameTimeBroadcasts));
@@ -117,7 +120,7 @@ public class BroadcastAggregator {
 
     private Set<ResolvedBroadcast> aggregateBroadcastsInternal(
             Collection<ResolvedBroadcast> broadcasts,
-            Optional<Platform> platformOptional
+            Optional<List<Platform>> platformsOptional
     ) {
 
         // Map parent channels to parent
@@ -141,7 +144,7 @@ public class BroadcastAggregator {
                     aggregateChannelsFromParent(
                             channelRef,
                             parentChannelMap.get(channelRef),
-                            platformOptional
+                            platformsOptional
                     )
             );
         }
@@ -213,7 +216,7 @@ public class BroadcastAggregator {
     private ResolvedBroadcast aggregateChannelsFromParent(
             ChannelRef channelRef,
             Collection<ResolvedBroadcast> broadcasts,
-            Optional<Platform> platformOptional
+            Optional<List<Platform>> platformsOptional
     ) {
         // If there's just one, no need to merge
         if (broadcasts.size() == 1) {
@@ -237,14 +240,14 @@ public class BroadcastAggregator {
 
         return ResolvedBroadcast.create(
                 broadcasts.iterator().next().getBroadcast(),
-                buildResolvedChannel(parent, ImmutableMap.copyOf(channelIdAndTitles), platformOptional)
+                buildResolvedChannel(parent, ImmutableMap.copyOf(channelIdAndTitles), platformsOptional)
         );
     }
 
     private ResolvedChannel buildResolvedChannel(
             Channel parent,
             Map<Id, String> channelIdsAndTitles,
-            Optional<Platform> platformOptional
+            Optional<List<Platform>> platformsOptional
     ) {
 
         return ResolvedChannel.builder(parent)
@@ -255,7 +258,7 @@ public class BroadcastAggregator {
                         resolveExcludedVariantRefs(
                                 parent,
                                 channelIdsAndTitles.keySet(),
-                                platformOptional
+                                platformsOptional
                         )
                 )
                 .build();
@@ -264,9 +267,12 @@ public class BroadcastAggregator {
 
     Set<Broadcast> removeBroadcastsNotOnPlatform(
             Iterable<Broadcast> broadcasts,
-            Platform platform
+            List<Platform> platforms
     ) {
-        List<Id> platformIds = StreamSupport.stream(platform.getChannels().spliterator(), false)
+        List<ChannelGroupMembership> channels = Lists.newArrayList();
+        platforms.forEach(platform -> Iterables.addAll(channels, platform.getChannels()));
+
+        List<Id> platformIds = channels.stream()
                 .map(ChannelGroupMembership::getChannel)
                 .map(ResourceRef::getId)
                 .collect(Collectors.toList());
@@ -339,19 +345,22 @@ public class BroadcastAggregator {
     List<ChannelVariantRef> resolveExcludedVariantRefs(
             Channel parent,
             Set<Id> ids,
-            Optional<Platform> platformOptional
+            Optional<List<Platform>> platformsOptional
     ) {
 
-        List<Id> platformIds = platformOptional.map(platform ->
-                StreamSupport.stream(platform.getChannels().spliterator(), false)
-                .map(channelNumbering -> channelNumbering.getChannel().getId())
-                .collect(MoreCollectors.toImmutableList())
-        )
-                .orElseGet(ImmutableList::of);
+        List<Id> platformsIds = Lists.newArrayList();
+        platformsOptional.ifPresent(platforms -> platforms.forEach(
+                platform -> platformsIds.addAll(StreamSupport.stream(
+                        platform.getChannels().spliterator(),
+                        false
+                )
+                        .map(channelNumbering -> channelNumbering.getChannel().getId())
+                        .collect(MoreCollectors.toImmutableList()))
+        ));
 
         return parent.getVariations().stream()
                 .filter(channelRef -> !ids.contains(channelRef.getId()))
-                .filter(channelRef -> platformIds.isEmpty() || platformIds.contains(channelRef.getId()))
+                .filter(channelRef -> platformsIds.isEmpty() || platformsIds.contains(channelRef.getId()))
                 .map(channelRef -> resolveChannel(channelRef.getId()))
                 .filter(this::isNotTimeshiftedOrHd)
                 .map(channel -> ChannelVariantRef.create(

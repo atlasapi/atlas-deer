@@ -1,11 +1,13 @@
 package org.atlasapi.output.annotation;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.atlasapi.annotation.Annotation;
+import org.atlasapi.channel.Region;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ChannelsBroadcastFilter;
 import org.atlasapi.content.Container;
@@ -18,8 +20,12 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.UpcomingContentDetailWriter;
 
+import com.metabroadcast.common.stream.MoreCollectors;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -76,11 +82,19 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
                             .stream()
                             .filter(Broadcast::isUpcoming)
                             .collect(Collectors.toSet());
-                    if (ctxt.getRegion().isPresent()) {
-                        upcomingBroadcasts = channelsBroadcastFilter.sortAndFilter(
-                                upcomingBroadcasts,
-                                ctxt.getRegion().get()
-                        );
+                    if (ctxt.getRegions().isPresent()) {
+                        List<Region> regions = ctxt.getRegions().get();
+
+                        List<Broadcast> broadcasts = Lists.newArrayList();
+                        for (Region region : regions) {
+                            Iterable<Broadcast> broadcastsToAdd = channelsBroadcastFilter.sortAndFilter(
+                                    upcomingBroadcasts,
+                                    region
+                            );
+                            Iterables.addAll(broadcasts, broadcastsToAdd);
+                        }
+
+                        upcomingBroadcasts = broadcasts;
                     }
                     item.setBroadcasts(
                             ImmutableSet.copyOf(upcomingBroadcasts)

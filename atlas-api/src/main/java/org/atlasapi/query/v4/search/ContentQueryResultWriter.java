@@ -1,7 +1,10 @@
 package org.atlasapi.query.v4.search;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -30,10 +33,14 @@ import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContentQueryResultWriter extends QueryResultWriter<Content> {
+
+    private static final Logger log = LoggerFactory.getLogger(ContentQueryResultWriter.class);
 
     private final EntityListWriter<Content> contentListWriter;
     private final ChannelGroupResolver channelGroupResolver;
@@ -76,45 +83,64 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
         OutputContext.Builder builder = OutputContext.builder(queryContext);
 
         if (!Strings.isNullOrEmpty(regionParam)) {
-            builder.withRegion(resolveRegion(regionParam));
+            List<String> regions = Arrays.asList(regionParam.split("\\s*,\\s*"));
+            builder.withRegions(resolveRegions(regions));
         }
 
         if (!Strings.isNullOrEmpty(platformParam)) {
-            builder.withPlatform(resolvePlatform(platformParam));
+            List<String> platforms = Arrays.asList(platformParam.split("\\s*,\\s*"));
+            builder.withPlatforms(resolvePlatforms(platforms));
         }
 
         return builder.build();
     }
 
-    private Region resolveRegion(String id) throws IOException {
-        ChannelGroup<?> channelGroup = resolveChannelGroup(id);
-        if (channelGroup instanceof Region) {
-            return (Region) channelGroup;
-        } else {
-            throw new RuntimeException(new NotAcceptableException(
-                    String.format(
-                            "%s is a channel group of type '%s', should be 'region",
-                            id,
-                            channelGroup
-                    )
-            ));
-        }
+    private List<Region> resolveRegions(List<String> ids) {
+        return ids.stream()
+                .map(id -> {
+                    ChannelGroup<?> channelGroup;
+                    try {
+                        channelGroup = resolveChannelGroup(id);
+                    } catch (IOException e) {
+                        throw new RuntimeException(new NotFoundException(Id.valueOf(codec.decode(id))));
+                    }
+                    if (channelGroup instanceof Region) {
+                        return (Region) channelGroup;
+                    } else {
+                        throw new RuntimeException(new NotAcceptableException(
+                                String.format(
+                                        "%s is a channel group of type '%s', should be 'region",
+                                        ids,
+                                        channelGroup
+                                )
+                        ));
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
-    private Platform resolvePlatform(String id) throws IOException {
-
-        ChannelGroup<?> channelGroup = resolveChannelGroup(id);
-        if (channelGroup instanceof Platform) {
-            return (Platform) channelGroup;
-        } else {
-            throw new RuntimeException(new NotAcceptableException(
-                    String.format(
-                            "%s is a channel group of type '%s', should be 'platform",
-                            id,
-                            channelGroup
-                    )
-            ));
-        }
+    private List<Platform> resolvePlatforms(List<String> ids) throws IOException {
+        return ids.stream()
+                .map(id -> {
+                    ChannelGroup<?> channelGroup;
+                    try {
+                        channelGroup = resolveChannelGroup(id);
+                    } catch (IOException e) {
+                        throw new RuntimeException(new NotFoundException(Id.valueOf(codec.decode(id))));
+                    }
+                    if (channelGroup instanceof Platform) {
+                        return (Platform) channelGroup;
+                    } else {
+                        throw new RuntimeException(new NotAcceptableException(
+                                String.format(
+                                        "%s is a channel group of type '%s', should be 'platform",
+                                        ids,
+                                        channelGroup
+                                )
+                        ));
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
     @Nullable

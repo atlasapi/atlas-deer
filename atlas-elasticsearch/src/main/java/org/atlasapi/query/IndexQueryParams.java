@@ -314,7 +314,7 @@ public class IndexQueryParams {
         ipIds.ifPresent(
                 ids -> {
                     validateNumberOfQueryIds(ipIdsQuery, ids);
-                    builder.withDttIds(ids);
+                    builder.withIpIds(ids);
                 }
         );
     }

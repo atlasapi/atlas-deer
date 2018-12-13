@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -290,7 +291,7 @@ public class BroadcastAggregatorTest {
 
         Set<Broadcast> filteredBroadcasts = broadcastAggregator.removeBroadcastsNotOnPlatform(
                 unfilteredBroadcasts,
-                platform
+                Collections.singletonList(platform)
         );
 
         assertThat(filteredBroadcasts.size(), is(1));
@@ -365,7 +366,7 @@ public class BroadcastAggregatorTest {
         List<ChannelVariantRef> excludedRefs = broadcastAggregator.resolveExcludedVariantRefs(
                 variantRefParent,
                 includedVariantIds,
-                Optional.of(platform)
+                Optional.of(Collections.singletonList(platform))
         );
 
         assertThat(excludedRefs.size(), is(1));
