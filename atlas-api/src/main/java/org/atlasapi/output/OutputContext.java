@@ -32,16 +32,16 @@ public class OutputContext {
     private final Application application;
     private final List<Resource> resources;
     private final HttpServletRequest request;
-    private final Optional<Region> region;
-    private final Optional<Platform> platform;
+    private final Optional<List<Region>> regions;
+    private final Optional<List<Platform>> platforms;
 
     private OutputContext(Builder builder) {
         this.annotations = checkNotNull(builder.activeAnnotations);
         this.application = checkNotNull(builder.application);
         this.resources = Lists.newLinkedList();
         this.request = checkNotNull(builder.request);
-        this.region = checkNotNull(builder.region);
-        this.platform = checkNotNull(builder.platform);
+        this.regions = checkNotNull(builder.regions);
+        this.platforms = checkNotNull(builder.platforms);
     }
 
     public static Builder builder(QueryContext queryContext) {
@@ -79,11 +79,11 @@ public class OutputContext {
         return request;
     }
 
-    public Optional<Region> getRegion() {
-        return region;
+    public Optional<List<Region>> getRegions() {
+        return regions;
     }
 
-    public Optional<Platform> getPlatform() { return platform; }
+    public Optional<List<Platform>> getPlatforms() { return platforms; }
 
     public static class Builder {
 
@@ -91,8 +91,8 @@ public class OutputContext {
         private ActiveAnnotations activeAnnotations;
         private Application application;
         private HttpServletRequest request;
-        private Optional<Region> region = Optional.empty();
-        private Optional<Platform> platform = Optional.empty();
+        private Optional<List<Region>> regions = Optional.empty();
+        private Optional<List<Platform>> platforms = Optional.empty();
 
         private Builder(QueryContext queryContext) {
             this.queryContext = checkNotNull(queryContext);
@@ -113,13 +113,13 @@ public class OutputContext {
             return this;
         }
 
-        public Builder withRegion(Region region) {
-            this.region = Optional.of(region);
+        public Builder withRegions(List<Region> region) {
+            this.regions = Optional.of(region);
             return this;
         }
 
-        public Builder withPlatform(Platform platform) {
-            this.platform = Optional.of(platform);
+        public Builder withPlatforms(List<Platform> platform) {
+            this.platforms = Optional.of(platform);
             return this;
         }
 

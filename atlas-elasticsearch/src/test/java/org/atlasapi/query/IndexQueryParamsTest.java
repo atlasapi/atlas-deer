@@ -17,6 +17,7 @@ import static org.atlasapi.criteria.attribute.Attributes.BRAND_ID;
 import static org.atlasapi.criteria.attribute.Attributes.BROADCAST_WEIGHT;
 import static org.atlasapi.criteria.attribute.Attributes.EPISODE_BRAND_ID;
 import static org.atlasapi.criteria.attribute.Attributes.ORDER_BY;
+import static org.atlasapi.criteria.attribute.Attributes.PLATFORM;
 import static org.atlasapi.criteria.attribute.Attributes.Q;
 import static org.atlasapi.criteria.attribute.Attributes.REGION;
 import static org.atlasapi.criteria.attribute.Attributes.SEARCH_TOPIC_ID;
@@ -39,7 +40,8 @@ public class IndexQueryParamsTest {
 
         assertThat(params.getFuzzyQueryParams().isPresent(), is(false));
         assertThat(params.getOrdering().isPresent(), is(false));
-        assertThat(params.getRegionId().isPresent(), is(false));
+        assertThat(params.getRegionIds().isPresent(), is(false));
+        assertThat(params.getPlatformIds().isPresent(), is(false));
         assertThat(params.getBroadcastWeighting().isPresent(), is(false));
         assertThat(params.getTopicFilterIds().isPresent(), is(false));
         assertThat(params.getBrandId().isPresent(), is(false));
@@ -179,7 +181,7 @@ public class IndexQueryParamsTest {
         ));
 
         assertThat(
-                params.getRegionId().get(),
+                params.getRegionIds().get().get(0),
                 is(Id.valueOf(1L))
         );
     }
@@ -191,7 +193,7 @@ public class IndexQueryParamsTest {
         ));
 
         assertThat(
-                params.getRegionId().isPresent(),
+                params.getRegionIds().isPresent(),
                 is(false)
         );
     }
@@ -203,8 +205,44 @@ public class IndexQueryParamsTest {
         ));
 
         assertThat(
-                params.getRegionId().get(),
+                params.getRegionIds().get(),
+                is(ImmutableList.of(Id.valueOf(1L), Id.valueOf(2L)))
+        );
+    }
+
+    @Test
+    public void parseWithPlatformReturnsExpectedValues() throws Exception {
+        IndexQueryParams params = IndexQueryParams.parse(ImmutableList.of(
+                query(PLATFORM, Id.valueOf(1L))
+        ));
+
+        assertThat(
+                params.getPlatformIds().get().get(0),
                 is(Id.valueOf(1L))
+        );
+    }
+
+    @Test
+    public void parseWithMissingPlatformReturnsEmpty() throws Exception {
+        IndexQueryParams params = IndexQueryParams.parse(ImmutableList.of(
+                query(PLATFORM)
+        ));
+
+        assertThat(
+                params.getPlatformIds().isPresent(),
+                is(false)
+        );
+    }
+
+    @Test
+    public void parseWithMultiplePlatformsReturnsAllOfThem() throws Exception {
+        IndexQueryParams params = IndexQueryParams.parse(ImmutableList.of(
+                query(PLATFORM, Id.valueOf(1L), Id.valueOf(2L))
+        ));
+
+        assertThat(
+                params.getPlatformIds().get(),
+                is(ImmutableList.of(Id.valueOf(1L), Id.valueOf(2L)))
         );
     }
 

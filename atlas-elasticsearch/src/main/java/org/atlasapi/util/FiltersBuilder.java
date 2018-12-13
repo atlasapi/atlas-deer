@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -20,10 +21,13 @@ import org.atlasapi.topic.EsTopic;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
@@ -113,7 +117,10 @@ public class FiltersBuilder {
 
     public static FilterBuilder buildActionableFilter(
             Map<String, String> actionableParams,
-            Optional<Id> maybeRegionId,
+            Optional<List<Id>> maybeRegionIds,
+            Optional<List<Id>> maybePlatformIds,
+            Optional<List<Id>> maybeDttIds,
+            Optional<List<Id>> maybeIpIds,
             ChannelGroupResolver channelGroupResolver
     ) {
         OrFilterBuilder orFilterBuilder = FilterBuilders.orFilter();
@@ -131,7 +138,10 @@ public class FiltersBuilder {
                     buildBroadcastRangeFilter(
                             broadcastTimeGreaterThan,
                             broadcastTimeLessThan,
-                            maybeRegionId,
+                            maybeRegionIds,
+                            maybePlatformIds,
+                            maybeDttIds,
+                            maybeIpIds,
                             channelGroupResolver
                     )
             );
@@ -142,7 +152,10 @@ public class FiltersBuilder {
     private static FilterBuilder buildBroadcastRangeFilter(
             DateTime broadcastTimeGreaterThan,
             DateTime broadcastTimeLessThan,
-            Optional<Id> maybeRegionId,
+            Optional<List<Id>> maybeRegionIds,
+            Optional<List<Id>> maybePlatformIds,
+            Optional<List<Id>> maybeDttIds,
+            Optional<List<Id>> maybeIpIds,
             ChannelGroupResolver cgResolver
     ) {
         if (broadcastTimeGreaterThan != null && broadcastTimeLessThan != null) {
@@ -173,9 +186,24 @@ public class FiltersBuilder {
 
         AndFilterBuilder rangeFilter = FilterBuilders.andFilter(startTimeFilter, endTimeFilter);
 
-        if (maybeRegionId.isPresent()) {
-            FilterBuilder regionFilter = buildRegionFilter(maybeRegionId.get(), cgResolver);
+        if (maybeRegionIds.isPresent()) {
+            FilterBuilder regionFilter = buildChannelGroupFilter(
+                    maybeRegionIds.get(),
+                    maybeDttIds,
+                    maybeIpIds,
+                    cgResolver
+            );
             rangeFilter = rangeFilter.add(regionFilter);
+        }
+
+        if (maybePlatformIds.isPresent()) {
+            FilterBuilder platformFilter = buildChannelGroupFilter(
+                    maybePlatformIds.get(),
+                    maybeDttIds,
+                    maybeIpIds,
+                    cgResolver
+            );
+            rangeFilter = rangeFilter.add(platformFilter);
         }
 
         NestedFilterBuilder parentFilter = FilterBuilders.nestedFilter(
@@ -209,29 +237,77 @@ public class FiltersBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    private static FilterBuilder buildRegionFilter(
-            Id regionId,
+    private static FilterBuilder buildChannelGroupFilter(
+            List<Id> channelGroupIds,
+            Optional<List<Id>> dttIds,
+            Optional<List<Id>> ipIds,
             ChannelGroupResolver channelGroupResolver
     ) {
-        ChannelGroup region;
-        try {
-            Resolved<ChannelGroup<?>> resolved = Futures.get(
-                    channelGroupResolver.resolveIds(ImmutableList.of(regionId)), IOException.class
-            );
-            region = resolved.getResources().first().get();
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
+        List<ChannelGroup> channelGroups = resolveChannelGroups(
+                channelGroupIds,
+                channelGroupResolver
+        );
 
-        ImmutableList<ChannelNumbering> channels = ImmutableList.copyOf(region.<ChannelNumbering>getChannels());
-        ImmutableList<Long> channelsIdsForRegion = channels.stream()
+        List<ChannelNumbering> channels = filterChannelsByDttOrIp(dttIds, ipIds, channelGroups);
+        ImmutableList<Long> channelsIdsForChannelGroup = channels.stream()
                 .map(c -> c.getChannel().getId())
                 .map(Id::longValue)
                 .collect(MoreCollectors.toImmutableList());
 
         return FilterBuilders.termsFilter(
                 EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL,
-                channelsIdsForRegion
+                channelsIdsForChannelGroup
         ).cache(true);
+    }
+
+    private static List<ChannelGroup> resolveChannelGroups(
+            List<Id> channelGroupIds,
+            ChannelGroupResolver channelGroupResolver
+    ) {
+        List<ChannelGroup> channelGroups;
+        try {
+            Iterable<ChannelGroup<?>> resolvedChannelGroups = Futures.get(
+                    Futures.transform(
+                            channelGroupResolver.resolveIds(channelGroupIds),
+                            (Resolved<ChannelGroup<?>> input) -> input.getResources()
+                    ),
+                    1, TimeUnit.MINUTES,
+                    IOException.class
+            );
+            channelGroups = Lists.newArrayList(resolvedChannelGroups);
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+        return channelGroups;
+    }
+
+    private static List<ChannelNumbering> filterChannelsByDttOrIp(
+            Optional<List<Id>> dttIds,
+            Optional<List<Id>> ipIds,
+            List<ChannelGroup> channelGroups
+    ) {
+        List<ChannelNumbering> channels = Lists.newArrayList();
+        channelGroups.forEach(region -> {
+            ImmutableList<ChannelNumbering> allChannels = ImmutableList.copyOf(region.getChannels());
+            if (dttIds.isPresent() && dttIds.get().contains(region.getId())) {
+                ImmutableSet<ChannelNumbering> dttChannels = allChannels.stream()
+                        .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))
+                        .filter(channel -> Integer.parseInt(channel.getChannelNumber().get())
+                                <= 300)
+                        .collect(MoreCollectors.toImmutableSet());
+
+                channels.addAll(dttChannels);
+            } else if (ipIds.isPresent() && ipIds.get().contains(region.getId())) {
+                ImmutableSet<ChannelNumbering> ipChannels = allChannels.stream()
+                        .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))
+                        .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) > 300)
+                        .collect(MoreCollectors.toImmutableSet());
+
+                channels.addAll(ipChannels);
+            } else {
+                channels.addAll(allChannels);
+            }
+        });
+        return channels;
     }
 }

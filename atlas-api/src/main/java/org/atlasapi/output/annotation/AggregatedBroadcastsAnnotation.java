@@ -85,7 +85,7 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
                 broadcastWriter,
                 broadcastAggregator.aggregateBroadcasts(
                         item.getBroadcasts(),
-                        ctxt.getPlatform(),
+                        ctxt.getPlatforms(),
                         downweighChannelIds,
                         ctxt.getActiveAnnotations().contains(Annotation.ALL_AGGREGATED_BROADCASTS)
                 ),

@@ -550,6 +550,18 @@ public class QueryWebModule {
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
+                                Attributes.PLATFORM,
+                                IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.CHANNEL_GROUP_DTT_CHANNELS,
+                                IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.CHANNEL_GROUP_IP_CHANNELS,
+                                IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
                                 Attributes.BROADCAST_WEIGHT,
                                 FloatCoercer.create()
                         ),
@@ -716,11 +728,11 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_DTT_CHANNELS,
-                                StringCoercer.create()
+                                IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_IP_CHANNELS,
-                                StringCoercer.create()
+                                IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
                                 Attributes.SOURCE,
@@ -732,7 +744,7 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_IDS,
-                                StringCoercer.create()
+                                IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_REQUEST_TIMESTAMP,

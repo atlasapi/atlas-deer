@@ -11,10 +11,12 @@ import java.util.stream.StreamSupport;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelEquivRef;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.channel.Region;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ChannelsBroadcastFilter;
@@ -79,14 +81,19 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
                     .filter(Broadcast::isActivelyPublished)
                     .filter(b -> b.getTransmissionTime().isAfter(DateTime.now(DateTimeZone.UTC)));
 
-            if (ctxt.getRegion().isPresent()) {
-                List<ResolvedBroadcast> resolvedBroadcasts = StreamSupport.stream(
-                        channelsBroadcastFilter.sortAndFilter(
-                                broadcastStream.collect(MoreCollectors.toImmutableList()),
-                                ctxt.getRegion().get()
-                        ).spliterator(),
-                        false
-                )
+            if (ctxt.getRegions().isPresent()) {
+                List<Region> regions = ctxt.getRegions().get();
+
+                List<Broadcast> broadcasts = Lists.newArrayList();
+                regions.forEach(region -> {
+                    Iterable<Broadcast> broadcastsToAdd = channelsBroadcastFilter.sortAndFilter(
+                            broadcastStream.collect(MoreCollectors.toImmutableList()),
+                            region
+                    );
+                    Iterables.addAll(broadcasts, broadcastsToAdd);
+                });
+
+                List<ResolvedBroadcast> resolvedBroadcasts = broadcasts.stream()
                         .map(broadcast -> ResolvedBroadcast.create(broadcast, resolveChannel(broadcast)))
                         .collect(MoreCollectors.toImmutableList());
 
