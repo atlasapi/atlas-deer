@@ -194,13 +194,15 @@ public class FiltersBuilder {
         maybeRegionIds.ifPresent(channelGroupsIds::addAll);
         maybePlatformIds.ifPresent(channelGroupsIds::addAll);
 
-        FilterBuilder channelGroupFilter = buildChannelGroupFilter(
-                channelGroupsIds,
-                maybeDttIds,
-                maybeIpIds,
-                cgResolver
-        );
-        rangeFilter = rangeFilter.add(channelGroupFilter);
+        if (!channelGroupsIds.isEmpty()) {
+            FilterBuilder channelGroupFilter = buildChannelGroupFilter(
+                    channelGroupsIds,
+                    maybeDttIds,
+                    maybeIpIds,
+                    cgResolver
+            );
+            rangeFilter = rangeFilter.add(channelGroupFilter);
+        }
 
         NestedFilterBuilder parentFilter = FilterBuilders.nestedFilter(
                 EsContent.BROADCASTS,
