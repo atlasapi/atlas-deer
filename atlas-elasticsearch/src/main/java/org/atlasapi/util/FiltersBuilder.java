@@ -3,8 +3,11 @@ package org.atlasapi.util;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -29,6 +32,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
+import org.apache.commons.collections.ListUtils;
 import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
@@ -186,25 +190,17 @@ public class FiltersBuilder {
 
         AndFilterBuilder rangeFilter = FilterBuilders.andFilter(startTimeFilter, endTimeFilter);
 
-        if (maybeRegionIds.isPresent()) {
-            FilterBuilder regionFilter = buildChannelGroupFilter(
-                    maybeRegionIds.get(),
-                    maybeDttIds,
-                    maybeIpIds,
-                    cgResolver
-            );
-            rangeFilter = rangeFilter.add(regionFilter);
-        }
+        List<Id> channelGroupsIds = Lists.newArrayList();
+        maybeRegionIds.ifPresent(channelGroupsIds::addAll);
+        maybePlatformIds.ifPresent(channelGroupsIds::addAll);
 
-        if (maybePlatformIds.isPresent()) {
-            FilterBuilder platformFilter = buildChannelGroupFilter(
-                    maybePlatformIds.get(),
-                    maybeDttIds,
-                    maybeIpIds,
-                    cgResolver
-            );
-            rangeFilter = rangeFilter.add(platformFilter);
-        }
+        FilterBuilder channelGroupFilter = buildChannelGroupFilter(
+                channelGroupsIds,
+                maybeDttIds,
+                maybeIpIds,
+                cgResolver
+        );
+        rangeFilter = rangeFilter.add(channelGroupFilter);
 
         NestedFilterBuilder parentFilter = FilterBuilders.nestedFilter(
                 EsContent.BROADCASTS,
