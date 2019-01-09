@@ -1,7 +1,6 @@
 package org.atlasapi.content;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
@@ -169,7 +168,9 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
             StreamSupport.stream(input.getHits().spliterator(), false)
                     .filter(hit -> getCanonicalId(hit).isPresent() && getSource(hit).isPresent())
                     .forEach(hit -> resultBuilder.add(
-                            getId(hit), getCanonicalId(hit).get(), getSource(hit).get()
+                            getId(hit),
+                            getCanonicalId(hit).get(),
+                            getSource(hit).get()
                     ));
 
             return resultBuilder.build();
@@ -366,4 +367,5 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
 
         return Optional.ofNullable(publisherMaybe.valueOrNull());
     }
+
 }

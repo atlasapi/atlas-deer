@@ -94,5 +94,6 @@ public class DelegateIndexQueryResult {
         public Publisher getPublisher() {
             return publisher;
         }
+
     }
 }
