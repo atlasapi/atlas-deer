@@ -39,9 +39,9 @@ public class PseudoEquivalentContentIndexTest {
     @Test
     public void testQuery() throws Exception {
         DelegateIndexQueryResult delegateResult = DelegateIndexQueryResult.builder(10L)
-                .add(Id.valueOf(0L), Id.valueOf(10L), Publisher.METABROADCAST)
-                .add(Id.valueOf(1L), Id.valueOf(10L), Publisher.BBC)
-                .add(Id.valueOf(2L), Id.valueOf(11L), Publisher.METABROADCAST)
+                .add(Id.valueOf(0L), Id.valueOf(10L), Publisher.METABROADCAST, "c")
+                .add(Id.valueOf(1L), Id.valueOf(10L), Publisher.BBC, "c")
+                .add(Id.valueOf(2L), Id.valueOf(11L), Publisher.METABROADCAST, "c")
                 .build();
 
         List<Publisher> publishers = Lists.newArrayList(
@@ -64,12 +64,12 @@ public class PseudoEquivalentContentIndexTest {
     @Test
     public void testQueryPagination() throws Exception {
         DelegateIndexQueryResult delegateResult = DelegateIndexQueryResult.builder(100L)
-                .add(Id.valueOf(0L), Id.valueOf(10L), Publisher.METABROADCAST)
-                .add(Id.valueOf(1L), Id.valueOf(11L), Publisher.METABROADCAST)
-                .add(Id.valueOf(2L), Id.valueOf(12L), Publisher.METABROADCAST)
-                .add(Id.valueOf(3L), Id.valueOf(13L), Publisher.METABROADCAST)
-                .add(Id.valueOf(4L), Id.valueOf(14L), Publisher.METABROADCAST)
-                .add(Id.valueOf(5L), Id.valueOf(15L), Publisher.METABROADCAST)
+                .add(Id.valueOf(0L), Id.valueOf(10L), Publisher.METABROADCAST, "c")
+                .add(Id.valueOf(1L), Id.valueOf(11L), Publisher.METABROADCAST, "c")
+                .add(Id.valueOf(2L), Id.valueOf(12L), Publisher.METABROADCAST, "c")
+                .add(Id.valueOf(3L), Id.valueOf(13L), Publisher.METABROADCAST, "c")
+                .add(Id.valueOf(4L), Id.valueOf(14L), Publisher.METABROADCAST, "c")
+                .add(Id.valueOf(5L), Id.valueOf(15L), Publisher.METABROADCAST, "c")
                 .build();
 
         List<Publisher> publishers = Lists.newArrayList(Publisher.METABROADCAST);
@@ -91,12 +91,12 @@ public class PseudoEquivalentContentIndexTest {
         Id canonicalIdC = Id.valueOf(12L);
 
         DelegateIndexQueryResult delegateResult = DelegateIndexQueryResult.builder(100L)
-                .add(Id.valueOf(0L), canonicalIdA, Publisher.METABROADCAST)
-                .add(Id.valueOf(1L), canonicalIdB, Publisher.METABROADCAST)
-                .add(Id.valueOf(2L), canonicalIdA, Publisher.BBC)
-                .add(Id.valueOf(3L), canonicalIdC, Publisher.BBC)
-                .add(Id.valueOf(4L), canonicalIdC, Publisher.METABROADCAST)
-                .add(Id.valueOf(5L), canonicalIdA, Publisher.PA)
+                .add(Id.valueOf(0L), canonicalIdA, Publisher.METABROADCAST, "c")
+                .add(Id.valueOf(1L), canonicalIdB, Publisher.METABROADCAST, "c")
+                .add(Id.valueOf(2L), canonicalIdA, Publisher.BBC, "c")
+                .add(Id.valueOf(3L), canonicalIdC, Publisher.BBC, "c")
+                .add(Id.valueOf(4L), canonicalIdC, Publisher.METABROADCAST, "c")
+                .add(Id.valueOf(5L), canonicalIdA, Publisher.PA, "c")
                 .build();
 
         List<Publisher> publishers = Lists.newArrayList(

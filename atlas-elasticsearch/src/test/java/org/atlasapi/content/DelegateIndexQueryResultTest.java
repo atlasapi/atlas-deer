@@ -23,8 +23,8 @@ public class DelegateIndexQueryResultTest {
     @Test
     public void testResultWithCanonicalIdsAndPublishers() throws Exception {
         DelegateIndexQueryResult result = DelegateIndexQueryResult.builder(4)
-                .add(idA, canonicalIdA, Publisher.METABROADCAST)
-                .add(idB, canonicalIdB, Publisher.BBC)
+                .add(idA, canonicalIdA, Publisher.METABROADCAST, "c")
+                .add(idB, canonicalIdB, Publisher.BBC, "c")
                 .build();
 
         assertThat(result.getTotalCount(), is(4L));
@@ -48,7 +48,7 @@ public class DelegateIndexQueryResultTest {
     public void testResultBuilderRejectsNullCanonicalIds() throws Exception {
         exception.expect(NullPointerException.class);
         DelegateIndexQueryResult.builder(1)
-                .add(idA, null, Publisher.METABROADCAST)
+                .add(idA, null, Publisher.METABROADCAST, "c")
                 .build();
     }
 
@@ -56,7 +56,7 @@ public class DelegateIndexQueryResultTest {
     public void testResultBuilderRejectsNullPublishers() throws Exception {
         exception.expect(NullPointerException.class);
         DelegateIndexQueryResult.builder(1)
-                .add(idA, canonicalIdA, null)
+                .add(idA, canonicalIdA, null, "c")
                 .build();
     }
 }

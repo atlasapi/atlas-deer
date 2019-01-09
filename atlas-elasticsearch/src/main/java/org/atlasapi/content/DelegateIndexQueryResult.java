@@ -57,8 +57,8 @@ public class DelegateIndexQueryResult {
             this.totalResultCount = totalResultCount;
         }
 
-        public Builder add(Id id, Id canonicalId, Publisher publisher) {
-            results.add(Result.of(id, canonicalId, publisher));
+        public Builder add(Id id, Id canonicalId, Publisher publisher, String channel) {
+            results.add(Result.of(id, canonicalId, publisher, channel));
             return this;
         }
 
@@ -72,15 +72,17 @@ public class DelegateIndexQueryResult {
         private final Id id;
         private final Id canonicalId;
         private final Publisher publisher;
+        private final String channel;
 
-        private Result(Id id, Id canonicalId, Publisher publisher) {
+        private Result(Id id, Id canonicalId, Publisher publisher, String channel) {
             this.id = checkNotNull(id);
             this.canonicalId = checkNotNull(canonicalId);
             this.publisher = checkNotNull(publisher);
+            this.channel = checkNotNull(channel);
         }
 
-        public static Result of(Id id, Id canonicalId, Publisher publisher) {
-            return new Result(id, canonicalId, publisher);
+        public static Result of(Id id, Id canonicalId, Publisher publisher, String channel) {
+            return new Result(id, canonicalId, publisher, channel);
         }
 
         public Id getId() {
@@ -93,6 +95,10 @@ public class DelegateIndexQueryResult {
 
         public Publisher getPublisher() {
             return publisher;
+        }
+
+        public String getChannel() {
+            return channel;
         }
     }
 }

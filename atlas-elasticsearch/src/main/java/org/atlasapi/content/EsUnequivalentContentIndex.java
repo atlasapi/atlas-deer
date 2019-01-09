@@ -1,7 +1,6 @@
 package org.atlasapi.content;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
@@ -169,7 +168,10 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
             StreamSupport.stream(input.getHits().spliterator(), false)
                     .filter(hit -> getCanonicalId(hit).isPresent() && getSource(hit).isPresent())
                     .forEach(hit -> resultBuilder.add(
-                            getId(hit), getCanonicalId(hit).get(), getSource(hit).get()
+                            getId(hit),
+                            getCanonicalId(hit).get(),
+                            getSource(hit).get(),
+                            getBroadcastChannel(hit).isPresent() ? getBroadcastChannel(hit).get() : "null"
                     ));
 
             return resultBuilder.build();
@@ -201,8 +203,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
                 .addField(EsContent.CANONICAL_ID)
                 .addField(EsContent.ID)
                 .addField(EsContent.SOURCE)
-                .addField(EsContent.BROADCASTS)
-                .addField(EsContent.LOCATIONS)
+                .addField(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL)
                 .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
                 .setFrom(selection.getOffset())
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
@@ -367,5 +368,14 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         Maybe<Publisher> publisherMaybe = Publisher.fromKey(source);
 
         return Optional.ofNullable(publisherMaybe.valueOrNull());
+    }
+
+    private Optional<String> getBroadcastChannel(SearchHit hit) {
+        if (hit == null || hit.field(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL) == null) {
+            return Optional.empty();
+        }
+        String channel = hit.field(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL).value();
+
+        return Optional.ofNullable(channel);
     }
 }
