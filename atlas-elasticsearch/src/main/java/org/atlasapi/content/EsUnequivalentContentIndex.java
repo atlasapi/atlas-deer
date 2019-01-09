@@ -201,6 +201,8 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
                 .addField(EsContent.CANONICAL_ID)
                 .addField(EsContent.ID)
                 .addField(EsContent.SOURCE)
+                .addField(EsContent.BROADCASTS)
+                .addField(EsContent.LOCATIONS)
                 .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
                 .setFrom(selection.getOffset())
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
