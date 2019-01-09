@@ -43,6 +43,7 @@ import org.elasticsearch.index.query.OrFilterBuilder;
 import org.elasticsearch.index.query.RangeFilterBuilder;
 import org.elasticsearch.index.query.TermsFilterBuilder;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -286,7 +287,9 @@ public class FiltersBuilder {
     ) {
         List<ChannelNumbering> channels = Lists.newArrayList();
         channelGroups.forEach(region -> {
-            ImmutableList<ChannelNumbering> allChannels = ImmutableList.copyOf(region.getChannels());
+            ImmutableList<ChannelNumbering> allChannels = ImmutableList.copyOf(
+                    region.getChannelsAvailable(LocalDate.now())
+            );
             if (dttIds.isPresent() && dttIds.get().contains(region.getId())) {
                 ImmutableSet<ChannelNumbering> dttChannels = allChannels.stream()
                         .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))

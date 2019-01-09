@@ -1,7 +1,9 @@
 package org.atlasapi.content;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -374,8 +376,12 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         if (hit == null || hit.field(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL) == null) {
             return Optional.empty();
         }
-        String channel = hit.field(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL).value();
+        List<String> channels = hit.field(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL)
+                .getValues()
+                .stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
 
-        return Optional.ofNullable(channel);
+        return Optional.ofNullable(channels.toString());
     }
 }
