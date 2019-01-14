@@ -311,7 +311,7 @@ message TopicRef {
 message ItemSummary {
     required string type = 1;
     required common.Reference itemRef = 2;
-    required string title = 3;
+    optional string title = 3;
     optional string description = 4;
     optional string image = 5;
     optional int32 episode_number = 6;
