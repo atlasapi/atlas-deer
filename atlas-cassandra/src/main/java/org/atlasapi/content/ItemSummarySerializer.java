@@ -14,6 +14,7 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import joptsimple.internal.Strings;
 
 public class ItemSummarySerializer {
 
@@ -59,7 +60,7 @@ public class ItemSummarySerializer {
         ContentProtos.ItemSummary.Builder builder = ContentProtos.ItemSummary.newBuilder();
 
         builder.setItemRef(itemRefBuilder);
-        if (itemSummary.getTitle() != null) {
+        if (!Strings.isNullOrEmpty(itemSummary.getTitle())) {
             builder.setTitle(itemSummary.getTitle());
         }
         builder.setType(CLASS_TO_TYPE.get(itemSummary.getClass()));
