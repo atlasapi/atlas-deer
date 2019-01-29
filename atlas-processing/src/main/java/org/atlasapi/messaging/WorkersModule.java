@@ -161,7 +161,7 @@ public class WorkersModule {
     @Bean
     @Lazy
     public KafkaConsumer equivalentContentStoreContentUpdateListener() {
-        String workerName = "EquivalentContentStoreContent";
+        String workerName = "EquivalentContentStoreContent_";
 
         return messaging.messageConsumerFactory()
                 .createConsumer(
