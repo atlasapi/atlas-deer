@@ -284,7 +284,14 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                     Optional.empty()
         );
 
-        if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ||
+        if (contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS)) {
+            resolvedChannelGroupBuilder.withAdvertisedChannels(
+                    resolveAdvertisedChannels(
+                            channelGroup,
+                            true
+                    )
+            );
+        } else if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ||
                 contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY)) {
             resolvedChannelGroupBuilder.withAdvertisedChannels(
                     resolveChannelsWithChannelGroups(
@@ -305,13 +312,6 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                     resolveAdvertisedChannels(
                             channelGroup,
                             false
-                    )
-            );
-        } else if (contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS)) {
-            resolvedChannelGroupBuilder.withAdvertisedChannels(
-                    resolveAdvertisedChannels(
-                            channelGroup,
-                            true
                     )
             );
         } else {
