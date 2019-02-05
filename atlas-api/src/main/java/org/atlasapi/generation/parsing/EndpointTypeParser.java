@@ -1,5 +1,6 @@
 package org.atlasapi.generation.parsing;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -21,7 +22,6 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import scala.actors.threadpool.Arrays;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

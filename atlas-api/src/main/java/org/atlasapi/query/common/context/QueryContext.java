@@ -11,7 +11,6 @@ import org.atlasapi.query.annotation.ActiveAnnotations;
 import com.metabroadcast.common.query.Selection;
 
 import com.google.common.base.Optional;
-import scala.io.BytePickle;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
