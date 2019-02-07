@@ -271,7 +271,7 @@
       <dependency>
         <groupId>org.atlasapi</groupId>
         <artifactId>atlas-applications</artifactId>
-        <version>${atlas.legacy.version}</version>
+        <version>5.2-SNAPSHOT</version>
         <exclusions>
           <exclusion>
             <groupId>org.mockito</groupId>
@@ -290,7 +290,7 @@
       <dependency>
         <groupId>org.atlasapi</groupId>
         <artifactId>atlas-persistence</artifactId>
-        <version>${atlas.legacy.version}</version>
+        <version>5.2-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
