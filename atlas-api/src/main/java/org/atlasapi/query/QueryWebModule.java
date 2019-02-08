@@ -53,6 +53,7 @@ import org.atlasapi.output.annotation.ClipsAnnotation;
 import org.atlasapi.output.annotation.ContainerSummaryAnnotation;
 import org.atlasapi.output.annotation.ContentDescriptionAnnotation;
 import org.atlasapi.output.annotation.CurrentAndFutureBroadcastsAnnotation;
+import org.atlasapi.output.annotation.CustomFieldsAnnotation;
 import org.atlasapi.output.annotation.DescriptionAnnotation;
 import org.atlasapi.output.annotation.EndpointInfoAnnotation;
 import org.atlasapi.output.annotation.EventAnnotation;
@@ -199,6 +200,7 @@ import static org.atlasapi.annotation.Annotation.CLIPS;
 import static org.atlasapi.annotation.Annotation.CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.CONTENT_SUMMARY;
 import static org.atlasapi.annotation.Annotation.CURRENT_AND_FUTURE_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.CUSTOM_FIELDS;
 import static org.atlasapi.annotation.Annotation.DESCRIPTION;
 import static org.atlasapi.annotation.Annotation.EVENT;
 import static org.atlasapi.annotation.Annotation.EVENT_DETAILS;
@@ -1189,6 +1191,7 @@ public class QueryWebModule {
                         new RatingsWriter(SourceWriter.sourceWriter("source")))
                 )
                 .register(MODIFIED_DATES, new ModifiedDatesAnnotation())
+                .register(CUSTOM_FIELDS, new CustomFieldsAnnotation())
                 .build();
     }
 

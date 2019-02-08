@@ -303,6 +303,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private <T extends Described> void mergeDescribed(Application application, T chosen,
             Iterable<T> notChosen) {
+        mergeCustomFields(chosen, notChosen);
         applyImagePrefs(application, chosen, notChosen);
         chosen.setRelatedLinks(projectFieldFromEquivalents(
                 chosen,
@@ -338,6 +339,19 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         if (chosen.getShortDescription() == null) {
             chosen.setShortDescription(first(notChosen, TO_SHORT_DESCRIPTION));
+        }
+    }
+
+    private <T extends Identified> void mergeCustomFields(
+            T chosen,
+            Iterable<T> notChosen
+    ) {
+        for(T identified : notChosen) {
+            for(Map.Entry<String, String> customField : identified.getCustomFields().entrySet()) {
+                if (!chosen.containsCustomFieldKey(customField.getKey())) {
+                    chosen.addCustomField(customField.getKey(), customField.getValue());
+                }
+            }
         }
     }
 
