@@ -1,9 +1,6 @@
 package org.atlasapi.content.v2.serialization.setters;
 
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.google.common.collect.ImmutableSet;
 import org.atlasapi.content.v2.model.IdentifiedWithoutUpdateTimes;
 import org.atlasapi.content.v2.model.udt.Ref;
 import org.atlasapi.content.v2.serialization.AliasSerialization;
@@ -13,7 +10,10 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.equivalence.EquivalenceRef;
 
-import com.google.common.collect.ImmutableSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class IdentifiedWithoutUpdateTimesSetter {
 
@@ -45,6 +45,9 @@ public class IdentifiedWithoutUpdateTimesSetter {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet()));
         }
+
+        internal.setCustomFields(identified.getCustomFields());
+
     }
 
     public void deserialize(Identified identified, IdentifiedWithoutUpdateTimes internal) {
@@ -73,6 +76,11 @@ public class IdentifiedWithoutUpdateTimesSetter {
             identified.setEquivalentTo(equivalentTo.stream()
                     .map(equivRef::deserialize)
                     .collect(Collectors.toSet()));
+        }
+
+        Map<String, String> customFields = internal.getCustomFields();
+        if (customFields != null) {
+            identified.setCustomFields(customFields);
         }
     }
 }

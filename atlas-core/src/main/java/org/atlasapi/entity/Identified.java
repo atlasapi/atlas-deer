@@ -1,5 +1,22 @@
 package org.atlasapi.entity;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.primitives.Ints;
+import org.atlasapi.content.Content;
+import org.atlasapi.equivalence.Equivalable;
+import org.atlasapi.equivalence.EquivalenceRef;
+import org.atlasapi.meta.annotations.FieldName;
+import org.joda.time.DateTime;
+
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -8,26 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import org.atlasapi.content.Content;
-import org.atlasapi.equivalence.Equivalable;
-import org.atlasapi.equivalence.EquivalenceRef;
-import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.primitives.Ints;
-import org.joda.time.DateTime;
-
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -216,6 +213,7 @@ public class Identified implements Identifiable, Aliased {
         return customFields.containsKey(key);
     }
 
+    @FieldName("custom_fields")
     public Map<String, String> getCustomFields() {
         return new HashMap<>(customFields);
     }

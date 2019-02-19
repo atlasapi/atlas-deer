@@ -1,9 +1,11 @@
 package org.atlasapi.content;
 
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
+import com.metabroadcast.common.intl.Countries;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
@@ -23,14 +25,12 @@ import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Subtitle;
 import org.atlasapi.serialization.protobuf.ContentProtos.Synopsis;
 import org.atlasapi.source.Sources;
-
-import com.metabroadcast.common.intl.Countries;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
-import com.google.common.collect.Ordering;
 import org.joda.time.Duration;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.ALL_AGGREGATED_BROADCASTS;
@@ -124,6 +124,12 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             ));
         }
         identified.setEquivalentTo(equivRefs.build());
+
+        Map<String, String> customFields = Maps.newHashMap();
+        for (CommonProtos.CustomFieldEntry customFieldEntry : msg.getCustomFieldsList()) {
+            customFields.put(customFieldEntry.getKey(), customFieldEntry.getValue());
+        }
+        identified.setCustomFields(customFields);
         return identified;
     }
 

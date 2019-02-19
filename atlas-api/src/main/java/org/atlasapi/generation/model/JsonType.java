@@ -8,7 +8,9 @@ public enum JsonType {
     STRING("String"),
     BOOLEAN("Boolean"),
     ARRAY("Array"),
-    OBJECT("Object"),;
+    OBJECT("Object"),
+    MAP("Map")
+    ;
 
     private final String value;
 

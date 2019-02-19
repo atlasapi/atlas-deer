@@ -5,6 +5,11 @@ option java_package = "org.atlasapi.serialization.protobuf";
 option java_outer_classname = "CommonProtos";
 option optimize_for = SPEED;
 
+message CustomFieldEntry {
+  optional string key = 1;
+  optional string value = 2;
+}
+
 message DateTime {
     required int64 millis = 1;
 }
@@ -25,6 +30,7 @@ message Identification {
     optional string uri = 9;
     optional string curie = 10;
     optional DateTime equivalenceUpdate = 11;
+    repeated CustomFieldEntry custom_fields = 12;
 }
 
 message BroadcastRef {

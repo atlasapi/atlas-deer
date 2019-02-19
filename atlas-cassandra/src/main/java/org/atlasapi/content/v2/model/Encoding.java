@@ -1,14 +1,14 @@
 package org.atlasapi.content.v2.model;
 
-import java.util.Set;
-
-import org.atlasapi.content.v2.model.udt.Alias;
-import org.atlasapi.content.v2.model.pojo.Location;
-import org.atlasapi.content.v2.model.udt.Ref;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.atlasapi.content.v2.model.pojo.Location;
+import org.atlasapi.content.v2.model.udt.Alias;
+import org.atlasapi.content.v2.model.udt.Ref;
 import org.joda.time.Instant;
+
+import java.util.Map;
+import java.util.Set;
 
 public class Encoding implements Identified {
 
@@ -44,6 +44,7 @@ public class Encoding implements Identified {
     private String quality;
     private String qualityDetail;
     private String versionId;
+    private Map<String, String> customFields;
 
     public Long getId() {
         return id;
@@ -299,6 +300,14 @@ public class Encoding implements Identified {
 
     public void setEquivalenceUpdate(Instant equivalenceUpdate) {
         this.equivalenceUpdate = equivalenceUpdate;
+    }
+
+    public Map<String, String> getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
     }
 
     public static class Wrapper {

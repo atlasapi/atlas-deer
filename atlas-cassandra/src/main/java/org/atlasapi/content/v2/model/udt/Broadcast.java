@@ -1,13 +1,13 @@
 package org.atlasapi.content.v2.model.udt;
 
-import java.util.Set;
-
-import org.atlasapi.content.v2.model.Identified;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.content.v2.model.Identified;
 import org.joda.time.Instant;
 import org.joda.time.LocalDate;
+
+import java.util.Map;
+import java.util.Set;
 
 @UDT(name = "broadcast")
 public class Broadcast implements Identified {
@@ -44,6 +44,7 @@ public class Broadcast implements Identified {
     @Field(name = "thd") private Boolean is3d;
     @Field(name = "br") private Boolean blackoutRestriction;
     @Field(name = "rr") private Boolean revisedRepeat;
+    @Field(name = "cf") private Map<String, String> customFields;
 
 
     public Broadcast() {}
@@ -294,5 +295,13 @@ public class Broadcast implements Identified {
 
     public void setRevisedRepeat(Boolean revisedRepeat) {
         this.revisedRepeat = revisedRepeat;
+    }
+
+    public Map<String, String> getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
     }
 }

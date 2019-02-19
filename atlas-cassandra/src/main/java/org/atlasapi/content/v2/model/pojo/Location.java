@@ -1,12 +1,12 @@
 package org.atlasapi.content.v2.model.pojo;
 
-import java.util.Set;
-
 import org.atlasapi.content.v2.model.Identified;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Ref;
-
 import org.joda.time.Instant;
+
+import java.util.Map;
+import java.util.Set;
 
 public class Location implements Identified {
 
@@ -26,6 +26,7 @@ public class Location implements Identified {
     private String embedCode;
     private String embedId;
     private Policy policy;
+    private Map<String, String> customFields;
 
     public Long getId() {
         return id;
@@ -153,5 +154,13 @@ public class Location implements Identified {
 
     public void setEquivalenceUpdate(Instant equivalenceUpdate) {
         this.equivalenceUpdate = equivalenceUpdate;
+    }
+
+    public Map<String, String> getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
     }
 }
