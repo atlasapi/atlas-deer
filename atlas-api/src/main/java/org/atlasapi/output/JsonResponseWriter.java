@@ -1,5 +1,14 @@
 package org.atlasapi.output;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
+import com.google.common.net.HttpHeaders;
+import com.google.common.primitives.Primitives;
+import com.metabroadcast.common.media.MimeType;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -8,18 +17,8 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLEncoder;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.metabroadcast.common.media.MimeType;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
-import com.google.common.base.Strings;
-import com.google.common.net.HttpHeaders;
-import com.google.common.primitives.Primitives;
 
 /**
  * <p>A {@link ResponseWriter} that writes to the {@link OutputStream} of an {@link
@@ -195,6 +194,24 @@ public final class JsonResponseWriter implements ResponseWriter {
         printMemberSeparator = true;
     }
 
+    @Override
+    public <K, V> void writeMap(String field, Map<K, V> map, OutputContext ctxt)
+            throws IOException {
+        startField(field);
+        writer.write(START_OBJECT);
+
+        Iterator<Map.Entry<K, V>> iter = map.entrySet().iterator();
+        if (iter.hasNext()) {
+            writeMapEntry(iter.next());
+            while (iter.hasNext()) {
+                writer.write(ELEMENT_SEPARTOR);
+                writeMapEntry(iter.next());
+            }
+        }
+        writer.write(END_OBJECT);
+        printMemberSeparator = true;
+    }
+
     private <T> void writeObj(EntityWriter<? super T> entWriter, T nextObj, OutputContext ctxt)
             throws IOException {
         printMemberSeparator = false;
@@ -212,6 +229,12 @@ public final class JsonResponseWriter implements ResponseWriter {
         //writer.write(STRING_DELIMITER);
         writer.write(escape(string));
         //writer.write(STRING_DELIMITER);
+    }
+
+    private <K, V> void writeMapEntry(Map.Entry<K, V> mapEntry) throws IOException {
+        writeString(mapEntry.getKey().toString());
+        writer.write(PAIR_SEPARATOR);
+        writeString(mapEntry.getValue().toString());
     }
 
     private String escape(String string) throws IOException {
