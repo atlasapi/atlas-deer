@@ -1,9 +1,10 @@
 package org.atlasapi.content.v2.model;
 
-import java.util.Set;
-
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Ref;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @see Identified
@@ -34,4 +35,8 @@ public interface IdentifiedWithoutUpdateTimes {
     Set<Ref> getEquivalentTo();
 
     void setEquivalentTo(Set<Ref> equivalentTo);
+
+    Map<String, String> getCustomFields();
+
+    public void setCustomFields(Map<String, String> customFields);
 }

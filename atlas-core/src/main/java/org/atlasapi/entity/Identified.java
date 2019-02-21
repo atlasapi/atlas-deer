@@ -1,24 +1,30 @@
 package org.atlasapi.entity;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-
-import org.atlasapi.content.Content;
-import org.atlasapi.equivalence.Equivalable;
-import org.atlasapi.equivalence.EquivalenceRef;
-import org.atlasapi.meta.annotations.FieldName;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
+import org.atlasapi.content.Content;
+import org.atlasapi.equivalence.Equivalable;
+import org.atlasapi.equivalence.EquivalenceRef;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
+
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -35,6 +41,7 @@ public class Identified implements Identifiable, Aliased {
     private @Deprecated Set<String> aliasUrls = Sets.newHashSet();
     private ImmutableSet<Alias> aliases = ImmutableSet.of();
     private Set<EquivalenceRef> equivalentTo = Sets.newHashSet();
+    private Map<String, String> customFields = Maps.newHashMap();
     /**
      * Records the time that the 3rd party reported that the {@link Identified} was last updated
      */
@@ -65,6 +72,7 @@ public class Identified implements Identifiable, Aliased {
         this.canonicalUri = builder.canonicalUri;
         this.aliases = ImmutableSet.copyOf(builder.aliases);
         this.equivalentTo = Sets.newHashSet(builder.equivalentTo);
+        this.customFields = Maps.newHashMap(builder.customFields);
         this.lastUpdated = builder.lastUpdated;
         this.equivalenceUpdate = builder.equivalenceUpdate;
         this.curie = builder.curie;
@@ -168,6 +176,63 @@ public class Identified implements Identifiable, Aliased {
         return this;
     }
 
+    public void setCustomFields(@NotNull Map<String, String> customFields) {
+        this.customFields = Maps.newHashMap(checkNotNull(customFields));
+    }
+
+    /**
+     * Adds a key-value custom field, if the key already exists it will be overwritten
+     * Since merging logic will combine all custom fields for everything in the equiv set proper key namespacing
+     * may be required to avoid a custom field being ignored in favour of a higher precedence sharing the custom field.
+     * @param key the name of the custom field
+     * @param value the value of the custom field
+     */
+    public void addCustomField(@NotNull String key, @Nullable String value) {
+        if(value == null) {
+            return;
+        }
+        customFields.put(checkNotNull(key), value);
+    }
+
+    /**
+     * Adds each key-value entry as a custom field, overwriting existing customFields which share the same key
+     * @param customFields the map containing the key-value custom fields to add
+     */
+    public void addCustomFields(@NotNull Map<String, String> customFields) {
+        for(Map.Entry<String, String> entry : customFields.entrySet()) {
+            addCustomField(entry.getKey(), entry.getValue());
+        }
+    }
+
+    @Nullable
+    public String getCustomField(@NotNull String key) {
+        return customFields.getOrDefault(checkNotNull(key), null);
+    }
+
+    public boolean containsCustomFieldKey(@NotNull String key) {
+        return customFields.containsKey(key);
+    }
+
+    @FieldName("custom_fields")
+    public Map<String, String> getCustomFields() {
+        return new HashMap<>(customFields);
+    }
+
+    public Set<String> getCustomFieldKeys() {
+        return getCustomFieldKeys(null);
+    }
+
+    public Set<String> getCustomFieldKeys(@Nullable String regex) {
+        if(regex == null) {
+            return customFields.keySet();
+        }
+        Pattern regexPattern = Pattern.compile(regex);
+        return customFields.keySet()
+                .stream()
+                .filter(key -> regexPattern.matcher(key).matches())
+                .collect(Collectors.toSet());
+    }
+
     @FieldName("last_updated")
     public DateTime getLastUpdated() {
         return lastUpdated;
@@ -243,6 +308,7 @@ public class Identified implements Identifiable, Aliased {
         to.aliasUrls = Sets.newHashSet(from.aliasUrls);
         to.aliases = ImmutableSet.copyOf(from.aliases);
         to.equivalentTo = Sets.newHashSet(from.equivalentTo);
+        to.customFields = Maps.newHashMap(from.customFields);
         to.lastUpdated = from.lastUpdated;
         to.equivalenceUpdate = from.equivalenceUpdate;
     }
@@ -259,6 +325,7 @@ public class Identified implements Identifiable, Aliased {
         to.aliasUrls = from.aliasUrls.isEmpty() ? to.aliasUrls : ImmutableSet.copyOf(from.aliasUrls);
         to.aliases = from.aliases.isEmpty() ? to.aliases : ImmutableSet.copyOf(from.aliases);
         to.equivalentTo = from.equivalentTo.isEmpty() ? to.equivalentTo : Sets.newHashSet(from.equivalentTo);
+        to.customFields = from.customFields.isEmpty() ? to.customFields : Maps.newHashMap(from.customFields);
         to.lastUpdated = ofNullable(from.lastUpdated).orElse(to.lastUpdated);
         to.equivalenceUpdate = ofNullable(from.equivalenceUpdate).orElse(to.lastUpdated);
     }
@@ -306,6 +373,7 @@ public class Identified implements Identifiable, Aliased {
         private @Deprecated ImmutableSet<String> aliasUrls = ImmutableSet.of();
         private ImmutableSet<Alias> aliases = ImmutableSet.of();
         private ImmutableSet<EquivalenceRef> equivalentTo = ImmutableSet.of();
+        private Map<String, String> customFields = Maps.newHashMap();
         private DateTime lastUpdated;
         private DateTime equivalenceUpdate;
 
@@ -344,6 +412,11 @@ public class Identified implements Identifiable, Aliased {
 
         public B withEquivalentTo(Iterable<EquivalenceRef> equivalentTo) {
             this.equivalentTo = ImmutableSet.copyOf(equivalentTo);
+            return self();
+        }
+
+        public B withCustomFields(Map<String, String> customFields) {
+            this.customFields = Maps.newHashMap(customFields);
             return self();
         }
 

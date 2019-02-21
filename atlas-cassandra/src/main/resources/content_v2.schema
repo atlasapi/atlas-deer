@@ -133,7 +133,8 @@ CREATE TYPE IF NOT EXISTS CrewMember (
   name text,
   publisher text,
   type text,
-  character text
+  character text,
+  custom_fields map<text, text>
 );
 
 CREATE TYPE IF NOT EXISTS LocationSummary (
@@ -179,7 +180,8 @@ CREATE TYPE IF NOT EXISTS Broadcast (
   co boolean,
   thd boolean,
   br boolean,
-  rr boolean
+  rr boolean,
+  cf map<text, text>
 );
 
 CREATE TYPE IF NOT EXISTS Description (
@@ -204,7 +206,8 @@ CREATE TYPE IF NOT EXISTS SegmentEvent (
   descr frozen<Description>,
   segment_ref frozen<Ref>,
   version_id text,
-  publisher text
+  publisher text,
+  custom_fields map<text, text>
 );
 
 CREATE TYPE IF NOT EXISTS Restriction (
@@ -218,7 +221,8 @@ CREATE TYPE IF NOT EXISTS Restriction (
   minimum_age int,
   message text,
   authority text,
-  rating text
+  rating text,
+  custom_fields map<text, text>
 );
 
 CREATE TYPE IF NOT EXISTS Review (
@@ -345,5 +349,7 @@ CREATE TABLE IF NOT EXISTS content_v2 (
   ratings set<frozen<Rating>>,
 
   clips text,
-  encodings text
+  encodings text,
+
+  custom_fields map<text, text>
 );

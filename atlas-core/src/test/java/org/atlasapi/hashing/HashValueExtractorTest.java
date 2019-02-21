@@ -396,6 +396,7 @@ public class HashValueExtractorTest {
         );
         identified.setLastUpdated(DateTime.now());
         identified.setEquivalenceUpdate(DateTime.now());
+        identified.addCustomField("testField", "testValue");
     }
 
     private void setDescribedFields(Described described) {

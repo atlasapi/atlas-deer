@@ -1,9 +1,9 @@
 package org.atlasapi.content.v2.model;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
@@ -25,13 +25,11 @@ import org.atlasapi.content.v2.model.udt.SegmentEvent;
 import org.atlasapi.content.v2.model.udt.Synopses;
 import org.atlasapi.content.v2.model.udt.Tag;
 import org.atlasapi.content.v2.model.udt.UpdateTimes;
-
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.joda.time.Instant;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Clip implements ContentIface {
 
@@ -88,6 +86,7 @@ public class Clip implements ContentIface {
     private Set<Review> reviews;
     private Set<Rating> ratings;
     private Encoding.Wrapper encodings;
+    private Map<String, String> customFields;
 
     public Long getId() {
         return id;
@@ -541,6 +540,16 @@ public class Clip implements ContentIface {
 
     public void setClipOf(String clipOf) {
         this.clipOf = clipOf;
+    }
+
+    @Override
+    public Map<String, String> getCustomFields() {
+        return customFields;
+    }
+
+    @Override
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
     }
 
     public static class Wrapper {

@@ -113,6 +113,8 @@ message Content {
     repeated common.Review reviews = 70 [(column)=DESC];
 
     optional bool special = 71 [(column)=DESC];
+
+    repeated common.CustomFieldEntry custom_fields = 72 [(column)=IDENT];
 }
 
 message Restriction {

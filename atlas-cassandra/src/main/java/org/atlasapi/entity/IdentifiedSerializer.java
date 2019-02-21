@@ -1,13 +1,15 @@
 package org.atlasapi.entity;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Maps;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
 import org.atlasapi.source.Sources;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
 import org.joda.time.DateTime;
+
+import java.util.Map;
 
 public class IdentifiedSerializer<T extends Identified> {
 
@@ -42,6 +44,15 @@ public class IdentifiedSerializer<T extends Identified> {
         if (identified.getEquivalenceUpdate() != null) {
             id.setEquivalenceUpdate(CommonProtos.DateTime.newBuilder()
                     .setMillis(identified.getEquivalenceUpdate().getMillis()));
+        }
+
+        for (Map.Entry<String, String> customFieldEntry : identified.getCustomFields().entrySet()) {
+            id.addCustomFields(
+                    CommonProtos.CustomFieldEntry.newBuilder()
+                            .setKey(customFieldEntry.getKey())
+                            .setValue(customFieldEntry.getValue())
+                            .build()
+            );
         }
         return id.build();
     }
@@ -114,6 +125,12 @@ public class IdentifiedSerializer<T extends Identified> {
         if (msg.hasEquivalenceUpdate()) {
             builder.withEquivalenceUpdate(dateTimeSerializer.deserialize(msg.getEquivalenceUpdate()));
         }
+
+        Map<String, String> customFields = Maps.newHashMap();
+        for (CommonProtos.CustomFieldEntry customFieldEntry : msg.getCustomFieldsList()) {
+            customFields.put(customFieldEntry.getKey(), customFieldEntry.getValue());
+        }
+        builder.withCustomFields(customFields);
         return builder;
     }
 }

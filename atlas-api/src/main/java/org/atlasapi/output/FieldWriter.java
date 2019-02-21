@@ -1,9 +1,9 @@
 package org.atlasapi.output;
 
-import java.io.IOException;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * <p>In a certain format, a FieldWriter writes a value in a particular named field either directly
@@ -75,5 +75,15 @@ public interface FieldWriter {
      */
     <T> void writeList(EntityListWriter<? super T> listWriter,
             Iterable<T> list, OutputContext ctxt) throws IOException;
+
+    /**
+     * <p>Writes a map of values to a single field.</p>
+     *
+     * @param field  - the field name to use
+     * @param map    - the map of values
+     * @param ctxt   - the context of the write
+     * @throws IOException if the field cannot be written
+     */
+    <K, V> void writeMap(String field, Map<K, V> map, OutputContext ctxt) throws IOException;
 
 }

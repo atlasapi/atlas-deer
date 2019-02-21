@@ -1,13 +1,12 @@
 package org.atlasapi.generation.generated.model;
 
-import java.util.Set;
-
+import com.google.common.collect.ImmutableSet;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 import org.atlasapi.generation.model.ModelClassInfo;
 
-import com.google.common.collect.ImmutableSet;
+import java.util.Set;
 
 public class IdentifiedInfo implements ModelClassInfo {
 
@@ -170,6 +169,16 @@ public class IdentifiedInfo implements ModelClassInfo {
                             .withIsMultiple(false)
                             .withIsModelType(false)
                             .withJsonType(JsonType.STRING)
+                            .build()
+            )
+            .add(
+                    FieldInfo.builder()
+                            .withName("custom_fields")
+                            .withDescription("")
+                            .withType("<String, String>")
+                            .withIsMultiple(true)
+                            .withIsModelType(false)
+                            .withJsonType(JsonType.MAP)
                             .build()
             )
             .build();

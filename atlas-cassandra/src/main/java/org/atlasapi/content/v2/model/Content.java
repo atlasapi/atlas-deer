@@ -1,9 +1,11 @@
 package org.atlasapi.content.v2.model;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.datastax.driver.mapping.annotations.Column;
+import com.datastax.driver.mapping.annotations.Frozen;
+import com.datastax.driver.mapping.annotations.FrozenKey;
+import com.datastax.driver.mapping.annotations.FrozenValue;
+import com.datastax.driver.mapping.annotations.PartitionKey;
+import com.datastax.driver.mapping.annotations.Table;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
@@ -14,11 +16,11 @@ import org.atlasapi.content.v2.model.udt.ContentGroupRef;
 import org.atlasapi.content.v2.model.udt.CrewMember;
 import org.atlasapi.content.v2.model.udt.Image;
 import org.atlasapi.content.v2.model.udt.Interval;
-import org.atlasapi.content.v2.model.udt.PartialItemRef;
 import org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs;
 import org.atlasapi.content.v2.model.udt.ItemRefAndItemSummary;
 import org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries;
 import org.atlasapi.content.v2.model.udt.KeyPhrase;
+import org.atlasapi.content.v2.model.udt.PartialItemRef;
 import org.atlasapi.content.v2.model.udt.Priority;
 import org.atlasapi.content.v2.model.udt.Rating;
 import org.atlasapi.content.v2.model.udt.Ref;
@@ -31,14 +33,11 @@ import org.atlasapi.content.v2.model.udt.SeriesRef;
 import org.atlasapi.content.v2.model.udt.Synopses;
 import org.atlasapi.content.v2.model.udt.Tag;
 import org.atlasapi.content.v2.model.udt.UpdateTimes;
-
-import com.datastax.driver.mapping.annotations.Column;
-import com.datastax.driver.mapping.annotations.Frozen;
-import com.datastax.driver.mapping.annotations.FrozenKey;
-import com.datastax.driver.mapping.annotations.FrozenValue;
-import com.datastax.driver.mapping.annotations.PartitionKey;
-import com.datastax.driver.mapping.annotations.Table;
 import org.joda.time.Instant;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Table(name = "content_v2")
 public class Content implements ContentIface {
@@ -285,6 +284,9 @@ public class Content implements ContentIface {
 
     @Column(name = "encodings")
     private Encoding.Wrapper encodings;
+
+    @Column(name = "custom_fields")
+    private Map<String, String> customFields;
 
     @Override
     public Long getId() {
@@ -722,6 +724,16 @@ public class Content implements ContentIface {
     @Override
     public void setEncodings(Encoding.Wrapper encodings) {
         this.encodings = encodings;
+    }
+
+    @Override
+    public Map<String, String> getCustomFields() {
+        return customFields;
+    }
+
+    @Override
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
     }
 
     public String getIsrc() {

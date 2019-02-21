@@ -1,12 +1,12 @@
 package org.atlasapi.content.v2.model.udt;
 
-import java.util.Set;
-
-import org.atlasapi.content.v2.model.Identified;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.content.v2.model.Identified;
 import org.joda.time.Instant;
+
+import java.util.Map;
+import java.util.Set;
 
 @UDT(name = "segmentevent")
 public class SegmentEvent implements Identified {
@@ -27,6 +27,7 @@ public class SegmentEvent implements Identified {
     @Field(name = "segment_ref") private Ref segmentRef;
     @Field(name = "version_id") private String versionId;
     @Field(name = "publisher") private String publisher;
+    @Field(name = "custom_fields") private Map<String, String> customFields;
 
     public SegmentEvent() {}
 
@@ -148,5 +149,13 @@ public class SegmentEvent implements Identified {
 
     public void setLastUpdated(Instant lastUpdated) {
         this.lastUpdated = lastUpdated;
+    }
+
+    public Map<String, String> getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
     }
 }

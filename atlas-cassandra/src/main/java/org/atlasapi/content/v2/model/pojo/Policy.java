@@ -1,13 +1,13 @@
 package org.atlasapi.content.v2.model.pojo;
 
-import java.util.List;
-import java.util.Set;
-
 import org.atlasapi.content.v2.model.Identified;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Ref;
-
 import org.joda.time.Instant;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Policy implements Identified {
 
@@ -33,6 +33,7 @@ public class Policy implements Identified {
     private String platform;
     private String network;
     private Instant actualAvailabilityStart;
+    private Map<String, String> customFields;
 
     public Long getId() {
         return id;
@@ -208,5 +209,13 @@ public class Policy implements Identified {
 
     public void setEquivalenceUpdate(Instant equivalenceUpdate) {
         this.equivalenceUpdate = equivalenceUpdate;
+    }
+
+    public Map<String, String> getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
     }
 }

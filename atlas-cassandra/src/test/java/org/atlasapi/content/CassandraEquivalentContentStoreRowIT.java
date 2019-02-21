@@ -1,21 +1,5 @@
 package org.atlasapi.content;
 
-import java.nio.ByteBuffer;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import org.atlasapi.annotation.Annotation;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.equivalence.EquivalenceGraphUpdate;
-import org.atlasapi.equivalence.ResolvedEquivalents;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.TestCassandraPersistenceModule;
-
-import com.metabroadcast.common.time.DateTimeZones;
-
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
@@ -26,11 +10,25 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.time.DateTimeZones;
+import org.atlasapi.annotation.Annotation;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.entity.util.WriteException;
+import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraphUpdate;
+import org.atlasapi.equivalence.ResolvedEquivalents;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.TestCassandraPersistenceModule;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.nio.ByteBuffer;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
@@ -300,6 +298,23 @@ public class CassandraEquivalentContentStoreRowIT {
         resolved(c1, c1, c2);
     }
 
+    @Test
+    public void testWritingAndRetrievingCustomFields() throws Exception {
+        Content content = new Item(Id.valueOf(1L), METABROADCAST);
+        content.addCustomField("testField", "testValue");
+        content.addCustomField("testField2", "testValue2");
+        writeContent(content);
+        persistenceModule.equivalentContentStore().updateContent(content.getId());
+        ResolvedEquivalents<Content> resolved
+                = get(persistenceModule.equivalentContentStore()
+                .resolveIds(ImmutableList.of(content.getId()),
+                        ImmutableSet.of(METABROADCAST), Annotation.all()
+                ));
+        ImmutableSet<Content> resolvedContent = resolved.get(content.getId());
+        assertThat(resolvedContent.size(), is(1));
+        assertThat(resolvedContent.iterator().next().getCustomFields(), is(content.getCustomFields()));
+    }
+
     private void assertNoRowsWithIds(Id setId, Id contentId) {
         Session session = persistenceModule.getCassandraSession();
         Statement rowsForIdQuery = select().all().from(EQUIVALENT_CONTENT_TABLE)
@@ -389,7 +404,10 @@ public class CassandraEquivalentContentStoreRowIT {
     private Content createAndWriteItem(Id id, Publisher src) throws WriteException {
         Content content = new Item(id, src);
         content.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
+        return writeContent(content);
+    }
 
+    private Content writeContent(Content content) throws WriteException {
         WriteResult<Content, Content> result = persistenceModule.contentStore()
                 .writeContent(content);
         assertTrue("Failed to write " + content, result.written());

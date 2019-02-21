@@ -1,12 +1,12 @@
 package org.atlasapi.content.v2.model.udt;
 
-import java.util.Set;
-
-import org.atlasapi.content.v2.model.Identified;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.content.v2.model.Identified;
 import org.joda.time.Instant;
+
+import java.util.Map;
+import java.util.Set;
 
 @UDT(name = "crewmember")
 public class CrewMember implements Identified {
@@ -24,6 +24,7 @@ public class CrewMember implements Identified {
     @Field(name = "publisher") private String publisher;
     @Field(name = "type") private String type;
     @Field(name = "character") private String character;
+    @Field(name = "custom_fields") private Map<String, String> customFields;
 
     public CrewMember() {}
 
@@ -129,5 +130,13 @@ public class CrewMember implements Identified {
 
     public void setCharacter(String character) {
         this.character = character;
+    }
+
+    public Map<String, String> getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
     }
 }

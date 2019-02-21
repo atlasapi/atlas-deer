@@ -114,6 +114,7 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.en
         target.setEquivalentTo(source.getEquivalentTo().stream()
                 .map(ref -> new EquivalenceRef(Id.valueOf(ref.id()), ref.publisher()))
                 .collect(Collectors.toSet()));
+        target.setCustomFields(source.getCustomFields());
         target.setLastUpdated(source.getLastUpdated());
         target.setEquivalenceUpdate(source.getEquivalenceUpdate());
     }

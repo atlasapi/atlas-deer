@@ -1,12 +1,8 @@
 package org.atlasapi.content;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import com.google.common.base.MoreObjects;
+import com.google.common.collect.Iterables;
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.AwardSerializer;
@@ -22,16 +18,15 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
-
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
 
@@ -81,6 +76,14 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
             builder.addEquivs(CommonProtos.Reference.newBuilder()
                     .setId(equivRef.getId().longValue())
                     .setSource(equivRef.getSource().key())
+            );
+        }
+        for (Map.Entry<String, String> customFieldEntry : ided.getCustomFields().entrySet()) {
+            builder.addCustomFields(
+                    CommonProtos.CustomFieldEntry.newBuilder()
+                            .setKey(customFieldEntry.getKey())
+                            .setValue(customFieldEntry.getValue())
+                            .build()
             );
         }
         return builder;

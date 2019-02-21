@@ -1,11 +1,11 @@
 package org.atlasapi.content.v2.model.udt;
 
-import java.util.Set;
-
-import org.atlasapi.content.v2.model.IdentifiedWithoutUpdateTimes;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.content.v2.model.IdentifiedWithoutUpdateTimes;
+
+import java.util.Map;
+import java.util.Set;
 
 @UDT(name = "restriction")
 public class Restriction implements IdentifiedWithoutUpdateTimes {
@@ -22,6 +22,7 @@ public class Restriction implements IdentifiedWithoutUpdateTimes {
     @Field(name = "message") private String message;
     @Field(name = "authority") private String authority;
     @Field(name = "rating") private String rating;
+    @Field(name = "custom_fields") private Map<String, String> customFields;
 
     public Restriction() {}
 
@@ -111,5 +112,13 @@ public class Restriction implements IdentifiedWithoutUpdateTimes {
 
     public void setRating(String rating) {
         this.rating = rating;
+    }
+
+    public Map<String, String> getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
     }
 }

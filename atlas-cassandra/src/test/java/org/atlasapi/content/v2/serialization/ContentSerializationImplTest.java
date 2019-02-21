@@ -1,18 +1,17 @@
 package org.atlasapi.content.v2.serialization;
 
+import com.google.common.collect.ImmutableSet;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.atlasapi.content.Content;
+import org.atlasapi.content.v2.CqlContentGenerator;
+import org.junit.Before;
+import org.junit.Test;
+import org.unitils.reflectionassert.ReflectionComparatorMode;
+
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Set;
-
-import org.atlasapi.content.Content;
-import org.atlasapi.content.v2.CqlContentGenerator;
-
-import com.google.common.collect.ImmutableSet;
-import org.apache.commons.beanutils.PropertyUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.unitils.reflectionassert.ReflectionComparatorMode;
 
 import static org.unitils.reflectionassert.ReflectionAssert.assertReflectionEquals;
 
@@ -58,7 +57,8 @@ public class ContentSerializationImplTest {
                 "upcomingContent", // takes an iterable, can't be set to null
                 "availableContent", // takes an iterable, can't be set to null
                 "Song#specialization", // explicitly initialised to MUSIC
-                "Film#specialization" // explicitly initialised to FILM
+                "Film#specialization", // explicitly initialised to FILM,
+                "customFields" //explicitly initialised to an empty map
         );
 
         for (Content original : contents) {
