@@ -316,8 +316,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getDescription() == null) {
             chosen.setDescription(first(notChosen, TO_DESCRIPTION));
         }
-        if (chosen.getSource().compareTo(Publisher.PA) == 0
-                && chosen.getDescription() != null
+        if (chosen.getDescription() != null
                 && chosen.getDescription().equals("Concluded.")) {
             for (Described notChosenDescribed : notChosen) {
                 //we want a better description than "Concluded."; there was an NPE happening when
