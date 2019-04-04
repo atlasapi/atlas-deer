@@ -11,6 +11,7 @@ import org.atlasapi.persistence.content.ResolvedContent;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSetMultimap.Builder;
 import com.google.common.collect.Iterables;
@@ -42,6 +43,19 @@ public class LegacyContentResolver implements ContentResolver {
     public ListenableFuture<Resolved<Content>> resolveIds(Iterable<Id> ids) {
         Iterable<Long> lids = Iterables.transform(ids, Id.toLongValue());
         Iterable<LookupEntry> entries = lookupStore.entriesForIds(lids);
+        Iterable<LookupRef> refs = Iterables.transform(entries, LookupEntry.TO_SELF);
+        ResolvedContent resolved = contentResolver.findByLookupRefs(refs);
+        Iterable<org.atlasapi.media.entity.Content> content = filterContent(resolved);
+        Iterable<Content> transformed = transformer.transform(content);
+        return Futures.immediateFuture(Resolved.valueOf(transformed));
+    }
+
+    public ListenableFuture<Resolved<Content>> resolveUri(String uri) {
+        return resolveUris(ImmutableSet.of(uri));
+    }
+
+    public ListenableFuture<Resolved<Content>> resolveUris(Iterable<String> uris) {
+        Iterable<LookupEntry> entries = lookupStore.entriesForCanonicalUris(uris);
         Iterable<LookupRef> refs = Iterables.transform(entries, LookupEntry.TO_SELF);
         ResolvedContent resolved = contentResolver.findByLookupRefs(refs);
         Iterable<org.atlasapi.media.entity.Content> content = filterContent(resolved);

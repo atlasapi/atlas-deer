@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -29,6 +30,7 @@ import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.system.bootstrap.ContentBootstrapListener;
 import org.atlasapi.system.bootstrap.ContentNeo4jMigrator;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.legacy.LegacyContentResolver;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.util.EsObject;
 
@@ -70,6 +72,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Controller
 public class ContentDebugController {
 
+    public static final Pattern ILLEGAL_URI_CHARACTERS = Pattern.compile("[$\"{}\\\\;]");
     private final NumberToShortStringCodec uppercase = new SubstitutionTableNumberCodec();
     private final NumberToShortStringCodec lowercase = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final Splitter commaSplitter = Splitter.on(',').trimResults().omitEmptyStrings();
@@ -77,7 +80,7 @@ public class ContentDebugController {
     private final Gson gson;
     private final ObjectMapper jackson;
 
-    private final ContentResolver legacyContentResolver;
+    private final LegacyContentResolver legacyContentResolver;
     private final ContentIndex index;
     private final EsContentTranslator esContentTranslator;
     private final ContentStore contentStore;
@@ -381,35 +384,44 @@ public class ContentDebugController {
             @RequestParam(name = "hierarchy", defaultValue = "true") boolean migrateHierarchy,
             final HttpServletResponse response
     ) throws IOException {
-        migrateContentById(migrateEquivalents, migrateHierarchy, response, id);
+        Content content = getContentById(id);
+        migrateContent(migrateEquivalents, migrateHierarchy, response, content);
     }
 
     @RequestMapping("/system/debug/content/migrate")
     public void forceListEquivUpdate(
             @RequestParam(name = "ids", defaultValue = "") String ids,
+            @RequestParam(name = "uris", defaultValue = "") String uris,
             @RequestParam(name = "equivalents", defaultValue = "false") boolean migrateEquivalents,
             @RequestParam(name = "hierarchy", defaultValue = "true") boolean migrateHierarchy,
             final HttpServletResponse response
     ) throws IOException {
-        if (Strings.isNullOrEmpty(ids)) {
-            throw new IllegalArgumentException("Must specify at least one content ID to migrate");
+        if (Strings.isNullOrEmpty(ids) && Strings.isNullOrEmpty(uris)) {
+            throw new IllegalArgumentException("Must specify at least one content ID or URI to "
+                                               + "migrate (parameters \"ids\" or \"uris\", can be "
+                                               + "comma separated lists)");
         }
+
         Iterable<String> requestedIds = commaSplitter.split(ids);
         for (String id : requestedIds) {
-            migrateContentById(migrateEquivalents, migrateHierarchy, response, id);
+            Content content = getContentById(id);
+            migrateContent(migrateEquivalents, migrateHierarchy, response, content);
+        }
+
+        Iterable<String> requestedUris = commaSplitter.split(uris);
+        for (String uri : requestedUris) {
+            Content content = getContentByUri(uri);
+            migrateContent(migrateEquivalents, migrateHierarchy, response, content);
         }
     }
 
-    private void migrateContentById(
+    private void migrateContent(
             boolean migrateEquivalents,
             boolean migrateHierarchy,
             HttpServletResponse response,
-            String id
+            Content content
     ) throws IOException {
         try {
-            Long decodedId = lowercase.decode(id).longValue();
-
-            Content content = resolveLegacyContent(decodedId);
 
             ContentBootstrapListener listener;
             if(migrateEquivalents && migrateHierarchy){
@@ -429,6 +441,31 @@ public class ContentDebugController {
             response.flushBuffer();
         } catch (Throwable t) {
             t.printStackTrace(response.getWriter());
+        }
+    }
+
+    private Content getContentById(String id) {
+        Long decodedId = lowercase.decode(id).longValue();
+
+        return Iterables.getOnlyElement(
+                Futures.getUnchecked(
+                        legacyContentResolver.resolveIds(ImmutableList.of(Id.valueOf(decodedId)))
+                ).getResources());
+    }
+
+    private Content getContentByUri(String uri) throws IllegalArgumentException {
+
+        sanitizeUri(uri);
+
+        return Iterables.getOnlyElement(
+                Futures.getUnchecked(
+                        legacyContentResolver.resolveUri(uri)
+                ).getResources());
+    }
+
+    private void sanitizeUri(String uri) throws IllegalArgumentException {
+        if(ILLEGAL_URI_CHARACTERS.matcher(uri).find()){
+            throw new IllegalArgumentException("Given uri contains illegal characters, i.e. ' \" \\ ; { } ");
         }
     }
 
@@ -505,20 +542,13 @@ public class ContentDebugController {
         response.flushBuffer();
     }
 
-    private Content resolveLegacyContent(Long id) {
-        return Iterables.getOnlyElement(
-                Futures.getUnchecked(legacyContentResolver
-                        .resolveIds(ImmutableList.of(Id.valueOf(id)))).getResources()
-        );
-    }
-
     private Id decodeId(String id) {
         return Id.valueOf(lowercase.decode(id).longValue());
     }
 
     public static final class Builder {
 
-        private ContentResolver legacyContentResolver;
+        private LegacyContentResolver legacyContentResolver;
         private ContentIndex index;
         private EsContentTranslator esContentTranslator;
         private ContentStore contentStore;
@@ -551,7 +581,7 @@ public class ContentDebugController {
             return this;
         }
 
-        public Builder withLegacyContentResolver(ContentResolver val) {
+        public Builder withLegacyContentResolver(LegacyContentResolver val) {
             legacyContentResolver = val;
             return this;
         }

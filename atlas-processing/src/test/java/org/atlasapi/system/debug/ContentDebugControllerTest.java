@@ -7,7 +7,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.ContentIndex;
-import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTranslator;
@@ -15,6 +14,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.legacy.LegacyContentResolver;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
 
 import com.google.common.collect.ImmutableSet;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ContentDebugControllerTest {
 
-    @Mock private ContentResolver contentResolver;
+    @Mock private LegacyContentResolver legacyContentResolver;
     @Mock private LegacySegmentMigrator legacySegmentMigrator;
     @Mock private AtlasPersistenceModule atlasPersistenceModule;
     @Mock private DirectAndExplicitEquivalenceMigrator directAndExplicitEquivalenceMigrator;
@@ -56,7 +56,7 @@ public class ContentDebugControllerTest {
                 .thenReturn(contentStore);
 
         contentDebugController = ContentDebugController.builder()
-                .withLegacyContentResolver(contentResolver)
+                .withLegacyContentResolver(legacyContentResolver)
                 .withLegacySegmentMigrator(legacySegmentMigrator)
                 .withPersistence(atlasPersistenceModule)
                 .withEquivalenceMigrator(directAndExplicitEquivalenceMigrator)
