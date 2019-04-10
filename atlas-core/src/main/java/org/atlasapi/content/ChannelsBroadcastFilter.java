@@ -14,6 +14,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 
 public class ChannelsBroadcastFilter {
 
@@ -33,7 +34,7 @@ public class ChannelsBroadcastFilter {
         }
 
         ImmutableList<Id> channelIds = StreamSupport.stream(
-                channelGroup.getChannels().spliterator(),
+                channelGroup.getChannelsAvailable(LocalDate.now()).spliterator(),
                 false
         )
                 .map(channel -> channel.getChannel().getId())

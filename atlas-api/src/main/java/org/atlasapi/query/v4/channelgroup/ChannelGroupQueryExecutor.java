@@ -434,10 +434,12 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     ) {
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
 
-        Iterable<? extends ChannelGroupMembership> availableChannels = entity.getChannelsAvailable(LocalDate.now());
+        Iterable<? extends ChannelGroupMembership> availableChannels;
 
         if (withFutureChannels) {
             availableChannels = entity.getChannels();
+        } else {
+            availableChannels = entity.getChannelsAvailable(LocalDate.now());
         }
 
         List<Id> orderedIds = StreamSupport.stream(availableChannels.spliterator(), false)
