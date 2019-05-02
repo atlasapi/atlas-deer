@@ -624,6 +624,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                         1
                 );
 
+        //TODO write more comments on what/why (here and/or in JIRA ticket)
         //if all_annotation set:
         //add all broadcasts from first to an ordered list of broadcasts
         //for all broadcasts from not chosen (in order probably):
