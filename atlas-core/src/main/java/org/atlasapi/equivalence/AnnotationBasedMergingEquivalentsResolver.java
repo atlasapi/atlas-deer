@@ -58,26 +58,26 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
             } catch (InterruptedException | ExecutionException e) {
                 log.error("Failed to see into the future :(");
             }
-            return Futures.transform(unmerged, mergeUsing(application));
+            return Futures.transform(unmerged, mergeUsing(application, activeAnnotations));
         }
     }
 
     private Function<ResolvedEquivalents<E>, ResolvedEquivalents<E>> mergeUsing(
-            final Application application) {
+            final Application application, Set<Annotation> activeAnnotations) {
         return input -> {
 
             ResolvedEquivalents.Builder<E> builder = ResolvedEquivalents.builder();
             for (Map.Entry<Id, Collection<E>> entry : input.asMap().entrySet()) {
                 builder.putEquivalents(
                         entry.getKey(),
-                        merge(entry.getKey(), entry.getValue(), application)
+                        merge(entry.getKey(), entry.getValue(), application, activeAnnotations)
                 );
             }
             return builder.build();
         };
     }
 
-    private Iterable<E> merge(Id id, Collection<E> equivs, Application application) {
-        return merger.merge(Optional.of(id), equivs, application);
+    private Iterable<E> merge(Id id, Collection<E> equivs, Application application, Set<Annotation> activeAnnotations) {
+        return merger.merge(Optional.of(id), equivs, application, activeAnnotations);
     }
 }

@@ -1,5 +1,6 @@
 package org.atlasapi.output;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,7 +58,7 @@ public class StrategyBackedEquivalentsMergerTest {
     public void testDoesntMergeForNonMergingConfig() {
         Id id = Id.valueOf(1234);
         List<Content> merged = merger.merge(Optional.of(id), ImmutableSet.of(),
-                nonMergingApplication
+                nonMergingApplication, Collections.emptySet()
         );
 
         assertTrue(merged.isEmpty());
@@ -68,7 +69,7 @@ public class StrategyBackedEquivalentsMergerTest {
     public void testDoesntMergeForEmptyEquivalenceSet() {
         Id id = Id.valueOf(1234);
         List<Content> merged = merger.merge(Optional.of(id), ImmutableSet.<Content>of(),
-                mergingApplication
+                mergingApplication, Collections.emptySet()
         );
 
         assertTrue(merged.isEmpty());
@@ -78,9 +79,9 @@ public class StrategyBackedEquivalentsMergerTest {
     @Test
     public void testDoesntMergeForSingletonEquivalenceSet() {
         Content brand = new Brand(Id.valueOf(1), Publisher.BBC);
-        when(strategy.merge(brand, ImmutableList.of(), mergingApplication)).thenReturn(brand);
+        when(strategy.merge(brand, ImmutableList.of(), mergingApplication, Collections.emptySet())).thenReturn(brand);
         List<Content> merged = merger.merge(Optional.of(brand.getId()), ImmutableSet.of(brand),
-                mergingApplication
+                mergingApplication, Collections.emptySet()
         );
 
         assertThat(merged.size(), is(1));
@@ -90,7 +91,8 @@ public class StrategyBackedEquivalentsMergerTest {
         verify(strategy, never()).merge(
                 argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
-                argThat(is(application))
+                argThat(is(application)),
+                Collections.emptySet()
         );
     }
 
@@ -109,31 +111,36 @@ public class StrategyBackedEquivalentsMergerTest {
             when(strategy.merge(
                     argThat(any(Content.class)),
                     anyCollectionOf(Content.class),
-                    argThat(is(mergingApplication))
+                    argThat(is(mergingApplication)),
+                    Collections.emptySet()
             )).thenReturn(one);
 
-            merger.merge(Optional.of(one.getId()), contentList, mergingApplication);
+            merger.merge(Optional.of(one.getId()), contentList, mergingApplication,
+                    Collections.emptySet());
 
             if (contentList.get(0).equals(one)) {
                 verify(strategy)
                         .merge(
                                 argThat(is(one)),
                                 argThat(contains(two, three)),
-                                argThat(is(mergingApplication))
+                                argThat(is(mergingApplication)),
+                                Collections.emptySet()
                         );
             } else if (contentList.get(0).equals(two)) {
                 verify(strategy)
                         .merge(
                                 argThat(is(one)),
                                 argThat(contains(two, three)),
-                                argThat(is(mergingApplication))
+                                argThat(is(mergingApplication)),
+                                Collections.emptySet()
                         );
             } else {
                 verify(strategy)
                         .merge(
                                 argThat(is(one)),
                                 argThat(contains(two, three)),
-                                argThat(is(mergingApplication))
+                                argThat(is(mergingApplication)),
+                                Collections.emptySet()
                         );
             }
 
@@ -150,20 +157,23 @@ public class StrategyBackedEquivalentsMergerTest {
         when(strategy.merge(
                 argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
-                argThat(is(mergingApplication))
+                argThat(is(mergingApplication)),
+                Collections.emptySet()
         )).thenReturn(retrieved1);
 
         merger.merge(
                 Optional.of(retrieved1.getId()),
                 ImmutableList.of(retrieved1, retrieved2),
-                mergingApplication
+                mergingApplication,
+                Collections.emptySet()
         );
 
         verify(strategy)
                 .merge(
                         argThat(is(retrieved1)),
                         argThat(contains(retrieved2)),
-                        argThat(is(mergingApplication))
+                        argThat(is(mergingApplication)),
+                        Collections.emptySet()
                 );
     }
 
@@ -178,38 +188,42 @@ public class StrategyBackedEquivalentsMergerTest {
         List<Content> merged = merger.merge(
                 Optional.of(one.getId()),
                 ImmutableSet.of(one, two, three),
-                mergingApplication
+                mergingApplication,
+                Collections.emptySet()
         );
 
         verify(strategy)
                 .merge(
                         argThat(is(one)),
                         argThat(contains(two, three)),
-                        argThat(is(mergingApplication))
+                        argThat(is(mergingApplication)),
+                        Collections.emptySet()
                 );
         reset(strategy);
         setUpMockStrategyToReturn(one);
         merged = merger.merge(Optional.of(two.getId()), ImmutableSet.of(one, two, three),
-                mergingApplication
+                mergingApplication, Collections.emptySet()
         );
 
         verify(strategy)
                 .merge(
                         argThat(is(two)),
                         argThat(contains(one, three)),
-                        argThat(is(mergingApplication))
+                        argThat(is(mergingApplication)),
+                        Collections.emptySet()
                 );
         reset(strategy);
         setUpMockStrategyToReturn(one);
         merged = merger.merge(Optional.of(three.getId()), ImmutableSet.of(one, two, three),
-                mergingApplication
+                mergingApplication, Collections.emptySet()
         );
 
         verify(strategy)
                 .merge(
                         argThat(is(one)),
                         argThat(contains(two, three)),
-                        argThat(is(mergingApplication))
+                        argThat(is(mergingApplication)),
+                        Collections.emptySet()
                 );
         reset(strategy);
     }
@@ -218,7 +232,8 @@ public class StrategyBackedEquivalentsMergerTest {
         when(strategy.merge(
                 argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
-                argThat(is(mergingApplication))
+                argThat(is(mergingApplication)),
+                Collections.emptySet()
         )).thenReturn(content);
     }
 

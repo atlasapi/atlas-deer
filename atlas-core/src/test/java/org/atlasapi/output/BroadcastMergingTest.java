@@ -14,6 +14,7 @@ import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.metabroadcast.common.time.DateTimeZones.UTC;
@@ -47,7 +48,9 @@ public class BroadcastMergingTest {
         chosenItem.addEquivalentTo(notChosenItem);
         notChosenItem.addEquivalentTo(chosenItem);
 
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application);
+        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application,
+                Collections.emptySet()
+        );
 
         assertTrue(notChosenItem.getBroadcasts().isEmpty());
     }
@@ -86,7 +89,9 @@ public class BroadcastMergingTest {
         chosenItem.addEquivalentTo(notChosenItem);
         notChosenItem.addEquivalentTo(chosenItem);
 
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application);
+        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application,
+                Collections.emptySet()
+        );
 
         assertTrue(chosenItem.getBroadcasts().size() == 1);
     }
@@ -130,7 +135,9 @@ public class BroadcastMergingTest {
         chosenItem.addEquivalentTo(notChosenItem);
         notChosenItem.addEquivalentTo(chosenItem);
 
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application);
+        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application,
+                Collections.emptySet()
+        );
 
         // ensure that the broadcast matched, 
         // and the fields on the non-chosen broadcast 
@@ -218,7 +225,8 @@ public class BroadcastMergingTest {
         executor.merge(
                 chosenItemWithoutBroadcasts,
                 ImmutableList.of(notChosenFirstBbcItem, notChosenBbcItem, notChosenFbItem),
-                application
+                application,
+                Collections.emptySet()
         );
 
         // ensure that the broadcast matched, 

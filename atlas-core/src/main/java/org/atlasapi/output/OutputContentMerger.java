@@ -15,6 +15,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.metabroadcast.applications.client.model.internal.Application;
+
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
@@ -112,7 +114,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     @Deprecated
-    public <T extends Described> List<T> merge(Application application, List<T> contents) {
+    public <T extends Described> List<T> merge(Application application, List<T> contents,
+            Set<Annotation> activeAnnotations) {
         Ordering<Sourced> publisherComparator = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher());
@@ -142,7 +145,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 mergeIn(application, (Container) chosen, filterEquivs(notChosen, Container.class));
             }
             if (chosen instanceof Item) {
-                mergeIn(application, (Item) chosen, filterEquivs(notChosen, Item.class));
+                mergeIn(application, (Item) chosen, filterEquivs(notChosen, Item.class), activeAnnotations);
             }
             if (chosen instanceof ContentGroup) {
                 mergeIn(application, (ContentGroup) chosen, filterEquivs(notChosen, ContentGroup.class));
@@ -213,7 +216,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     @Override
     public <T extends Content> T merge(T chosen, final Iterable<? extends T> equivalents,
-            final Application application) {
+            final Application application,
+            Set<Annotation> activeAnnotations) {
         chosen = createChosen(chosen, equivalents);
         chosen = mergeIdAndEquivTo(chosen);
         return chosen.accept(new ContentVisitorAdapter<T>() {
@@ -226,7 +230,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
             @Override
             protected T visitItem(Item item) {
-                mergeIn(application, item, filterEquivs(equivalents, Item.class));
+                mergeIn(application, item, filterEquivs(equivalents, Item.class), activeAnnotations);
                 return uncheckedCast(item);
             }
 
@@ -460,9 +464,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Item> void mergeIn(Application application, T chosen,
-            Iterable<T> notChosen) {
+            Iterable<T> notChosen,
+            Set<Annotation> activeAnnotations) {
         mergeContent(application, chosen, notChosen);
-        mergeVersions(application, chosen, notChosen);
+        mergeVersions(application, chosen, notChosen, activeAnnotations);
 
         if (chosen instanceof Film) {
             mergeFilmProperties(application, (Film) chosen, Iterables.filter(notChosen, Film.class));
@@ -568,8 +573,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Item> void mergeVersions(Application application, T chosen,
-            Iterable<T> notChosen) {
-        mergeBroadcasts(application, chosen, notChosen);
+            Iterable<T> notChosen, Set<Annotation> activeAnnotations) {
+        mergeBroadcasts(application, chosen, notChosen, activeAnnotations);
         List<T> notChosenOrdered = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher())
@@ -594,7 +599,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private <T extends Item> void mergeBroadcasts(
             Application application,
             T chosen,
-            Iterable<T> notChosen
+            Iterable<T> notChosen,
+            Set<Annotation> activeAnnotations
     ) {
 
         // Take broadcasts from the most precedent source with broadcasts, and
@@ -611,6 +617,18 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                         1
                 );
 
+
+        if(activeAnnotations.contains(Annotation.ALL_BROADCASTS)){
+            //do stuff
+        }
+
+        //if all_annotation set:
+        //add all broadcasts from first to an ordered list of broadcasts
+        //for all broadcasts from not chosen (in order probably):
+        //add all broadcasts to the list which do not match channel / transmission time
+        //then do chosen.setBroadcasts with the list and carry on with the match and merge looping
+        //if annotation not set do the if(!first.isEmpty()) block
+
         if (!first.isEmpty()) {
             Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
             chosen.setBroadcasts(Sets.newHashSet(
@@ -620,7 +638,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                                     Item::getBroadcasts
                             )
                     )));
-
         }
 
         List<T> notChosenOrdered = application.getConfiguration()
