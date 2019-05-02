@@ -1,20 +1,16 @@
 package org.atlasapi.output;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
-import com.metabroadcast.applications.client.model.internal.Application;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nullable;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
@@ -50,20 +46,25 @@ import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 
+import com.metabroadcast.applications.client.model.internal.Application;
+
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -608,19 +609,20 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
 
+        List<T> notChosenOrdered = application.getConfiguration()
+                .getReadPrecedenceOrdering()
+                .onResultOf(Sourceds.toPublisher())
+                .sortedCopy(notChosen);
+
         List<T> first = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher())
-                .leastOf(StreamSupport.stream(all.spliterator(), false)
+                .leastOf(
+                        StreamSupport.stream(all.spliterator(), false)
                                 .filter(HAS_BROADCASTS::apply)
                                 .collect(Collectors.toList()),
                         1
                 );
-
-
-        if(activeAnnotations.contains(Annotation.ALL_BROADCASTS)){
-            //do stuff
-        }
 
         //if all_annotation set:
         //add all broadcasts from first to an ordered list of broadcasts
@@ -628,22 +630,40 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         //add all broadcasts to the list which do not match channel / transmission time
         //then do chosen.setBroadcasts with the list and carry on with the match and merge looping
         //if annotation not set do the if(!first.isEmpty()) block
-
-        if (!first.isEmpty()) {
-            Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
-            chosen.setBroadcasts(Sets.newHashSet(
-                    Iterables.concat(
-                            Iterables.transform(
-                                    Iterables.filter(all, isPublisher(sourceForBroadcasts)),
-                                    Item::getBroadcasts
-                            )
-                    )));
+        if (activeAnnotations.contains(Annotation.ALL_BROADCASTS)) {
+            if (!first.isEmpty()) {
+                Iterable<Broadcast> broadcastsOfFirst = Iterables.concat(Iterables.transform(
+                        first,
+                        Item::getBroadcasts
+                ));
+                HashSet<Broadcast> allBroadcasts = Sets.newHashSet(broadcastsOfFirst);
+                for (T notChosenContent : notChosenOrdered) {
+                    if (notChosenContent.getBroadcasts() != null
+                            && !notChosenContent.getBroadcasts()
+                            .isEmpty()) {
+                        for (Broadcast notChosenBroadcast : notChosenContent.getBroadcasts()) {
+                            for (Broadcast broadcastOfFirst : broadcastsOfFirst) {
+                                if (broadcastsMatch(broadcastOfFirst, notChosenBroadcast)) {
+                                    allBroadcasts.add(notChosenBroadcast);
+                                }
+                            }
+                        }
+                    }
+                }
+                chosen.setBroadcasts(allBroadcasts);
+            }
+        } else {
+            if (!first.isEmpty()) {
+                Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
+                chosen.setBroadcasts(Sets.newHashSet(
+                        Iterables.concat(
+                                Iterables.transform(
+                                        Iterables.filter(all, isPublisher(sourceForBroadcasts)),
+                                        Item::getBroadcasts
+                                )
+                        )));
+            }
         }
-
-        List<T> notChosenOrdered = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher())
-                .sortedCopy(notChosen);
 
         if (chosen.getBroadcasts() != null && !chosen.getBroadcasts().isEmpty()) {
             for (Broadcast chosenBroadcast : chosen.getBroadcasts()) {
