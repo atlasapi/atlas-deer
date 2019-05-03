@@ -1,6 +1,7 @@
 package org.atlasapi.output;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.annotation.Nullable;
@@ -47,6 +49,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 
 import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -607,7 +610,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         // Take broadcasts from the most precedent source with broadcasts, and
         // merge them with broadcasts from less precedent sources.
 
-        Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
+        List<T> all = ImmutableList.<T>builder().add(chosen).addAll(notChosen).build();
 
         List<T> notChosenOrdered = application.getConfiguration()
                 .getReadPrecedenceOrdering()
@@ -618,56 +621,68 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher())
                 .leastOf(
-                        StreamSupport.stream(all.spliterator(), false)
+                        all.stream()
                                 .filter(HAS_BROADCASTS::apply)
                                 .collect(Collectors.toList()),
                         1
                 );
 
         //TODO write more comments on what/why (here and/or in JIRA ticket)
+        if(activeAnnotations.contains(Annotation.ALL_BROADCASTS)){
+            chosen.setBroadcasts(
+                    all.stream()
+                            .map(T::getBroadcasts)
+                            .flatMap(Collection::stream)
+                            .collect(MoreCollectors.toImmutableSet())
+            );
+            return;
+        }
         //if all_annotation set:
         //add all broadcasts from first to an ordered list of broadcasts
         //for all broadcasts from not chosen (in order probably):
         //add all broadcasts to the list which do not match channel / transmission time
         //then do chosen.setBroadcasts with the list and carry on with the match and merge looping
         //if annotation not set do the if(!first.isEmpty()) block
-        if (activeAnnotations.contains(Annotation.ALL_BROADCASTS)) {
-            Iterable<Broadcast> broadcastsOfFirst = Iterables.concat(Iterables.transform(
-                    first,
-                    Item::getBroadcasts
-            ));
-            HashSet<Broadcast> allBroadcasts = Sets.newHashSet(broadcastsOfFirst);
-            for (T notChosenContent : notChosenOrdered) {
-                if (notChosenContent.getBroadcasts() != null
-                        && !notChosenContent.getBroadcasts()
-                        .isEmpty()) {
-                    for (Broadcast notChosenBroadcast : notChosenContent.getBroadcasts()) {
-                        boolean anyExistingMatches = false;
-                        for (Broadcast existingBroadcast : allBroadcasts) {
-                            if (broadcastsMatch(existingBroadcast, notChosenBroadcast)) {
-                                anyExistingMatches = true;
-                                break;
-                            }
-                        }
-                        if(!anyExistingMatches){
-                            allBroadcasts.add(notChosenBroadcast);
-                        }
-                    }
-                }
-            }
-            chosen.setBroadcasts(allBroadcasts);
-        } else {
+//        if (activeAnnotations.contains(Annotation.ALL_MERGED_BROADCASTS)) {
+//            List<Broadcast> broadcastsOfFirst = first.stream()
+//                            .map(Item::getBroadcasts)
+//                            .flatMap(Collection::stream)
+//                            .collect(MoreCollectors.toImmutableList());
+//            HashSet<Broadcast> allBroadcasts = Sets.newHashSet(broadcastsOfFirst);
+//            for (T notChosenContent : notChosenOrdered) {
+//                if (notChosenContent.getBroadcasts() != null
+//                        && !notChosenContent.getBroadcasts().isEmpty()) {
+//                    for (Broadcast notChosenBroadcast : notChosenContent.getBroadcasts()) {
+//                        boolean anyExistingMatches = false;
+//                        for (Broadcast existingBroadcast : allBroadcasts) {
+//                            if (broadcastsMatch(existingBroadcast, notChosenBroadcast)) {
+//                                anyExistingMatches = true;
+//                                break;
+//                            }
+//                        }
+//                        if (!anyExistingMatches) {
+//                            //note: chosen's broadcasts won't be included? Only first + no chosens... sounds wrong
+//                            allBroadcasts.add(notChosenBroadcast);
+//                        }
+//                    }
+//                }
+//            }
+//            chosen.setBroadcasts(allBroadcasts);
+//        } else {
             if (!first.isEmpty()) {
                 Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
-                chosen.setBroadcasts(Sets.newHashSet(
-                        Iterables.concat(
-                                Iterables.transform(
-                                        Iterables.filter(all, isPublisher(sourceForBroadcasts)),
-                                        Item::getBroadcasts
-                                )
-                        )));
+                chosen.setBroadcasts(
+                        all.stream()
+                        .filter(item ->
+                                activeAnnotations.contains(Annotation.ALL_MERGED_BROADCASTS)
+                                || item.getSource().equals(sourceForBroadcasts)
+                        )
+                        .map(T::getBroadcasts)
+                        .flatMap(Collection::stream)
+                        .collect(MoreCollectors.toImmutableSet())
+                );
             }
-        }
+//        }
 
         if (chosen.getBroadcasts() != null && !chosen.getBroadcasts().isEmpty()) {
             for (Broadcast chosenBroadcast : chosen.getBroadcasts()) {
