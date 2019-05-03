@@ -632,27 +632,30 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         //then do chosen.setBroadcasts with the list and carry on with the match and merge looping
         //if annotation not set do the if(!first.isEmpty()) block
         if (activeAnnotations.contains(Annotation.ALL_BROADCASTS)) {
-            if (!first.isEmpty()) {
-                Iterable<Broadcast> broadcastsOfFirst = Iterables.concat(Iterables.transform(
-                        first,
-                        Item::getBroadcasts
-                ));
-                HashSet<Broadcast> allBroadcasts = Sets.newHashSet(broadcastsOfFirst);
-                for (T notChosenContent : notChosenOrdered) {
-                    if (notChosenContent.getBroadcasts() != null
-                            && !notChosenContent.getBroadcasts()
-                            .isEmpty()) {
-                        for (Broadcast notChosenBroadcast : notChosenContent.getBroadcasts()) {
-                            for (Broadcast broadcastOfFirst : broadcastsOfFirst) {
-                                if (broadcastsMatch(broadcastOfFirst, notChosenBroadcast)) {
-                                    allBroadcasts.add(notChosenBroadcast);
-                                }
+            Iterable<Broadcast> broadcastsOfFirst = Iterables.concat(Iterables.transform(
+                    first,
+                    Item::getBroadcasts
+            ));
+            HashSet<Broadcast> allBroadcasts = Sets.newHashSet(broadcastsOfFirst);
+            for (T notChosenContent : notChosenOrdered) {
+                if (notChosenContent.getBroadcasts() != null
+                        && !notChosenContent.getBroadcasts()
+                        .isEmpty()) {
+                    for (Broadcast notChosenBroadcast : notChosenContent.getBroadcasts()) {
+                        boolean anyExistingMatches = false;
+                        for (Broadcast existingBroadcast : allBroadcasts) {
+                            if (broadcastsMatch(existingBroadcast, notChosenBroadcast)) {
+                                anyExistingMatches = true;
+                                break;
                             }
+                        }
+                        if(!anyExistingMatches){
+                            allBroadcasts.add(notChosenBroadcast);
                         }
                     }
                 }
-                chosen.setBroadcasts(allBroadcasts);
             }
+            chosen.setBroadcasts(allBroadcasts);
         } else {
             if (!first.isEmpty()) {
                 Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
