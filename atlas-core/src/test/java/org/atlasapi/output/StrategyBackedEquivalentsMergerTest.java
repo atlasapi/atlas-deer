@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Content;
 import org.atlasapi.entity.Id;
@@ -19,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -92,7 +94,7 @@ public class StrategyBackedEquivalentsMergerTest {
                 argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
                 argThat(is(application)),
-                Collections.emptySet()
+                Matchers.anySetOf(Annotation.class)
         );
     }
 
@@ -112,7 +114,7 @@ public class StrategyBackedEquivalentsMergerTest {
                     argThat(any(Content.class)),
                     anyCollectionOf(Content.class),
                     argThat(is(mergingApplication)),
-                    Collections.emptySet()
+                    Matchers.anySetOf(Annotation.class)
             )).thenReturn(one);
 
             merger.merge(Optional.of(one.getId()), contentList, mergingApplication,
@@ -124,7 +126,7 @@ public class StrategyBackedEquivalentsMergerTest {
                                 argThat(is(one)),
                                 argThat(contains(two, three)),
                                 argThat(is(mergingApplication)),
-                                Collections.emptySet()
+                                Matchers.anySetOf(Annotation.class)
                         );
             } else if (contentList.get(0).equals(two)) {
                 verify(strategy)
@@ -132,7 +134,7 @@ public class StrategyBackedEquivalentsMergerTest {
                                 argThat(is(one)),
                                 argThat(contains(two, three)),
                                 argThat(is(mergingApplication)),
-                                Collections.emptySet()
+                                Matchers.anySetOf(Annotation.class)
                         );
             } else {
                 verify(strategy)
@@ -140,7 +142,7 @@ public class StrategyBackedEquivalentsMergerTest {
                                 argThat(is(one)),
                                 argThat(contains(two, three)),
                                 argThat(is(mergingApplication)),
-                                Collections.emptySet()
+                                Matchers.anySetOf(Annotation.class)
                         );
             }
 
@@ -158,7 +160,7 @@ public class StrategyBackedEquivalentsMergerTest {
                 argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
                 argThat(is(mergingApplication)),
-                Collections.emptySet()
+                Matchers.anySetOf(Annotation.class)
         )).thenReturn(retrieved1);
 
         merger.merge(
@@ -173,7 +175,7 @@ public class StrategyBackedEquivalentsMergerTest {
                         argThat(is(retrieved1)),
                         argThat(contains(retrieved2)),
                         argThat(is(mergingApplication)),
-                        Collections.emptySet()
+                        Matchers.anySetOf(Annotation.class)
                 );
     }
 
@@ -197,7 +199,7 @@ public class StrategyBackedEquivalentsMergerTest {
                         argThat(is(one)),
                         argThat(contains(two, three)),
                         argThat(is(mergingApplication)),
-                        Collections.emptySet()
+                        Matchers.anySetOf(Annotation.class)
                 );
         reset(strategy);
         setUpMockStrategyToReturn(one);
@@ -210,7 +212,7 @@ public class StrategyBackedEquivalentsMergerTest {
                         argThat(is(two)),
                         argThat(contains(one, three)),
                         argThat(is(mergingApplication)),
-                        Collections.emptySet()
+                        Matchers.anySetOf(Annotation.class)
                 );
         reset(strategy);
         setUpMockStrategyToReturn(one);
@@ -223,7 +225,7 @@ public class StrategyBackedEquivalentsMergerTest {
                         argThat(is(one)),
                         argThat(contains(two, three)),
                         argThat(is(mergingApplication)),
-                        Collections.emptySet()
+                        Matchers.anySetOf(Annotation.class)
                 );
         reset(strategy);
     }
@@ -233,7 +235,7 @@ public class StrategyBackedEquivalentsMergerTest {
                 argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
                 argThat(is(mergingApplication)),
-                Collections.emptySet()
+                Matchers.anySetOf(Annotation.class)
         )).thenReturn(content);
     }
 
