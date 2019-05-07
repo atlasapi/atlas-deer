@@ -611,6 +611,16 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         List<T> all = ImmutableList.<T>builder().add(chosen).addAll(notChosen).build();
 
+        if (activeAnnotations.contains(Annotation.ALL_BROADCASTS)) {
+            chosen.setBroadcasts(
+                    all.stream()
+                            .map(T::getBroadcasts)
+                            .flatMap(Collection::stream)
+                            .collect(MoreCollectors.toImmutableSet())
+            );
+            return;
+        }
+
         List<T> notChosenOrdered = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher())
@@ -626,15 +636,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                         1
                 );
 
-        if (activeAnnotations.contains(Annotation.ALL_BROADCASTS)) {
-            chosen.setBroadcasts(
-                    all.stream()
-                            .map(T::getBroadcasts)
-                            .flatMap(Collection::stream)
-                            .collect(MoreCollectors.toImmutableSet())
-            );
-            return;
-        }
         if (!first.isEmpty()) {
             Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
             chosen.setBroadcasts(
