@@ -626,7 +626,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                         1
                 );
 
-        //TODO write more comments on what/why (here and/or in JIRA ticket)
         if (activeAnnotations.contains(Annotation.ALL_BROADCASTS)) {
             chosen.setBroadcasts(
                     all.stream()
