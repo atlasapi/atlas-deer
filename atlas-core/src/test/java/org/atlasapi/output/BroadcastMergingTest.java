@@ -2,6 +2,8 @@ package org.atlasapi.output;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
@@ -15,9 +17,12 @@ import org.joda.time.DateTime;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.metabroadcast.common.time.DateTimeZones.UTC;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -239,6 +244,105 @@ public class BroadcastMergingTest {
         assertFalse(mergedBroadcast.getSurround());
         assertTrue(mergedBroadcast.getSubtitled());
         assertTrue(mergedBroadcast.getAliases().size() == 3);
+    }
+
+    @Test
+    public void testBroadcastMergingWithAllBroadcastsAnnotation(){
+
+        when(application.getConfiguration()).thenReturn(getConfigWithReads(defaultTestPublishers));
+
+        Item chosenItem = new Item();
+        chosenItem.setId(1L);
+        chosenItem.setPublisher(Publisher.BBC);
+        chosenItem.setCanonicalUri("chosenItem");
+        chosenItem.addBroadcast(new Broadcast(
+                Id.valueOf(2),
+                new DateTime(2012, 1, 1, 0, 0, 0, UTC),
+                new DateTime(2012, 1, 1, 0, 0, 0, UTC)
+        ));
+
+        Item notChosenItem = new Item();
+        notChosenItem.setId(2L);
+        notChosenItem.setPublisher(Publisher.BBC);
+        notChosenItem.setCanonicalUri("notChosenItem");
+        // different channel (should not match)
+        notChosenItem.addBroadcast(new Broadcast(
+                Id.valueOf(1),
+                new DateTime(2012, 1, 1, 0, 0, 0, UTC),
+                new DateTime(2012, 1, 1, 0, 0, 0, UTC)
+        ));
+        // different start time (should not match)
+        notChosenItem.addBroadcast(new Broadcast(
+                Id.valueOf(2),
+                new DateTime(2012, 1, 5, 0, 0, 0, UTC),
+                new DateTime(2012, 1, 5, 0, 0, 0, UTC)
+        ));
+        // same channel + start time (should not match because of annotation)
+        notChosenItem.addBroadcast(new Broadcast(
+                Id.valueOf(2),
+                new DateTime(2012, 1, 1, 0, 0, 2, UTC),
+                new DateTime(2012, 1, 1, 0, 0, 2, UTC)
+        ));
+
+        chosenItem.addEquivalentTo(notChosenItem);
+        notChosenItem.addEquivalentTo(chosenItem);
+
+        Set<Annotation> activeAnnotations = new HashSet<>();
+
+        //merge all broadcasts from all sources, even if different channel and start time
+        activeAnnotations.add(Annotation.ALL_BROADCASTS);
+        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application, activeAnnotations);
+        assertEquals(4, chosenItem.getBroadcasts().size());
+
+    }
+
+    @Test
+    public void testBroadcastMergingWithMergedBroadcastsAnnotation(){
+
+        when(application.getConfiguration()).thenReturn(getConfigWithReads(defaultTestPublishers));
+
+        Item chosenItem = new Item();
+        chosenItem.setId(1L);
+        chosenItem.setPublisher(Publisher.BBC);
+        chosenItem.setCanonicalUri("chosenItem");
+        chosenItem.addBroadcast(new Broadcast(
+                Id.valueOf(2),
+                new DateTime(2012, 1, 1, 0, 0, 0, UTC),
+                new DateTime(2012, 1, 1, 0, 0, 0, UTC)
+        ));
+
+        Item notChosenItem = new Item();
+        notChosenItem.setId(2L);
+        notChosenItem.setPublisher(Publisher.BARB_TRANSMISSIONS);
+        notChosenItem.setCanonicalUri("notChosenItem");
+        // different channel (should not match)
+        notChosenItem.addBroadcast(new Broadcast(
+                Id.valueOf(1),
+                new DateTime(2012, 1, 1, 0, 0, 0, UTC),
+                new DateTime(2012, 1, 1, 0, 0, 0, UTC)
+        ));
+        // different start time (should not match)
+        notChosenItem.addBroadcast(new Broadcast(
+                Id.valueOf(2),
+                new DateTime(2012, 1, 5, 0, 0, 0, UTC),
+                new DateTime(2012, 1, 5, 0, 0, 0, UTC)
+        ));
+        // same channel + start time (should be matched+merged)
+        notChosenItem.addBroadcast(new Broadcast(
+                Id.valueOf(2),
+                new DateTime(2012, 1, 1, 0, 0, 0, UTC),
+                new DateTime(2012, 1, 1, 0, 0, 0, UTC)
+        ));
+
+        chosenItem.addEquivalentTo(notChosenItem);
+        notChosenItem.addEquivalentTo(chosenItem);
+
+        Set<Annotation> activeAnnotations = new HashSet<>();
+        //get broadcasts from all sources, merging on matching channel+start time
+        activeAnnotations.add(Annotation.ALL_MERGED_BROADCASTS);
+        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application, activeAnnotations);
+
+        assertEquals(3, chosenItem.getBroadcasts().size());
     }
 
     private ApplicationConfiguration getConfigWithReads(List<Publisher> publishers) {
