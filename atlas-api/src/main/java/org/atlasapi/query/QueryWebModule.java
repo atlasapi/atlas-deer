@@ -1069,6 +1069,16 @@ public class QueryWebModule {
                         commonImplied
                 )
                 .register(
+                        ALL_MERGED_BROADCASTS,
+                        BroadcastsAnnotation.create(idCodec(), channelResolver),
+                        commonImplied
+                )
+                .register(
+                        ALL_BROADCASTS,
+                        BroadcastsAnnotation.create(idCodec(), channelResolver),
+                        commonImplied
+                )
+                .register(
                         UPCOMING_BROADCASTS,
                         UpcomingBroadcastsAnnotation.create(
                                 idCodec(),
@@ -1100,16 +1110,6 @@ public class QueryWebModule {
                                 channelResolver
                         ),
                         commonImplied
-                )
-                .register(
-                        ALL_MERGED_BROADCASTS,
-                        NullWriter.create(Content.class),
-                        ImmutableSet.of(BROADCASTS)
-                )
-                .register(
-                        ALL_BROADCASTS,
-                        NullWriter.create(Content.class),
-                        ImmutableSet.of(BROADCASTS)
                 )
                 .register(AVAILABLE_LOCATIONS, new AvailableLocationsAnnotation(
                                 persistenceModule.playerResolver(),
