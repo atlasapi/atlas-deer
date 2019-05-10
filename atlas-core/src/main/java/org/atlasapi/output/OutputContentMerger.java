@@ -606,8 +606,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Set<Annotation> activeAnnotations
     ) {
 
-        // Take broadcasts from the most precedent source with broadcasts, and
-        // merge them with broadcasts from less precedent sources.
+        // Annotation of "broadcasts" behaviour: take broadcasts from the most precedent source with
+        // broadcasts, and merge them with broadcasts from less precedent sources
 
         List<T> all = ImmutableList.<T>builder().add(chosen).addAll(notChosen).build();
 
