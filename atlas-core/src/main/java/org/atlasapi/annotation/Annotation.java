@@ -38,6 +38,8 @@ public enum Annotation {
     AVAILABLE_LOCATIONS,
     UPCOMING_BROADCASTS,
     CURRENT_AND_FUTURE_BROADCASTS,
+    ALL_MERGED_BROADCASTS,  //all broadcasts from equiv set with merging on same channel/tx start
+    ALL_BROADCASTS,          //all broadcasts from equiv set without merging on same channel/tx start
     FILTERING_RESOURCE,
     CHANNEL,
     CHANNEL_GROUP,
@@ -78,9 +80,7 @@ public enum Annotation {
     CHANNEL_GROUP_INFO,
     CHANNEL_IDS,
     FUTURE_CHANNELS,
-    CUSTOM_FIELDS,
-    ALL_MERGED_BROADCASTS,  //all broadcasts from equiv set with merging on same channel/tx start
-    ALL_BROADCASTS          //all broadcasts from equiv set without merging on same channel/tx start
+    CUSTOM_FIELDS
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());
