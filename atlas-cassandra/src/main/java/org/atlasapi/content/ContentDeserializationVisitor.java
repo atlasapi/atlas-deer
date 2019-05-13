@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.ALL_AGGREGATED_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.ALL_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.ALL_MERGED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
@@ -77,7 +79,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             FIRST_BROADCASTS,
             NEXT_BROADCASTS,
             ALL_AGGREGATED_BROADCASTS,
-            AGGREGATED_BROADCASTS
+            AGGREGATED_BROADCASTS,
+            ALL_MERGED_BROADCASTS,
+            ALL_BROADCASTS
     );
     private static final Annotation SUB_ITEMS_ANNOTATIONS = SUB_ITEMS;
     private static final Annotation SUB_ITEM_SUMMARIES_ANNOTATION = SUB_ITEM_SUMMARIES;
