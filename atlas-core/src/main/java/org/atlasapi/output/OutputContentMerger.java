@@ -606,12 +606,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Set<Annotation> activeAnnotations
     ) {
 
-        // Annotation of "broadcasts" behaviour: take broadcasts from the most precedent source with
+        // Behaviour of "broadcasts" annotation: take broadcasts from the most precedent source with
         // broadcasts, and merge them with broadcasts from less precedent sources
+        // NB: source <=> publisher
 
         List<T> all = ImmutableList.<T>builder().add(chosen).addAll(notChosen).build();
 
         if (activeAnnotations.contains(Annotation.ALL_BROADCASTS)) {
+            //return all broadcasts in the equiv set, from all sources and with no merging
             chosen.setBroadcasts(
                     all.stream()
                             .map(T::getBroadcasts)
@@ -626,6 +628,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 .onResultOf(Sourceds.toPublisher())
                 .sortedCopy(notChosen);
 
+        //first = piece of content with highest precedence source with broadcasts
         List<T> first = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher())
@@ -640,6 +643,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
             chosen.setBroadcasts(
                     all.stream()
+                            //if ALL_MERGED_BROADCASTS not present, then filter out the broadcasts
+                            //from sources that are different from the source of "first"
                             .filter(item ->
                                     activeAnnotations.contains(Annotation.ALL_MERGED_BROADCASTS)
                                             || item.getSource().equals(sourceForBroadcasts)

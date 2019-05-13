@@ -31,15 +31,15 @@ public enum Annotation {
     KEY_PHRASES,
     ALL_AGGREGATED_BROADCASTS,
     AGGREGATED_BROADCASTS,
-    BROADCASTS,             //all broadcasts from equiv set with same source + channel/tx start
+    BROADCASTS, //all broadcasts from equiv set with same source with merge on same channel/tx start
     LOCATIONS,
     FIRST_BROADCASTS,
     NEXT_BROADCASTS,
     AVAILABLE_LOCATIONS,
     UPCOMING_BROADCASTS,
     CURRENT_AND_FUTURE_BROADCASTS,
-    ALL_MERGED_BROADCASTS,  //all broadcasts from equiv set with merging on same channel/tx start
-    ALL_BROADCASTS,          //all broadcasts from equiv set without merging on same channel/tx start
+    ALL_MERGED_BROADCASTS,  //all broadcasts from equiv set with merge on same channel/tx start
+    ALL_BROADCASTS,         //all broadcasts from equiv set without merge on same channel/tx start
     FILTERING_RESOURCE,
     CHANNEL,
     CHANNEL_GROUP,
