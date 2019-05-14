@@ -651,13 +651,15 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                         continue;
                     }
                     for (Broadcast broadcast : content.getBroadcasts()) {
+                        Set<Broadcast> broadcastsToAdd = new HashSet<>();
                         //merge similar broadcasts before adding them to set, to avoid dupes
                         for (Broadcast alreadyAddedBroadcast : allMergedBroadcasts) {
                             if (broadcastsMatch(alreadyAddedBroadcast, broadcast)) {
                                 mergeBroadcast(alreadyAddedBroadcast, broadcast);
                             } else {
-                                allMergedBroadcasts.add(broadcast);
+                                broadcastsToAdd.add(broadcast);
                             }
+                            allMergedBroadcasts.addAll(broadcastsToAdd);
                         }
                     }
                 }
