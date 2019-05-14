@@ -659,8 +659,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                             } else {
                                 broadcastsToAdd.add(broadcast);
                             }
-                            allMergedBroadcasts.addAll(broadcastsToAdd);
                         }
+                        allMergedBroadcasts.addAll(broadcastsToAdd);
                     }
                 }
                 chosen.setBroadcasts(allMergedBroadcasts);
