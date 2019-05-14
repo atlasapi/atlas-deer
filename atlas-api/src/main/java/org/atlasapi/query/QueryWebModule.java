@@ -183,6 +183,8 @@ import org.springframework.context.annotation.Import;
 import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.ALL_AGGREGATED_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.ALL_MERGED_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.ALL_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
@@ -1063,6 +1065,16 @@ public class QueryWebModule {
                 )
                 .register(
                         BROADCASTS,
+                        BroadcastsAnnotation.create(idCodec(), channelResolver),
+                        commonImplied
+                )
+                .register(
+                        ALL_MERGED_BROADCASTS,
+                        BroadcastsAnnotation.create(idCodec(), channelResolver),
+                        commonImplied
+                )
+                .register(
+                        ALL_BROADCASTS,
                         BroadcastsAnnotation.create(idCodec(), channelResolver),
                         commonImplied
                 )

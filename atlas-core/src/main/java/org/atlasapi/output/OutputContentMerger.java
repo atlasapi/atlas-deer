@@ -1,20 +1,19 @@
 package org.atlasapi.output;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
-import com.metabroadcast.applications.client.model.internal.Application;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nullable;
+
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
@@ -48,20 +47,26 @@ import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.stream.MoreCollectors;
+
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -112,7 +117,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     @Deprecated
-    public <T extends Described> List<T> merge(Application application, List<T> contents) {
+    public <T extends Described> List<T> merge(Application application, List<T> contents,
+            Set<Annotation> activeAnnotations) {
         Ordering<Sourced> publisherComparator = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher());
@@ -142,7 +148,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 mergeIn(application, (Container) chosen, filterEquivs(notChosen, Container.class));
             }
             if (chosen instanceof Item) {
-                mergeIn(application, (Item) chosen, filterEquivs(notChosen, Item.class));
+                mergeIn(application, (Item) chosen, filterEquivs(notChosen, Item.class), activeAnnotations);
             }
             if (chosen instanceof ContentGroup) {
                 mergeIn(application, (ContentGroup) chosen, filterEquivs(notChosen, ContentGroup.class));
@@ -213,7 +219,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     @Override
     public <T extends Content> T merge(T chosen, final Iterable<? extends T> equivalents,
-            final Application application) {
+            final Application application,
+            Set<Annotation> activeAnnotations) {
         chosen = createChosen(chosen, equivalents);
         chosen = mergeIdAndEquivTo(chosen);
         return chosen.accept(new ContentVisitorAdapter<T>() {
@@ -226,7 +233,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
             @Override
             protected T visitItem(Item item) {
-                mergeIn(application, item, filterEquivs(equivalents, Item.class));
+                mergeIn(application, item, filterEquivs(equivalents, Item.class), activeAnnotations);
                 return uncheckedCast(item);
             }
 
@@ -460,9 +467,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Item> void mergeIn(Application application, T chosen,
-            Iterable<T> notChosen) {
+            Iterable<T> notChosen,
+            Set<Annotation> activeAnnotations) {
         mergeContent(application, chosen, notChosen);
-        mergeVersions(application, chosen, notChosen);
+        mergeVersions(application, chosen, notChosen, activeAnnotations);
 
         if (chosen instanceof Film) {
             mergeFilmProperties(application, (Film) chosen, Iterables.filter(notChosen, Film.class));
@@ -568,8 +576,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Item> void mergeVersions(Application application, T chosen,
-            Iterable<T> notChosen) {
-        mergeBroadcasts(application, chosen, notChosen);
+            Iterable<T> notChosen, Set<Annotation> activeAnnotations) {
+        mergeBroadcasts(application, chosen, notChosen, activeAnnotations);
         List<T> notChosenOrdered = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher())
@@ -594,18 +602,38 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private <T extends Item> void mergeBroadcasts(
             Application application,
             T chosen,
-            Iterable<T> notChosen
+            Iterable<T> notChosen,
+            Set<Annotation> activeAnnotations
     ) {
 
-        // Take broadcasts from the most precedent source with broadcasts, and
-        // merge them with broadcasts from less precedent sources.
+        // Behaviour of "broadcasts" annotation: take broadcasts from the most precedent source with
+        // broadcasts, and merge them with broadcasts from less precedent sources
+        // NB: source <=> publisher
 
-        Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
+        List<T> all = ImmutableList.<T>builder().add(chosen).addAll(notChosen).build();
 
+        if (activeAnnotations.contains(Annotation.ALL_BROADCASTS)) {
+            //return all broadcasts in the equiv set, from all sources and with no merging
+            chosen.setBroadcasts(
+                    all.stream()
+                            .map(T::getBroadcasts)
+                            .flatMap(Collection::stream)
+                            .collect(MoreCollectors.toImmutableSet())
+            );
+            return;
+        }
+
+        List<T> notChosenOrdered = application.getConfiguration()
+                .getReadPrecedenceOrdering()
+                .onResultOf(Sourceds.toPublisher())
+                .sortedCopy(notChosen);
+
+        //first = piece of content with highest precedence source with broadcasts
         List<T> first = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher())
-                .leastOf(StreamSupport.stream(all.spliterator(), false)
+                .leastOf(
+                        all.stream()
                                 .filter(HAS_BROADCASTS::apply)
                                 .collect(Collectors.toList()),
                         1
@@ -613,20 +641,19 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         if (!first.isEmpty()) {
             Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
-            chosen.setBroadcasts(Sets.newHashSet(
-                    Iterables.concat(
-                            Iterables.transform(
-                                    Iterables.filter(all, isPublisher(sourceForBroadcasts)),
-                                    Item::getBroadcasts
+            chosen.setBroadcasts(
+                    all.stream()
+                            //if ALL_MERGED_BROADCASTS not present, then filter out the broadcasts
+                            //from sources that are different from the source of "first"
+                            .filter(item ->
+                                    activeAnnotations.contains(Annotation.ALL_MERGED_BROADCASTS)
+                                            || item.getSource().equals(sourceForBroadcasts)
                             )
-                    )));
-
+                            .map(T::getBroadcasts)
+                            .flatMap(Collection::stream)
+                            .collect(MoreCollectors.toImmutableSet())
+            );
         }
-
-        List<T> notChosenOrdered = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher())
-                .sortedCopy(notChosen);
 
         if (chosen.getBroadcasts() != null && !chosen.getBroadcasts().isEmpty()) {
             for (Broadcast chosenBroadcast : chosen.getBroadcasts()) {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.metabroadcast.applications.client.model.internal.Application;
@@ -186,27 +187,28 @@ public class EquivalentScheduleQueryExecutor
                     context.getAnnotations().containsValue(Annotation.NON_MERGED);
 
             if (context.getApplication().getConfiguration().isPrecedenceEnabled() && !hasNonMergedAnnotation) {
-                return mergeItemsInSchedule(input, context.getApplication());
+                return mergeItemsInSchedule(input, context.getApplication(),
+                        context.getAnnotations().all());
             }
             return selectBroadcastItems(input);
         };
     }
 
     private Schedule mergeItemsInSchedule(EquivalentSchedule schedule,
-            Application application) {
+            Application application, Set<Annotation> activeAnnotations) {
         ImmutableList.Builder<ChannelSchedule> channelSchedules = ImmutableList.builder();
         for (EquivalentChannelSchedule ecs : schedule.channelSchedules()) {
             channelSchedules.add(new ChannelSchedule(
                     ecs.getChannel(),
                     ecs.getInterval(),
-                    mergeItems(ecs.getEntries(), application)
+                    mergeItems(ecs.getEntries(), application, activeAnnotations)
             ));
         }
         return new Schedule(channelSchedules.build(), schedule.interval());
     }
 
     private Iterable<ItemAndBroadcast> mergeItems(ImmutableList<EquivalentScheduleEntry> entries,
-            Application application) {
+            Application application, Set<Annotation> activeAnnotations) {
         ImmutableList.Builder<ItemAndBroadcast> iabs = ImmutableList.builder();
         for (EquivalentScheduleEntry entry : entries) {
             if (entry.getItems().getResources().isEmpty()) {
@@ -218,7 +220,7 @@ public class EquivalentScheduleQueryExecutor
             List<Item> mergedItems = equivalentsMerger.merge(
                     Optional.<Id>absent(),
                     entry.getItems().getResources(),
-                    application
+                    application, activeAnnotations
             );
 
             Item item = Iterables.getOnlyElement(mergedItems);

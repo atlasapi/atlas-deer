@@ -1,6 +1,7 @@
 package org.atlasapi.query.v4.schedule;
 
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -314,7 +315,8 @@ public class EquivalentScheduleQueryExecutorTest {
         when(equivalentsMerger.merge(
                 Optional.absent(),
                 ImmutableSet.of(scheduleItem, equivalentItem),
-                application
+                application,
+                context.getAnnotations().all()
         ))
                 .thenReturn(ImmutableList.of(equivalentItem));
         when(broadcastMatcher.findMatchingBroadcast(originalBroadcast, equivalentBroadcasts))
@@ -333,7 +335,8 @@ public class EquivalentScheduleQueryExecutorTest {
         verify(equivalentsMerger).merge(
                 Optional.<Id>absent(),
                 ImmutableSet.of(scheduleItem, equivalentItem),
-                application
+                application,
+                context.getAnnotations().all()
         );
 
     }

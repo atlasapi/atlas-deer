@@ -1,8 +1,12 @@
 package org.atlasapi.output;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import com.metabroadcast.applications.client.model.internal.Application;
+
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;
@@ -29,7 +33,7 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
 
     @Override
     public <T extends E> List<T> merge(final Optional<Id> id, Iterable<T> equivalents,
-            Application application) {
+            Application application, Set<Annotation> activeAnnotations) {
         if (!application.getConfiguration().isPrecedenceEnabled()) {
             return ImmutableList.copyOf(equivalents);
         }
@@ -47,7 +51,8 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
                     strategy.merge(
                             Iterables.getFirst(sortedEquivalents, null),
                             ImmutableList.of(),
-                            application
+                            application,
+                            activeAnnotations
                     )
             );
         }
@@ -66,7 +71,7 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
                 sortedEquivalents,
                 Predicates.not(idIs(chosen.getId()))
         );
-        return ImmutableList.of(strategy.merge(chosen, notChosen, application));
+        return ImmutableList.of(strategy.merge(chosen, notChosen, application, activeAnnotations));
     }
 
     private boolean trivialMerge(ImmutableList<?> sortedEquivalents) {
