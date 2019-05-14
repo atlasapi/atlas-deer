@@ -640,19 +640,39 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 );
 
         if (!first.isEmpty()) {
+            if (activeAnnotations.contains(Annotation.ALL_MERGED_BROADCASTS)) {
+                Set<Broadcast> allMergedBroadcasts = new HashSet<>();
+                Set<Broadcast> firstBroadcasts = Iterables.getOnlyElement(first).getBroadcasts();
+                if(firstBroadcasts != null){
+                    allMergedBroadcasts.addAll(firstBroadcasts);
+                }
+                for (T content : notChosenOrdered) {
+                    if (content.getBroadcasts() == null) {
+                        continue;
+                    }
+                    for (Broadcast broadcast : content.getBroadcasts()) {
+                        //merge similar broadcasts before adding them to set, to avoid dupes
+                        for (Broadcast alreadyAddedBroadcast : allMergedBroadcasts) {
+                            if (broadcastsMatch(alreadyAddedBroadcast, broadcast)) {
+                                mergeBroadcast(alreadyAddedBroadcast, broadcast);
+                            } else {
+                                allMergedBroadcasts.add(broadcast);
+                            }
+                        }
+                    }
+                }
+                chosen.setBroadcasts(allMergedBroadcasts);
+                return;
+            }
             Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
             chosen.setBroadcasts(
                     all.stream()
-                            //if ALL_MERGED_BROADCASTS not present, then filter out the broadcasts
-                            //from sources that are different from the source of "first"
-                            .filter(item ->
-                                    activeAnnotations.contains(Annotation.ALL_MERGED_BROADCASTS)
-                                            || item.getSource().equals(sourceForBroadcasts)
-                            )
+                            //filter out the broadcasts from other sources
+                            .filter(item -> item.getSource().equals(sourceForBroadcasts))
                             .map(T::getBroadcasts)
                             .flatMap(Collection::stream)
                             .collect(MoreCollectors.toImmutableSet())
-            );
+                );
         }
 
         if (chosen.getBroadcasts() != null && !chosen.getBroadcasts().isEmpty()) {
