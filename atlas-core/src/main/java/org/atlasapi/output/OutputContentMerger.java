@@ -641,10 +641,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         if (!first.isEmpty()) {
             if (activeAnnotations.contains(Annotation.ALL_MERGED_BROADCASTS)) {
-                Set<Broadcast> allMergedBroadcasts = new HashSet<>();
+                Set<Broadcast> finalAllMergedBroadcasts = new HashSet<>();
                 Set<Broadcast> firstBroadcasts = Iterables.getOnlyElement(first).getBroadcasts();
                 if(firstBroadcasts != null){
-                    allMergedBroadcasts.addAll(firstBroadcasts);
+                    finalAllMergedBroadcasts.addAll(firstBroadcasts);
                 }
                 for (T content : notChosenOrdered) {
                     if (content.getBroadcasts() == null) {
@@ -652,18 +652,22 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                     }
                     Set<Broadcast> broadcastsToAdd = new HashSet<>();
                     for (Broadcast broadcast : content.getBroadcasts()) {
+                        boolean merged = false;
                         //merge similar broadcasts instead of adding them to set,to avoid duplicates
-                        for (Broadcast alreadyAddedBroadcast : allMergedBroadcasts) {
+                        for (Broadcast alreadyAddedBroadcast : finalAllMergedBroadcasts) {
                             if (broadcastsMatch(alreadyAddedBroadcast, broadcast)) {
                                 mergeBroadcast(alreadyAddedBroadcast, broadcast);
-                            } else {
-                                broadcastsToAdd.add(broadcast);
+                                merged = true;
+                                break;
                             }
                         }
+                        if (!merged){
+                            broadcastsToAdd.add(broadcast);
+                        }
                     }
-                    allMergedBroadcasts.addAll(broadcastsToAdd);
+                    finalAllMergedBroadcasts.addAll(broadcastsToAdd);
                 }
-                chosen.setBroadcasts(allMergedBroadcasts);
+                chosen.setBroadcasts(finalAllMergedBroadcasts);
                 return;
             }
             Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
