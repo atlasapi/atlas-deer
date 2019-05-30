@@ -31,7 +31,6 @@ import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -261,7 +260,8 @@ public class ScheduleQueryExecutorImplTest {
         when(equivalentContentResolver.resolveIds(
                 ImmutableSet.of(itemId),
                 application,
-                ActiveAnnotations.standard().all()
+                ActiveAnnotations.standard().all(),
+                null
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
                         itemId,
@@ -277,7 +277,8 @@ public class ScheduleQueryExecutorImplTest {
         verify(equivalentContentResolver).resolveIds(
                 ImmutableSet.of(itemId),
                 application,
-                ActiveAnnotations.standard().all()
+                ActiveAnnotations.standard().all(),
+                null
         );
 
     }

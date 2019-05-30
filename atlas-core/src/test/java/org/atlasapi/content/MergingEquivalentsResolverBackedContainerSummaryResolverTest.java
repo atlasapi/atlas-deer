@@ -80,13 +80,15 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
         when(contentResolver.resolveIds(
                 containerIds,
                 application,
-                ImmutableSet.of()
+                ImmutableSet.of(),
+                null
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
                 application,
-                ImmutableSet.of()
+                ImmutableSet.of(),
+                null
         );
 
         assertThat(containerSummaryOptional.get(), is(containerSummary));
@@ -103,13 +105,15 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
         when(contentResolver.resolveIds(
                 containerIds,
                 application,
-                ImmutableSet.of()
+                ImmutableSet.of(),
+                null
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
                 application,
-                ImmutableSet.of()
+                ImmutableSet.of(),
+                null
         );
 
         assertThat(containerSummaryOptional.isPresent(), is(false));
@@ -136,13 +140,15 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
         when(contentResolver.resolveIds(
                 containerIds,
                 application,
-                ImmutableSet.of()
+                ImmutableSet.of(),
+                null
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
                 application,
-                ImmutableSet.of()
+                ImmutableSet.of(),
+                null
         );
 
         assertThat(containerSummaryOptional.isPresent(), is(false));
@@ -160,10 +166,14 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
         contentAnnotationBasedMergingEquivalentsResolver.resolveIds(
                 ImmutableSet.of(),
                 application,
-                ImmutableSet.of(
-                        Annotation.NON_MERGED)
+                ImmutableSet.of(Annotation.NON_MERGED),
+                null
         );
-        verify(resolver).resolveIdsWithoutEquivalence(ImmutableSet.of(), null, ImmutableSet.of(
-                Annotation.NON_MERGED));
+        verify(resolver).resolveIdsWithoutEquivalence(
+                ImmutableSet.of(),
+                null,
+                ImmutableSet.of(Annotation.NON_MERGED),
+                false
+        );
     }
 }

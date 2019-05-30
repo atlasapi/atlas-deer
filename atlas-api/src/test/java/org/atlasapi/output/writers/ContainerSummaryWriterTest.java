@@ -2,7 +2,6 @@ package org.atlasapi.output.writers;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Episode;
@@ -86,7 +85,7 @@ public class ContainerSummaryWriterTest {
         ContainerSummary expectedSummary = ContainerSummary.from(series);
 
         when(containerSummaryResolver.resolveContainerSummary(
-                series.getId(), application, annotations
+                series.getId(), application, annotations, null
         ))
                 .thenReturn(Optional.of(expectedSummary));
 
@@ -98,7 +97,7 @@ public class ContainerSummaryWriterTest {
     @Test
     public void doNotWriteWhenContainerSummaryCannotBeResolved() throws Exception {
         when(containerSummaryResolver.resolveContainerSummary(
-                series.getId(), application, annotations
+                series.getId(), application, annotations, null
         ))
                 .thenReturn(Optional.absent());
 

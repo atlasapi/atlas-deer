@@ -21,12 +21,22 @@ public interface EquivalentsResolver<E extends Equivalable<E>> {
      * @param ids               - requested numeric keys of equivalent content.
      * @param selectedSources   - sources of the equivalent set to resolve.
      * @param activeAnnotations - components of the model to resolve.
+     * @param isHigherReadConsistencyQuery - boolean request parameter which decides the read
+     *                                     consistency level
      * @return EquivalentContent with an entry for each of the requested IDs.
      */
-    ListenableFuture<ResolvedEquivalents<E>> resolveIds(Iterable<Id> ids,
-            Set<Publisher> selectedSources, Set<Annotation> activeAnnotations);
+    ListenableFuture<ResolvedEquivalents<E>> resolveIds(
+            Iterable<Id> ids,
+            Set<Publisher> selectedSources,
+            Set<Annotation> activeAnnotations,
+            boolean isHigherReadConsistencyQuery
+    );
 
-    ListenableFuture<ResolvedEquivalents<E>> resolveIdsWithoutEquivalence(Iterable<Id> ids,
-            Set<Publisher> selectedSources, Set<Annotation> activeAnnotations);
+    ListenableFuture<ResolvedEquivalents<E>> resolveIdsWithoutEquivalence(
+            Iterable<Id> ids,
+            Set<Publisher> selectedSources,
+            Set<Annotation> activeAnnotations,
+            boolean isHigherReadConsistencyQuery
+    );
 
 }

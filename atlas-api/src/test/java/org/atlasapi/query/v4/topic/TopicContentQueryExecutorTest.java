@@ -111,7 +111,8 @@ public class TopicContentQueryExecutorTest {
         when(equivalentsResolver.resolveIds(
                 argThat(hasItems(content.getId())),
                 argThat(is(context.getApplication())),
-                argThat(is(context.getAnnotations().all()))
+                argThat(is(context.getAnnotations().all())),
+                null
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
                         Id.valueOf(1235),
@@ -175,7 +176,8 @@ public class TopicContentQueryExecutorTest {
         verify(equivalentsResolver, never()).resolveIds(
                 argThat(isA(Iterable.class)),
                 argThat(isA(Application.class)),
-                argThat(isA(Set.class))
+                argThat(isA(Set.class)),
+                null
         );
         throw qee.getCause();
     }

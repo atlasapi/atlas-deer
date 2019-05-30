@@ -1,5 +1,44 @@
 package org.atlasapi.content;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.atlasapi.annotation.Annotation;
+import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphFilter;
+import org.atlasapi.equivalence.EquivalenceGraphSerializer;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceGraphUpdate;
+import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
+import org.atlasapi.equivalence.ResolvedEquivalents;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
+import org.atlasapi.segment.SegmentEvent;
+import org.atlasapi.serialization.protobuf.ContentProtos;
+import org.atlasapi.system.legacy.LegacyContentResolver;
+import org.atlasapi.util.CassandraSecondaryIndex;
+import org.atlasapi.util.SecondaryIndex;
+
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.stream.MoreStreams;
+
 import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
@@ -26,43 +65,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.stream.MoreStreams;
-import org.atlasapi.annotation.Annotation;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.equivalence.EquivalenceGraph;
-import org.atlasapi.equivalence.EquivalenceGraphFilter;
-import org.atlasapi.equivalence.EquivalenceGraphSerializer;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.equivalence.EquivalenceGraphUpdate;
-import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
-import org.atlasapi.equivalence.ResolvedEquivalents;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
-import org.atlasapi.segment.SegmentEvent;
-import org.atlasapi.serialization.protobuf.ContentProtos;
-import org.atlasapi.system.legacy.LegacyContentResolver;
-import org.atlasapi.util.CassandraSecondaryIndex;
-import org.atlasapi.util.SecondaryIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.asc;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
@@ -191,14 +195,23 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     @Override
-    public ListenableFuture<ResolvedEquivalents<Content>> resolveIds(Iterable<Id> ids,
-            Set<Publisher> selectedSources, Set<Annotation> activeAnnotations) {
-
+    public ListenableFuture<ResolvedEquivalents<Content>> resolveIds(
+            Iterable<Id> ids,
+            Set<Publisher> selectedSources,
+            Set<Annotation> activeAnnotations,
+            boolean isHigherReadConsistencyQuery
+    ) {
         log.debug("Resolving IDs {}", Iterables.toString(ids));
 
         final SettableFuture<ResolvedEquivalents<Content>> result = SettableFuture.create();
 
-        resolveWithConsistency(result, ids, selectedSources, activeAnnotations, readConsistency);
+        resolveWithConsistency(
+                result,
+                ids,
+                selectedSources,
+                activeAnnotations,
+                isHigherReadConsistencyQuery ? ConsistencyLevel.QUORUM : readConsistency
+        );
 
         return result;
     }
@@ -206,12 +219,15 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     @Override
     public ListenableFuture<ResolvedEquivalents<Content>> resolveIdsWithoutEquivalence(
             Iterable<Id> ids,
-            Set<Publisher> selectedSources, Set<Annotation> activeAnnotations) {
-
+            Set<Publisher> selectedSources,
+            Set<Annotation> activeAnnotations,
+            boolean isHigherReadConsistencyQuery
+    ) {
         ListenableFuture<ResolvedEquivalents<Content>> equivalents = resolveIds(
                 ids,
                 selectedSources,
-                activeAnnotations
+                activeAnnotations,
+                isHigherReadConsistencyQuery
         );
         return Futures.transform(equivalents, extractTargetContent(ids));
     }

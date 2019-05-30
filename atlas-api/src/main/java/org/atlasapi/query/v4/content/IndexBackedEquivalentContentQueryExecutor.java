@@ -10,6 +10,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
@@ -34,7 +35,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.xml.Null;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -123,7 +123,8 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         return resolver.resolveIds(
                 ImmutableSet.of(id),
                 application(query),
-                annotations(query)
+                annotations(query),
+                operands(query)
         );
     }
 
@@ -170,7 +171,8 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
                 resolver.resolveIds(
                         input.getIds(),
                         application(query),
-                        annotations(query)
+                        annotations(query),
+                        operands(query)
                 );
         return Futures.transform(
                 resolving,
@@ -197,5 +199,9 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
 
     private Application application(Query<Content> query) {
         return query.getContext().getApplication();
+    }
+
+    private AttributeQuerySet operands(Query<Content> query) {
+        return query.getOperands();
     }
 }

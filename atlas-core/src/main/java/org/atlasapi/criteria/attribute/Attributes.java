@@ -162,6 +162,10 @@ public class Attributes {
             "actionableFilterParameters",
             Identified.class
     );
+    public static final Attribute<Boolean> HIGHER_READ_CONSISTENCY = BooleanAttribute.single(
+            "higherReadConsistency",
+            Identified.class
+    );
 
     // For Channels
     public static final String BROADCASTER_PARAM = "broadcaster";

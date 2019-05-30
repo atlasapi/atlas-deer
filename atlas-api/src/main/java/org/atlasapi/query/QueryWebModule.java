@@ -588,6 +588,10 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.SERIES_ID,
                                 IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.HIGHER_READ_CONSISTENCY,
+                                BooleanCoercer.create()
                         )
                 )
         );

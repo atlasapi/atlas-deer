@@ -56,7 +56,8 @@ public class AvailableContentDetailAnnotation extends OutputAnnotation<Content> 
                 contentResolver.resolveIds(
                         contentIds,
                         ctxt.getApplication(),
-                        Annotation.all()
+                        Annotation.all(),
+                        ctxt.getOperands()
                 ),
                 IOException.class
         );
