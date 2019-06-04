@@ -39,7 +39,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolver
             Id id,
             Application application,
             Set<Annotation> annotations,
-            @Nullable AttributeQuerySet operands
+            AttributeQuerySet operands
     ) {
         ResolvedEquivalents<Content> contentResolved = null;
         try {

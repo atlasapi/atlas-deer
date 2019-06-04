@@ -150,8 +150,8 @@ public class OutputContext {
                 request = queryContext.getRequest();
             }
 
-            if (operands == null && queryContext.getOperands().isPresent()) {
-                operands = queryContext.getOperands().get();
+            if (operands == null) {
+                operands = queryContext.getOperands();
             }
 
             return new OutputContext(this);

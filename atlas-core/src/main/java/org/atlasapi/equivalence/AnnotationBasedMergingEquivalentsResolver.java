@@ -32,7 +32,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
         implements MergingEquivalentsResolver<E> {
 
     private static final Logger log = LoggerFactory.getLogger(AnnotationBasedMergingEquivalentsResolver.class);
-    private static final String HIGHER_READ_CONSISTENCY_ENABLED_ROLE = "higher-read-consistency-enabled";
+    private static final String HIGHER_READ_CONSISTENCY_ENABLED_ROLE = "cassandra.consistency.level=quorum";
 
     private final EquivalentsResolver<E> resolver;
     private final ApplicationEquivalentsMerger<E> merger;
@@ -50,7 +50,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
             Iterable<Id> ids,
             Application application,
             Set<Annotation> activeAnnotations,
-            @Nullable AttributeQuerySet operands
+            AttributeQuerySet operands
     ) {
         if (activeAnnotations.contains(Annotation.NON_MERGED)) {
             return resolver.resolveIdsWithoutEquivalence(
@@ -84,12 +84,11 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
     }
 
     private boolean isHigherReadConsistencyQuery(
-            @Nullable AttributeQuerySet operands,
+            AttributeQuerySet operands,
             AccessRoles accessRoles
     ) {
-        return operands != null
-                && operands.stream().anyMatch(isHigherReadConsistency())
-                && accessRoles.hasRole(HIGHER_READ_CONSISTENCY_ENABLED_ROLE);
+        return !operands.isEmpty() && operands.stream().anyMatch(isHigherReadConsistency())
+                || accessRoles.hasRole(HIGHER_READ_CONSISTENCY_ENABLED_ROLE);
     }
 
     private Predicate<AttributeQuery<?>> isHigherReadConsistency() {

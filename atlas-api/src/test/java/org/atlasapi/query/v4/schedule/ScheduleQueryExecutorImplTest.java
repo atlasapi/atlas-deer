@@ -13,6 +13,7 @@ import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
@@ -261,7 +262,7 @@ public class ScheduleQueryExecutorImplTest {
                 ImmutableSet.of(itemId),
                 application,
                 ActiveAnnotations.standard().all(),
-                null
+                AttributeQuerySet.create(ImmutableSet.of())
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
                         itemId,
@@ -278,7 +279,7 @@ public class ScheduleQueryExecutorImplTest {
                 ImmutableSet.of(itemId),
                 application,
                 ActiveAnnotations.standard().all(),
-                null
+                AttributeQuerySet.create(ImmutableSet.of())
         );
 
     }

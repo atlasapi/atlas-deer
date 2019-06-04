@@ -17,6 +17,6 @@ public interface ContainerSummaryResolver {
             Id id,
             Application application,
             Set<Annotation> annotations,
-            @Nullable AttributeQuerySet operands
+            AttributeQuerySet operands
     );
 }

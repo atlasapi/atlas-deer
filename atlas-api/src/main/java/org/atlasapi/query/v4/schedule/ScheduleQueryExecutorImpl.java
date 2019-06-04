@@ -133,7 +133,7 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
                 idsFrom(schedule),
                 application,
                 annotations,
-                context.getOperands().orNull()
+                context.getOperands()
         );
         return Futures.transform(equivs, intoSchedule(schedule));
     }

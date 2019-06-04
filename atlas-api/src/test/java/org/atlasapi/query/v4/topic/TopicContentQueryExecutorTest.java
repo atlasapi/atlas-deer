@@ -87,6 +87,7 @@ public class TopicContentQueryExecutorTest {
         QueryContext context = QueryContext.create(
                 application,
                 ActiveAnnotations.standard(),
+                emptyAttributeQuerySet,
                 mock(HttpServletRequest.class)
         );
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context);
@@ -112,7 +113,7 @@ public class TopicContentQueryExecutorTest {
                 argThat(hasItems(content.getId())),
                 argThat(is(context.getApplication())),
                 argThat(is(context.getAnnotations().all())),
-                null
+                argThat(is(emptyAttributeQuerySet))
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
                         Id.valueOf(1235),
@@ -177,7 +178,7 @@ public class TopicContentQueryExecutorTest {
                 argThat(isA(Iterable.class)),
                 argThat(isA(Application.class)),
                 argThat(isA(Set.class)),
-                null
+                argThat(isA(AttributeQuerySet.class))
         );
         throw qee.getCause();
     }

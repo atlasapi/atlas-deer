@@ -48,7 +48,7 @@ public abstract class Query<T> {
         public SingleQuery(Id id, QueryContext context) {
             super(context);
             this.id = checkNotNull(id);
-            this.operands = null;
+            this.operands = AttributeQuerySet.create(ImmutableSet.of());
         }
 
         public SingleQuery(Id id, QueryContext context, AttributeQuerySet operands) {
@@ -68,10 +68,6 @@ public abstract class Query<T> {
 
         @Override
         public AttributeQuerySet getOperands() {
-            if (Objects.isNull(operands)) {
-                return AttributeQuerySet.create(ImmutableSet.of());
-            }
-
             return operands;
         }
 

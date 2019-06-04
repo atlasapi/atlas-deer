@@ -1,9 +1,12 @@
 package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableList;
+
+import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.annotation.Annotation;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.AnnotationBasedMergingEquivalentsResolver;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
@@ -29,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,14 +85,14 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
                 containerIds,
                 application,
                 ImmutableSet.of(),
-                null
+                AttributeQuerySet.create(ImmutableSet.of())
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
                 application,
                 ImmutableSet.of(),
-                null
+                AttributeQuerySet.create(ImmutableSet.of())
         );
 
         assertThat(containerSummaryOptional.get(), is(containerSummary));
@@ -106,14 +110,14 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
                 containerIds,
                 application,
                 ImmutableSet.of(),
-                null
+                AttributeQuerySet.create(ImmutableSet.of())
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
                 application,
                 ImmutableSet.of(),
-                null
+                AttributeQuerySet.create(ImmutableSet.of())
         );
 
         assertThat(containerSummaryOptional.isPresent(), is(false));
@@ -141,14 +145,14 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
                 containerIds,
                 application,
                 ImmutableSet.of(),
-                null
+                AttributeQuerySet.create(ImmutableSet.of())
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
                 application,
                 ImmutableSet.of(),
-                null
+                AttributeQuerySet.create(ImmutableSet.of())
         );
 
         assertThat(containerSummaryOptional.isPresent(), is(false));
@@ -158,16 +162,20 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
     public void testAnnotationBasedMerger() throws Exception {
         EquivalentsResolver<Content> resolver = mock(EquivalentsResolver.class);
         ApplicationEquivalentsMerger<Content> merger = mock(ApplicationEquivalentsMerger.class);
+        AccessRoles accessRoles = mock(AccessRoles.class);
         when(application.getConfiguration()).thenReturn(mock(ApplicationConfiguration.class));
         contentAnnotationBasedMergingEquivalentsResolver = new AnnotationBasedMergingEquivalentsResolver<>(
                 resolver,
                 merger
         );
+        when(application.getAccessRoles()).thenReturn(accessRoles);
+        when(accessRoles.hasRole(any())).thenReturn(false);
+
         contentAnnotationBasedMergingEquivalentsResolver.resolveIds(
                 ImmutableSet.of(),
                 application,
                 ImmutableSet.of(Annotation.NON_MERGED),
-                null
+                AttributeQuerySet.create(ImmutableSet.of())
         );
         verify(resolver).resolveIdsWithoutEquivalence(
                 ImmutableSet.of(),
