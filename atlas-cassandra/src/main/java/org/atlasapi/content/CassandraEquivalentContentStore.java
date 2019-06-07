@@ -14,6 +14,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attributes;
@@ -199,7 +201,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             Iterable<Id> ids,
             Set<Publisher> selectedSources,
             Set<Annotation> activeAnnotations,
-            boolean isHigherReadConsistencyQuery
+            @Nullable ConsistencyLevel consistencyLevel
     ) {
         log.debug("Resolving IDs {}", Iterables.toString(ids));
 
@@ -210,7 +212,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 ids,
                 selectedSources,
                 activeAnnotations,
-                isHigherReadConsistencyQuery ? ConsistencyLevel.QUORUM : readConsistency
+                consistencyLevel != null ? consistencyLevel : readConsistency
         );
 
         return result;
@@ -221,13 +223,13 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             Iterable<Id> ids,
             Set<Publisher> selectedSources,
             Set<Annotation> activeAnnotations,
-            boolean isHigherReadConsistencyQuery
+            ConsistencyLevel consistencyLevel
     ) {
         ListenableFuture<ResolvedEquivalents<Content>> equivalents = resolveIds(
                 ids,
                 selectedSources,
                 activeAnnotations,
-                isHigherReadConsistencyQuery
+                consistencyLevel
         );
         return Futures.transform(equivalents, extractTargetContent(ids));
     }

@@ -1,10 +1,12 @@
 package org.atlasapi.equivalence;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -19,6 +21,7 @@ import org.atlasapi.entity.Id;
 import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 
+import com.datastax.driver.core.ConsistencyLevel;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Futures;
@@ -32,7 +35,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
         implements MergingEquivalentsResolver<E> {
 
     private static final Logger log = LoggerFactory.getLogger(AnnotationBasedMergingEquivalentsResolver.class);
-    private static final String HIGHER_READ_CONSISTENCY_ENABLED_ROLE = "cassandra.consistency.level=quorum";
+    private static final String CASSANDRA_CONSISTENCY_LEVEL_ROLE_REGEX = "cassandra\\.consistency\\.level=*";
 
     private final EquivalentsResolver<E> resolver;
     private final ApplicationEquivalentsMerger<E> merger;
@@ -57,14 +60,14 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
                     ids,
                     application.getConfiguration().getEnabledReadSources(),
                     activeAnnotations,
-                    isHigherReadConsistencyQuery(operands, application.getAccessRoles())
+                    getRequestedReadConsistencyLevel(operands, application.getAccessRoles())
             );
         } else {
             ListenableFuture<ResolvedEquivalents<E>> unmerged = resolver.resolveIds(
                     ids,
                     application.getConfiguration().getEnabledReadSources(),
                     activeAnnotations,
-                    isHigherReadConsistencyQuery(operands, application.getAccessRoles())
+                    getRequestedReadConsistencyLevel(operands, application.getAccessRoles())
             );
             try {
                 if (unmerged.get() == null) {
@@ -83,16 +86,28 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
         }
     }
 
-    private boolean isHigherReadConsistencyQuery(
+    @Nullable
+    private ConsistencyLevel getRequestedReadConsistencyLevel(
             AttributeQuerySet operands,
             AccessRoles accessRoles
     ) {
-        return !operands.isEmpty() && operands.stream().anyMatch(isHigherReadConsistency())
-                || accessRoles.hasRole(HIGHER_READ_CONSISTENCY_ENABLED_ROLE);
+        if (!operands.isEmpty() && operands.stream().anyMatch(isHigherReadConsistency())) {
+            return ConsistencyLevel.QUORUM;
+        }
+
+        List<String> roles = accessRoles.getRole(Pattern.compile(CASSANDRA_CONSISTENCY_LEVEL_ROLE_REGEX));
+        if (!roles.isEmpty()) {
+            String role = roles.get(0);
+            String consistencyLevel = role.substring(role.lastIndexOf("=") + 1);
+            return ConsistencyLevel.valueOf(consistencyLevel.toUpperCase());
+        }
+
+        return null;
     }
 
     private Predicate<AttributeQuery<?>> isHigherReadConsistency() {
-        return operand -> operand.getAttribute().equals(Attributes.HIGHER_READ_CONSISTENCY);
+        return operand -> operand.getAttribute().equals(Attributes.HIGHER_READ_CONSISTENCY)
+                && Boolean.parseBoolean(operand.getValue().get(0).toString());
     }
 
     private Function<ResolvedEquivalents<E>, ResolvedEquivalents<E>> mergeUsing(

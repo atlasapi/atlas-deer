@@ -2,10 +2,13 @@ package org.atlasapi.equivalence;
 
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
+import com.datastax.driver.core.ConsistencyLevel;
 import com.google.common.util.concurrent.ListenableFuture;
 
 /**
@@ -21,22 +24,21 @@ public interface EquivalentsResolver<E extends Equivalable<E>> {
      * @param ids               - requested numeric keys of equivalent content.
      * @param selectedSources   - sources of the equivalent set to resolve.
      * @param activeAnnotations - components of the model to resolve.
-     * @param isHigherReadConsistencyQuery - boolean request parameter which decides the read
-     *                                     consistency level
+     * @param consistencyLevel - requested consistency level to read
      * @return EquivalentContent with an entry for each of the requested IDs.
      */
     ListenableFuture<ResolvedEquivalents<E>> resolveIds(
             Iterable<Id> ids,
             Set<Publisher> selectedSources,
             Set<Annotation> activeAnnotations,
-            boolean isHigherReadConsistencyQuery
+            @Nullable ConsistencyLevel consistencyLevel
     );
 
     ListenableFuture<ResolvedEquivalents<E>> resolveIdsWithoutEquivalence(
             Iterable<Id> ids,
             Set<Publisher> selectedSources,
             Set<Annotation> activeAnnotations,
-            boolean isHigherReadConsistencyQuery
+            @Nullable ConsistencyLevel consistencyLevel
     );
 
 }

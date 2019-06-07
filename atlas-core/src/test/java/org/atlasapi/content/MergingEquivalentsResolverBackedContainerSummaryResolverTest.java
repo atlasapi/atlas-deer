@@ -181,7 +181,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
                 ImmutableSet.of(),
                 null,
                 ImmutableSet.of(Annotation.NON_MERGED),
-                false
+                null
         );
     }
 }

@@ -310,7 +310,7 @@ public class CassandraEquivalentContentStoreRowIT {
                 .resolveIds(ImmutableList.of(content.getId()),
                         ImmutableSet.of(METABROADCAST),
                         Annotation.all(),
-                        false
+                        null
                 ));
         ImmutableSet<Content> resolvedContent = resolved.get(content.getId());
         assertThat(resolvedContent.size(), is(1));
@@ -351,7 +351,7 @@ public class CassandraEquivalentContentStoreRowIT {
                 .resolveIds(ImmutableList.of(c.getId()),
                         ImmutableSet.of(METABROADCAST),
                         Annotation.all(),
-                        false
+                        null
                 ));
         ImmutableSet<Content> content = resolved.get(c.getId());
 
@@ -366,14 +366,14 @@ public class CassandraEquivalentContentStoreRowIT {
                                 ImmutableSet.of(setId),
                                 ImmutableSet.of(METABROADCAST),
                                 ImmutableSet.of(),
-                                false
+                                null
                         ));
         ResolvedEquivalents<Content> resolved = get(persistenceModule.equivalentContentStore().
                 resolveIds(
                         ImmutableSet.of(setId),
                         ImmutableSet.of(METABROADCAST),
                         ImmutableSet.of(),
-                        false
+                        null
                 ));
         assertEquals(resolved.size(), 3);
         assertEquals(resolvedWithoutEquivalence.size(), 1);

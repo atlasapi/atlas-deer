@@ -290,7 +290,7 @@ public class ContentDebugController {
         ImmutableList<Id> ids = ImmutableList.of(id);
         ResolvedEquivalents<Content> result = Futures.get(
                 equivalentContentStore.resolveIds(
-                        ids, Publisher.all(), ImmutableSet.of(), false
+                        ids, Publisher.all(), ImmutableSet.of(), null
                 ),
                 1,
                 TimeUnit.MINUTES,
@@ -310,7 +310,7 @@ public class ContentDebugController {
         ImmutableList<Id> ids = ImmutableList.of(id);
         ResolvedEquivalents<Content> result = Futures.get(
                 equivalentContentStore.resolveIds(
-                        ids, Publisher.all(), ImmutableSet.of(), false
+                        ids, Publisher.all(), ImmutableSet.of(), null
                 ),
                 1,
                 TimeUnit.MINUTES,
