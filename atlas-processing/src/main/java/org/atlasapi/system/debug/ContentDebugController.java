@@ -172,6 +172,7 @@ public class ContentDebugController {
             @PathVariable("id") String id,
             final HttpServletResponse response
     ) throws IOException {
+        response.setContentType("text/html;charset=UTF-8");
         response.getWriter().write(uppercase.decode(id).toString());
     }
 
@@ -180,6 +181,7 @@ public class ContentDebugController {
             @PathVariable("id") String id,
             final HttpServletResponse response
     ) throws IOException {
+        response.setContentType("text/html;charset=UTF-8");
         response.getWriter().write(lowercase.decode(id).toString());
     }
 
@@ -188,6 +190,7 @@ public class ContentDebugController {
             @PathVariable("id") Long id,
             final HttpServletResponse response
     ) throws IOException {
+        response.setContentType("text/html;charset=UTF-8");
         response.getWriter().write(uppercase.encode(BigInteger.valueOf(id)));
     }
 
@@ -196,6 +199,7 @@ public class ContentDebugController {
             @PathVariable("id") Long id,
             final HttpServletResponse response
     ) throws IOException {
+        response.setContentType("text/html;charset=UTF-8");
         response.getWriter().write(lowercase.encode(BigInteger.valueOf(id)));
     }
 
@@ -204,6 +208,7 @@ public class ContentDebugController {
             @PathVariable("id") String id,
             final HttpServletResponse response
     ) throws IOException {
+        response.setContentType("text/html;charset=UTF-8");
         response.getWriter().write(lowercase.encode(uppercase.decode(id)));
     }
 
@@ -212,6 +217,7 @@ public class ContentDebugController {
             @PathVariable("id") String id,
             final HttpServletResponse response
     ) throws IOException {
+        response.setContentType("text/html;charset=UTF-8");
         response.getWriter().write(uppercase.encode(lowercase.decode(id)));
     }
 
