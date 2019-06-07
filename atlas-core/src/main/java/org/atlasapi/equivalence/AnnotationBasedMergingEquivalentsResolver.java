@@ -91,7 +91,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
             AttributeQuerySet operands,
             AccessRoles accessRoles
     ) {
-        if (!operands.isEmpty() && operands.stream().anyMatch(isHigherReadConsistency())) {
+        if (operands.stream().anyMatch(isHigherReadConsistency())) {
             return ConsistencyLevel.QUORUM;
         }
 
