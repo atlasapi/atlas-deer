@@ -1,28 +1,28 @@
 package org.atlasapi.system.debug;
 
-import java.io.IOException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.equivalence.EquivalenceGraph;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.system.debug.serializers.AdjacentsSerializer;
-import org.atlasapi.system.debug.serializers.EquivalenceGraphSerializer;
-import org.atlasapi.system.debug.serializers.ResourceRefSerializer;
-
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.webapp.serializers.JodaDateTimeSerializer;
-
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.webapp.serializers.JodaDateTimeSerializer;
+import joptsimple.internal.Strings;
+import org.atlasapi.application.ApplicationFetcher;
+import org.atlasapi.application.ApplicationResolutionException;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.system.debug.serializers.AdjacentsSerializer;
+import org.atlasapi.system.debug.serializers.EquivalenceGraphSerializer;
+import org.atlasapi.system.debug.serializers.ResourceRefSerializer;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +31,18 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
 
 @Controller
 public class DelphiController {
@@ -38,11 +50,13 @@ public class DelphiController {
     private static final Logger log = LoggerFactory.getLogger(DelphiController.class);
 
     private final EquivalenceGraphStore equivalenceGraphStore;
+    private final ApplicationFetcher applicationFetcher;
     private final NumberToShortStringCodec codec;
     private final Gson gson;
 
-    private DelphiController(EquivalenceGraphStore equivalenceGraphStore) {
+    private DelphiController(EquivalenceGraphStore equivalenceGraphStore, ApplicationFetcher applicationFetcher) {
         this.equivalenceGraphStore = equivalenceGraphStore;
+        this.applicationFetcher = applicationFetcher;
         this.codec = SubstitutionTableNumberCodec.lowerCaseOnly();
         this.gson = new GsonBuilder()
                 .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -53,15 +67,19 @@ public class DelphiController {
                 .create();
     }
 
-    public static DelphiController create(EquivalenceGraphStore equivalenceGraphStore) {
-        return new DelphiController(equivalenceGraphStore);
+    public static DelphiController create(
+            EquivalenceGraphStore equivalenceGraphStore,
+            ApplicationFetcher applicationFetcher
+    ) {
+        return new DelphiController(equivalenceGraphStore, applicationFetcher);
     }
 
     @RequestMapping(value = "/system/debug/delphi/graph/{id}.json", method = RequestMethod.GET)
     public void listEquivalenceGraph(
             HttpServletRequest request,
             HttpServletResponse response,
-            @PathVariable("id") String id
+            @PathVariable("id") String id,
+            @RequestParam(value = "key", required = false) String apiKey
     ) throws IOException {
         try {
             Id decodedId = Id.valueOf(codec.decode(id));
@@ -78,6 +96,10 @@ public class DelphiController {
 
             EquivalenceGraph equivalenceGraph = optionalGraphMap.get(decodedId).get();
 
+            if(!Strings.isNullOrEmpty(apiKey)) {
+                equivalenceGraph = filterSources(equivalenceGraph, decodedId, apiKey);
+            }
+
             response.addHeader(
                     HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN,
                     "*"
@@ -87,5 +109,48 @@ public class DelphiController {
             log.error("Request exception {}", request.getRequestURI(), e);
             response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
         }
+    }
+
+    private EquivalenceGraph filterSources(EquivalenceGraph equivalenceGraph, Id start, String apiKey)
+            throws ApplicationResolutionException {
+        Optional<Application> applicationOpt = applicationFetcher.applicationForApiKey(apiKey);
+        if (!applicationOpt.isPresent()) {
+            throw new IllegalArgumentException("No application found for apiKey " + apiKey);
+        }
+
+        Application application = applicationOpt.get();
+        Set<Publisher> readSources = application.getConfiguration().getEnabledReadSources();
+
+        Queue<Id> idsToVisit = new LinkedList<>();
+        Map<Id, EquivalenceGraph.Adjacents> filteredAdjacents = new HashMap<>();
+        idsToVisit.add(start);
+
+        while(!idsToVisit.isEmpty()) {
+            Id id = idsToVisit.poll();
+            EquivalenceGraph.Adjacents adjacents = equivalenceGraph.getAdjacents(id);
+            adjacents = adjacents
+                    .copyWithIncoming(filterSources(adjacents.getIncomingEdges(), readSources))
+                    .copyWithOutgoing(filterSources(adjacents.getOutgoingEdges(), readSources));
+            filteredAdjacents.put(id, adjacents);
+            Set<Id> outgoingToVisit = adjacents.getOutgoingEdges().stream()
+                    .map(ResourceRef::getId)
+                    .filter(refId -> !filteredAdjacents.containsKey(refId))
+                    .collect(MoreCollectors.toImmutableSet());
+            Set<Id> incomingToVisit = adjacents.getIncomingEdges().stream()
+                    .map(ResourceRef::getId)
+                    .filter(refId -> !filteredAdjacents.containsKey(refId))
+                    .collect(MoreCollectors.toImmutableSet());
+            idsToVisit.addAll(Sets.union(outgoingToVisit, incomingToVisit));
+        }
+
+        Set<EquivalenceGraph.Adjacents> filteredAdjacentsSet = filteredAdjacents.values().stream()
+                .collect(MoreCollectors.toImmutableSet());
+        return EquivalenceGraph.valueOf(filteredAdjacentsSet);
+    }
+
+    private Set<ResourceRef> filterSources(Collection<ResourceRef> refs, Set<Publisher> publishers) {
+        return refs.stream()
+                .filter(ref -> publishers.contains(ref.getSource()))
+                .collect(MoreCollectors.toImmutableSet());
     }
 }

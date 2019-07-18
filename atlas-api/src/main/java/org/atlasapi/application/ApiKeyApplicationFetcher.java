@@ -1,20 +1,18 @@
 package org.atlasapi.application;
 
-import javax.servlet.http.HttpServletRequest;
-
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.applications.client.ApplicationsClient;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.Environment;
 import com.metabroadcast.applications.client.query.Query;
 import com.metabroadcast.applications.client.query.Result;
-
-import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -62,6 +60,11 @@ public class ApiKeyApplicationFetcher implements ApplicationFetcher {
 
         String apiKey = MoreObjects.firstNonNull(apiKeyParam, apiKeyHeader);
 
+        return applicationForApiKey(apiKey);
+    }
+
+    @Override
+    public Optional<Application> applicationForApiKey(String apiKey) throws ApplicationResolutionException {
         Result result = applicationsClient.resolve(
                 Query.create(apiKey, environment)
         );
