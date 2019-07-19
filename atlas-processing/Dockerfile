@@ -36,6 +36,8 @@ CMD java \
     -Djetty.home="$JETTY_HOME" \
     -Dsun.net.inetaddr.ttl="$SUN_NET_INETADDR_TTL" \
     -DMBST_PLATFORM="$MBST_PLATFORM" \
+    -Dapplications.client.host="$APPLICATIONS_CLIENT_HOST" \
+    -Dapplications.client.env="$APPLICATIONS_CLIENT_ENV" \
     -Dc4.apikey="$C4_APIKEY" \
     -Dc4.keystore.password="$C4_KEYSTORE_PASSWORD" \
     -Dc4.lakeviewavailability.key="$C4_LAKEVIEWAVAILABILITY_KEY" \
