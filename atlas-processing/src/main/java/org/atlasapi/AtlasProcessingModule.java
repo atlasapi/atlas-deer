@@ -2,8 +2,6 @@ package org.atlasapi;
 
 import com.metabroadcast.common.webapp.properties.ContextConfigurer;
 import org.atlasapi.application.ApplicationModule;
-import org.atlasapi.application.ApplicationPersistenceModule;
-import org.atlasapi.application.www.ApplicationWebModule;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.WorkersModule;
 import org.atlasapi.system.ProcessingHealthModule;
@@ -23,8 +21,6 @@ import org.springframework.context.annotation.Import;
         WorkersModule.class,
         BootstrapModule.class,
         ApplicationModule.class,
-        ApplicationWebModule.class,
-        ApplicationPersistenceModule.class,
         DebugModule.class
 })
 public class AtlasProcessingModule {
