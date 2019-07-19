@@ -20,8 +20,11 @@ public class ApplicationPersistenceModule {
     @Autowired AtlasPersistenceModule persistence;
     private @Autowired MetricsModule metricsModule;
 
-    public ApplicationsClient applicationsClient() throws InterruptedException {
-        Thread.sleep(2 * 60 * 100);
+    public ApplicationsClient applicationsClient() {
+        try {
+            Thread.sleep(2 * 60 * 100);
+        } catch (InterruptedException e) {
+        }
         return ApplicationsClientImpl.create(
                 applicationsClientHost,
                 metricsModule.metrics()
