@@ -4,7 +4,6 @@ import com.metabroadcast.applications.client.ApplicationsClient;
 import com.metabroadcast.applications.client.ApplicationsClientImpl;
 import com.metabroadcast.common.properties.Configurer;
 import org.atlasapi.AtlasPersistenceModule;
-
 import org.atlasapi.system.MetricsModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +20,8 @@ public class ApplicationPersistenceModule {
     @Autowired AtlasPersistenceModule persistence;
     private @Autowired MetricsModule metricsModule;
 
-    public ApplicationsClient applicationsClient() {
+    public ApplicationsClient applicationsClient() throws InterruptedException {
+        Thread.sleep(2 * 60 * 100);
         return ApplicationsClientImpl.create(
                 applicationsClientHost,
                 metricsModule.metrics()
