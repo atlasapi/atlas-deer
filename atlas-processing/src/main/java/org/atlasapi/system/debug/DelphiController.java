@@ -10,7 +10,6 @@ import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.webapp.serializers.JodaDateTimeSerializer;
 import joptsimple.internal.Strings;
 import org.atlasapi.application.ApplicationFetcher;
@@ -38,12 +37,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Stream;
 
 @Controller
 public class DelphiController {
@@ -114,52 +113,36 @@ public class DelphiController {
 
     private EquivalenceGraph filterSources(EquivalenceGraph equivalenceGraph, Id start, String apiKey)
             throws ApplicationResolutionException {
-        Optional<Application> applicationOpt = applicationFetcher.applicationForApiKey(apiKey);
-        if (!applicationOpt.isPresent()) {
+        Optional<Application> application = applicationFetcher.applicationForApiKey(apiKey);
+        if (!application.isPresent()) {
             throw new IllegalArgumentException("No application found for apiKey " + apiKey);
         }
+        return filterSources(equivalenceGraph, start, application.get());
+    }
 
-        Application application = applicationOpt.get();
+    private EquivalenceGraph filterSources(EquivalenceGraph equivalenceGraph, Id start, Application application) {
         Set<Publisher> readSources = application.getConfiguration().getEnabledReadSources();
-
         Queue<Id> idsToVisit = new LinkedList<>();
         Map<Id, EquivalenceGraph.Adjacents> newAdjacentsMap = new HashMap<>();
-        idsToVisit.add(start);
 
+        idsToVisit.add(start);
         while(!idsToVisit.isEmpty()) {
             Id id = idsToVisit.poll();
             EquivalenceGraph.Adjacents existing = equivalenceGraph.getAdjacents(id);
             if (!readSources.contains(existing.getRef().getSource()) || newAdjacentsMap.containsKey(id)) {
                 continue;
             }
-            Set<ResourceRef> newOutgoing = new HashSet<>();
-            Set<ResourceRef> newIncoming = new HashSet<>();
 
             Set<ResourceRef> filteredOutgoing = filterSources(existing.getOutgoingEdges(), readSources);
             Set<ResourceRef> filteredIncoming = filterSources(existing.getIncomingEdges(), readSources);
-
-            for (ResourceRef ref : filteredOutgoing) {
-                newOutgoing.add(ref);
-                EquivalenceGraph.Adjacents adj = newAdjacentsMap.get(ref.getId());
-                newAdjacentsMap.put(ref.getId(), adj.copyWithIncoming(existing.getRef()));
-                idsToVisit.add(ref.getId());
-            }
-
-            for (ResourceRef ref : filteredIncoming) {
-                newIncoming.add(ref);
-                EquivalenceGraph.Adjacents adj = newAdjacentsMap.get(ref.getId());
-                newAdjacentsMap.put(ref.getId(), adj.copyWithOutgoing(existing.getRef()));
-                idsToVisit.add(ref.getId());
-            }
-
-            EquivalenceGraph.Adjacents newAdjacents = new EquivalenceGraph.Adjacents(
-                    existing.getRef(),
-                    new DateTime(DateTimeZones.UTC),
-                    newOutgoing,
-                    newIncoming
-            );
+            EquivalenceGraph.Adjacents newAdjacents = existing
+                    .copyWithOutgoing(filteredOutgoing)
+                    .copyWithIncoming(filteredIncoming);
             newAdjacentsMap.put(id, newAdjacents);
 
+            Stream.concat(filteredOutgoing.stream(), filteredIncoming.stream())
+                    .map(ResourceRef::getId)
+                    .forEach(idsToVisit::add);
         }
 
         Set<EquivalenceGraph.Adjacents> filteredAdjacentsSet = newAdjacentsMap.values().stream()
