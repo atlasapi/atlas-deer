@@ -1,7 +1,6 @@
 package org.atlasapi.system.debug;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -11,6 +10,7 @@ import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.webapp.serializers.JodaDateTimeSerializer;
 import joptsimple.internal.Strings;
 import org.atlasapi.application.ApplicationFetcher;
@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
@@ -122,28 +123,46 @@ public class DelphiController {
         Set<Publisher> readSources = application.getConfiguration().getEnabledReadSources();
 
         Queue<Id> idsToVisit = new LinkedList<>();
-        Map<Id, EquivalenceGraph.Adjacents> filteredAdjacents = new HashMap<>();
+        Map<Id, EquivalenceGraph.Adjacents> newAdjacentsMap = new HashMap<>();
         idsToVisit.add(start);
 
         while(!idsToVisit.isEmpty()) {
             Id id = idsToVisit.poll();
-            EquivalenceGraph.Adjacents adjacents = equivalenceGraph.getAdjacents(id);
-            adjacents = adjacents
-                    .copyWithIncoming(filterSources(adjacents.getIncomingEdges(), readSources))
-                    .copyWithOutgoing(filterSources(adjacents.getOutgoingEdges(), readSources));
-            filteredAdjacents.put(id, adjacents);
-            Set<Id> outgoingToVisit = adjacents.getOutgoingEdges().stream()
-                    .map(ResourceRef::getId)
-                    .filter(refId -> !filteredAdjacents.containsKey(refId))
-                    .collect(MoreCollectors.toImmutableSet());
-            Set<Id> incomingToVisit = adjacents.getIncomingEdges().stream()
-                    .map(ResourceRef::getId)
-                    .filter(refId -> !filteredAdjacents.containsKey(refId))
-                    .collect(MoreCollectors.toImmutableSet());
-            idsToVisit.addAll(Sets.union(outgoingToVisit, incomingToVisit));
+            EquivalenceGraph.Adjacents existing = equivalenceGraph.getAdjacents(id);
+            if (!readSources.contains(existing.getRef().getSource()) || newAdjacentsMap.containsKey(id)) {
+                continue;
+            }
+            Set<ResourceRef> newOutgoing = new HashSet<>();
+            Set<ResourceRef> newIncoming = new HashSet<>();
+
+            Set<ResourceRef> filteredOutgoing = filterSources(existing.getOutgoingEdges(), readSources);
+            Set<ResourceRef> filteredIncoming = filterSources(existing.getIncomingEdges(), readSources);
+
+            for (ResourceRef ref : filteredOutgoing) {
+                newOutgoing.add(ref);
+                EquivalenceGraph.Adjacents adj = newAdjacentsMap.get(ref.getId());
+                newAdjacentsMap.put(ref.getId(), adj.copyWithIncoming(existing.getRef()));
+                idsToVisit.add(ref.getId());
+            }
+
+            for (ResourceRef ref : filteredIncoming) {
+                newIncoming.add(ref);
+                EquivalenceGraph.Adjacents adj = newAdjacentsMap.get(ref.getId());
+                newAdjacentsMap.put(ref.getId(), adj.copyWithOutgoing(existing.getRef()));
+                idsToVisit.add(ref.getId());
+            }
+
+            EquivalenceGraph.Adjacents newAdjacents = new EquivalenceGraph.Adjacents(
+                    existing.getRef(),
+                    new DateTime(DateTimeZones.UTC),
+                    newOutgoing,
+                    newIncoming
+            );
+            newAdjacentsMap.put(id, newAdjacents);
+
         }
 
-        Set<EquivalenceGraph.Adjacents> filteredAdjacentsSet = filteredAdjacents.values().stream()
+        Set<EquivalenceGraph.Adjacents> filteredAdjacentsSet = newAdjacentsMap.values().stream()
                 .collect(MoreCollectors.toImmutableSet());
         return EquivalenceGraph.valueOf(filteredAdjacentsSet);
     }
