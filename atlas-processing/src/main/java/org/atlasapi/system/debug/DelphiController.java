@@ -117,11 +117,10 @@ public class DelphiController {
         if (!application.isPresent()) {
             throw new IllegalArgumentException("No application found for apiKey " + apiKey);
         }
-        return filterSources(equivalenceGraph, start, application.get());
+        return filterSources(equivalenceGraph, start, application.get().getConfiguration().getEnabledReadSources());
     }
 
-    private EquivalenceGraph filterSources(EquivalenceGraph equivalenceGraph, Id start, Application application) {
-        Set<Publisher> readSources = application.getConfiguration().getEnabledReadSources();
+    private EquivalenceGraph filterSources(EquivalenceGraph equivalenceGraph, Id start, Set<Publisher> publishers) {
         Queue<Id> idsToVisit = new LinkedList<>();
         Map<Id, EquivalenceGraph.Adjacents> newAdjacentsMap = new HashMap<>();
 
@@ -129,12 +128,12 @@ public class DelphiController {
         while(!idsToVisit.isEmpty()) {
             Id id = idsToVisit.poll();
             EquivalenceGraph.Adjacents existing = equivalenceGraph.getAdjacents(id);
-            if (!readSources.contains(existing.getRef().getSource()) || newAdjacentsMap.containsKey(id)) {
+            if (!publishers.contains(existing.getRef().getSource()) || newAdjacentsMap.containsKey(id)) {
                 continue;
             }
 
-            Set<ResourceRef> filteredOutgoing = filterSources(existing.getOutgoingEdges(), readSources);
-            Set<ResourceRef> filteredIncoming = filterSources(existing.getIncomingEdges(), readSources);
+            Set<ResourceRef> filteredOutgoing = filterSources(existing.getOutgoingEdges(), publishers);
+            Set<ResourceRef> filteredIncoming = filterSources(existing.getIncomingEdges(), publishers);
             EquivalenceGraph.Adjacents newAdjacents = existing
                     .copyWithOutgoing(filteredOutgoing)
                     .copyWithIncoming(filteredIncoming);
