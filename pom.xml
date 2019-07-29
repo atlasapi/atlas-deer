@@ -539,7 +539,7 @@
     <jetty.version>9.0.6.v20130930</jetty.version>
     <slf4j.version>1.7.5</slf4j.version>
     <astyanax.version>2.0.2</astyanax.version>
-    <common.version>2.0-SNAPSHOT</common.version>
+    <common.version>2.2-SNAPSHOT</common.version>
     <common.webapp.version>1.0-SNAPSHOT</common.webapp.version>
     <common.social.version>1.0-SNAPSHOT</common.social.version>
     <common.queue.version>2.0-SNAPSHOT</common.queue.version>
