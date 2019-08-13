@@ -95,7 +95,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
             return ConsistencyLevel.QUORUM;
         }
 
-        List<String> roles = accessRoles.getRole(Pattern.compile(CASSANDRA_CONSISTENCY_LEVEL_ROLE_REGEX));
+        List<String> roles = accessRoles.getRoles(Pattern.compile(CASSANDRA_CONSISTENCY_LEVEL_ROLE_REGEX));
         if (!roles.isEmpty()) {
             String role = roles.get(0);
             String consistencyLevel = role.substring(role.lastIndexOf("=") + 1);
