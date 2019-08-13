@@ -45,7 +45,8 @@ public final class EquivalentContentStoreTester
                 = get(getSubjectGenerator().getEquivalentContentStore()
                 .resolveIds(ImmutableList.of(content.getId()),
                         ImmutableSet.of(Publisher.METABROADCAST),
-                        Annotation.all()
+                        Annotation.all(),
+                        null
                 ));
 
         ImmutableSet<Content> set = resolved.get(content.getId());
@@ -82,7 +83,8 @@ public final class EquivalentContentStoreTester
                 = get(getSubjectGenerator().getEquivalentContentStore()
                 .resolveIds(ImmutableList.of(content1.getId()),
                         ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC),
-                        Annotation.all()
+                        Annotation.all(),
+                        null
                 ));
 
         ImmutableSet<Content> set = resolved.get(content1.getId());
@@ -125,7 +127,8 @@ public final class EquivalentContentStoreTester
                 = get(getSubjectGenerator().getEquivalentContentStore()
                 .resolveIds(ImmutableList.of(content1.getId()),
                         ImmutableSet.of(Publisher.METABROADCAST),
-                        Annotation.all()
+                        Annotation.all(),
+                        null
                 ));
 
         ImmutableSet<Content> set = resolved.get(content1.getId());
@@ -156,7 +159,9 @@ public final class EquivalentContentStoreTester
         ResolvedEquivalents<Content> resolved
                 = get(getSubjectGenerator().getEquivalentContentStore()
                 .resolveIds(ImmutableList.of(content1.getId(), content2.getId()),
-                        ImmutableSet.of(Publisher.METABROADCAST), Annotation.all()
+                        ImmutableSet.of(Publisher.METABROADCAST),
+                        Annotation.all(),
+                        null
                 ));
 
         ImmutableSet<Content> set1 = resolved.get(content1.getId());
@@ -178,7 +183,8 @@ public final class EquivalentContentStoreTester
                 = get(getSubjectGenerator().getEquivalentContentStore()
                 .resolveIds(ImmutableList.of(Id.valueOf(2)),
                         ImmutableSet.of(Publisher.METABROADCAST),
-                        Annotation.all()
+                        Annotation.all(),
+                        null
                 ));
 
         assertTrue(resolved.get(content.getId()).isEmpty());
@@ -198,7 +204,8 @@ public final class EquivalentContentStoreTester
                 = get(getSubjectGenerator().getEquivalentContentStore()
                 .resolveIds(ImmutableList.of(Id.valueOf(1)),
                         ImmutableSet.of(Publisher.BBC),
-                        Annotation.all()
+                        Annotation.all(),
+                        null
                 ));
 
         ImmutableSet<Content> set = resolved.get(content.getId());
@@ -229,7 +236,9 @@ public final class EquivalentContentStoreTester
         ResolvedEquivalents<Content> resolved
                 = get(getSubjectGenerator().getEquivalentContentStore()
                 .resolveIds(ImmutableList.of(content2.getId()),
-                        ImmutableSet.of(Publisher.METABROADCAST), Annotation.all()
+                        ImmutableSet.of(Publisher.METABROADCAST),
+                        Annotation.all(),
+                        null
                 ));
 
         ImmutableSet<Content> set = resolved.get(content2.getId());
@@ -250,7 +259,8 @@ public final class EquivalentContentStoreTester
                 = get(getSubjectGenerator().getEquivalentContentStore()
                 .resolveIds(ImmutableList.of(content.getId(), Id.valueOf(4)),
                         Publisher.all(),
-                        Annotation.all()
+                        Annotation.all(),
+                        null
                 ));
 
         ImmutableSet<Content> set = resolved.get(content.getId());
@@ -287,7 +297,8 @@ public final class EquivalentContentStoreTester
                 = get(getSubjectGenerator().getEquivalentContentStore()
                 .resolveIds(ImmutableList.of(content1.getId()),
                         ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC),
-                        Annotation.all()
+                        Annotation.all(),
+                        null
                 ));
 
         ImmutableSet<Content> set = resolved.get(content1.getId());

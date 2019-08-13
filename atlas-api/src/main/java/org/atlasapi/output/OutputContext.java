@@ -9,6 +9,8 @@ import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
+import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.Resource;
@@ -30,6 +32,7 @@ public class OutputContext {
 
     private final ActiveAnnotations annotations;
     private final Application application;
+    private final AttributeQuerySet operands;
     private final List<Resource> resources;
     private final HttpServletRequest request;
     private final Optional<List<Region>> regions;
@@ -38,6 +41,7 @@ public class OutputContext {
     private OutputContext(Builder builder) {
         this.annotations = checkNotNull(builder.activeAnnotations);
         this.application = checkNotNull(builder.application);
+        this.operands = checkNotNull(builder.operands);
         this.resources = Lists.newLinkedList();
         this.request = checkNotNull(builder.request);
         this.regions = checkNotNull(builder.regions);
@@ -85,11 +89,16 @@ public class OutputContext {
 
     public Optional<List<Platform>> getPlatforms() { return platforms; }
 
+    public AttributeQuerySet getOperands() {
+        return operands;
+    }
+
     public static class Builder {
 
         private final QueryContext queryContext;
         private ActiveAnnotations activeAnnotations;
         private Application application;
+        private AttributeQuerySet operands;
         private HttpServletRequest request;
         private Optional<List<Region>> regions = Optional.empty();
         private Optional<List<Platform>> platforms = Optional.empty();
@@ -105,6 +114,11 @@ public class OutputContext {
 
         public Builder withApplication(Application application) {
             this.application = application;
+            return this;
+        }
+
+        public Builder withOperands(AttributeQuerySet operands) {
+            this.operands = operands;
             return this;
         }
 
@@ -134,6 +148,10 @@ public class OutputContext {
 
             if (request == null) {
                 request = queryContext.getRequest();
+            }
+
+            if (operands == null) {
+                operands = queryContext.getOperands();
             }
 
             return new OutputContext(this);

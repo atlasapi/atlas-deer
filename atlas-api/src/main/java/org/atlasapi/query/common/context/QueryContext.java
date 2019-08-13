@@ -3,15 +3,16 @@ package org.atlasapi.query.common.context;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
-import com.google.common.base.MoreObjects;
-import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.application.DefaultApplication;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.query.Selection;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
-import scala.io.BytePickle;
+import com.google.common.collect.ImmutableSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -19,17 +20,20 @@ public class QueryContext {
 
     private final Application application;
     private final ActiveAnnotations annotations;
+    private final AttributeQuerySet operands;
     private final Optional<Selection> selection;
     private final HttpServletRequest request;
 
     private QueryContext(
             Application application,
             ActiveAnnotations annotations,
+            AttributeQuerySet operands,
             @Nullable Selection selection,
             HttpServletRequest request
     ) {
         this.application = checkNotNull(application);
         this.annotations = checkNotNull(annotations);
+        this.operands = checkNotNull(operands);
         this.selection = Optional.fromNullable(selection);
         this.request = checkNotNull(request);
     }
@@ -39,6 +43,7 @@ public class QueryContext {
         return new QueryContext(
                 DefaultApplication.create(),
                 ActiveAnnotations.standard(),
+                AttributeQuerySet.create(ImmutableSet.of()),
                 null,
                 request
         );
@@ -49,7 +54,13 @@ public class QueryContext {
             ActiveAnnotations annotations,
             HttpServletRequest request
     ) {
-        return new QueryContext(application, annotations, null, request);
+        return new QueryContext(
+                application,
+                annotations,
+                AttributeQuerySet.create(ImmutableSet.of()),
+                null,
+                request
+        );
     }
 
     public static QueryContext create(
@@ -58,7 +69,22 @@ public class QueryContext {
             Selection selection,
             HttpServletRequest request
     ) {
-        return new QueryContext(application, annotations, selection, request);
+        return new QueryContext(
+                application,
+                annotations,
+                AttributeQuerySet.create(ImmutableSet.of()),
+                selection,
+                request
+        );
+    }
+
+    public static QueryContext create(
+            Application application,
+            ActiveAnnotations annotations,
+            AttributeQuerySet operands,
+            HttpServletRequest request
+    ) {
+        return new QueryContext(application, annotations, operands, null, request);
     }
 
     public Application getApplication() {
@@ -75,6 +101,10 @@ public class QueryContext {
 
     public HttpServletRequest getRequest() {
         return request;
+    }
+
+    public AttributeQuerySet getOperands() {
+        return operands;
     }
 
     @Override
@@ -102,6 +132,7 @@ public class QueryContext {
                 .add("application", application)
                 .add("annotations", annotations)
                 .add("selection", selection)
+                .add("operands", operands)
                 .toString();
     }
 }

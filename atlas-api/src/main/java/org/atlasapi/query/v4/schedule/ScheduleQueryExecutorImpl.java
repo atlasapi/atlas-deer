@@ -3,7 +3,6 @@ package org.atlasapi.query.v4.schedule;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
@@ -23,6 +22,8 @@ import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleResolver;
+
+import com.metabroadcast.applications.client.model.internal.Application;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -125,12 +126,15 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
         return input -> resolveEquivalents(input, query.getContext());
     }
 
-    private ListenableFuture<Schedule> resolveEquivalents(Schedule schedule,
-            QueryContext context) {
+    private ListenableFuture<Schedule> resolveEquivalents(Schedule schedule, QueryContext context) {
         Application application = context.getApplication();
         ImmutableSet<Annotation> annotations = context.getAnnotations().all();
-        ListenableFuture<ResolvedEquivalents<Content>> equivs
-                = mergingContentResolver.resolveIds(idsFrom(schedule), application, annotations);
+        ListenableFuture<ResolvedEquivalents<Content>> equivs = mergingContentResolver.resolveIds(
+                idsFrom(schedule),
+                application,
+                annotations,
+                context.getOperands()
+        );
         return Futures.transform(equivs, intoSchedule(schedule));
     }
 

@@ -1,18 +1,18 @@
 package org.atlasapi.output.writers;
 
-import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Series;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.common.CommonContainerSummaryWriter;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 import com.google.common.base.Optional;
@@ -25,7 +25,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -59,6 +58,7 @@ public class ContainerSummaryWriterTest {
 
         when(outputContext.getApplication()).thenReturn(application);
         when(outputContext.getActiveAnnotations()).thenReturn(annotations);
+        when(outputContext.getOperands()).thenReturn(AttributeQuerySet.create(ImmutableSet.of()));
 
         series = new Series(Id.valueOf(10L), Publisher.METABROADCAST);
         series.setTitle("title");
@@ -86,9 +86,11 @@ public class ContainerSummaryWriterTest {
         ContainerSummary expectedSummary = ContainerSummary.from(series);
 
         when(containerSummaryResolver.resolveContainerSummary(
-                series.getId(), application, annotations
-        ))
-                .thenReturn(Optional.of(expectedSummary));
+                series.getId(),
+                application,
+                annotations,
+                AttributeQuerySet.create(ImmutableSet.of())
+        )).thenReturn(Optional.of(expectedSummary));
 
         containerSummaryWriter.write(episode, fieldWriter, outputContext);
 
@@ -98,9 +100,11 @@ public class ContainerSummaryWriterTest {
     @Test
     public void doNotWriteWhenContainerSummaryCannotBeResolved() throws Exception {
         when(containerSummaryResolver.resolveContainerSummary(
-                series.getId(), application, annotations
-        ))
-                .thenReturn(Optional.absent());
+                series.getId(),
+                application,
+                annotations,
+                AttributeQuerySet.create(ImmutableSet.of())
+        )).thenReturn(Optional.absent());
 
         containerSummaryWriter.write(episode, fieldWriter, outputContext);
 

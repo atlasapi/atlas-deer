@@ -13,7 +13,6 @@ import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
-import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContent;
@@ -297,7 +296,7 @@ public class ContentDebugController {
         ImmutableList<Id> ids = ImmutableList.of(id);
         ResolvedEquivalents<Content> result = Futures.get(
                 equivalentContentStore.resolveIds(
-                        ids, Publisher.all(), ImmutableSet.of()
+                        ids, Publisher.all(), ImmutableSet.of(), null
                 ),
                 1,
                 TimeUnit.MINUTES,
@@ -317,7 +316,7 @@ public class ContentDebugController {
         ImmutableList<Id> ids = ImmutableList.of(id);
         ResolvedEquivalents<Content> result = Futures.get(
                 equivalentContentStore.resolveIds(
-                        ids, Publisher.all(), ImmutableSet.of()
+                        ids, Publisher.all(), ImmutableSet.of(), null
                 ),
                 1,
                 TimeUnit.MINUTES,

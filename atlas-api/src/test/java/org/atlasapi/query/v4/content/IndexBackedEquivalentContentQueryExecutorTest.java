@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
@@ -51,7 +52,9 @@ public class IndexBackedEquivalentContentQueryExecutorTest {
         QueryContext ctxt = query.getContext();
 
         when(equivalentContentResolver.resolveIds(ImmutableSet.of(query.getOnlyId()),
-                ctxt.getApplication(), ImmutableSet.copyOf(ctxt.getAnnotations().values())
+                ctxt.getApplication(),
+                ImmutableSet.copyOf(ctxt.getAnnotations().values()),
+                AttributeQuerySet.create(ImmutableSet.of())
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>empty()));
 

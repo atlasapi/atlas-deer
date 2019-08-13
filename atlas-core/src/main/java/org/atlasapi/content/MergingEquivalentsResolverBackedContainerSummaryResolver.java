@@ -3,8 +3,11 @@ package org.atlasapi.content;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nullable;
+
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
@@ -32,15 +35,20 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolver
     }
 
     @Override
-    public Optional<ContainerSummary> resolveContainerSummary(Id id,
-            Application application, Set<Annotation> annotations) {
+    public Optional<ContainerSummary> resolveContainerSummary(
+            Id id,
+            Application application,
+            Set<Annotation> annotations,
+            AttributeQuerySet operands
+    ) {
         ResolvedEquivalents<Content> contentResolved = null;
         try {
             contentResolved = Futures.get(
                     contentResolver.resolveIds(
                             ImmutableSet.of(id),
                             application,
-                            annotations
+                            annotations,
+                            operands
                     ),
                     1, TimeUnit.MINUTES,
                     Exception.class

@@ -57,7 +57,8 @@ public class ContainerSummaryWriter implements EntityWriter<Item> {
             summary = containerSummaryResolver.resolveContainerSummary(
                     container.getId(),
                     ctxt.getApplication(),
-                    ctxt.getActiveAnnotations()
+                    ctxt.getActiveAnnotations(),
+                    ctxt.getOperands()
             );
         }
         if (summary.isPresent()) {

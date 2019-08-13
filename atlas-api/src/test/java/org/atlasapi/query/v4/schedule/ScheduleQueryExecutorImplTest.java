@@ -13,6 +13,7 @@ import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
@@ -31,7 +32,6 @@ import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -261,7 +261,8 @@ public class ScheduleQueryExecutorImplTest {
         when(equivalentContentResolver.resolveIds(
                 ImmutableSet.of(itemId),
                 application,
-                ActiveAnnotations.standard().all()
+                ActiveAnnotations.standard().all(),
+                AttributeQuerySet.create(ImmutableSet.of())
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
                         itemId,
@@ -277,7 +278,8 @@ public class ScheduleQueryExecutorImplTest {
         verify(equivalentContentResolver).resolveIds(
                 ImmutableSet.of(itemId),
                 application,
-                ActiveAnnotations.standard().all()
+                ActiveAnnotations.standard().all(),
+                AttributeQuerySet.create(ImmutableSet.of())
         );
 
     }

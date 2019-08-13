@@ -6,6 +6,7 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.IndexQueryResult;
+import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
@@ -92,7 +93,11 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
             }
 
             return Futures.transform(
-                    resolveContent(queryIndex(query.getResourceQuery()), query.getContext()),
+                    resolveContent(
+                            queryIndex(query.getResourceQuery()),
+                            query.getContext(),
+                            query.getResourceQuery().getOperands()
+                    ),
                     toContextualQuery(topic, context)
             );
         };
@@ -112,21 +117,28 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
     }
 
     private ListenableFuture<ResolvedEquivalents<Content>> resolveContent(
-            ListenableFuture<IndexQueryResult> queryIndex, QueryContext context) {
+            ListenableFuture<IndexQueryResult> queryIndex,
+            QueryContext context,
+            AttributeQuerySet operands
+    ) {
         return resolveContent(
                 queryIndex,
                 context.getApplication(),
-                context.getAnnotations().all()
+                context.getAnnotations().all(),
+                operands
         );
     }
 
     private ListenableFuture<ResolvedEquivalents<Content>> resolveContent(
             ListenableFuture<IndexQueryResult> queryHits,
-            final Application application, final Set<Annotation> annotations) {
+            final Application application,
+            final Set<Annotation> annotations,
+            AttributeQuerySet operands
+    ) {
         return Futures.transform(
                 queryHits,
                 (IndexQueryResult ids) ->
-                        contentResolver.resolveIds(ids.getIds(), application, annotations)
+                        contentResolver.resolveIds(ids.getIds(), application, annotations, operands)
         );
     }
 
