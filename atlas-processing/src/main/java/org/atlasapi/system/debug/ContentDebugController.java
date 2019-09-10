@@ -89,10 +89,10 @@ public class ContentDebugController {
     private final ContentStore nullMessageSendingContentStore;
     private final EquivalentContentStore nullMessageSendingEquivalentContentStore;
 
-    private final ContentBootstrapListener.Builder contentBootstrapListener;
-    private final ContentBootstrapListener.Builder contentAndHierarchyBootstrapListener;
-    private final ContentBootstrapListener.Builder contentAndEquivBootstrapListener;
-    private final ContentBootstrapListener.Builder contentEquivAndHierarchyBootstrapListener;
+    private final ContentBootstrapListener.Builder contentBootstrapListenerBuilder;
+    private final ContentBootstrapListener.Builder contentAndHierarchyBootstrapListenerBuilder;
+    private final ContentBootstrapListener.Builder contentAndEquivBootstrapListenerBuilder;
+    private final ContentBootstrapListener.Builder contentEquivAndHierarchyBootstrapListenerBuilder;
     private final ContentNeo4jMigrator contentNeo4jMigrator;
 
     private ContentDebugController(Builder builder) {
@@ -121,36 +121,28 @@ public class ContentDebugController {
         index = checkNotNull(builder.index);
         esContentTranslator = checkNotNull(builder.esContentTranslator);
         contentStore = checkNotNull(builder.contentStore);
+        nullMessageSendingContentStore = builder.persistence.nullMessageSendingContentStore();
         equivalenceGraphStore = checkNotNull(builder.contentEquivalenceGraphStore);
         equivalentContentStore = checkNotNull(builder.equivalentContentStore);
-        neo4jContentStore = checkNotNull(builder.neo4jContentStore);
-        nullMessageSendingContentStore = builder.persistence.nullMessageSendingContentStore();
         nullMessageSendingEquivalentContentStore = builder.persistence.nullMessageSendingEquivalentContentStore();
+        neo4jContentStore = checkNotNull(builder.neo4jContentStore);
 
-        contentBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(builder.contentStore)
+        contentBootstrapListenerBuilder = ContentBootstrapListener.builder()
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
-                .withEquivalentContentStore(builder.equivalentContentStore)
                 .withContentIndex(index);
 
-        contentAndHierarchyBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(builder.contentStore)
+        contentAndHierarchyBootstrapListenerBuilder = ContentBootstrapListener.builder()
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
-                .withEquivalentContentStore(builder.equivalentContentStore)
                 .withContentIndex(index)
                 .withMigrateHierarchies(builder.legacySegmentMigrator, legacyContentResolver);
 
-        contentAndEquivBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(builder.contentStore)
+        contentAndEquivBootstrapListenerBuilder = ContentBootstrapListener.builder()
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
-                .withEquivalentContentStore(builder.equivalentContentStore)
                 .withContentIndex(index)
                 .withMigrateEquivalents(builder.persistence.nullMessageSendingEquivalenceGraphStore());
 
-        contentEquivAndHierarchyBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(builder.contentStore)
+        contentEquivAndHierarchyBootstrapListenerBuilder = ContentBootstrapListener.builder()
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
-                .withEquivalentContentStore(builder.equivalentContentStore)
                 .withContentIndex(index)
                 .withMigrateHierarchies(builder.legacySegmentMigrator, legacyContentResolver)
                 .withMigrateEquivalents(builder.persistence.nullMessageSendingEquivalenceGraphStore());
@@ -431,18 +423,21 @@ public class ContentDebugController {
 
             ContentBootstrapListener.Builder listener;
             if(migrateEquivalents && migrateHierarchy){
-                listener = contentEquivAndHierarchyBootstrapListener;
+                listener = contentEquivAndHierarchyBootstrapListenerBuilder;
             } else if(migrateEquivalents){
-                listener = contentAndEquivBootstrapListener;
+                listener = contentAndEquivBootstrapListenerBuilder;
             } else if(migrateHierarchy){
-                listener = contentAndHierarchyBootstrapListener;
+                listener = contentAndHierarchyBootstrapListenerBuilder;
             } else {
-                listener = contentBootstrapListener;
+                listener = contentBootstrapListenerBuilder;
             }
 
             if (!sendKafkaMessages) {
                 listener.withContentWriter(nullMessageSendingContentStore)
                         .withEquivalentContentStore(nullMessageSendingEquivalentContentStore);
+            } else {
+                listener.withContentWriter(contentStore)
+                        .withEquivalentContentStore(equivalentContentStore);
             }
 
             ContentBootstrapListener.Result result = content.accept(listener.build());
