@@ -80,8 +80,10 @@ public class ContentBootstrapController {
     private final ProgressStore progressStore;
     private final Timer timer;
 
-    private final ContentBootstrapListener.Builder contentBootstrapListenerBuilder;
-    private final ContentBootstrapListener.Builder contentAndEquivalentsBootstrapListenerBuilder;
+    private final ContentBootstrapListener contentBootstrapListener;
+    private final ContentBootstrapListener nullSendingMessageContentBootstrapListener;
+    private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
+    private final ContentBootstrapListener nullSendingMessageContentAndEquivalentsBootstrapListener;
     private final ContentNeo4jMigrator contentNeo4jMigrator;
 
     private final ContentResolver legacyResolver;
@@ -110,16 +112,39 @@ public class ContentBootstrapController {
         nullMessageSenderEquivalentContentStore = checkNotNull(builder.nullMessageSenderEquivalentContentStore);
         replayConsumerFactory = checkNotNull(builder.replayConsumerFactory);
 
-        contentBootstrapListenerBuilder = ContentBootstrapListener.builder()
+        contentBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(contentWriter)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
-                .withSegmentMigratorAndContentResolver(null, legacyResolver)
-                .withContentIndex(contentIndex);
-
-        contentAndEquivalentsBootstrapListenerBuilder = ContentBootstrapListener.builder()
-                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(equivalentContentStore)
                 .withSegmentMigratorAndContentResolver(null, legacyResolver)
                 .withContentIndex(contentIndex)
-                .withMigrateEquivalents(builder.equivalenceGraphStore);
+                .build();
+
+        nullSendingMessageContentBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(nullMessageSenderContentWriter)
+                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(nullMessageSenderEquivalentContentStore)
+                .withSegmentMigratorAndContentResolver(null, legacyResolver)
+                .withContentIndex(contentIndex)
+                .build();
+
+        contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(contentWriter)
+                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(equivalentContentStore)
+                .withSegmentMigratorAndContentResolver(null, legacyResolver)
+                .withContentIndex(contentIndex)
+                .withMigrateEquivalents(builder.equivalenceGraphStore)
+                .build();
+
+        nullSendingMessageContentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(nullMessageSenderContentWriter)
+                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(nullMessageSenderEquivalentContentStore)
+                .withSegmentMigratorAndContentResolver(null, legacyResolver)
+                .withContentIndex(contentIndex)
+                .withMigrateEquivalents(builder.equivalenceGraphStore)
+                .build();
 
         contentNeo4jMigrator = ContentNeo4jMigrator.create(
                 builder.neo4JContentStore,
@@ -149,16 +174,21 @@ public class ContentBootstrapController {
         Runnable listener;
         if (Boolean.TRUE.equals(migrateEquivalents)) {
             listener = bootstrappingRunnable(
-                    getContentBootstrapListener(
-                            contentAndEquivalentsBootstrapListenerBuilder,
-                            sendKafkaMessages
+                    getVisitor(
+                            sendKafkaMessages,
+                            contentAndEquivalentsBootstrapListener,
+                            nullSendingMessageContentAndEquivalentsBootstrapListener
                     ),
                     source,
                     progress
             );
         } else {
             listener = bootstrappingRunnable(
-                    getContentBootstrapListener(contentBootstrapListenerBuilder, sendKafkaMessages),
+                    getVisitor(
+                            sendKafkaMessages,
+                            contentBootstrapListener,
+                            nullSendingMessageContentBootstrapListener
+                    ),
                     source,
                     progress
             );
@@ -211,9 +241,10 @@ public class ContentBootstrapController {
             ExecutorService executor = getExecutor();
 
             for (Content c : contentIterable) {
-                executor.submit(() -> c.accept(getContentBootstrapListener(
-                        contentBootstrapListenerBuilder,
-                        sendKafkaMessages
+                executor.submit(() -> c.accept(getVisitor(
+                        sendKafkaMessages,
+                        contentBootstrapListener,
+                        nullSendingMessageContentBootstrapListener
                 )));
                 progressStore.storeProgress(
                         progressId,
@@ -251,9 +282,10 @@ public class ContentBootstrapController {
                     progressStore.progressForTask(source.toString());
             executorService.execute(
                     bootstrappingRunnable(
-                            getContentBootstrapListener(
-                                    contentBootstrapListenerBuilder,
-                                    sendKafkaMessages
+                            getVisitor(
+                                    sendKafkaMessages,
+                                    contentBootstrapListener,
+                                    nullSendingMessageContentBootstrapListener
                             ),
                             source,
                             progress
@@ -294,9 +326,10 @@ public class ContentBootstrapController {
         }
         Content content = (Content) identified;
 
-        ContentBootstrapListener.Result result = content.accept(getContentBootstrapListener(
-                contentBootstrapListenerBuilder,
-                sendKafkaMessages
+        ContentBootstrapListener.Result result = content.accept(getVisitor(
+                sendKafkaMessages,
+                contentBootstrapListener,
+                nullSendingMessageContentBootstrapListener
         ));
 
         if (result.getSucceeded()) {
@@ -412,19 +445,14 @@ public class ContentBootstrapController {
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }
 
-    private ContentBootstrapListener getContentBootstrapListener(
-            ContentBootstrapListener.Builder builder,
-            boolean sendKafkaMessages
+    private ContentBootstrapListener getVisitor(
+            boolean sendKafkaMessages,
+            ContentBootstrapListener contentBootstrapListener,
+            ContentBootstrapListener nullSendingMessageContentBootstrapListener
     ) {
-        if (!sendKafkaMessages) {
-            return builder.withContentWriter(nullMessageSenderContentWriter)
-                    .withEquivalentContentStore(nullMessageSenderEquivalentContentStore)
-                    .build();
-        }
-
-        return builder.withContentWriter(contentWriter)
-                .withEquivalentContentStore(equivalentContentStore)
-                .build();
+        return sendKafkaMessages
+               ? contentBootstrapListener
+               : nullSendingMessageContentBootstrapListener;
     }
 
     private FluentIterable<Content> resolve(Iterable<Id> ids) {
