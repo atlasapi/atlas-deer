@@ -81,12 +81,19 @@ public class ContentBootstrapController {
     private final Timer timer;
 
     private final ContentBootstrapListener contentBootstrapListener;
+    private final ContentBootstrapListener nullSendingMessageContentBootstrapListener;
     private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
+    private final ContentBootstrapListener nullSendingMessageContentAndEquivalentsBootstrapListener;
     private final ContentNeo4jMigrator contentNeo4jMigrator;
 
     private final ContentResolver legacyResolver;
     private final ContentStore contentStore;
     private final Function<Worker<ResourceUpdatedMessage>, KafkaConsumer> replayConsumerFactory;
+
+    private final ContentWriter contentWriter;
+    private final ContentWriter nullMessageSenderContentWriter;
+    private final EquivalentContentStore equivalentContentStore;
+    private final EquivalentContentStore nullMessageSenderEquivalentContentStore;
 
     private KafkaConsumer replayBootstrapListener;
 
@@ -99,20 +106,41 @@ public class ContentBootstrapController {
         timer = checkNotNull(builder.metrics).timer(getClass().getSimpleName());
         legacyResolver = checkNotNull(builder.legacyResolver);
         contentStore = checkNotNull(builder.contentStore);
+        contentWriter = checkNotNull(builder.write);
+        nullMessageSenderContentWriter = checkNotNull(builder.nullMessageSenderWrite);
+        equivalentContentStore = checkNotNull(builder.equivalentContentStore);
+        nullMessageSenderEquivalentContentStore = checkNotNull(builder.nullMessageSenderEquivalentContentStore);
         replayConsumerFactory = checkNotNull(builder.replayConsumerFactory);
 
         contentBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(builder.write)
+                .withContentWriter(contentWriter)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
-                .withEquivalentContentStore(builder.equivalentContentStore)
+                .withEquivalentContentStore(equivalentContentStore)
+                .withSegmentMigratorAndContentResolver(null, legacyResolver)
+                .withContentIndex(contentIndex)
+                .build();
+
+        nullSendingMessageContentBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(nullMessageSenderContentWriter)
+                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(nullMessageSenderEquivalentContentStore)
                 .withSegmentMigratorAndContentResolver(null, legacyResolver)
                 .withContentIndex(contentIndex)
                 .build();
 
         contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(builder.write)
+                .withContentWriter(contentWriter)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
-                .withEquivalentContentStore(builder.equivalentContentStore)
+                .withEquivalentContentStore(equivalentContentStore)
+                .withSegmentMigratorAndContentResolver(null, legacyResolver)
+                .withContentIndex(contentIndex)
+                .withMigrateEquivalents(builder.equivalenceGraphStore)
+                .build();
+
+        nullSendingMessageContentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(nullMessageSenderContentWriter)
+                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(nullMessageSenderEquivalentContentStore)
                 .withSegmentMigratorAndContentResolver(null, legacyResolver)
                 .withContentIndex(contentIndex)
                 .withMigrateEquivalents(builder.equivalenceGraphStore)
@@ -133,6 +161,7 @@ public class ContentBootstrapController {
     public void bootstrapSource(
             @RequestParam("source") String sourceString,
             @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
+            @RequestParam(name = "sendKafkaMessages", defaultValue = "true") boolean sendKafkaMessages,
             HttpServletResponse resp
     ) throws IOException {
         log.info("Bootstrapping source: {}", sourceString);
@@ -144,12 +173,24 @@ public class ContentBootstrapController {
         Publisher source = fromKey.get();
         Runnable listener;
         if (Boolean.TRUE.equals(migrateEquivalents)) {
-            listener = bootstrappingRunnable(contentAndEquivalentsBootstrapListener,
-                    source, progress
+            listener = bootstrappingRunnable(
+                    getVisitor(
+                            sendKafkaMessages,
+                            contentAndEquivalentsBootstrapListener,
+                            nullSendingMessageContentAndEquivalentsBootstrapListener
+                    ),
+                    source,
+                    progress
             );
         } else {
-            listener = bootstrappingRunnable(contentBootstrapListener,
-                    source, progress
+            listener = bootstrappingRunnable(
+                    getVisitor(
+                            sendKafkaMessages,
+                            contentBootstrapListener,
+                            nullSendingMessageContentBootstrapListener
+                    ),
+                    source,
+                    progress
             );
         }
         executorService.execute(listener);
@@ -166,6 +207,7 @@ public class ContentBootstrapController {
     public void bootstrapType(
             @RequestParam("type") String type,
             @RequestParam("progress") String progressId,
+            @RequestParam(name = "sendKafkaMessages", defaultValue = "true") boolean sendKafkaMessages,
             HttpServletResponse resp
     ) throws IOException {
         Optional<ContentListingProgress> progress = progressStore.progressForTask(progressId);
@@ -199,7 +241,11 @@ public class ContentBootstrapController {
             ExecutorService executor = getExecutor();
 
             for (Content c : contentIterable) {
-                executor.submit(() -> c.accept(contentBootstrapListener));
+                executor.submit(() -> c.accept(getVisitor(
+                        sendKafkaMessages,
+                        contentBootstrapListener,
+                        nullSendingMessageContentBootstrapListener
+                )));
                 progressStore.storeProgress(
                         progressId,
                         new ContentListingProgress(null, null, c.getCanonicalUri())
@@ -221,6 +267,7 @@ public class ContentBootstrapController {
     @RequestMapping(value = "/system/bootstrap/all", method = RequestMethod.POST)
     public void bootstrapAllSources(
             @Nullable @RequestParam("exclude") String excludedSourcesString,
+            @RequestParam(name = "sendKafkaMessages", defaultValue = "true") boolean sendKafkaMessages,
             HttpServletResponse resp
     ) {
         Set<Publisher> excludedSources = ImmutableSet.of();
@@ -234,7 +281,15 @@ public class ContentBootstrapController {
             Optional<ContentListingProgress> progress =
                     progressStore.progressForTask(source.toString());
             executorService.execute(
-                    bootstrappingRunnable(contentBootstrapListener, source, progress)
+                    bootstrappingRunnable(
+                            getVisitor(
+                                    sendKafkaMessages,
+                                    contentBootstrapListener,
+                                    nullSendingMessageContentBootstrapListener
+                            ),
+                            source,
+                            progress
+                    )
             );
         }
 
@@ -256,6 +311,7 @@ public class ContentBootstrapController {
     @RequestMapping(value = "/system/bootstrap/content", method = RequestMethod.POST)
     public void bootstrapContent(
             @RequestParam("id") final String id,
+            @RequestParam(name = "sendKafkaMessages", defaultValue = "true") boolean sendKafkaMessages,
             final HttpServletResponse resp
     ) throws IOException {
         log.info("Bootstrapping: {}", id);
@@ -270,7 +326,11 @@ public class ContentBootstrapController {
         }
         Content content = (Content) identified;
 
-        ContentBootstrapListener.Result result = content.accept(contentBootstrapListener);
+        ContentBootstrapListener.Result result = content.accept(getVisitor(
+                sendKafkaMessages,
+                contentBootstrapListener,
+                nullSendingMessageContentBootstrapListener
+        ));
 
         if (result.getSucceeded()) {
             resp.setStatus(HttpStatus.OK.value());
@@ -383,6 +443,16 @@ public class ContentBootstrapController {
         executorService.execute(neo4jBootstrapRunnable(source, progress, migrateEquivalents));
 
         resp.setStatus(HttpStatus.ACCEPTED.value());
+    }
+
+    private ContentBootstrapListener getVisitor(
+            boolean sendKafkaMessages,
+            ContentBootstrapListener contentBootstrapListener,
+            ContentBootstrapListener nullSendingMessageContentBootstrapListener
+    ) {
+        return sendKafkaMessages
+               ? contentBootstrapListener
+               : nullSendingMessageContentBootstrapListener;
     }
 
     private FluentIterable<Content> resolve(Iterable<Id> ids) {
@@ -598,8 +668,10 @@ public class ContentBootstrapController {
 
         private ContentResolver read;
         private ContentWriter write;
+        private ContentWriter nullMessageSenderWrite;
         private DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
         private EquivalentContentStore equivalentContentStore;
+        private EquivalentContentStore nullMessageSenderEquivalentContentStore;
         private EquivalenceGraphStore equivalenceGraphStore;
         private Neo4jContentStore neo4JContentStore;
         private ContentStore contentStore;
@@ -646,6 +718,11 @@ public class ContentBootstrapController {
             return this;
         }
 
+        public Builder withNullMessageSenderEquivalentContentStore(EquivalentContentStore val) {
+            nullMessageSenderEquivalentContentStore = val;
+            return this;
+        }
+
         public Builder withEquivalenceMigrator(DirectAndExplicitEquivalenceMigrator val) {
             equivalenceMigrator = val;
             return this;
@@ -653,6 +730,11 @@ public class ContentBootstrapController {
 
         public Builder withWrite(ContentWriter val) {
             write = val;
+            return this;
+        }
+
+        public Builder withNullMessageSenderWrite(ContentWriter val) {
+            nullMessageSenderWrite = val;
             return this;
         }
 

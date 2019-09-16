@@ -82,7 +82,8 @@ public class BootstrapModule {
         return ContentBootstrapController.builder()
                 .withRead(persistence.legacyContentResolver())
                 .withContentLister(persistence.legacyContentLister())
-                .withWrite(persistence.nullMessageSendingContentStore())
+                .withWrite(persistence.contentStore())
+                .withNullMessageSenderWrite(persistence.nullMessageSendingContentStore())
                 .withContentIndex(search.equivContentIndex())
                 .withEquivalenceMigrator(
                         DirectAndExplicitEquivalenceMigrator.create(
@@ -94,7 +95,8 @@ public class BootstrapModule {
                 .withMaxSourceBootstrapThreads(NUMBER_OF_SOURCE_BOOTSTRAP_THREADS)
                 .withProgressStore(progressStore())
                 .withMetrics(metrics)
-                .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
+                .withEquivalentContentStore(persistence.getEquivalentContentStore())
+                .withNullMessageSenderEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
                 .withEquivalenceGraphStore(persistence.nullMessageSendingEquivalenceGraphStore())
                 .withContentStore(persistence.contentStore())
                 .withNeo4JContentStore(persistence.neo4jContentStore())
