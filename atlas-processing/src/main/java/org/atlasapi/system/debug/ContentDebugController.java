@@ -1,14 +1,26 @@
 package org.atlasapi.system.debug;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.math.BigInteger;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletResponse;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.google.api.client.repackaged.com.google.common.base.Strings;
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializer;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
@@ -32,29 +44,6 @@ import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrato
 import org.atlasapi.system.legacy.LegacyContentResolver;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.util.EsObject;
-
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
-import com.google.api.client.repackaged.com.google.common.base.Strings;
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.springframework.http.HttpStatus;
@@ -63,6 +52,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.math.BigInteger;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
@@ -425,7 +422,7 @@ public class ContentDebugController {
             @PathVariable("id") String id,
             @RequestParam(name = "equivalents", defaultValue = "false") boolean migrateEquivalents,
             @RequestParam(name = "hierarchy", defaultValue = "true") boolean migrateHierarchy,
-            @RequestParam(name = "sendKafkaMessages", defaultValue = "true") boolean sendKafkaMessages,
+            @RequestParam(name = "sendKafkaMessages", defaultValue = "false") boolean sendKafkaMessages,
             final HttpServletResponse response
     ) throws IOException {
         Content content = getContentById(id);
@@ -438,7 +435,7 @@ public class ContentDebugController {
             @RequestParam(name = "uris", defaultValue = "") String uris,
             @RequestParam(name = "equivalents", defaultValue = "false") boolean migrateEquivalents,
             @RequestParam(name = "hierarchy", defaultValue = "true") boolean migrateHierarchy,
-            @RequestParam(name = "sendKafkaMessages", defaultValue = "true") boolean sendKafkaMessages,
+            @RequestParam(name = "sendKafkaMessages", defaultValue = "false") boolean sendKafkaMessages,
             final HttpServletResponse response
     ) throws IOException {
         if (Strings.isNullOrEmpty(ids) && Strings.isNullOrEmpty(uris)) {
