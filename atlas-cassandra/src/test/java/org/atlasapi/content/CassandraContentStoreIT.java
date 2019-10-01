@@ -240,13 +240,13 @@ public abstract class CassandraContentStoreIT {
         assertTrue(writeResult.written());
 
         when(hasher.hash(argThat(isA(Content.class)))).thenReturn("same");
+        when(clock.now()).thenReturn(now.plusHours(1));
 
         writeResult = store.writeContent(writeResult.getResource());
         assertFalse(writeResult.written());
 
         verify(hasher, times(2)).hash(argThat(isA(Content.class)));
         verify(idGenerator, times(1)).generateRaw();
-        verify(clock, times(1)).now();
 
         Content item = resolve(content.getId().longValue());
 
