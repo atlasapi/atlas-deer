@@ -12,6 +12,7 @@ import com.google.common.primitives.Ints;
 import org.atlasapi.content.Content;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
+import org.atlasapi.hashing.ExcludeFromHash;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
@@ -45,7 +46,9 @@ public class Identified implements Identifiable, Aliased {
     /**
      * Records the time that the 3rd party reported that the {@link Identified} was last updated
      */
+    @ExcludeFromHash
     private DateTime lastUpdated;
+    @ExcludeFromHash
     private DateTime equivalenceUpdate;
 
     public Identified(String uri, String curie) {

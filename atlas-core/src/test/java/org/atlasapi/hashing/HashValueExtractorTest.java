@@ -1,18 +1,13 @@
 package org.atlasapi.hashing;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.Currency;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import com.metabroadcast.common.currency.Price;
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.media.MimeType;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
@@ -66,14 +61,6 @@ import org.atlasapi.event.EventRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
-
-import com.metabroadcast.common.currency.Price;
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.media.MimeType;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
@@ -81,7 +68,16 @@ import org.joda.time.LocalDate;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Currency;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -278,6 +274,73 @@ public class HashValueExtractorTest {
     }
 
     @Test
+    public void getValueIsSameForTwoItemsWithSameFields() throws Exception {
+        Item content = new Item();
+        Item content2 = new Item();
+
+        DateTime now = DateTime.now();
+
+        setIdentifiedFields(content, now);
+        setIdentifiedFields(content2, now);
+        setDescribedFields(content, now);
+        setDescribedFields(content2, now);
+        setContentFields(content, true, now);
+        setContentFields(content2, true, now);
+        setItemFields(content, now);
+        setItemFields(content2, now);
+
+        verifyAllFieldsAreSet(content, "Item");
+        verifyAllFieldsAreSet(content2, "Item");
+
+        Optional<String> hash = hashValueExtractor.getValueToHash(content);
+        Optional<String> hash2 = hashValueExtractor.getValueToHash(content2);
+
+        assertThat(hash.isPresent(), is(true));
+        assertThat(hash2.isPresent(), is(true));
+        assertThat(hash.get().isEmpty(), is(false));
+        assertThat(hash2.get().isEmpty(), is(false));
+
+        assertEquals(hash.get(), hash2.get());
+    }
+
+    @Test
+    public void getValueIgnoresDatabaseSpecificDateFields() throws Exception {
+        Item content = new Item();
+        Item content2 = new Item();
+
+        DateTime now = DateTime.now();
+
+        setIdentifiedFields(content, now);
+        setIdentifiedFields(content2, now);
+        setDescribedFields(content, now);
+        setDescribedFields(content2, now);
+        setContentFields(content, true, now);
+        setContentFields(content2, true, now);
+        setItemFields(content, now);
+        setItemFields(content2, now);
+
+        content.setLastUpdated(now);
+        content2.setLastUpdated(now.plusHours(1));
+        content.setThisOrChildLastUpdated(now);
+        content2.setThisOrChildLastUpdated(now.plusHours(1));
+        content.setFirstSeen(now);
+        content2.setFirstSeen(now.plusHours(1));
+
+        verifyAllFieldsAreSet(content, "Item");
+        verifyAllFieldsAreSet(content2, "Item");
+
+        Optional<String> hash = hashValueExtractor.getValueToHash(content);
+        Optional<String> hash2 = hashValueExtractor.getValueToHash(content2);
+
+        assertThat(hash.isPresent(), is(true));
+        assertThat(hash2.isPresent(), is(true));
+        assertThat(hash.get().isEmpty(), is(false));
+        assertThat(hash2.get().isEmpty(), is(false));
+
+        assertEquals(hash.get(), hash2.get());
+    }
+
+    @Test
     public void getValueSupportsAllFieldsInSong() throws Exception {
         Song content = new Song();
 
@@ -293,6 +356,38 @@ public class HashValueExtractorTest {
 
         assertThat(hash.isPresent(), is(true));
         assertThat(hash.get().isEmpty(), is(false));
+    }
+
+    @Test
+    public void getValueIsSameForTwoSongsWithSameFields() throws Exception {
+        Song content = new Song();
+        Song content2 = new Song();
+
+        DateTime now = DateTime.now();
+
+        setIdentifiedFields(content, now);
+        setIdentifiedFields(content2, now);
+        setDescribedFields(content, now);
+        setDescribedFields(content2, now);
+        setContentFields(content, true, now);
+        setContentFields(content2, true, now);
+        setItemFields(content, now);
+        setItemFields(content2, now);
+        setSongFields(content);
+        setSongFields(content2);
+
+        verifyAllFieldsAreSet(content, "Song");
+        verifyAllFieldsAreSet(content2, "Song");
+
+        Optional<String> hash = hashValueExtractor.getValueToHash(content);
+        Optional<String> hash2 = hashValueExtractor.getValueToHash(content2);
+
+        assertThat(hash.isPresent(), is(true));
+        assertThat(hash2.isPresent(), is(true));
+        assertThat(hash.get().isEmpty(), is(false));
+        assertThat(hash2.get().isEmpty(), is(false));
+
+        assertEquals(hash.get(), hash2.get());
     }
 
     @Test
@@ -314,6 +409,38 @@ public class HashValueExtractorTest {
     }
 
     @Test
+    public void getValueIsSameForTwoClipsWithSameFields() throws Exception {
+        Clip content = new Clip();
+        Clip content2 = new Clip();
+
+        DateTime now = DateTime.now();
+
+        setIdentifiedFields(content, now);
+        setIdentifiedFields(content2, now);
+        setDescribedFields(content, now);
+        setDescribedFields(content2, now);
+        setContentFields(content, true, now);
+        setContentFields(content2, true, now);
+        setItemFields(content, now);
+        setItemFields(content2, now);
+        setClipFields(content);
+        setClipFields(content2);
+
+        verifyAllFieldsAreSet(content, "Clip");
+        verifyAllFieldsAreSet(content2, "Clip");
+
+        Optional<String> hash = hashValueExtractor.getValueToHash(content);
+        Optional<String> hash2 = hashValueExtractor.getValueToHash(content2);
+
+        assertThat(hash.isPresent(), is(true));
+        assertThat(hash2.isPresent(), is(true));
+        assertThat(hash.get().isEmpty(), is(false));
+        assertThat(hash2.get().isEmpty(), is(false));
+
+        assertEquals(hash.get(), hash2.get());
+    }
+
+    @Test
     public void getValueSupportsAllFieldsInEpisode() throws Exception {
         Episode content = new Episode();
 
@@ -329,6 +456,38 @@ public class HashValueExtractorTest {
 
         assertThat(hash.isPresent(), is(true));
         assertThat(hash.get().isEmpty(), is(false));
+    }
+
+    @Test
+    public void getValueIsSameForTwoEpisodesWithSameFields() throws Exception {
+        Episode content = new Episode();
+        Episode content2 = new Episode();
+
+        DateTime now = DateTime.now();
+
+        setIdentifiedFields(content, now);
+        setIdentifiedFields(content2, now);
+        setDescribedFields(content, now);
+        setDescribedFields(content2, now);
+        setContentFields(content, true, now);
+        setContentFields(content2, true, now);
+        setItemFields(content, now);
+        setItemFields(content2, now);
+        setEpisodeFields(content, now);
+        setEpisodeFields(content2, now);
+
+        verifyAllFieldsAreSet(content, "Episode");
+        verifyAllFieldsAreSet(content2, "Episode");
+
+        Optional<String> hash = hashValueExtractor.getValueToHash(content);
+        Optional<String> hash2 = hashValueExtractor.getValueToHash(content2);
+
+        assertThat(hash.isPresent(), is(true));
+        assertThat(hash2.isPresent(), is(true));
+        assertThat(hash.get().isEmpty(), is(false));
+        assertThat(hash2.get().isEmpty(), is(false));
+
+        assertEquals(hash.get(), hash2.get());
     }
 
     @Test
@@ -350,6 +509,38 @@ public class HashValueExtractorTest {
     }
 
     @Test
+    public void getValueIsSameForTwoFilmsWithSameFields() throws Exception {
+        Film content = new Film();
+        Film content2 = new Film();
+
+        DateTime now = DateTime.now();
+
+        setIdentifiedFields(content, now);
+        setIdentifiedFields(content2, now);
+        setDescribedFields(content, now);
+        setDescribedFields(content2, now);
+        setContentFields(content, true, now);
+        setContentFields(content2, true, now);
+        setItemFields(content, now);
+        setItemFields(content2, now);
+        setFilmFields(content);
+        setFilmFields(content2);
+
+        verifyAllFieldsAreSet(content, "Film");
+        verifyAllFieldsAreSet(content2, "Film");
+
+        Optional<String> hash = hashValueExtractor.getValueToHash(content);
+        Optional<String> hash2 = hashValueExtractor.getValueToHash(content2);
+
+        assertThat(hash.isPresent(), is(true));
+        assertThat(hash2.isPresent(), is(true));
+        assertThat(hash.get().isEmpty(), is(false));
+        assertThat(hash2.get().isEmpty(), is(false));
+
+        assertEquals(hash.get(), hash2.get());
+    }
+
+    @Test
     public void getValueSupportsAllFieldsInBrand() throws Exception {
         Brand content = new Brand();
 
@@ -365,6 +556,38 @@ public class HashValueExtractorTest {
 
         assertThat(hash.isPresent(), is(true));
         assertThat(hash.get().isEmpty(), is(false));
+    }
+
+    @Test
+    public void getValueIsSameForTwoBrandsWithSameFields() throws Exception {
+        Brand content = new Brand();
+        Brand content2 = new Brand();
+
+        DateTime now = DateTime.now();
+
+        setIdentifiedFields(content, now);
+        setIdentifiedFields(content2, now);
+        setDescribedFields(content, now);
+        setDescribedFields(content2, now);
+        setContentFields(content, true, now);
+        setContentFields(content2, true, now);
+        setContainerFields(content, now);
+        setContainerFields(content2, now);
+        setBrandFields(content, now);
+        setBrandFields(content2, now);
+
+        verifyAllFieldsAreSet(content, "Brand");
+        verifyAllFieldsAreSet(content2, "Brand");
+
+        Optional<String> hash = hashValueExtractor.getValueToHash(content);
+        Optional<String> hash2 = hashValueExtractor.getValueToHash(content2);
+
+        assertThat(hash.isPresent(), is(true));
+        assertThat(hash2.isPresent(), is(true));
+        assertThat(hash.get().isEmpty(), is(false));
+        assertThat(hash2.get().isEmpty(), is(false));
+
+        assertEquals(hash.get(), hash2.get());
     }
 
     @Test
@@ -385,7 +608,43 @@ public class HashValueExtractorTest {
         assertThat(hash.get().isEmpty(), is(false));
     }
 
+    @Test
+    public void getValueIsSameForTwoSeriesWithSameFields() throws Exception {
+        Series content = new Series();
+        Series content2 = new Series();
+
+        DateTime now = DateTime.now();
+
+        setIdentifiedFields(content, now);
+        setIdentifiedFields(content2, now);
+        setDescribedFields(content, now);
+        setDescribedFields(content2, now);
+        setContentFields(content, true, now);
+        setContentFields(content2, true, now);
+        setContainerFields(content, now);
+        setContainerFields(content2, now);
+        setSeriesFields(content);
+        setSeriesFields(content2);
+
+        verifyAllFieldsAreSet(content, "Series");
+        verifyAllFieldsAreSet(content2, "Series");
+
+        Optional<String> hash = hashValueExtractor.getValueToHash(content);
+        Optional<String> hash2 = hashValueExtractor.getValueToHash(content2);
+
+        assertThat(hash.isPresent(), is(true));
+        assertThat(hash2.isPresent(), is(true));
+        assertThat(hash.get().isEmpty(), is(false));
+        assertThat(hash2.get().isEmpty(), is(false));
+
+        assertEquals(hash.get(), hash2.get());
+    }
+
     private void setIdentifiedFields(Identified identified) {
+        setIdentifiedFields(identified, DateTime.now());
+    }
+
+    private void setIdentifiedFields(Identified identified, DateTime timestamp) {
         identified.setId(Id.valueOf(1L));
         identified.setCanonicalUri("canonicalUri");
         identified.setCurie("curie");
@@ -394,12 +653,16 @@ public class HashValueExtractorTest {
         identified.setEquivalentTo(ImmutableSet.of(
                 new EquivalenceRef(Id.valueOf(2L), Publisher.METABROADCAST))
         );
-        identified.setLastUpdated(DateTime.now());
-        identified.setEquivalenceUpdate(DateTime.now());
+        identified.setLastUpdated(timestamp);
+        identified.setEquivalenceUpdate(timestamp);
         identified.addCustomField("testField", "testValue");
     }
 
     private void setDescribedFields(Described described) {
+        setDescribedFields(described, DateTime.now());
+    }
+
+    private void setDescribedFields(Described described, DateTime timestamp) {
         described.setTitle("title");
         described.setShortDescription("short");
         described.setMediumDescription("medium");
@@ -426,17 +689,17 @@ public class HashValueExtractorTest {
                 .withWidth(50)
                 .withAspectRatio(Image.AspectRatio.SIXTEEN_BY_NINE)
                 .withMimeType(MimeType.IMAGE_PNG)
-                .withAvailabilityStart(DateTime.now())
-                .withAvailabilityEnd(DateTime.now())
+                .withAvailabilityStart(timestamp)
+                .withAvailabilityEnd(timestamp)
                 .withHasTitleArt(true)
                 .withSource(Publisher.METABROADCAST)
                 .build();
         described.setImages(ImmutableSet.of(image));
 
         described.setThumbnail("thumbnail");
-        described.setFirstSeen(DateTime.now());
-        described.setLastFetched(DateTime.now());
-        described.setThisOrChildLastUpdated(DateTime.now());
+        described.setFirstSeen(timestamp);
+        described.setLastFetched(timestamp);
+        described.setThisOrChildLastUpdated(timestamp);
         described.setScheduleOnly(false);
         described.setActivelyPublished(true);
         described.setPresentationChannel("channel");
@@ -478,13 +741,17 @@ public class HashValueExtractorTest {
     }
 
     private void setContentFields(Content content, boolean addClips) {
+        setContentFields(content, addClips, DateTime.now());
+    }
+
+    private void setContentFields(Content content, boolean addClips, DateTime timestamp) {
         if (addClips) {
             Clip clip = new Clip();
 
-            setIdentifiedFields(clip);
-            setDescribedFields(clip);
-            setContentFields(clip, false);
-            setItemFields(clip);
+            setIdentifiedFields(clip, timestamp);
+            setDescribedFields(clip, timestamp);
+            setContentFields(clip, false, timestamp);
+            setItemFields(clip, timestamp);
 
             clip.setClipOf("clipOf");
 
@@ -553,22 +820,22 @@ public class HashValueExtractorTest {
 
         Policy policy = new Policy();
 
-        policy.setAvailabilityStart(DateTime.now());
-        policy.setAvailabilityEnd(DateTime.now());
-        policy.setDrmPlayableFrom(DateTime.now());
+        policy.setAvailabilityStart(timestamp);
+        policy.setAvailabilityEnd(timestamp);
+        policy.setDrmPlayableFrom(timestamp);
         policy.setAvailableCountries(ImmutableSet.of(Countries.GB));
         policy.setAvailabilityLength(10);
         policy.setRevenueContract(Policy.RevenueContract.FREE_TO_VIEW);
         policy.setSubscriptionPackages(ImmutableSet.of("subscription"));
         policy.setPrice(new Price(Currency.getInstance("GBP"), 10));
         policy.setPricing(ImmutableList.of(new Pricing(
-                DateTime.now(), DateTime.now(), new Price(Currency.getInstance("GBP"), 10)
+                timestamp, timestamp, new Price(Currency.getInstance("GBP"), 10)
         )));
         policy.setServiceId(Id.valueOf(10L));
         policy.setPlayerId(Id.valueOf(11L));
         policy.setPlatform(Policy.Platform.BTVISION_CARDINAL);
         policy.setNetwork(Policy.Network.THREE_G);
-        policy.setActualAvailabilityStart(DateTime.now());
+        policy.setActualAvailabilityStart(timestamp);
 
         location.setPolicy(policy);
 
@@ -578,6 +845,10 @@ public class HashValueExtractorTest {
     }
 
     private void setItemFields(Item item) {
+        setItemFields(item, DateTime.now());
+    }
+
+    private void setItemFields(Item item, DateTime timestamp) {
         item.setContainerRef(new BrandRef(Id.valueOf(10L), Publisher.METABROADCAST));
         item.setIsLongForm(true);
         item.setBlackAndWhite(false);
@@ -586,9 +857,9 @@ public class HashValueExtractorTest {
         ));
 
         Broadcast broadcast = new Broadcast(
-                Id.valueOf(10L), DateTime.now(), DateTime.now(), true
+                Id.valueOf(10L), timestamp, timestamp, true
         );
-        setIdentifiedFields(broadcast);
+        setIdentifiedFields(broadcast, timestamp);
 
         broadcast.setScheduleDate(LocalDate.now());
         broadcast.withId("sourceId");
@@ -622,7 +893,7 @@ public class HashValueExtractorTest {
         segmentEvent.setVersionId("5");
         segmentEvent.setPublisher(Publisher.METABROADCAST);
 
-        setIdentifiedFields(segmentEvent);
+        setIdentifiedFields(segmentEvent, timestamp);
 
         item.setSegmentEvents(ImmutableSet.of(segmentEvent));
 
@@ -634,7 +905,7 @@ public class HashValueExtractorTest {
         restriction.setAuthority("authority");
         restriction.setRating("rating");
 
-        setIdentifiedFields(restriction);
+        setIdentifiedFields(restriction, timestamp);
 
         item.setRestrictions(ImmutableSet.of(restriction));
     }
@@ -659,6 +930,10 @@ public class HashValueExtractorTest {
     }
 
     private void setEpisodeFields(Episode episode) {
+        setEpisodeFields(episode, DateTime.now());
+    }
+
+    private void setEpisodeFields(Episode episode, DateTime timestamp) {
         episode.setSeriesNumber(5);
         episode.setEpisodeNumber(5);
         episode.setPartNumber(1);
@@ -668,18 +943,22 @@ public class HashValueExtractorTest {
                 Publisher.METABROADCAST,
                 "title",
                 5,
-                DateTime.now(),
+                timestamp,
                 2000,
                 ImmutableSet.of(new Certificate("18", Countries.GB))
         ));
     }
 
     private void setContainerFields(Container container) {
+        setContainerFields(container, DateTime.now());
+    }
+
+    private void setContainerFields(Container container, DateTime timestamp) {
         ItemRef itemRef = new ItemRef(
                 Id.valueOf(10L),
                 Publisher.METABROADCAST,
                 "sort",
-                DateTime.now()
+                timestamp
         );
         container.setItemRefs(ImmutableSet.of(itemRef));
         container.setUpcomingContent(ImmutableMap.of(
@@ -688,7 +967,7 @@ public class HashValueExtractorTest {
                         new BroadcastRef(
                                 "id",
                                 Id.valueOf(1L),
-                                new Interval(DateTime.now(), DateTime.now().plusDays(1))
+                                new Interval(timestamp, timestamp.plusDays(1))
                         )
                 )
         ));
@@ -698,8 +977,8 @@ public class HashValueExtractorTest {
                         new LocationSummary(
                                 true,
                                 "uri",
-                                DateTime.now().minusDays(1),
-                                DateTime.now().plusDays(1)
+                                timestamp.minusDays(1),
+                                timestamp.plusDays(1)
                         )
                 )
         ));
@@ -714,12 +993,16 @@ public class HashValueExtractorTest {
     }
 
     private void setBrandFields(Brand brand) {
+        setBrandFields(brand, DateTime.now());
+    }
+
+    private void setBrandFields(Brand brand, DateTime timestamp) {
         brand.setSeriesRefs(ImmutableSet.of(new SeriesRef(
                 Id.valueOf(1L),
                 Publisher.METABROADCAST,
                 "title",
                 1,
-                DateTime.now(),
+                timestamp,
                 2000,
                 ImmutableSet.of(new Certificate("18", Countries.GB))
         )));
