@@ -14,23 +14,25 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
-import java.util.Set;
-
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import org.atlasapi.entity.Award;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.Sourced;
-import org.atlasapi.entity.Award;
-import org.atlasapi.entity.Review;
 import org.atlasapi.entity.Rating;
+import org.atlasapi.entity.Review;
+import org.atlasapi.entity.Sameable;
+import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
+
+import javax.annotation.Nullable;
+import java.util.Objects;
+import java.util.Set;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Optional.ofNullable;
@@ -404,4 +406,32 @@ public abstract class Described extends Identified implements Sourced {
                 );
     }
 
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        if (!super.isSame(other)) return false;
+        Described described = (Described) other;
+        return scheduleOnly == described.scheduleOnly &&
+                activelyPublished == described.activelyPublished &&
+                Objects.equals(title, described.title) &&
+                Objects.equals(shortDescription, described.shortDescription) &&
+                Objects.equals(mediumDescription, described.mediumDescription) &&
+                Objects.equals(longDescription, described.longDescription) &&
+                Objects.equals(synopses, described.synopses) &&
+                Objects.equals(description, described.description) &&
+                mediaType == described.mediaType &&
+                specialization == described.specialization &&
+                Objects.equals(genres, described.genres) &&
+                publisher == described.publisher &&
+                Objects.equals(image, described.image) &&
+                Objects.equals(images, described.images) &&
+                Objects.equals(thumbnail, described.thumbnail) &&
+                Objects.equals(presentationChannel, described.presentationChannel) &&
+                Objects.equals(priority, described.priority) &&
+                Objects.equals(relatedLinks, described.relatedLinks) &&
+                Objects.equals(reviews, described.reviews) &&
+                Objects.equals(ratings, described.ratings) &&
+                Objects.equals(awards, described.awards);
+    }
 }

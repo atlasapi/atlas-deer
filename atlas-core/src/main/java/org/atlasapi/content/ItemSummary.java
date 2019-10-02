@@ -1,18 +1,17 @@
 package org.atlasapi.content;
 
-import java.util.Optional;
-
-import javax.annotation.Nullable;
-
-import org.atlasapi.hashing.Hashable;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
+import org.atlasapi.entity.Sameable;
+import org.atlasapi.hashing.Hashable;
+
+import javax.annotation.Nullable;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ItemSummary implements Hashable {
+public class ItemSummary implements Hashable, Sameable {
 
     public static final Ordering<ItemSummary> ORDERING = new Ordering<ItemSummary>() {
 
@@ -95,5 +94,18 @@ public class ItemSummary implements Hashable {
 
     public Optional<String> getDescription() {
         return description;
+    }
+
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        ItemSummary that = (ItemSummary) other;
+        return itemRef.isSame(that.itemRef) &&
+                java.util.Objects.equals(title, that.title) &&
+                java.util.Objects.equals(description, that.description) &&
+                java.util.Objects.equals(image, that.image) &&
+                java.util.Objects.equals(releaseYear, that.releaseYear) &&
+                java.util.Objects.equals(certificate, that.certificate);
     }
 }

@@ -33,7 +33,7 @@ import static java.util.Optional.ofNullable;
 /**
  * Base type for descriptions of resources.
  */
-public class Identified implements Identifiable, Aliased {
+public class Identified implements Identifiable, Aliased, Sameable {
 
     private Id id;
     private String canonicalUri;
@@ -359,6 +359,20 @@ public class Identified implements Identifiable, Aliased {
         List<T> toSort = Lists.newArrayList(content);
         Collections.sort(toSort, byPositionInList);
         return toSort;
+    }
+
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        Identified that = (Identified) other;
+        return java.util.Objects.equals(id, that.id) &&
+                java.util.Objects.equals(canonicalUri, that.canonicalUri) &&
+                java.util.Objects.equals(curie, that.curie) &&
+                java.util.Objects.equals(aliasUrls, that.aliasUrls) &&
+                java.util.Objects.equals(aliases, that.aliases) &&
+                java.util.Objects.equals(equivalentTo, that.equivalentTo) &&
+                java.util.Objects.equals(customFields, that.customFields);
     }
 
     public static Builder<?, ?> builder() {

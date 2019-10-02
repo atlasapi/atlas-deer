@@ -15,12 +15,14 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Sameable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * @author Robert Chatley (robert@metabroadcast.com)
@@ -147,4 +149,16 @@ public class Episode extends Item {
         return visitor.visit(this);
     }
 
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        if (!super.isSame(other)) return false;
+        Episode episode = (Episode) other;
+        return Objects.equals(seriesNumber, episode.seriesNumber) &&
+                Objects.equals(episodeNumber, episode.episodeNumber) &&
+                Objects.equals(partNumber, episode.partNumber) &&
+                Objects.equals(special, episode.special) &&
+                Objects.equals(seriesRef, episode.seriesRef);
+    }
 }

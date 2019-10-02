@@ -2,10 +2,12 @@ package org.atlasapi.content;
 
 import com.google.common.base.Strings;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Sameable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class Series extends Container {
 
@@ -98,4 +100,14 @@ public class Series extends Container {
         return accept((ContainerVisitor<V>) visitor);
     }
 
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        if (!super.isSame(other)) return false;
+        Series series = (Series) other;
+        return Objects.equals(seriesNumber, series.seriesNumber) &&
+                Objects.equals(totalEpisodes, series.totalEpisodes) &&
+                Objects.equals(brandRef, series.brandRef);
+    }
 }

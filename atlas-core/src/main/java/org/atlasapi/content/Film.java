@@ -1,12 +1,14 @@
 package org.atlasapi.content;
 
-import java.util.Set;
-
+import com.google.common.collect.ImmutableSet;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Sameable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
-import com.google.common.collect.ImmutableSet;
+import javax.annotation.Nullable;
+import java.util.Objects;
+import java.util.Set;
 
 public class Film extends Item {
 
@@ -88,4 +90,14 @@ public class Film extends Item {
         return visitor.visit(this);
     }
 
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        if (!super.isSame(other)) return false;
+        Film film = (Film) other;
+        return Objects.equals(websiteUrl, film.websiteUrl) &&
+                Objects.equals(subtitles, film.subtitles) &&
+                Objects.equals(releaseDates, film.releaseDates);
+    }
 }

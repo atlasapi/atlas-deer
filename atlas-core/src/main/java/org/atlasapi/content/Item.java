@@ -17,8 +17,8 @@ package org.atlasapi.content;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.metabroadcast.common.intl.Country;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Sameable;
 import org.atlasapi.hashing.ExcludeFromHash;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
@@ -26,6 +26,7 @@ import org.atlasapi.segment.SegmentEvent;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -248,5 +249,20 @@ public class Item extends Content {
                 .map(Broadcast::toRef)
                 .collect(Collectors.toSet());
 
+    }
+
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        if (!super.isSame(other)) return false;
+        Item item = (Item) other;
+        return isLongForm == item.isLongForm &&
+                Objects.equals(containerRef, item.containerRef) &&
+                Objects.equals(blackAndWhite, item.blackAndWhite) &&
+                Objects.equals(containerSummary, item.containerSummary) &&
+                Objects.equals(broadcasts, item.broadcasts) &&
+                Objects.equals(segmentEvents, item.segmentEvents) &&
+                Objects.equals(restrictions, item.restrictions);
     }
 }

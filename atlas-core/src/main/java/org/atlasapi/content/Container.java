@@ -5,12 +5,15 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Sameable;
+import org.atlasapi.entity.util.ComparisonUtils;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.StreamSupport;
 
 public abstract class Container extends Content {
@@ -133,5 +136,17 @@ public abstract class Container extends Content {
         this.itemSummaries = itemSummaries.stream()
                 .sorted(ItemSummary.ORDERING)
                 .collect(MoreCollectors.toImmutableList());
+    }
+
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        if (!super.isSame(other)) return false;
+        Container container = (Container) other;
+        return ComparisonUtils.isSame(itemRefs, container.itemRefs) &&
+                Objects.equals(upcomingContent, container.upcomingContent) &&
+                Objects.equals(availableContent, container.availableContent) &&
+                Objects.equals(itemSummaries, container.itemSummaries);
     }
 }

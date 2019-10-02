@@ -17,8 +17,12 @@ package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Sameable;
+import org.atlasapi.entity.util.ComparisonUtils;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
+
+import javax.annotation.Nullable;
 
 /**
  * @author Robert Chatley (robert@metabroadcast.com)
@@ -78,4 +82,12 @@ public class Brand extends Container {
         return new BrandRef(getId(), getSource());
     }
 
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        if (!super.isSame(other)) return false;
+        Brand brand = (Brand) other;
+        return ComparisonUtils.isSame(seriesRefs, brand.seriesRefs);
+    }
 }

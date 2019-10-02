@@ -1,15 +1,17 @@
 package org.atlasapi.content;
 
-import java.util.List;
-
-import org.atlasapi.entity.Id;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.meta.annotations.FieldName;
-
 import com.google.common.base.Objects.ToStringHelper;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Sameable;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Objects;
 
 public class SeriesRef extends ContainerRef implements Comparable<SeriesRef> {
 
@@ -108,4 +110,15 @@ public class SeriesRef extends ContainerRef implements Comparable<SeriesRef> {
         return false;
     }
 
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        if (!super.isSame(other)) return false;
+        SeriesRef seriesRef = (SeriesRef) other;
+        return Objects.equals(title, seriesRef.title) &&
+                Objects.equals(seriesNumber, seriesRef.seriesNumber) &&
+                Objects.equals(releaseYear, seriesRef.releaseYear) &&
+                Objects.equals(certificates, seriesRef.certificates);
+    }
 }

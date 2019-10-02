@@ -1,18 +1,19 @@
 package org.atlasapi.entity;
 
-import org.atlasapi.hashing.Hashable;
-import org.atlasapi.media.entity.Publisher;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.Objects;
 import com.google.common.base.Objects.ToStringHelper;
+import org.atlasapi.hashing.Hashable;
+import org.atlasapi.media.entity.Publisher;
+
+import javax.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
-public abstract class ResourceRef implements Identifiable, Sourced, Hashable {
+public abstract class ResourceRef implements Identifiable, Sourced, Hashable, Sameable {
 
     protected final Id id;
     protected final Publisher source;
@@ -67,4 +68,12 @@ public abstract class ResourceRef implements Identifiable, Sourced, Hashable {
         return toStringHelper().toString();
     }
 
+    @Override
+    public boolean isSame(@Nullable Sameable other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        ResourceRef that = (ResourceRef) other;
+        return java.util.Objects.equals(id, that.id) &&
+                source == that.source;
+    }
 }
