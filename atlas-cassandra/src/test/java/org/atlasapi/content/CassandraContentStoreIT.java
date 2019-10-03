@@ -250,7 +250,7 @@ public abstract class CassandraContentStoreIT {
 //        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
         verify(comparer, times(1)).equals(argThat(isA(Content.class)), argThat(isA(Content.class)));
         verify(idGenerator, times(1)).generateRaw();
-        verify(clock, times(1)).now();
+        verify(clock, times(2)).now();
 
         Content item = resolve(content.getId().longValue());
 
