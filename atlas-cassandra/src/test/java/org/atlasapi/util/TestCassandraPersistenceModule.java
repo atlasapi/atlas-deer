@@ -1,32 +1,5 @@
 package org.atlasapi.util;
 
-import java.io.IOException;
-import java.util.UUID;
-
-import org.atlasapi.CassandraPersistenceModule;
-import org.atlasapi.ConfiguredAstyanaxContext;
-import org.atlasapi.PersistenceModule;
-import org.atlasapi.content.CassandraEquivalentContentStore;
-import org.atlasapi.content.ContentStore;
-import org.atlasapi.content.EquivalentContentStore;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.event.EventStore;
-import org.atlasapi.organisation.OrganisationStore;
-import org.atlasapi.schedule.EquivalentScheduleStore;
-import org.atlasapi.schedule.ScheduleStore;
-import org.atlasapi.segment.SegmentStore;
-import org.atlasapi.system.legacy.LegacyContentResolver;
-import org.atlasapi.topic.TopicStore;
-
-import com.metabroadcast.common.ids.IdGeneratorBuilder;
-import com.metabroadcast.common.ids.SequenceGenerator;
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
-import com.metabroadcast.common.queue.Message;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessageSenderFactory;
-import com.metabroadcast.common.queue.MessageSerializer;
-import com.metabroadcast.common.queue.MessagingException;
-
 import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -39,11 +12,37 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.AbstractIdleService;
+import com.metabroadcast.common.ids.IdGeneratorBuilder;
+import com.metabroadcast.common.ids.SequenceGenerator;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+import com.metabroadcast.common.queue.Message;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessageSenderFactory;
+import com.metabroadcast.common.queue.MessageSerializer;
+import com.metabroadcast.common.queue.MessagingException;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
+import org.atlasapi.CassandraPersistenceModule;
+import org.atlasapi.ConfiguredAstyanaxContext;
+import org.atlasapi.PersistenceModule;
+import org.atlasapi.comparison.AlwaysFalseComparer;
+import org.atlasapi.content.CassandraEquivalentContentStore;
+import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.EquivalentContentStore;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.event.EventStore;
+import org.atlasapi.organisation.OrganisationStore;
+import org.atlasapi.schedule.EquivalentScheduleStore;
+import org.atlasapi.schedule.ScheduleStore;
+import org.atlasapi.segment.SegmentStore;
+import org.atlasapi.system.legacy.LegacyContentResolver;
+import org.atlasapi.topic.TopicStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.UUID;
 
 public class TestCassandraPersistenceModule extends AbstractIdleService
         implements PersistenceModule {
@@ -139,6 +138,7 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
                 .withKeyspace(keyspace)
                 .withIdGeneratorBuilder(idGeneratorBuilder())
                 .withContentHasher(content -> UUID.randomUUID().toString())
+                .withComparer(new AlwaysFalseComparer())
                 .withEventHasher(eventv2 -> UUID.randomUUID().toString())
                 .withMetrics(new MetricRegistry())
                 .build();
