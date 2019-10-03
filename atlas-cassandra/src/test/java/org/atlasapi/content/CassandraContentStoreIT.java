@@ -230,7 +230,7 @@ public abstract class CassandraContentStoreIT {
     }
 
     @Test
-    public void testContentNotWrittenWhenHashNotChanged() throws Exception {
+    public void testContentNotWrittenWhenContentNotChanged() throws Exception {
         Content content = create(new Item());
         content.setTitle("title");
 
@@ -250,7 +250,6 @@ public abstract class CassandraContentStoreIT {
 //        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
         verify(comparer, times(1)).equals(argThat(isA(Content.class)), argThat(isA(Content.class)));
         verify(idGenerator, times(1)).generateRaw();
-        verify(clock, times(2)).now();
 
         Content item = resolve(content.getId().longValue());
 
@@ -263,7 +262,7 @@ public abstract class CassandraContentStoreIT {
     }
 
     @Test
-    public void testContentWrittenWhenHashChanged() throws Exception {
+    public void testContentWrittenWhenContentChanged() throws Exception {
         Content content = create(new Item());
         content.setTitle("title");
 
@@ -292,7 +291,6 @@ public abstract class CassandraContentStoreIT {
 //        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
         verify(comparer, times(1)).equals(argThat(isA(Content.class)), argThat(isA(Content.class)));
         verify(idGenerator, times(1)).generateRaw();
-        verify(clock, times(2)).now();
 
         Content item = resolve(content.getId().longValue());
 
