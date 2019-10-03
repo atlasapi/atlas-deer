@@ -166,7 +166,7 @@ public final class EquivalentContentStoreTester
 
         ImmutableSet<Content> set1 = resolved.get(content1.getId());
         ImmutableSet<Content> set2 = resolved.get(content2.getId());
-        assertEquals("Sets resolved for ids of the same set should be equal", set1, set2);
+        assertEquals("Sets resolved for ids of the same set should be equals", set1, set2);
     }
 
     public void testResolvingMissingId() throws Exception {

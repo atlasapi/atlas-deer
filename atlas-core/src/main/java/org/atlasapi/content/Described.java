@@ -14,23 +14,23 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
-import java.util.Set;
-
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import org.atlasapi.comparison.ExcludeFromObjectComparison;
+import org.atlasapi.entity.Award;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.Sourced;
-import org.atlasapi.entity.Award;
-import org.atlasapi.entity.Review;
 import org.atlasapi.entity.Rating;
+import org.atlasapi.entity.Review;
+import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
+
+import java.util.Set;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Optional.ofNullable;
@@ -57,8 +57,11 @@ public abstract class Described extends Identified implements Sourced {
     private Set<Image> images = ImmutableSet.of();
     private String thumbnail;
 
+    @ExcludeFromObjectComparison
     private DateTime firstSeen;
+    @ExcludeFromObjectComparison
     private DateTime lastFetched;
+    @ExcludeFromObjectComparison
     private DateTime thisOrChildLastUpdated;
     private boolean scheduleOnly = false;
     private boolean activelyPublished = true;

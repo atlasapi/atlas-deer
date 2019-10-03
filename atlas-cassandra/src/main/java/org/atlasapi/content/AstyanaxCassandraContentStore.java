@@ -1,29 +1,5 @@
 package org.atlasapi.content;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import javax.annotation.Nullable;
-
-import org.atlasapi.entity.Alias;
-import org.atlasapi.entity.AliasIndex;
-import org.atlasapi.entity.CassandraPersistenceException;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.hashing.content.ContentHasher;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.messaging.ResourceUpdatedMessage;
-
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.time.SystemClock;
-
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -37,9 +13,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.MultimapBuilder;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.time.SystemClock;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.ColumnListMutation;
 import com.netflix.astyanax.Keyspace;
@@ -52,8 +31,25 @@ import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.serializers.LongSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
+import org.atlasapi.comparison.Comparer;
+import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.AliasIndex;
+import org.atlasapi.entity.CassandraPersistenceException;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.hashing.content.ContentHasher;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.content.ContentColumn.DESCRIPTION;
@@ -67,13 +63,13 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
     public static Builder builder(
             AstyanaxContext<Keyspace> context,
-            String name, ContentHasher hasher,
+            String name, ContentHasher hasher, Comparer comparer,
             MessageSender<ResourceUpdatedMessage> sender,
             IdGenerator idGenerator,
             EquivalenceGraphStore graphStore
     ) {
         return new Builder(
-                context, name, hasher, sender, idGenerator, graphStore
+                context, name, hasher, comparer, sender, idGenerator, graphStore
         );
     }
 
@@ -82,6 +78,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         private final AstyanaxContext<Keyspace> context;
         private final String name;
         private final ContentHasher hasher;
+        private final Comparer comparer;
         private final MessageSender<ResourceUpdatedMessage> sender;
         private final IdGenerator idGenerator;
         private final EquivalenceGraphStore graphStore;
@@ -96,6 +93,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 AstyanaxContext<Keyspace> context,
                 String name,
                 ContentHasher hasher,
+                Comparer comparer,
                 MessageSender<ResourceUpdatedMessage> sender,
                 IdGenerator idGenerator,
                 EquivalenceGraphStore graphStore
@@ -103,6 +101,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             this.context = context;
             this.name = name;
             this.hasher = hasher;
+            this.comparer = comparer;
             this.sender = sender;
             this.idGenerator = idGenerator;
             this.graphStore = graphStore;
@@ -140,6 +139,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                     readCl,
                     writeCl,
                     hasher,
+                    comparer,
                     idGenerator,
                     sender,
                     graphStore,
@@ -196,6 +196,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             ConsistencyLevel readConsistency,
             ConsistencyLevel writeConsistency,
             ContentHasher hasher,
+            Comparer comparer,
             IdGenerator idGenerator,
             MessageSender<ResourceUpdatedMessage> sender,
             EquivalenceGraphStore graphStore,
@@ -203,7 +204,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             MetricRegistry metricRegistry,
             String metricPrefix
     ) {
-        super(hasher, idGenerator, sender, graphStore, clock, metricRegistry, metricPrefix);
+        super(hasher, comparer, idGenerator, sender, graphStore, clock, metricRegistry, metricPrefix);
         this.keyspace = checkNotNull(context.getClient());
         this.readConsistency = checkNotNull(readConsistency);
         this.writeConsistency = checkNotNull(writeConsistency);

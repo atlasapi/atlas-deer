@@ -8,6 +8,7 @@ import javax.annotation.PreDestroy;
 
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.comparison.ObjectComparer;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentIndex;
@@ -236,6 +237,7 @@ public class AtlasPersistenceModule {
                         UTIL_METRIC_PREFIX,
                         metricsModule.metrics()
                 ))
+                .withComparer(new ObjectComparer())
                 .withEventHasher(eventV2 -> UUID.randomUUID().toString())
                 .withMetrics(metricsModule.metrics())
                 .build();

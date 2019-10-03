@@ -1,18 +1,33 @@
 package org.atlasapi.content.v2;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import javax.annotation.Nullable;
-
+import com.codahale.metrics.MetricRegistry;
+import com.codepoetics.protonpack.maps.MapStream;
+import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.Statement;
+import com.datastax.driver.mapping.Mapper;
+import com.datastax.driver.mapping.MappingManager;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.primitives.Longs;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.time.Timestamp;
+import com.metabroadcast.promise.Promise;
+import org.atlasapi.comparison.Comparer;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
@@ -54,39 +69,22 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
-
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.time.Timestamp;
-import com.metabroadcast.promise.Promise;
-
-import com.codahale.metrics.MetricRegistry;
-import com.codepoetics.protonpack.maps.MapStream;
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
-import com.datastax.driver.mapping.Mapper;
-import com.datastax.driver.mapping.MappingManager;
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.primitives.Longs;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.DateTime;
 import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -118,6 +116,7 @@ public class CqlContentStore implements ContentStore {
     private final ContainerSummarySerialization containerSummaryTranslator =
             new ContainerSummarySerialization();
     private final ContentHasher hasher;
+    private final Comparer comparer;
     private final EquivalenceGraphStore graphStore;
 
     private final String writeContent;
@@ -148,6 +147,7 @@ public class CqlContentStore implements ContentStore {
 
         this.sender = builder.sender;
         this.hasher = checkNotNull(builder.hasher);
+        this.comparer = checkNotNull(builder.comparer);
         this.graphStore = checkNotNull(builder.graphStore);
 
         writeContent = builder.metricPrefix + "writeContent.";
@@ -171,11 +171,11 @@ public class CqlContentStore implements ContentStore {
 
             Content previous = resolvePrevious(content);
 
-            if (previous != null && hasher.hash(content).equals(hasher.hash(previous))) {
-                return WriteResult.<Content, Content>result(content, false)
-                        .withPrevious(previous)
-                        .build();
-            }
+//            if (previous != null && hasher.hash(content).equals(hasher.hash(previous))) {
+//                return WriteResult.<Content, Content>result(content, false)
+//                        .withPrevious(previous)
+//                        .build();
+//            }
 
             BatchStatement batch = new BatchStatement();
 
@@ -218,6 +218,11 @@ public class CqlContentStore implements ContentStore {
 
             setExistingItemRefs(content, previous);
 
+            if (previous != null && comparer.isSupported(content, previous) && comparer.equals(content, previous)) {
+                return WriteResult.<Content, Content>result(content, false)
+                        .withPrevious(previous)
+                        .build();
+            }
             org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
 
             batch.add(mapper.saveQuery(serialized));
@@ -872,6 +877,7 @@ public class CqlContentStore implements ContentStore {
         private MessageSender<ResourceUpdatedMessage> sender;
         private Clock clock;
         private ContentHasher hasher;
+        private Comparer comparer;
         private EquivalenceGraphStore graphStore;
         private MetricRegistry metricRegistry;
         private String metricPrefix;
@@ -902,6 +908,11 @@ public class CqlContentStore implements ContentStore {
 
         public Builder withHasher(ContentHasher val) {
             hasher = val;
+            return this;
+        }
+
+        public Builder withComparer(Comparer val) {
+            comparer = val;
             return this;
         }
 

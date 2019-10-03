@@ -1,14 +1,20 @@
 package org.atlasapi.content;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
-import java.util.stream.StreamSupport;
-
-import javax.annotation.Nullable;
-
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.primitives.Longs;
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.time.Timestamp;
+import org.atlasapi.comparison.Comparer;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
@@ -20,26 +26,18 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
-
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.time.Timestamp;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.primitives.Longs;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -52,6 +50,10 @@ public abstract class AbstractContentStore implements ContentStore {
 
     private final class ContentWritingVisitor
             implements ContentVisitor<WriteResult<? extends Content, Content>> {
+
+        private boolean hasChanged(Content writing, Content previous) {
+            return !(comparer.isSupported(writing, previous) && comparer.equals(writing, previous));
+        }
 
         private boolean hashChanged(Content writing, Content previous) {
             return !hasher.hash(writing).equals(hasher.hash(previous));
@@ -99,7 +101,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         private WriteResult<Brand, Content> writeBrandWithPrevious(Brand brand, Content previous) {
             boolean written = false;
-            if (hashChanged(brand, previous)) {
+            if (hasChanged(brand, previous)) {
                 updateWithPevious(brand, previous);
                 write(brand, previous);
                 written = true;
@@ -144,7 +146,7 @@ public abstract class AbstractContentStore implements ContentStore {
         private WriteResult<Series, Content> writeSeriesWithPrevious(Series series,
                 Content previous) {
             boolean written = false;
-            if (hashChanged(series, previous)) {
+            if (hasChanged(series, previous)) {
                 updateWithPevious(series, previous);
                 writeRefAndSummarizePrimary(series);
                 write(series, previous);
@@ -195,7 +197,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         private WriteResult<Item, Content> writeItemWithPrevious(Item item, Content previous) {
             boolean written = false;
-            if (hashChanged(item, previous)) {
+            if (hasChanged(item, previous)) {
                 updateWithPreviousItem(item, previous);
                 updateWithPevious(item, previous);
                 writeItemRefs(item);
@@ -239,7 +241,7 @@ public abstract class AbstractContentStore implements ContentStore {
         private WriteResult<Episode, Content> writeEpisodeWithExising(Episode episode,
                 Content previous) {
             boolean written = false;
-            if (hashChanged(episode, previous)) {
+            if (hasChanged(episode, previous)) {
                 updateWithPreviousItem(episode, previous);
                 updateWithPevious(episode, previous);
                 writeItemRefs(episode);
@@ -282,7 +284,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         private WriteResult<Film, Content> writeFilmWithPrevious(Film film, Content previous) {
             boolean written = false;
-            if (hashChanged(film, previous)) {
+            if (hasChanged(film, previous)) {
                 updateWithPevious(film, previous);
                 write(film, previous);
                 written = true;
@@ -314,7 +316,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         private WriteResult<Song, Content> writeSongWithPrevious(Song song, Content previous) {
             boolean written = false;
-            if (hashChanged(song, previous)) {
+            if (hasChanged(song, previous)) {
                 updateWithPevious(song, previous);
                 write(song, previous);
                 written = true;
@@ -335,6 +337,7 @@ public abstract class AbstractContentStore implements ContentStore {
     private static final String METER_FAILURE = "meter.failure";
 
     private final ContentHasher hasher;
+    private final Comparer comparer;
     private final IdGenerator idGenerator;
     private final MessageSender<ResourceUpdatedMessage> sender;
     private final Clock clock;
@@ -349,6 +352,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
     protected AbstractContentStore(
             ContentHasher hasher,
+            Comparer comparer,
             IdGenerator idGenerator,
             MessageSender<ResourceUpdatedMessage> sender,
             EquivalenceGraphStore graphStore,
@@ -357,6 +361,7 @@ public abstract class AbstractContentStore implements ContentStore {
             String metricPrefix
     ) {
         this.hasher = checkNotNull(hasher);
+        this.comparer = checkNotNull(comparer);
         this.idGenerator = checkNotNull(idGenerator);
         this.sender = checkNotNull(sender);
         this.graphStore = checkNotNull(graphStore);

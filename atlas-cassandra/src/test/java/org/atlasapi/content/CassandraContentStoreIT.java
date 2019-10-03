@@ -30,6 +30,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.atlasapi.comparison.Comparer;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;
@@ -57,7 +58,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -92,6 +92,7 @@ public abstract class CassandraContentStoreIT {
     protected static Session session;
 
     @Mock protected ContentHasher hasher;
+    @Mock protected Comparer comparer;
     @Mock protected IdGenerator idGenerator;
     @Mock protected MessageSender<ResourceUpdatedMessage> sender;
     @Mock protected EquivalenceGraphStore graphStore;
@@ -106,6 +107,7 @@ public abstract class CassandraContentStoreIT {
     @Before
     public void before() throws ConnectionException {
         store = provideContentStore();
+        when(comparer.isSupported(any(Content.class), any(Content.class))).thenReturn(true);
 
         when(graphStore.resolveIds(anyCollectionOf(Id.class)))
                 .thenReturn(Futures.immediateFuture(ImmutableOptionalMap.of()));
@@ -239,12 +241,14 @@ public abstract class CassandraContentStoreIT {
         WriteResult<Content, Content> writeResult = store.writeContent(content);
         assertTrue(writeResult.written());
 
-        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("same");
+//        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("same");
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(true);
 
         writeResult = store.writeContent(writeResult.getResource());
         assertFalse(writeResult.written());
 
-        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
+//        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
+        verify(comparer, times(1)).equals(argThat(isA(Content.class)), argThat(isA(Content.class)));
         verify(idGenerator, times(1)).generateRaw();
         verify(clock, times(1)).now();
 
@@ -276,14 +280,17 @@ public abstract class CassandraContentStoreIT {
         Content resolved = resolve(content.getId().longValue());
         assertThat(resolved.getTitle(), is(content.getTitle()));
 
-        when(hasher.hash(argThat(isA(Content.class))))
-                .thenReturn("different")
-                .thenReturn("differentAgain");
+//        when(hasher.hash(argThat(isA(Content.class))))
+//                .thenReturn("different")
+//                .thenReturn("differentAgain");
+
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         writeResult = store.writeContent(writeResult.getResource());
         assertTrue(writeResult.written());
 
-        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
+//        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
+        verify(comparer, times(1)).equals(argThat(isA(Content.class)), argThat(isA(Content.class)));
         verify(idGenerator, times(1)).generateRaw();
         verify(clock, times(2)).now();
 
@@ -587,10 +594,11 @@ public abstract class CassandraContentStoreIT {
 
         Brand writtenBrand = brandWriteResult.getResource();
         writtenBrand.setTitle("new title");
-        when(hasher.hash(argThat(isA(Content.class))))
-                .thenReturn("different")
-                .thenReturn("differentAgain");
+//        when(hasher.hash(argThat(isA(Content.class))))
+//                .thenReturn("different")
+//                .thenReturn("differentAgain");
 
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
         brandWriteResult = store.writeContent(writtenBrand);
         writtenBrand = brandWriteResult.getResource();
 
@@ -599,9 +607,11 @@ public abstract class CassandraContentStoreIT {
 
         Series writtenSeries = seriesWriteResult.getResource();
         writtenSeries.setTitle("new title");
-        when(hasher.hash(argThat(isA(Content.class))))
-                .thenReturn("different")
-                .thenReturn("differentAgain");
+//        when(hasher.hash(argThat(isA(Content.class))))
+//                .thenReturn("different")
+//                .thenReturn("differentAgain");
+
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         seriesWriteResult = store.writeContent(writtenSeries);
         writtenSeries = seriesWriteResult.getResource();
@@ -629,10 +639,11 @@ public abstract class CassandraContentStoreIT {
         brand.addAlias(sharedAlias);
 
         when(idGenerator.generateRaw()).thenReturn(1234L);
-        when(hasher.hash(argThat(isA(Content.class))))
-                .thenReturn("different")
-                .thenReturn("differentAgain");
+//        when(hasher.hash(argThat(isA(Content.class))))
+//                .thenReturn("different")
+//                .thenReturn("differentAgain");
 
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
         WriteResult<Brand, Content> writtenBrand = store.writeContent(brand);
         assertTrue(writtenBrand.written());
 
@@ -655,10 +666,11 @@ public abstract class CassandraContentStoreIT {
         series.addAlias(sharedAlias);
 
         when(idGenerator.generateRaw()).thenReturn(1234L);
-        when(hasher.hash(argThat(isA(Content.class))))
-                .thenReturn("different")
-                .thenReturn("differentAgain");
+//        when(hasher.hash(argThat(isA(Content.class))))
+//                .thenReturn("different")
+//                .thenReturn("differentAgain");
 
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
         WriteResult<Series, Content> writtenSeries = store.writeContent(series);
         assertTrue(writtenSeries.written());
 
@@ -1303,7 +1315,8 @@ public abstract class CassandraContentStoreIT {
 
         series1.setActivelyPublished(false);
 
-        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+//        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         store.writeContent(series1);
 
@@ -1398,7 +1411,8 @@ public abstract class CassandraContentStoreIT {
         );
 
         episode.setActivelyPublished(false);
-        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+//        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         store.writeContent(episode);
 
@@ -1486,7 +1500,8 @@ public abstract class CassandraContentStoreIT {
         );
 
         episode.setActivelyPublished(false);
-        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+//        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         store.writeContent(episode);
 
@@ -1627,9 +1642,10 @@ public abstract class CassandraContentStoreIT {
         when(idGenerator.generateRaw()).thenReturn(1237L);
         store.writeContent(episode);
 
-        when(hasher.hash(argThat(isA(Content.class))))
-                .thenReturn("different")
-                .thenReturn("differentAgain");
+//        when(hasher.hash(argThat(isA(Content.class))))
+//                .thenReturn("different")
+//                .thenReturn("differentAgain");
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         Episode resolvedEpisode = (Episode) resolve(1237L);
         assertThat(resolvedEpisode.getFirstSeen(), is(now.plusHours(2)));
@@ -1754,7 +1770,8 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedBrand2.getAvailableContent().isEmpty(), is(true));
 
         episode.setContainer(brandWriteResult2.getResource());
-        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+//        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         store.writeContent(episode);
 
@@ -1843,7 +1860,8 @@ public abstract class CassandraContentStoreIT {
         );
 
         item.setContainerRef(null);
-        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+//        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         store.writeContent(item);
 
@@ -1873,9 +1891,10 @@ public abstract class CassandraContentStoreIT {
         encoding.setAvailableAt(ImmutableSet.of(location));
         item.setManifestedAs(ImmutableSet.of(encoding));
 
-        when(hasher.hash(argThat(isA(Content.class))))
-                .thenReturn("different")
-                .thenReturn("differentAgain");
+//        when(hasher.hash(argThat(isA(Content.class))))
+//                .thenReturn("different")
+//                .thenReturn("differentAgain");
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
         WriteResult<Item, Content> result = store.writeContent(item);
 
         item.setManifestedAs(ImmutableSet.of());
@@ -1943,10 +1962,11 @@ public abstract class CassandraContentStoreIT {
     public void removingBroadcastsDeletesThem() throws Exception {
         DateTime now = new DateTime(DateTimeZones.UTC);
         when(clock.now()).thenReturn(now);
-        when(hasher.hash(any(Item.class))).thenReturn(
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString()
-        );
+//        when(hasher.hash(any(Item.class))).thenReturn(
+//                UUID.randomUUID().toString(),
+//                UUID.randomUUID().toString()
+//        );
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         Item item = create(new Item());
         item.setTitle("Title");
@@ -1998,10 +2018,11 @@ public abstract class CassandraContentStoreIT {
 
         DateTime now = new DateTime(DateTimeZones.UTC);
         when(clock.now()).thenReturn(now);
-        when(hasher.hash(any(Item.class))).thenReturn(
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString()
-        );
+//        when(hasher.hash(any(Item.class))).thenReturn(
+//                UUID.randomUUID().toString(),
+//                UUID.randomUUID().toString()
+//        );
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         Item item = create(new Item());
         item.setTitle("Title");
@@ -2077,7 +2098,8 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedBrand.getItemRefs().size(), is(2));
         assertThat(resolvedBrand.getItemSummaries().size(), is(2));
 
-        when(hasher.hash(brand)).thenReturn("has summaries", "no summaries");
+//        when(hasher.hash(brand)).thenReturn("has summaries", "no summaries");
+        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
 
         store.writeContent(brand);
 

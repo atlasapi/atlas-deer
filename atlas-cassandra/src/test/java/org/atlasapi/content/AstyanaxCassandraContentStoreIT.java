@@ -13,7 +13,7 @@ public class AstyanaxCassandraContentStoreIT extends CassandraContentStoreIT {
     @Override
     protected ContentStore provideContentStore() {
         return AstyanaxCassandraContentStore
-                .builder(context, CONTENT_TABLE, hasher, sender, idGenerator, graphStore)
+                .builder(context, CONTENT_TABLE, hasher, comparer, sender, idGenerator, graphStore)
                 .withReadConsistency(ConsistencyLevel.CL_ONE)
                 .withWriteConsistency(ConsistencyLevel.CL_ONE)
                 .withClock(clock)

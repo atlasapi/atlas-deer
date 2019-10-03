@@ -13,12 +13,14 @@
  permissions and limitations under the License. */
 package org.atlasapi.content;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.metabroadcast.common.intl.Country;
+import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
@@ -30,14 +32,10 @@ import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
-import com.metabroadcast.common.intl.Country;
-
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -47,6 +45,7 @@ public abstract class Content extends Described
         implements Aliased, Sourced, Equivalable<Content>, Hashable {
 
     @ExcludeFromHash
+    @ExcludeFromObjectComparison
     private transient String readHash;
 
     private ImmutableList<Clip> clips = ImmutableList.of();
