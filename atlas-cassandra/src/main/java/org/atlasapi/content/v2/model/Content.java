@@ -6,6 +6,7 @@ import com.datastax.driver.mapping.annotations.FrozenKey;
 import com.datastax.driver.mapping.annotations.FrozenValue;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
+import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
@@ -66,9 +67,11 @@ public class Content implements ContentIface {
     @Column(name = "equiv_to")
     private Set<Ref> equivalentTo;
 
+    @ExcludeFromObjectComparison
     @Column(name = "last_updated")
     private Instant lastUpdated;
 
+    @ExcludeFromObjectComparison
     @Column(name = "equiv_update")
     private Instant equivalenceUpdate;
 
@@ -114,12 +117,15 @@ public class Content implements ContentIface {
     @Column(name = "thumbnail")
     private String thumbnail;
 
+    @ExcludeFromObjectComparison
     @Column(name = "first_seen")
     private Instant firstSeen;
 
+    @ExcludeFromObjectComparison
     @Column(name = "last_fetched")
     private Instant lastFetched;
 
+    @ExcludeFromObjectComparison
     @Column(name = "this_or_child_last_updated")
     private Instant thisOrChildLastUpdated;
 

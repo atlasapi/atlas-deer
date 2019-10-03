@@ -2,6 +2,7 @@ package org.atlasapi.content.v2.model.udt;
 
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.joda.time.Instant;
 
 /** This doesn't hold the actual ID and publisher because those are the strict PK of
@@ -16,6 +17,7 @@ import org.joda.time.Instant;
 public class PartialItemRef {
 
     @Field(name = "sort_key") private String sortKey;
+    @ExcludeFromObjectComparison
     @Field(name = "updated") private Instant updated;
     @Field(name = "type") private String type;
 

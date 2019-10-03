@@ -2,6 +2,7 @@ package org.atlasapi.content.v2.model.udt;
 
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.content.v2.model.Identified;
 import org.joda.time.Instant;
 
@@ -17,7 +18,9 @@ public class CrewMember implements Identified {
     @Field(name = "alias_urls") private Set<String> aliasUrls;
     @Field(name = "aliases") private Set<Alias> aliases;
     @Field(name = "equiv_to") private Set<Ref> equivalentTo;
+    @ExcludeFromObjectComparison
     @Field(name = "last_updated") private Instant lastUpdated;
+    @ExcludeFromObjectComparison
     @Field(name = "equiv_update") private Instant equivalenceUpdate;
     @Field(name = "role") private String role;
     @Field(name = "name") private String name;

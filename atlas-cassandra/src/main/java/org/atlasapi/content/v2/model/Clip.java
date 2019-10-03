@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.metabroadcast.common.stream.MoreCollectors;
+import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
@@ -39,7 +40,9 @@ public class Clip implements ContentIface {
     private Set<String> aliasUrls;
     private Set<Alias> aliases;
     private Set<Ref> equivalentTo;
+    @ExcludeFromObjectComparison
     private Instant lastUpdated;
+    @ExcludeFromObjectComparison
     private Instant equivalenceUpdate;
     private String title;
     private String shortDescription;
@@ -54,8 +57,11 @@ public class Clip implements ContentIface {
     private String image;
     private Map<Image, Interval> images;
     private String thumbnail;
+    @ExcludeFromObjectComparison
     private Instant firstSeen;
+    @ExcludeFromObjectComparison
     private Instant lastFetched;
+    @ExcludeFromObjectComparison
     private Instant thisOrChildLastUpdated;
     private Boolean scheduleOnly;
     private Boolean activelyPublished;

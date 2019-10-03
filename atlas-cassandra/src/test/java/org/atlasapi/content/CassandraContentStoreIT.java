@@ -104,10 +104,15 @@ public abstract class CassandraContentStoreIT {
 
     protected abstract ContentStore provideContentStore();
 
+    protected abstract Class<?> provideContentComparisonClass();
+
     @Before
     public void before() throws ConnectionException {
         store = provideContentStore();
-        when(comparer.isSupported(any(Content.class), any(Content.class))).thenReturn(true);
+        when(comparer.isSupported(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass())
+        )).thenReturn(true);
 
         when(graphStore.resolveIds(anyCollectionOf(Id.class)))
                 .thenReturn(Futures.immediateFuture(ImmutableOptionalMap.of()));
@@ -242,13 +247,20 @@ public abstract class CassandraContentStoreIT {
         assertTrue(writeResult.written());
 
 //        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("same");
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(true);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(true);
 
         writeResult = store.writeContent(writeResult.getResource());
         assertFalse(writeResult.written());
 
 //        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
-        verify(comparer, times(1)).equals(argThat(isA(Content.class)), argThat(isA(Content.class)));
+        verify(comparer, times(1))
+                .equals(
+                        argThat(isA(provideContentComparisonClass())),
+                        argThat(isA(provideContentComparisonClass()))
+                );
         verify(idGenerator, times(1)).generateRaw();
 
         Content item = resolve(content.getId().longValue());
@@ -283,13 +295,20 @@ public abstract class CassandraContentStoreIT {
 //                .thenReturn("different")
 //                .thenReturn("differentAgain");
 
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         writeResult = store.writeContent(writeResult.getResource());
         assertTrue(writeResult.written());
 
 //        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
-        verify(comparer, times(1)).equals(argThat(isA(Content.class)), argThat(isA(Content.class)));
+        verify(comparer, times(1))
+                .equals(
+                        argThat(isA(provideContentComparisonClass())),
+                        argThat(isA(provideContentComparisonClass()))
+                );
         verify(idGenerator, times(1)).generateRaw();
 
         Content item = resolve(content.getId().longValue());
@@ -596,7 +615,10 @@ public abstract class CassandraContentStoreIT {
 //                .thenReturn("different")
 //                .thenReturn("differentAgain");
 
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
         brandWriteResult = store.writeContent(writtenBrand);
         writtenBrand = brandWriteResult.getResource();
 
@@ -609,7 +631,10 @@ public abstract class CassandraContentStoreIT {
 //                .thenReturn("different")
 //                .thenReturn("differentAgain");
 
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         seriesWriteResult = store.writeContent(writtenSeries);
         writtenSeries = seriesWriteResult.getResource();
@@ -641,7 +666,10 @@ public abstract class CassandraContentStoreIT {
 //                .thenReturn("different")
 //                .thenReturn("differentAgain");
 
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
         WriteResult<Brand, Content> writtenBrand = store.writeContent(brand);
         assertTrue(writtenBrand.written());
 
@@ -668,7 +696,10 @@ public abstract class CassandraContentStoreIT {
 //                .thenReturn("different")
 //                .thenReturn("differentAgain");
 
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
         WriteResult<Series, Content> writtenSeries = store.writeContent(series);
         assertTrue(writtenSeries.written());
 
@@ -1314,7 +1345,10 @@ public abstract class CassandraContentStoreIT {
         series1.setActivelyPublished(false);
 
 //        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         store.writeContent(series1);
 
@@ -1410,7 +1444,10 @@ public abstract class CassandraContentStoreIT {
 
         episode.setActivelyPublished(false);
 //        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         store.writeContent(episode);
 
@@ -1499,7 +1536,10 @@ public abstract class CassandraContentStoreIT {
 
         episode.setActivelyPublished(false);
 //        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         store.writeContent(episode);
 
@@ -1643,7 +1683,10 @@ public abstract class CassandraContentStoreIT {
 //        when(hasher.hash(argThat(isA(Content.class))))
 //                .thenReturn("different")
 //                .thenReturn("differentAgain");
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         Episode resolvedEpisode = (Episode) resolve(1237L);
         assertThat(resolvedEpisode.getFirstSeen(), is(now.plusHours(2)));
@@ -1769,7 +1812,10 @@ public abstract class CassandraContentStoreIT {
 
         episode.setContainer(brandWriteResult2.getResource());
 //        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         store.writeContent(episode);
 
@@ -1859,7 +1905,10 @@ public abstract class CassandraContentStoreIT {
 
         item.setContainerRef(null);
 //        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         store.writeContent(item);
 
@@ -1892,7 +1941,10 @@ public abstract class CassandraContentStoreIT {
 //        when(hasher.hash(argThat(isA(Content.class))))
 //                .thenReturn("different")
 //                .thenReturn("differentAgain");
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
         WriteResult<Item, Content> result = store.writeContent(item);
 
         item.setManifestedAs(ImmutableSet.of());
@@ -1964,7 +2016,10 @@ public abstract class CassandraContentStoreIT {
 //                UUID.randomUUID().toString(),
 //                UUID.randomUUID().toString()
 //        );
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         Item item = create(new Item());
         item.setTitle("Title");
@@ -2020,7 +2075,10 @@ public abstract class CassandraContentStoreIT {
 //                UUID.randomUUID().toString(),
 //                UUID.randomUUID().toString()
 //        );
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         Item item = create(new Item());
         item.setTitle("Title");
@@ -2097,7 +2155,10 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedBrand.getItemSummaries().size(), is(2));
 
 //        when(hasher.hash(brand)).thenReturn("has summaries", "no summaries");
-        when(comparer.equals(any(Content.class), any(Content.class))).thenReturn(false);
+        when(comparer.equals(
+                any(provideContentComparisonClass()),
+                any(provideContentComparisonClass()))
+        ).thenReturn(false);
 
         store.writeContent(brand);
 

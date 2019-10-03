@@ -1,10 +1,11 @@
 package org.atlasapi.content.v2.model.udt;
 
-import java.util.Set;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.joda.time.Instant;
+
+import java.util.Set;
 
 /** This doesn't hold the actual ID and publisher because those are the strict PK of
  * any resource ref. These objects are usually stored as a CQL {@code map<Ref, PartialItemRef>} and
@@ -18,6 +19,7 @@ import org.joda.time.Instant;
 public class SeriesRef {
 
     @Field(name = "title") private String title;
+    @ExcludeFromObjectComparison
     @Field(name = "updated") private Instant updated;
     @Field(name = "series_nr") private Integer seriesNumber;
     @Field(name = "release_year") private Integer releaseYear;

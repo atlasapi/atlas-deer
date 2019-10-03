@@ -169,7 +169,9 @@ public class CqlContentStore implements ContentStore {
                     "Can't write episode without brand"
             );
 
-            Content previous = resolvePrevious(content);
+            org.atlasapi.content.v2.model.Content previousSerialized
+                    = resolvePreviousSerialized(content);
+            Content previous = deserializeIfFull(previousSerialized);
 
 //            if (previous != null && hasher.hash(content).equals(hasher.hash(previous))) {
 //                return WriteResult.<Content, Content>result(content, false)
@@ -218,12 +220,19 @@ public class CqlContentStore implements ContentStore {
 
             setExistingItemRefs(content, previous);
 
-            if (previous != null && comparer.isSupported(content, previous) && comparer.equals(content, previous)) {
+            org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
+
+            boolean unchanged =
+                    previousSerialized != null
+                            && comparer.isSupported(serialized, previousSerialized)
+                            && comparer.equals(serialized, previousSerialized)
+                    ;
+
+            if (unchanged) {
                 return WriteResult.<Content, Content>result(content, false)
                         .withPrevious(previous)
                         .build();
             }
-            org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
 
             batch.add(mapper.saveQuery(serialized));
 
@@ -332,6 +341,26 @@ public class CqlContentStore implements ContentStore {
             metricRegistry.meter(writeBroadcast + METER_FAILURE).mark();
             Throwables.propagate(e);
         }
+    }
+
+    private org.atlasapi.content.v2.model.Content resolvePreviousSerialized(
+            @Nullable Content content
+    ) throws WriteException {
+
+        org.atlasapi.content.v2.model.Content previous;
+        if (content != null && content.getId() != null) {
+            try {
+                previous = accessor.getContent(content.getId().longValue()).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new WriteException(
+                        String.format("Failed to resolve content %s", content.getId()),
+                        e
+                );
+            }
+        } else {
+            previous = null;
+        }
+        return previous;
     }
 
     @Override

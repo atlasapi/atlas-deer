@@ -1,10 +1,11 @@
 package org.atlasapi.content.v2.model.udt;
 
-import java.util.Set;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.joda.time.Instant;
+
+import java.util.Set;
 
 @UDT(name = "containerref")
 public class ContainerRef {
@@ -15,6 +16,7 @@ public class ContainerRef {
 
     @Field(name = "title") private String title;
     @Field(name = "series_nr") private Integer seriesNumber;
+    @ExcludeFromObjectComparison
     @Field(name = "updated") private Instant updated;
     @Field(name = "release_year") private Integer releaseYear;
     @Field(name = "certificates") private Set<Certificate> certificates;

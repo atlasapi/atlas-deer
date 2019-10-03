@@ -1,17 +1,19 @@
 package org.atlasapi.content.v2.model.udt;
 
-import javax.annotation.Nullable;
-
-import org.atlasapi.content.v2.model.WithUpdateTimes;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.comparison.ExcludeFromObjectComparison;
+import org.atlasapi.content.v2.model.WithUpdateTimes;
 import org.joda.time.Instant;
+
+import javax.annotation.Nullable;
 
 @UDT(name = "updatetimes")
 public class UpdateTimes implements WithUpdateTimes {
 
+    @ExcludeFromObjectComparison
     @Field(name = "last_updated") private Instant lastUpdated;
+    @ExcludeFromObjectComparison
     @Field(name = "equiv_update") private Instant equivalenceUpdate;
 
     public UpdateTimes() {}
