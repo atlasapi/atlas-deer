@@ -277,11 +277,13 @@ public abstract class CassandraContentStoreIT {
         Content resolved = resolve(content.getId().longValue());
         assertThat(resolved.getTitle(), is(content.getTitle()));
 
+        content.setTitle("differentTitle");
+
         when(hasher.hash(argThat(isA(Content.class))))
                 .thenReturn("different")
                 .thenReturn("differentAgain");
 
-        writeResult = store.writeContent(writeResult.getResource());
+        writeResult = store.writeContent(content);
         assertTrue(writeResult.written());
 
 //        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
