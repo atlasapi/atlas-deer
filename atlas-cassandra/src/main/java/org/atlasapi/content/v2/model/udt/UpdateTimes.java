@@ -49,4 +49,9 @@ public class UpdateTimes implements WithUpdateTimes {
         if (object == null || getClass() != object.getClass()) return false;
         return true;
     }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
 }

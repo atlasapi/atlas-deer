@@ -117,4 +117,9 @@ public class Image {
                 Objects.equals(hasTitleArt, image.hasTitleArt) &&
                 Objects.equals(source, image.source);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uri, type, color, theme, height, width, aspectRatio, mimeType, hasTitleArt, source);
+    }
 }

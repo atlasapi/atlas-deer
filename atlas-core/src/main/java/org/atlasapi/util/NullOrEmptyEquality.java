@@ -20,4 +20,18 @@ public class NullOrEmptyEquality {
         }
         return Objects.equals(map1, map2);
     }
+
+    public static int hash(Object... objects) {
+        for (int i = 0; i < objects.length; i++) {
+            Object object = objects[i];
+            if(object instanceof Collection) {
+                Collection collection = (Collection) object;
+                objects[i] = collection.isEmpty() ? null : collection;
+            } else if (object instanceof Map) {
+                Map map = (Map) object;
+                objects[i] = map.isEmpty() ? null : map;
+            }
+        }
+        return Objects.hash(objects);
+    }
 }

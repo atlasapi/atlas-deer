@@ -106,4 +106,9 @@ public class Review {
                 Objects.equals(reviewTypeKey, review1.reviewTypeKey) &&
                 Objects.equals(publisherKey, review1.publisherKey);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(locale, review, author, authorInitials, rating, date, reviewTypeKey, publisherKey);
+    }
 }

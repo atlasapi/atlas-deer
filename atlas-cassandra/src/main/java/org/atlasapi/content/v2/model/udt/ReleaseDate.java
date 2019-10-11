@@ -48,4 +48,9 @@ public class ReleaseDate {
                 Objects.equals(type, that.type) &&
                 Objects.equals(releaseDate, that.releaseDate);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(country, type, releaseDate);
+    }
 }

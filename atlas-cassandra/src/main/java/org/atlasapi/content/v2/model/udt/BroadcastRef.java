@@ -48,4 +48,9 @@ public class BroadcastRef {
                 Objects.equals(channelId, that.channelId) &&
                 Objects.equals(interval, that.interval);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sourceId, channelId, interval);
+    }
 }

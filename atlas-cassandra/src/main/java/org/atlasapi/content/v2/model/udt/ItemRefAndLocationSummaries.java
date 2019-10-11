@@ -52,4 +52,9 @@ public class ItemRefAndLocationSummaries {
         return Objects.equals(itemRef, that.itemRef) &&
                 NullOrEmptyEquality.equals(locationSummaries, that.locationSummaries);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(itemRef, locationSummaries);
+    }
 }

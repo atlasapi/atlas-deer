@@ -163,4 +163,9 @@ public class CrewMember implements Identified {
                 Objects.equals(character, that.character) &&
                 NullOrEmptyEquality.equals(customFields, that.customFields);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, role, name, publisher, type, character, customFields);
+    }
 }

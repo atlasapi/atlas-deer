@@ -377,4 +377,9 @@ public class Encoding implements Identified {
                 Objects.equals(versionId, encoding.versionId) &&
                 NullOrEmptyEquality.equals(customFields, encoding.customFields);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, availableAt, containsAdvertising, advertisingDuration, duration, bitRate, audioBitRate, audioChannels, audioCoding, videoAspectRatio, videoBitRate, videoCoding, videoFrameRate, videoHorizontalSize, videoProgressiveScan, videoVerticalSize, dataSize, dataContainerFormat, source, distributor, hasDog, is3d, quality, qualityDetail, versionId, customFields);
+    }
 }

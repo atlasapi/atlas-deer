@@ -184,4 +184,9 @@ public class SegmentEvent implements Identified {
                 Objects.equals(publisher, that.publisher) &&
                 NullOrEmptyEquality.equals(customFields, that.customFields);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, position, offset, isChapter, description, segmentRef, versionId, publisher, customFields);
+    }
 }

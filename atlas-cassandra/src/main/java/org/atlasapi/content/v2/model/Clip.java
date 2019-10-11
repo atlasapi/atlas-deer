@@ -716,4 +716,9 @@ public class Clip implements ContentIface {
                 Objects.equals(encodings, clip.encodings) &&
                 NullOrEmptyEquality.equals(customFields, clip.customFields);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, manifestedAs, genericDescription, eventRefs, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, containerSummary, broadcasts, segmentEvents, restrictions, clipOf, reviews, ratings, encodings, customFields);
+    }
 }

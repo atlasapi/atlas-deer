@@ -57,4 +57,9 @@ public class PartialItemRef {
         return Objects.equals(sortKey, that.sortKey) &&
                 Objects.equals(type, that.type);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sortKey, type);
+    }
 }

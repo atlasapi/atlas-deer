@@ -346,4 +346,9 @@ public class Broadcast implements Identified {
                 Objects.equals(revisedRepeat, broadcast.revisedRepeat) &&
                 NullOrEmptyEquality.equals(customFields, broadcast.customFields);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, channelId, transmissionStart, transmissionEnd, broadcastDuration, scheduleDate, activelyPublished, versionId, repeat, subtitled, signed, audioDescribed, highDefinition, widescreen, surround, live, newSeries, newEpisode, newOneOff, premiere, continuation, is3d, blackoutRestriction, revisedRepeat, customFields);
+    }
 }

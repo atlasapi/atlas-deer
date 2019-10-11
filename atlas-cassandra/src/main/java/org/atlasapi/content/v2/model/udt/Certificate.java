@@ -37,4 +37,9 @@ public class Certificate {
         return Objects.equals(countryCode, that.countryCode) &&
                 Objects.equals(classification, that.classification);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(countryCode, classification);
+    }
 }

@@ -89,4 +89,9 @@ public class ItemSummary {
                 Objects.equals(type, that.type) &&
                 Objects.equals(episodeNumber, that.episodeNumber);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(title, description, image, releaseYear, certificate, type, episodeNumber);
+    }
 }

@@ -190,4 +190,9 @@ public class Location implements Identified {
                 Objects.equals(policy, location.policy) &&
                 NullOrEmptyEquality.equals(customFields, location.customFields);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, available, transportIsLive, transportSubType, transportType, uri, embedCode, embedId, policy, customFields);
+    }
 }

@@ -47,4 +47,9 @@ public class Rating {
                 Objects.equals(type, rating.type) &&
                 Objects.equals(publisher, rating.publisher);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value, type, publisher);
+    }
 }

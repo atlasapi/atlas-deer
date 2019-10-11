@@ -251,4 +251,9 @@ public class Policy implements Identified {
                 Objects.equals(actualAvailabilityStart, policy.actualAvailabilityStart) &&
                 NullOrEmptyEquality.equals(customFields, policy.customFields);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, availabilityStart, availabilityEnd, drmPlayableFrom, availableCountries, availabilityLength, revenueContract, subscriptionPackages, price, pricing, serviceId, playerId, platform, network, actualAvailabilityStart, customFields);
+    }
 }

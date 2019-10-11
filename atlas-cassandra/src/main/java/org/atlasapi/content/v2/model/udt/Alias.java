@@ -37,4 +37,9 @@ public class Alias {
         return Objects.equals(value, alias.value) &&
                 Objects.equals(namespace, alias.namespace);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value, namespace);
+    }
 }

@@ -1017,4 +1017,10 @@ public class Content implements ContentIface {
                 Objects.equals(encodings, content.encodings) &&
                 NullOrEmptyEquality.equals(customFields, content.customFields);
     }
+
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, type, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, genericDescription, eventRefs, isrc, duration, seriesNumber, totalEpisodes, brandRef, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, containerSummary, broadcasts, segmentEvents, restrictions, websiteUrl, subtitles, releaseDates, episodeNumber, partNumber, special, seriesRefs, itemRefs, upcomingContent, availableContent, itemSummaries, reviews, ratings, clips, encodings, customFields);
+    }
 }

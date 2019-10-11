@@ -97,4 +97,9 @@ public class RelatedLink {
                 Objects.equals(image, that.image) &&
                 Objects.equals(thumbnail, that.thumbnail);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url, type, sourceId, shortName, title, description, image, thumbnail);
+    }
 }

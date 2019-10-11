@@ -142,4 +142,9 @@ public class Restriction implements IdentifiedWithoutUpdateTimes {
                 Objects.equals(rating, that.rating) &&
                 NullOrEmptyEquality.equals(customFields, that.customFields);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, restricted, minimumAge, message, authority, rating, customFields);
+    }
 }

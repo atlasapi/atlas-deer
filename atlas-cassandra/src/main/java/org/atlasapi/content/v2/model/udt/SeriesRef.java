@@ -80,4 +80,9 @@ public class SeriesRef {
                 Objects.equals(releaseYear, seriesRef.releaseYear) &&
                 NullOrEmptyEquality.equals(certificates, seriesRef.certificates);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(title, seriesNumber, releaseYear, certificates);
+    }
 }

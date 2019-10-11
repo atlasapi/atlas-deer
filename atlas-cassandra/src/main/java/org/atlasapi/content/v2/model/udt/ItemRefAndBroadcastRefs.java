@@ -50,4 +50,9 @@ public class ItemRefAndBroadcastRefs {
         return Objects.equals(itemRef, that.itemRef) &&
                 NullOrEmptyEquality.equals(broadcastRefs, that.broadcastRefs);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(itemRef, broadcastRefs);
+    }
 }

@@ -41,4 +41,9 @@ public class Interval {
         return Objects.equals(start, interval.start) &&
                 Objects.equals(end, interval.end);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(start, end);
+    }
 }

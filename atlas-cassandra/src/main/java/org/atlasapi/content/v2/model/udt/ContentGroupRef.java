@@ -37,4 +37,9 @@ public class ContentGroupRef {
         return Objects.equals(id, that.id) &&
                 Objects.equals(uri, that.uri);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, uri);
+    }
 }

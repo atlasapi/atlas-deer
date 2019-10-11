@@ -43,4 +43,9 @@ public class Pricing {
                 Objects.equals(end, pricing.end) &&
                 Objects.equals(price, pricing.price);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(start, end, price);
+    }
 }

@@ -103,4 +103,9 @@ public class ContainerRef {
                 Objects.equals(releaseYear, that.releaseYear) &&
                 NullOrEmptyEquality.equals(certificates, that.certificates);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, source, type, title, seriesNumber, releaseYear, certificates);
+    }
 }

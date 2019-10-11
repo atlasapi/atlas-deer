@@ -37,4 +37,9 @@ public class Ref {
         return Objects.equals(id, ref.id) &&
                 Objects.equals(source, ref.source);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, source);
+    }
 }

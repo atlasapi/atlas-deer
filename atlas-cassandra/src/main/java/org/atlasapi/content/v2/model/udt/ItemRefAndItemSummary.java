@@ -51,4 +51,9 @@ public class ItemRefAndItemSummary {
         return Objects.equals(itemRef, that.itemRef) &&
                 Objects.equals(summary, that.summary);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(itemRef, summary);
+    }
 }

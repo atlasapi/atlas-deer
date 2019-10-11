@@ -47,4 +47,9 @@ public class Synopses {
                 Objects.equals(mediumDescr, synopses.mediumDescr) &&
                 Objects.equals(longDescr, synopses.longDescr);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(shortDescr, mediumDescr, longDescr);
+    }
 }

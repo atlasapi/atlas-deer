@@ -57,4 +57,9 @@ public class Description {
                 Objects.equals(image, that.image) &&
                 Objects.equals(thumbnail, that.thumbnail);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(title, synopsis, image, thumbnail);
+    }
 }

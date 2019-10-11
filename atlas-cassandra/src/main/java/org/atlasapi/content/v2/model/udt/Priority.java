@@ -49,4 +49,9 @@ public class Priority {
                 NullOrEmptyEquality.equals(negative, priority1.negative) &&
                 Objects.equals(priority, priority1.priority);
     }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(positive, negative, priority);
+    }
 }

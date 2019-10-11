@@ -48,4 +48,9 @@ public class LocationSummary {
                 Objects.equals(uri, that.uri) &&
                 Objects.equals(interval, that.interval);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(available, uri, interval);
+    }
 }

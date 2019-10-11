@@ -67,4 +67,9 @@ public class ContainerSummary {
                 Objects.equals(seriesNumber, that.seriesNumber) &&
                 Objects.equals(totalEpisodes, that.totalEpisodes);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, title, description, seriesNumber, totalEpisodes);
+    }
 }

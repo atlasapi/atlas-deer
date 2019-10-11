@@ -37,4 +37,9 @@ public class KeyPhrase {
         return Objects.equals(phrase, keyPhrase.phrase) &&
                 Objects.equals(weighting, keyPhrase.weighting);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(phrase, weighting);
+    }
 }
