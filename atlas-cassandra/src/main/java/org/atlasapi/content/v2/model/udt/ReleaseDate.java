@@ -4,6 +4,8 @@ import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.LocalDate;
 
+import java.util.Objects;
+
 @UDT(name = "releasedate")
 public class ReleaseDate {
 
@@ -35,5 +37,15 @@ public class ReleaseDate {
 
     public void setReleaseDate(LocalDate releaseDate) {
         this.releaseDate = releaseDate;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ReleaseDate that = (ReleaseDate) object;
+        return Objects.equals(country, that.country) &&
+                Objects.equals(type, that.type) &&
+                Objects.equals(releaseDate, that.releaseDate);
     }
 }

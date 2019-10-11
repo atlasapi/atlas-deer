@@ -38,8 +38,6 @@ public class CqlContentStoreIT extends CassandraContentStoreIT {
                 .withSender(sender)
                 .withIdGenerator(idGenerator)
                 .withClock(clock)
-                .withHasher(hasher)
-                .withComparer(comparer)
                 .withGraphStore(graphStore)
                 .withMetricRegistry(new MetricRegistry())
                 .withMetricPrefix("test.CqlContentStore.")
@@ -99,11 +97,8 @@ public class CqlContentStoreIT extends CassandraContentStoreIT {
 
         episode.setTitle("some dodgy title to trigger an update");
 
-//        when(hasher.hash(any(Content.class))).thenReturn("one", "two");
-        when(comparer.equals(
-                any(org.atlasapi.content.v2.model.Content.class),
-                any(org.atlasapi.content.v2.model.Content.class)
-        )).thenReturn(false);
+        when(hasher.hash(any(Content.class))).thenReturn("one", "two");
+
         when(clock.now()).thenReturn(now.plusHours(3));
         store.writeContent(episode);
 

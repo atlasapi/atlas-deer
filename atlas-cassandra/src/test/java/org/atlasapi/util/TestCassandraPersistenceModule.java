@@ -26,7 +26,6 @@ import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import org.atlasapi.CassandraPersistenceModule;
 import org.atlasapi.ConfiguredAstyanaxContext;
 import org.atlasapi.PersistenceModule;
-import org.atlasapi.comparison.AlwaysFalseComparer;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
@@ -138,7 +137,6 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
                 .withKeyspace(keyspace)
                 .withIdGeneratorBuilder(idGeneratorBuilder())
                 .withContentHasher(content -> UUID.randomUUID().toString())
-                .withComparer(new AlwaysFalseComparer())
                 .withEventHasher(eventv2 -> UUID.randomUUID().toString())
                 .withMetrics(new MetricRegistry())
                 .build();

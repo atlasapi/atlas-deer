@@ -4,10 +4,12 @@ import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.content.v2.model.Identified;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Ref;
+import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class Policy implements Identified {
@@ -220,5 +222,33 @@ public class Policy implements Identified {
 
     public void setCustomFields(Map<String, String> customFields) {
         this.customFields = customFields;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Policy policy = (Policy) object;
+        return Objects.equals(id, policy.id) &&
+                Objects.equals(canonicalUri, policy.canonicalUri) &&
+                Objects.equals(curie, policy.curie) &&
+                NullOrEmptyEquality.equals(aliasUrls, policy.aliasUrls) &&
+                NullOrEmptyEquality.equals(aliases, policy.aliases) &&
+                NullOrEmptyEquality.equals(equivalentTo, policy.equivalentTo) &&
+                Objects.equals(availabilityStart, policy.availabilityStart) &&
+                Objects.equals(availabilityEnd, policy.availabilityEnd) &&
+                Objects.equals(drmPlayableFrom, policy.drmPlayableFrom) &&
+                NullOrEmptyEquality.equals(availableCountries, policy.availableCountries) &&
+                Objects.equals(availabilityLength, policy.availabilityLength) &&
+                Objects.equals(revenueContract, policy.revenueContract) &&
+                NullOrEmptyEquality.equals(subscriptionPackages, policy.subscriptionPackages) &&
+                Objects.equals(price, policy.price) &&
+                NullOrEmptyEquality.equals(pricing, policy.pricing) &&
+                Objects.equals(serviceId, policy.serviceId) &&
+                Objects.equals(playerId, policy.playerId) &&
+                Objects.equals(platform, policy.platform) &&
+                Objects.equals(network, policy.network) &&
+                Objects.equals(actualAvailabilityStart, policy.actualAvailabilityStart) &&
+                NullOrEmptyEquality.equals(customFields, policy.customFields);
     }
 }

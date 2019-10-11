@@ -34,10 +34,12 @@ import org.atlasapi.content.v2.model.udt.SeriesRef;
 import org.atlasapi.content.v2.model.udt.Synopses;
 import org.atlasapi.content.v2.model.udt.Tag;
 import org.atlasapi.content.v2.model.udt.UpdateTimes;
+import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @Table(name = "content_v2")
@@ -942,5 +944,77 @@ public class Content implements ContentIface {
 
     public void setItemSummaries(Map<Ref, ItemRefAndItemSummary> itemSummaries) {
         this.itemSummaries = itemSummaries;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Content content = (Content) object;
+        return Objects.equals(id, content.id) &&
+                Objects.equals(type, content.type) &&
+                Objects.equals(canonicalUri, content.canonicalUri) &&
+                Objects.equals(curie, content.curie) &&
+                NullOrEmptyEquality.equals(aliasUrls, content.aliasUrls) &&
+                NullOrEmptyEquality.equals(aliases, content.aliases) &&
+                NullOrEmptyEquality.equals(equivalentTo, content.equivalentTo) &&
+                Objects.equals(title, content.title) &&
+                Objects.equals(shortDescription, content.shortDescription) &&
+                Objects.equals(mediumDescription, content.mediumDescription) &&
+                Objects.equals(longDescription, content.longDescription) &&
+                Objects.equals(synopses, content.synopses) &&
+                Objects.equals(description, content.description) &&
+                Objects.equals(mediaType, content.mediaType) &&
+                Objects.equals(specialization, content.specialization) &&
+                NullOrEmptyEquality.equals(genres, content.genres) &&
+                Objects.equals(publisher, content.publisher) &&
+                Objects.equals(image, content.image) &&
+                NullOrEmptyEquality.equals(images, content.images) &&
+                Objects.equals(thumbnail, content.thumbnail) &&
+                Objects.equals(scheduleOnly, content.scheduleOnly) &&
+                Objects.equals(activelyPublished, content.activelyPublished) &&
+                Objects.equals(presentationChannel, content.presentationChannel) &&
+                Objects.equals(priority, content.priority) &&
+                NullOrEmptyEquality.equals(relatedLinks, content.relatedLinks) &&
+                NullOrEmptyEquality.equals(awards, content.awards) &&
+                NullOrEmptyEquality.equals(keyPhrases, content.keyPhrases) &&
+                NullOrEmptyEquality.equals(tags, content.tags) &&
+                NullOrEmptyEquality.equals(contentGroupRefs, content.contentGroupRefs) &&
+                NullOrEmptyEquality.equals(people, content.people) &&
+                NullOrEmptyEquality.equals(languages, content.languages) &&
+                NullOrEmptyEquality.equals(certificates, content.certificates) &&
+                Objects.equals(year, content.year) &&
+                Objects.equals(genericDescription, content.genericDescription) &&
+                NullOrEmptyEquality.equals(eventRefs, content.eventRefs) &&
+                Objects.equals(isrc, content.isrc) &&
+                Objects.equals(duration, content.duration) &&
+                Objects.equals(seriesNumber, content.seriesNumber) &&
+                Objects.equals(totalEpisodes, content.totalEpisodes) &&
+                Objects.equals(brandRef, content.brandRef) &&
+                Objects.equals(containerRef, content.containerRef) &&
+                Objects.equals(isLongForm, content.isLongForm) &&
+                Objects.equals(blackAndWhite, content.blackAndWhite) &&
+                NullOrEmptyEquality.equals(countriesOfOrigin, content.countriesOfOrigin) &&
+                Objects.equals(sortKey, content.sortKey) &&
+                Objects.equals(containerSummary, content.containerSummary) &&
+                NullOrEmptyEquality.equals(broadcasts, content.broadcasts) &&
+                NullOrEmptyEquality.equals(segmentEvents, content.segmentEvents) &&
+                NullOrEmptyEquality.equals(restrictions, content.restrictions) &&
+                Objects.equals(websiteUrl, content.websiteUrl) &&
+                NullOrEmptyEquality.equals(subtitles, content.subtitles) &&
+                NullOrEmptyEquality.equals(releaseDates, content.releaseDates) &&
+                Objects.equals(episodeNumber, content.episodeNumber) &&
+                Objects.equals(partNumber, content.partNumber) &&
+                Objects.equals(special, content.special) &&
+                NullOrEmptyEquality.equals(seriesRefs, content.seriesRefs) &&
+                NullOrEmptyEquality.equals(itemRefs, content.itemRefs) &&
+                NullOrEmptyEquality.equals(upcomingContent, content.upcomingContent) &&
+                NullOrEmptyEquality.equals(availableContent, content.availableContent) &&
+                NullOrEmptyEquality.equals(itemSummaries, content.itemSummaries) &&
+                NullOrEmptyEquality.equals(reviews, content.reviews) &&
+                NullOrEmptyEquality.equals(ratings, content.ratings) &&
+                Objects.equals(clips, content.clips) &&
+                Objects.equals(encodings, content.encodings) &&
+                NullOrEmptyEquality.equals(customFields, content.customFields);
     }
 }

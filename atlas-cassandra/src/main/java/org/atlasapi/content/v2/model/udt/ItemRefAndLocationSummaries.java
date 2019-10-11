@@ -1,10 +1,12 @@
 package org.atlasapi.content.v2.model.udt;
 
-import java.util.List;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.Frozen;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.util.NullOrEmptyEquality;
+
+import java.util.List;
+import java.util.Objects;
 
 @UDT(name = "itemrefandlocationsummaries")
 public class ItemRefAndLocationSummaries {
@@ -40,5 +42,14 @@ public class ItemRefAndLocationSummaries {
 
     public void setLocationSummaries(List<LocationSummary> locationSummaries) {
         this.locationSummaries = locationSummaries;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ItemRefAndLocationSummaries that = (ItemRefAndLocationSummaries) object;
+        return Objects.equals(itemRef, that.itemRef) &&
+                NullOrEmptyEquality.equals(locationSummaries, that.locationSummaries);
     }
 }

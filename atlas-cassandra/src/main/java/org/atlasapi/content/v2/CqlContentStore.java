@@ -27,7 +27,6 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 import com.metabroadcast.promise.Promise;
-import org.atlasapi.comparison.Comparer;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
@@ -67,7 +66,6 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.joda.time.DateTime;
 import org.joda.time.Instant;
@@ -115,8 +113,6 @@ public class CqlContentStore implements ContentStore {
             new LocationSummarySerialization();
     private final ContainerSummarySerialization containerSummaryTranslator =
             new ContainerSummarySerialization();
-    private final ContentHasher hasher;
-    private final Comparer comparer;
     private final EquivalenceGraphStore graphStore;
 
     private final String writeContent;
@@ -146,8 +142,6 @@ public class CqlContentStore implements ContentStore {
         mapper.setDefaultDeleteOptions(Mapper.Option.consistencyLevel(builder.writeConsistency));
 
         this.sender = builder.sender;
-        this.hasher = checkNotNull(builder.hasher);
-        this.comparer = checkNotNull(builder.comparer);
         this.graphStore = checkNotNull(builder.graphStore);
 
         writeContent = builder.metricPrefix + "writeContent.";
@@ -172,12 +166,6 @@ public class CqlContentStore implements ContentStore {
             org.atlasapi.content.v2.model.Content previousSerialized
                     = resolvePreviousSerialized(content);
             Content previous = deserializeIfFull(previousSerialized);
-
-//            if (previous != null && hasher.hash(content).equals(hasher.hash(previous))) {
-//                return WriteResult.<Content, Content>result(content, false)
-//                        .withPrevious(previous)
-//                        .build();
-//            }
 
             BatchStatement batch = new BatchStatement();
 
@@ -222,11 +210,7 @@ public class CqlContentStore implements ContentStore {
 
             org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
 
-            boolean unchanged =
-                    previousSerialized != null
-                            && comparer.isSupported(serialized, previousSerialized)
-                            && comparer.equals(serialized, previousSerialized)
-                    ;
+            boolean unchanged = serialized.equals(previousSerialized);
 
             if (unchanged) {
                 return WriteResult.<Content, Content>result(content, false)
@@ -905,8 +889,6 @@ public class CqlContentStore implements ContentStore {
         private IdGenerator idGenerator;
         private MessageSender<ResourceUpdatedMessage> sender;
         private Clock clock;
-        private ContentHasher hasher;
-        private Comparer comparer;
         private EquivalenceGraphStore graphStore;
         private MetricRegistry metricRegistry;
         private String metricPrefix;
@@ -932,16 +914,6 @@ public class CqlContentStore implements ContentStore {
 
         public Builder withClock(Clock val) {
             clock = val;
-            return this;
-        }
-
-        public Builder withHasher(ContentHasher val) {
-            hasher = val;
-            return this;
-        }
-
-        public Builder withComparer(Comparer val) {
-            comparer = val;
             return this;
         }
 

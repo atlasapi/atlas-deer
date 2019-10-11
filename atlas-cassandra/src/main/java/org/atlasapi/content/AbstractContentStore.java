@@ -14,7 +14,6 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
-import org.atlasapi.comparison.Comparer;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
@@ -52,10 +51,6 @@ public abstract class AbstractContentStore implements ContentStore {
             implements ContentVisitor<WriteResult<? extends Content, Content>> {
 
         private boolean hasChanged(Content writing, Content previous) {
-            return !(comparer.isSupported(writing, previous) && comparer.equals(writing, previous));
-        }
-
-        private boolean hashChanged(Content writing, Content previous) {
             return !hasher.hash(writing).equals(hasher.hash(previous));
         }
 
@@ -337,7 +332,6 @@ public abstract class AbstractContentStore implements ContentStore {
     private static final String METER_FAILURE = "meter.failure";
 
     private final ContentHasher hasher;
-    private final Comparer comparer;
     private final IdGenerator idGenerator;
     private final MessageSender<ResourceUpdatedMessage> sender;
     private final Clock clock;
@@ -352,7 +346,6 @@ public abstract class AbstractContentStore implements ContentStore {
 
     protected AbstractContentStore(
             ContentHasher hasher,
-            Comparer comparer,
             IdGenerator idGenerator,
             MessageSender<ResourceUpdatedMessage> sender,
             EquivalenceGraphStore graphStore,
@@ -361,7 +354,6 @@ public abstract class AbstractContentStore implements ContentStore {
             String metricPrefix
     ) {
         this.hasher = checkNotNull(hasher);
-        this.comparer = checkNotNull(comparer);
         this.idGenerator = checkNotNull(idGenerator);
         this.sender = checkNotNull(sender);
         this.graphStore = checkNotNull(graphStore);

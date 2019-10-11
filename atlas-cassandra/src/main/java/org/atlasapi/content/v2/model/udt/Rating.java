@@ -3,6 +3,8 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
+import java.util.Objects;
+
 @UDT(name = "rating")
 public class Rating {
 
@@ -34,5 +36,15 @@ public class Rating {
 
     public void setPublisher(String publisher) {
         this.publisher = publisher;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Rating rating = (Rating) object;
+        return Float.compare(rating.value, value) == 0 &&
+                Objects.equals(type, rating.type) &&
+                Objects.equals(publisher, rating.publisher);
     }
 }

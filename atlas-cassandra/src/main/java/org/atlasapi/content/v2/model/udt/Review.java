@@ -5,6 +5,7 @@ import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 @UDT(name = "review")
 public class Review {
@@ -89,5 +90,20 @@ public class Review {
 
     public void setPublisherKey(String publisherKey) {
         this.publisherKey = publisherKey;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Review review1 = (Review) object;
+        return Objects.equals(locale, review1.locale) &&
+                Objects.equals(review, review1.review) &&
+                Objects.equals(author, review1.author) &&
+                Objects.equals(authorInitials, review1.authorInitials) &&
+                Objects.equals(rating, review1.rating) &&
+                Objects.equals(date, review1.date) &&
+                Objects.equals(reviewTypeKey, review1.reviewTypeKey) &&
+                Objects.equals(publisherKey, review1.publisherKey);
     }
 }

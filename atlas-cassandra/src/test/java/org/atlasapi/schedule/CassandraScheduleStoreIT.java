@@ -19,7 +19,6 @@ import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.model.ConsistencyLevel;
 import org.atlasapi.channel.Channel;
-import org.atlasapi.comparison.Comparer;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
@@ -56,6 +55,7 @@ import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -78,7 +78,6 @@ public abstract class CassandraScheduleStoreIT {
     private static DatastaxCassandraService cassandraService;
 
     @Mock protected ContentHasher hasher;
-    @Mock protected Comparer comparer;
     @Mock protected MessageSender<ResourceUpdatedMessage> contentUpdateSender;
     @Mock protected MessageSender<ScheduleUpdateMessage> scheduleUpdateSender;
     @Mock protected EquivalenceGraphStore graphStore;
@@ -122,7 +121,6 @@ public abstract class CassandraScheduleStoreIT {
                         context,
                         CONTENT_CF_NAME,
                         hasher,
-                        comparer,
                         contentUpdateSender,
                         new SequenceGenerator(),
                         graphStore
@@ -223,15 +221,11 @@ public abstract class CassandraScheduleStoreIT {
         DateTime newMiddle = new DateTime(2013, 05, 31, 23, 30, 0, 0, DateTimeZones.LONDON);
 
         //items 1 and 2 change 
-//        when(hasher.hash(argThat(isA(Content.class))))
-//                .thenReturn("differentOne")
-//                .thenReturn("oneDifferent")
-//                .thenReturn("differentTwo")
-//                .thenReturn("twoDifferent");
-
-        when(comparer.equals(any(Content.class), any(Content.class)))
-                .thenReturn(false)
-                .thenReturn(false);
+        when(hasher.hash(argThat(isA(Content.class))))
+                .thenReturn("differentOne")
+                .thenReturn("oneDifferent")
+                .thenReturn("differentTwo")
+                .thenReturn("twoDifferent");
 
         episode1 = itemAndBroadcast(null, "one", source, channel, start, newMiddle);
         ItemAndBroadcast episode3 = itemAndBroadcast(
@@ -299,14 +293,11 @@ public abstract class CassandraScheduleStoreIT {
         DateTime newMiddle = new DateTime(2013, 05, 31, 23, 30, 0, 0, DateTimeZones.UTC);
 
         //items 1 and 2 change
-//        when(hasher.hash(argThat(isA(Content.class))))
-//                .thenReturn("differentOne")
-//                .thenReturn("oneDifferent")
-//                .thenReturn("differentTwo")
-//                .thenReturn("twoDifferent");
-        when(comparer.equals(any(Content.class), any(Content.class)))
-                .thenReturn(false)
-                .thenReturn(false);
+        when(hasher.hash(argThat(isA(Content.class))))
+                .thenReturn("differentOne")
+                .thenReturn("oneDifferent")
+                .thenReturn("differentTwo")
+                .thenReturn("twoDifferent");
 
         episode1 = itemAndBroadcast(null, "one", source, channel, start, newMiddle);
         ItemAndBroadcast episode3 = itemAndBroadcast(
@@ -379,25 +370,18 @@ public abstract class CassandraScheduleStoreIT {
 
         Interval writtenInterval = new Interval(start, end);
         Interval newWrittenInterval = new Interval(newStart, newEnd);
-//        when(hasher.hash(argThat(isA(Content.class))))
-//                .thenReturn("1")
-//                .thenReturn("2")
-//                .thenReturn("3")
-//                .thenReturn("4")
-//                .thenReturn("5")
-//                .thenReturn("6")
-//                .thenReturn("7")
-//                .thenReturn("9")
-//                .thenReturn("10")
-//                .thenReturn("11")
-//                .thenReturn("12");
-        when(comparer.equals(any(Content.class), any(Content.class)))
-                .thenReturn(false)
-                .thenReturn(false)
-                .thenReturn(false)
-                .thenReturn(false)
-                .thenReturn(false)
-                .thenReturn(false);
+        when(hasher.hash(argThat(isA(Content.class))))
+                .thenReturn("1")
+                .thenReturn("2")
+                .thenReturn("3")
+                .thenReturn("4")
+                .thenReturn("5")
+                .thenReturn("6")
+                .thenReturn("7")
+                .thenReturn("9")
+                .thenReturn("10")
+                .thenReturn("11")
+                .thenReturn("12");
 
         //write a broadcast for a block
         store.writeSchedule(hiers1, channel, writtenInterval);
@@ -454,14 +438,11 @@ public abstract class CassandraScheduleStoreIT {
         DateTime newEnd = new DateTime(2013, 05, 31, 23, 30, 0, 0, DateTimeZones.LONDON);
 
         //items 1 and 2 change 
-//        when(hasher.hash(argThat(isA(Content.class))))
-//                .thenReturn("differentOne")
-//                .thenReturn("oneDifferent")
-//                .thenReturn("differentTwo")
-//                .thenReturn("twoDifferent");
-        when(comparer.equals(any(Content.class), any(Content.class)))
-                .thenReturn(false)
-                .thenReturn(false);
+        when(hasher.hash(argThat(isA(Content.class))))
+                .thenReturn("differentOne")
+                .thenReturn("oneDifferent")
+                .thenReturn("differentTwo")
+                .thenReturn("twoDifferent");
 
         episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode3 = itemAndBroadcast(
@@ -544,16 +525,12 @@ public abstract class CassandraScheduleStoreIT {
         );
         Interval writtenInterval = new Interval(start, end);
 
-//        when(hasher.hash(argThat(any(Content.class)))).thenReturn("one", "two", "three");
-        when(comparer.equals(any(Content.class), any(Content.class)))
-                .thenReturn(false)
-                .thenReturn(false);
+        when(hasher.hash(argThat(any(Content.class)))).thenReturn("one", "two", "three");
 
         List<WriteResult<? extends Content, Content>> results
                 = store.writeSchedule(hiers, channel, writtenInterval);
 
-//        verify(hasher, never()).hash(argThat(is(any(Content.class))));
-        verify(comparer, never()).equals(argThat(is(any(Content.class))), argThat(is(any(Content.class))));
+        verify(hasher, never()).hash(argThat(is(any(Content.class))));
         assertThat(results.size(), is(1));
 
         Schedule schedule = future(store.resolve(
@@ -609,14 +586,11 @@ public abstract class CassandraScheduleStoreIT {
         DateTime newEnd = new DateTime(2013, 05, 31, 23, 30, 0, 0, DateTimeZones.LONDON);
 
         //items 1 and 2 change 
-//        when(hasher.hash(argThat(isA(Content.class))))
-//                .thenReturn("differentOne")
-//                .thenReturn("oneDifferent")
-//                .thenReturn("differentTwo")
-//                .thenReturn("twoDifferent");
-        when(comparer.equals(any(Content.class), any(Content.class)))
-                .thenReturn(false)
-                .thenReturn(false);
+        when(hasher.hash(argThat(isA(Content.class))))
+                .thenReturn("differentOne")
+                .thenReturn("oneDifferent")
+                .thenReturn("differentTwo")
+                .thenReturn("twoDifferent");
 
         episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode3 = itemAndBroadcast(

@@ -31,7 +31,6 @@ import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.serializers.LongSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
-import org.atlasapi.comparison.Comparer;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.CassandraPersistenceException;
@@ -63,13 +62,13 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
     public static Builder builder(
             AstyanaxContext<Keyspace> context,
-            String name, ContentHasher hasher, Comparer comparer,
+            String name, ContentHasher hasher,
             MessageSender<ResourceUpdatedMessage> sender,
             IdGenerator idGenerator,
             EquivalenceGraphStore graphStore
     ) {
         return new Builder(
-                context, name, hasher, comparer, sender, idGenerator, graphStore
+                context, name, hasher, sender, idGenerator, graphStore
         );
     }
 
@@ -78,7 +77,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         private final AstyanaxContext<Keyspace> context;
         private final String name;
         private final ContentHasher hasher;
-        private final Comparer comparer;
         private final MessageSender<ResourceUpdatedMessage> sender;
         private final IdGenerator idGenerator;
         private final EquivalenceGraphStore graphStore;
@@ -93,7 +91,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 AstyanaxContext<Keyspace> context,
                 String name,
                 ContentHasher hasher,
-                Comparer comparer,
                 MessageSender<ResourceUpdatedMessage> sender,
                 IdGenerator idGenerator,
                 EquivalenceGraphStore graphStore
@@ -101,7 +98,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             this.context = context;
             this.name = name;
             this.hasher = hasher;
-            this.comparer = comparer;
             this.sender = sender;
             this.idGenerator = idGenerator;
             this.graphStore = graphStore;
@@ -139,7 +135,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                     readCl,
                     writeCl,
                     hasher,
-                    comparer,
                     idGenerator,
                     sender,
                     graphStore,
@@ -196,7 +191,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             ConsistencyLevel readConsistency,
             ConsistencyLevel writeConsistency,
             ContentHasher hasher,
-            Comparer comparer,
             IdGenerator idGenerator,
             MessageSender<ResourceUpdatedMessage> sender,
             EquivalenceGraphStore graphStore,
@@ -204,7 +198,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             MetricRegistry metricRegistry,
             String metricPrefix
     ) {
-        super(hasher, comparer, idGenerator, sender, graphStore, clock, metricRegistry, metricPrefix);
+        super(hasher, idGenerator, sender, graphStore, clock, metricRegistry, metricPrefix);
         this.keyspace = checkNotNull(context.getClient());
         this.readConsistency = checkNotNull(readConsistency);
         this.writeConsistency = checkNotNull(writeConsistency);

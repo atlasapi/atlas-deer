@@ -3,6 +3,8 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
+import java.util.Objects;
+
 @UDT(name = "containersummary")
 public class ContainerSummary {
 
@@ -52,5 +54,17 @@ public class ContainerSummary {
 
     public void setTotalEpisodes(Integer totalEpisodes) {
         this.totalEpisodes = totalEpisodes;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ContainerSummary that = (ContainerSummary) object;
+        return Objects.equals(type, that.type) &&
+                Objects.equals(title, that.title) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(seriesNumber, that.seriesNumber) &&
+                Objects.equals(totalEpisodes, that.totalEpisodes);
     }
 }

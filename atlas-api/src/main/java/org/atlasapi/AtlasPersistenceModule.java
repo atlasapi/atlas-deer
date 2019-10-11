@@ -237,7 +237,6 @@ public class AtlasPersistenceModule {
                         UTIL_METRIC_PREFIX,
                         metricsModule.metrics()
                 ))
-                .withComparer(new ObjectComparer())
                 .withEventHasher(eventV2 -> UUID.randomUUID().toString())
                 .withMetrics(metricsModule.metrics())
                 .build();

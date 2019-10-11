@@ -1,9 +1,11 @@
 package org.atlasapi.content.v2.model.udt;
 
-import java.util.Set;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.util.NullOrEmptyEquality;
+
+import java.util.Objects;
+import java.util.Set;
 
 @UDT(name = "itemsummary")
 public class ItemSummary {
@@ -72,5 +74,19 @@ public class ItemSummary {
 
     public void setEpisodeNumber(Integer episodeNumber) {
         this.episodeNumber = episodeNumber;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ItemSummary that = (ItemSummary) object;
+        return Objects.equals(title, that.title) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(image, that.image) &&
+                Objects.equals(releaseYear, that.releaseYear) &&
+                NullOrEmptyEquality.equals(certificate, that.certificate) &&
+                Objects.equals(type, that.type) &&
+                Objects.equals(episodeNumber, that.episodeNumber);
     }
 }

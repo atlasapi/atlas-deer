@@ -21,8 +21,6 @@ import com.metabroadcast.common.time.SystemClock;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ConsistencyLevel;
-import org.atlasapi.comparison.AlwaysFalseComparer;
-import org.atlasapi.comparison.Comparer;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
@@ -59,7 +57,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -88,7 +85,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private final Session session;
 
     private final ContentHasher contentHasher;
-    private final Comparer comparer;
     private final EventHasher eventHasher;
     private final IdGeneratorBuilder idGeneratorBuilder;
 
@@ -117,7 +113,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     private CassandraPersistenceModule(Builder builder) {
         this.contentHasher = builder.contentHasher;
-        this.comparer = builder.comparer;
         this.eventHasher = checkNotNull(builder.eventHasher);
         this.idGeneratorBuilder = builder.idGeneratorBuilder;
         this.contentIdGenerator = builder.idGeneratorBuilder.generator("content");
@@ -258,7 +253,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 context,
                 "content",
                 contentHasher,
-                comparer,
                 nullMessageSender(ResourceUpdatedMessage.class),
                 contentIdGenerator,
                 contentEquivalenceGraphStore
@@ -291,8 +285,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withSession(session)
                 .withIdGenerator(contentIdGenerator)
                 .withClock(new SystemClock())
-                .withHasher(contentHasher)
-                .withComparer(comparer)
                 .withGraphStore(contentEquivalenceGraphStore)
                 .withSender(sender(contentChanges, ResourceUpdatedMessage.class))
                 .withMetricRegistry(metrics)
@@ -305,8 +297,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withSession(session)
                 .withIdGenerator(contentIdGenerator)
                 .withClock(new SystemClock())
-                .withHasher(content -> UUID.randomUUID().toString())
-                .withComparer(new AlwaysFalseComparer())
                 .withGraphStore(contentEquivalenceGraphStore)
                 .withMetricRegistry(metrics)
                 .withMetricPrefix(METRIC_PREFIX + "NullMessageCqlContentStore.")
@@ -572,7 +562,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         private String keyspace;
         private IdGeneratorBuilder idGeneratorBuilder;
         private ContentHasher contentHasher;
-        private Comparer comparer;
         private EventHasher eventHasher;
         private MetricRegistry metrics;
 
@@ -603,11 +592,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
         public Builder withContentHasher(ContentHasher contentHasher) {
             this.contentHasher = contentHasher;
-            return this;
-        }
-
-        public Builder withComparer(Comparer comparer) {
-            this.comparer = comparer;
             return this;
         }
 

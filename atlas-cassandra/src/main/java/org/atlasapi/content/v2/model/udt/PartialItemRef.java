@@ -5,6 +5,8 @@ import com.datastax.driver.mapping.annotations.UDT;
 import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.joda.time.Instant;
 
+import java.util.Objects;
+
 /** This doesn't hold the actual ID and publisher because those are the strict PK of
  * any resource ref. These objects are usually stored as a CQL {@code map<Ref, PartialItemRef>} and
  * serialised accordingly. If you need to store a full {@code PartialItemRef} as a field, you'll need a
@@ -45,5 +47,14 @@ public class PartialItemRef {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        PartialItemRef that = (PartialItemRef) object;
+        return Objects.equals(sortKey, that.sortKey) &&
+                Objects.equals(type, that.type);
     }
 }
