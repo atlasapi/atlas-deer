@@ -1,12 +1,14 @@
 package org.atlasapi.system.bootstrap;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-
-import javax.annotation.Nullable;
-
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.collect.OptionalMap;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
@@ -16,7 +18,6 @@ import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.EquivalentContentStore;
-import org.atlasapi.content.Film;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.Series;
@@ -30,19 +31,14 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.system.legacy.UnresolvedLegacySegmentException;
-
-import com.metabroadcast.common.collect.OptionalMap;
-
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -236,7 +232,7 @@ public class ContentBootstrapListener
         try {
             WriteResult<Content, Content> writeResult = contentWriter.writeContent(content);
             if (!writeResult.written()) {
-                result.failure("No write occurred when migrating content into C* store");
+                result.failure("No write occurred when migrating content " + content.getId() + " into C* store");
                 return;
             }
             stringBuilder.append("Content store: DONE, ");
@@ -259,7 +255,7 @@ public class ContentBootstrapListener
             result.success(stringBuilder.toString());
         } catch (Exception e) {
             log.error(String.format("Bootstrapping failure: %s %s", content.getId(), content), e);
-            result.failure("Failed to bootstrap content with error " + e.getMessage());
+            result.failure("Failed to bootstrap content " + content.getId() + " with error " + e.getMessage());
         }
     }
 
