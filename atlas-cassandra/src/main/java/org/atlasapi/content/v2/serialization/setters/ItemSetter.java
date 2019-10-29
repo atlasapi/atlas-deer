@@ -1,11 +1,6 @@
 package org.atlasapi.content.v2.serialization.setters;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.v2.model.Content;
@@ -17,9 +12,10 @@ import org.atlasapi.content.v2.serialization.ContainerSummarySerialization;
 import org.atlasapi.content.v2.serialization.RestrictionSerialization;
 import org.atlasapi.content.v2.serialization.SegmentEventSerialization;
 
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.intl.Country;
-import com.metabroadcast.common.stream.MoreCollectors;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.atlasapi.content.v2.serialization.DateTimeUtils.toInstant;
 
@@ -59,7 +55,7 @@ public class ItemSetter {
                 .collect(Collectors.toList()));
 
         internal.setRestrictions(item.getRestrictions().stream()
-                .collect(MoreCollectors.toImmutableMap(
+                .collect(SetterUtils.toImmutableMapAllowDuplicates(
                         restriction::serialize,
                         r -> new UpdateTimes(
                                 toInstant(r.getLastUpdated()),
