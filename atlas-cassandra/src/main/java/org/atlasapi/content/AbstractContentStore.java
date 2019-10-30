@@ -1,19 +1,14 @@
 package org.atlasapi.content;
 
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.primitives.Longs;
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.time.Timestamp;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
@@ -25,18 +20,26 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.time.Timestamp;
+
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.primitives.Longs;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
-import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -50,7 +53,7 @@ public abstract class AbstractContentStore implements ContentStore {
     private final class ContentWritingVisitor
             implements ContentVisitor<WriteResult<? extends Content, Content>> {
 
-        private boolean hasChanged(Content writing, Content previous) {
+        private boolean hashChanged(Content writing, Content previous) {
             return !hasher.hash(writing).equals(hasher.hash(previous));
         }
 
@@ -96,7 +99,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         private WriteResult<Brand, Content> writeBrandWithPrevious(Brand brand, Content previous) {
             boolean written = false;
-            if (hasChanged(brand, previous)) {
+            if (hashChanged(brand, previous)) {
                 updateWithPevious(brand, previous);
                 write(brand, previous);
                 written = true;
@@ -141,7 +144,7 @@ public abstract class AbstractContentStore implements ContentStore {
         private WriteResult<Series, Content> writeSeriesWithPrevious(Series series,
                 Content previous) {
             boolean written = false;
-            if (hasChanged(series, previous)) {
+            if (hashChanged(series, previous)) {
                 updateWithPevious(series, previous);
                 writeRefAndSummarizePrimary(series);
                 write(series, previous);
@@ -192,7 +195,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         private WriteResult<Item, Content> writeItemWithPrevious(Item item, Content previous) {
             boolean written = false;
-            if (hasChanged(item, previous)) {
+            if (hashChanged(item, previous)) {
                 updateWithPreviousItem(item, previous);
                 updateWithPevious(item, previous);
                 writeItemRefs(item);
@@ -236,7 +239,7 @@ public abstract class AbstractContentStore implements ContentStore {
         private WriteResult<Episode, Content> writeEpisodeWithExising(Episode episode,
                 Content previous) {
             boolean written = false;
-            if (hasChanged(episode, previous)) {
+            if (hashChanged(episode, previous)) {
                 updateWithPreviousItem(episode, previous);
                 updateWithPevious(episode, previous);
                 writeItemRefs(episode);
@@ -279,7 +282,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         private WriteResult<Film, Content> writeFilmWithPrevious(Film film, Content previous) {
             boolean written = false;
-            if (hasChanged(film, previous)) {
+            if (hashChanged(film, previous)) {
                 updateWithPevious(film, previous);
                 write(film, previous);
                 written = true;
@@ -311,7 +314,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         private WriteResult<Song, Content> writeSongWithPrevious(Song song, Content previous) {
             boolean written = false;
-            if (hasChanged(song, previous)) {
+            if (hashChanged(song, previous)) {
                 updateWithPevious(song, previous);
                 write(song, previous);
                 written = true;

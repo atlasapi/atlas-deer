@@ -14,22 +14,23 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import org.atlasapi.entity.Award;
+import java.util.Set;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.Rating;
-import org.atlasapi.entity.Review;
 import org.atlasapi.entity.Sourced;
+import org.atlasapi.entity.Award;
+import org.atlasapi.entity.Review;
+import org.atlasapi.entity.Rating;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-import org.joda.time.DateTime;
 
-import java.util.Set;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import org.joda.time.DateTime;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Optional.ofNullable;
