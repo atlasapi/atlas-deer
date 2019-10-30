@@ -232,26 +232,20 @@ public class ContentBootstrapListener
         try {
             stringBuilder.append("Content store: ");
             WriteResult<Content, Content> writeResult = contentWriter.writeContent(content);
-            if (!writeResult.written()) {
-                stringBuilder.append("No write occurred");
-                result.success(stringBuilder.toString());
-                return;
-            }
-            stringBuilder.append("DONE, ");
+            stringBuilder.append(writeResult.written() ? "DONE, " : "UNCHANGED, ");
 
+            stringBuilder.append("Equivalence Graph: ");
             Optional<EquivalenceGraphUpdate> graphUpdate =
                     equivalenceMigrator.migrateEquivalence(content.toRef());
-            stringBuilder.append("Equivalence Graph: DONE, ");
+            stringBuilder.append(graphUpdate.isPresent() ? "DONE, " : "UNCHANGED, ");
 
             equivalentContentStore.updateContent(content.getId());
-
             if (graphUpdate.isPresent()) {
                 equivalentContentStore.updateEquivalences(graphUpdate.get());
             }
             stringBuilder.append("Equivalent content store: DONE, ");
 
             contentIndex.index(content);
-
             stringBuilder.append("Index: DONE");
 
             result.success(stringBuilder.toString());
