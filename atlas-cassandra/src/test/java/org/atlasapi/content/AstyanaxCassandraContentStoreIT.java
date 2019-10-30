@@ -22,11 +22,6 @@ public class AstyanaxCassandraContentStoreIT extends CassandraContentStoreIT {
                 .build();
     }
 
-    @Override
-    protected Class<?> provideContentComparisonClass() {
-        return Content.class;
-    }
-
     @Ignore("This is a known bug. Given this store is due to be decommissioned it is only being "
             + "fixed in the CqlContentStore")
     @Test

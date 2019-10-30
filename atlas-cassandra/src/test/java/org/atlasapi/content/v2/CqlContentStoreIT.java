@@ -44,11 +44,6 @@ public class CqlContentStoreIT extends CassandraContentStoreIT {
                 .build();
     }
 
-    @Override
-    protected Class<?> provideContentComparisonClass() {
-        return org.atlasapi.content.v2.model.Content.class;
-    }
-
     @Ignore("this used to test that an exception was thrown for mangled protobuf rows")
     @Test
     @Override
@@ -98,7 +93,6 @@ public class CqlContentStoreIT extends CassandraContentStoreIT {
         episode.setTitle("some dodgy title to trigger an update");
 
         when(hasher.hash(any(Content.class))).thenReturn("one", "two");
-
         when(clock.now()).thenReturn(now.plusHours(3));
         store.writeContent(episode);
 

@@ -103,8 +103,6 @@ public abstract class CassandraContentStoreIT {
 
     protected abstract ContentStore provideContentStore();
 
-    protected abstract Class<?> provideContentComparisonClass();
-
     @Before
     public void before() throws ConnectionException {
         store = provideContentStore();
