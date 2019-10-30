@@ -230,12 +230,14 @@ public class ContentBootstrapListener
         content.setReadHash(null);
 
         try {
+            stringBuilder.append("Content store: ");
             WriteResult<Content, Content> writeResult = contentWriter.writeContent(content);
             if (!writeResult.written()) {
-                result.failure("No write occurred when migrating content " + content.getId() + " into C* store");
+                stringBuilder.append("No write occurred");
+                result.success(stringBuilder.toString());
                 return;
             }
-            stringBuilder.append("Content store: DONE, ");
+            stringBuilder.append("DONE, ");
 
             Optional<EquivalenceGraphUpdate> graphUpdate =
                     equivalenceMigrator.migrateEquivalence(content.toRef());
@@ -338,7 +340,7 @@ public class ContentBootstrapListener
         } else {
             String message = "Failed to find equivalence graph for " + content.getId().longValue();
             log.warn(message);
-            result.failure(message);
+            result.success(message);
         }
     }
 
