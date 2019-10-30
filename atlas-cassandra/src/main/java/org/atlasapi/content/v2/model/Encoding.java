@@ -2,7 +2,6 @@ package org.atlasapi.content.v2.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.content.v2.model.pojo.Location;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Ref;
@@ -21,9 +20,7 @@ public class Encoding implements Identified {
     private Set<String> aliasUrls;
     private Set<Alias> aliases;
     private Set<Ref> equivalentTo;
-    @ExcludeFromObjectComparison
     private Instant lastUpdated;
-    @ExcludeFromObjectComparison
     private Instant equivalenceUpdate;
     private Set<Location> availableAt;
     private Boolean containsAdvertising;

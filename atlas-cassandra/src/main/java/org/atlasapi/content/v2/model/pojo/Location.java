@@ -1,6 +1,5 @@
 package org.atlasapi.content.v2.model.pojo;
 
-import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.content.v2.model.Identified;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Ref;
@@ -19,9 +18,7 @@ public class Location implements Identified {
     private Set<String> aliasUrls;
     private Set<Alias> aliases;
     private Set<Ref> equivalentTo;
-    @ExcludeFromObjectComparison
     private Instant lastUpdated;
-    @ExcludeFromObjectComparison
     private Instant equivalenceUpdate;
     private Boolean available;
     private Boolean transportIsLive;

@@ -16,7 +16,6 @@ package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
@@ -57,11 +56,8 @@ public abstract class Described extends Identified implements Sourced {
     private Set<Image> images = ImmutableSet.of();
     private String thumbnail;
 
-    @ExcludeFromObjectComparison
     private DateTime firstSeen;
-    @ExcludeFromObjectComparison
     private DateTime lastFetched;
-    @ExcludeFromObjectComparison
     private DateTime thisOrChildLastUpdated;
     private boolean scheduleOnly = false;
     private boolean activelyPublished = true;

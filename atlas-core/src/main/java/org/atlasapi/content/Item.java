@@ -17,7 +17,6 @@ package org.atlasapi.content;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.entity.Id;
 import org.atlasapi.hashing.ExcludeFromHash;
 import org.atlasapi.media.entity.Publisher;
@@ -39,7 +38,6 @@ public class Item extends Content {
     private Boolean blackAndWhite;
 
     @ExcludeFromHash
-    @ExcludeFromObjectComparison
     private String sortKey;
 
     private ContainerSummary containerSummary;

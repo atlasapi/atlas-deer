@@ -20,7 +20,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.metabroadcast.common.intl.Country;
-import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
@@ -45,7 +44,6 @@ public abstract class Content extends Described
         implements Aliased, Sourced, Equivalable<Content>, Hashable {
 
     @ExcludeFromHash
-    @ExcludeFromObjectComparison
     private transient String readHash;
 
     private ImmutableList<Clip> clips = ImmutableList.of();

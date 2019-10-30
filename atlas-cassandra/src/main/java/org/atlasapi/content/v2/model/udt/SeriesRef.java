@@ -2,7 +2,6 @@ package org.atlasapi.content.v2.model.udt;
 
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
-import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
@@ -21,7 +20,6 @@ import java.util.Set;
 public class SeriesRef {
 
     @Field(name = "title") private String title;
-    @ExcludeFromObjectComparison
     @Field(name = "updated") private Instant updated;
     @Field(name = "series_nr") private Integer seriesNumber;
     @Field(name = "release_year") private Integer releaseYear;

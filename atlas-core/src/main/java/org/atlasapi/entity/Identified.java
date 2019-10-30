@@ -9,7 +9,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
-import org.atlasapi.comparison.ExcludeFromObjectComparison;
 import org.atlasapi.content.Content;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
@@ -46,9 +45,7 @@ public class Identified implements Identifiable, Aliased {
     /**
      * Records the time that the 3rd party reported that the {@link Identified} was last updated
      */
-    @ExcludeFromObjectComparison
     private DateTime lastUpdated;
-    @ExcludeFromObjectComparison
     private DateTime equivalenceUpdate;
 
     public Identified(String uri, String curie) {
