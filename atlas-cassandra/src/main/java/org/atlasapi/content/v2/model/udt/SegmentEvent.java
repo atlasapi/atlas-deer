@@ -14,8 +14,9 @@ import java.util.Set;
 @UDT(name = "segmentevent")
 public class SegmentEvent implements Identified {
 
-    public static final Comparator<SegmentEvent> COMPARATOR = Comparator.comparing(SegmentEvent::getPosition)
-            .thenComparing(SegmentEvent::getCanonicalUri);
+    public static final Comparator<SegmentEvent> COMPARATOR =
+            Comparator.comparing(SegmentEvent::getPosition, Comparator.nullsLast(Comparator.naturalOrder()))
+                    .thenComparing(SegmentEvent::getCanonicalUri);
 
     @Field(name = "id") private Long id;
     @Field(name = "canonical_uri") private String canonicalUri;
