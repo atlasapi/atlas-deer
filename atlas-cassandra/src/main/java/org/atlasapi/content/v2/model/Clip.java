@@ -28,6 +28,7 @@ import org.atlasapi.content.v2.model.udt.UpdateTimes;
 import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -580,6 +581,9 @@ public class Clip implements ContentIface {
     }
 
     public static class RestrictionWithTimes {
+
+        public static final Comparator<RestrictionWithTimes> COMPARATOR =
+                Comparator.comparing(r -> r.getRestriction().getCanonicalUri());
 
         private Restriction restriction;
         private UpdateTimes updateTimes;

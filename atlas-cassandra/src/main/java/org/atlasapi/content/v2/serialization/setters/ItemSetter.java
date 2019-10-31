@@ -52,6 +52,10 @@ public class ItemSetter {
                 .stream()
                 .map(segmentEvent::serialize)
                 .filter(Objects::nonNull)
+                // Order is not preserved when fetched from Owl since it is originally stored in a set
+                // we need to preserve order in the resulting list so that content change checks will succeed
+                // if nothing has changed
+                .sorted(SegmentEvent.COMPARATOR)
                 .collect(Collectors.toList()));
 
         internal.setRestrictions(item.getRestrictions().stream()

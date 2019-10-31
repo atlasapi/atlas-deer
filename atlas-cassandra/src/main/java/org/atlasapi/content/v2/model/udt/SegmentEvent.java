@@ -6,12 +6,16 @@ import org.atlasapi.content.v2.model.Identified;
 import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 @UDT(name = "segmentevent")
 public class SegmentEvent implements Identified {
+
+    public static final Comparator<SegmentEvent> COMPARATOR = Comparator.comparing(SegmentEvent::getPosition)
+            .thenComparing(SegmentEvent::getCanonicalUri);
 
     @Field(name = "id") private Long id;
     @Field(name = "canonical_uri") private String canonicalUri;
