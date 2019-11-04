@@ -3,6 +3,8 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
+import java.util.Objects;
+
 @UDT(name = "image")
 public class Image {
 
@@ -97,5 +99,27 @@ public class Image {
 
     public void setSource(String source) {
         this.source = source;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Image image = (Image) object;
+        return Objects.equals(uri, image.uri) &&
+                Objects.equals(type, image.type) &&
+                Objects.equals(color, image.color) &&
+                Objects.equals(theme, image.theme) &&
+                Objects.equals(height, image.height) &&
+                Objects.equals(width, image.width) &&
+                Objects.equals(aspectRatio, image.aspectRatio) &&
+                Objects.equals(mimeType, image.mimeType) &&
+                Objects.equals(hasTitleArt, image.hasTitleArt) &&
+                Objects.equals(source, image.source);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uri, type, color, theme, height, width, aspectRatio, mimeType, hasTitleArt, source);
     }
 }

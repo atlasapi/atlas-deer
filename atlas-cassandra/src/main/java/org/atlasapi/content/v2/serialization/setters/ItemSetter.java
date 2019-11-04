@@ -1,11 +1,6 @@
 package org.atlasapi.content.v2.serialization.setters;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.v2.model.Content;
@@ -17,9 +12,10 @@ import org.atlasapi.content.v2.serialization.ContainerSummarySerialization;
 import org.atlasapi.content.v2.serialization.RestrictionSerialization;
 import org.atlasapi.content.v2.serialization.SegmentEventSerialization;
 
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.intl.Country;
-import com.metabroadcast.common.stream.MoreCollectors;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.atlasapi.content.v2.serialization.DateTimeUtils.toInstant;
 
@@ -56,10 +52,14 @@ public class ItemSetter {
                 .stream()
                 .map(segmentEvent::serialize)
                 .filter(Objects::nonNull)
+                // Order is not preserved when fetched from Owl since it is originally stored in a set
+                // we need to preserve order in the resulting list so that content change checks will succeed
+                // if nothing has changed
+                .sorted(SegmentEvent.COMPARATOR)
                 .collect(Collectors.toList()));
 
         internal.setRestrictions(item.getRestrictions().stream()
-                .collect(MoreCollectors.toImmutableMap(
+                .collect(SetterUtils.toImmutableMapAllowDuplicates(
                         restriction::serialize,
                         r -> new UpdateTimes(
                                 toInstant(r.getLastUpdated()),

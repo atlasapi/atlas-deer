@@ -57,7 +57,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -286,7 +285,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withSession(session)
                 .withIdGenerator(contentIdGenerator)
                 .withClock(new SystemClock())
-                .withHasher(contentHasher)
                 .withGraphStore(contentEquivalenceGraphStore)
                 .withSender(sender(contentChanges, ResourceUpdatedMessage.class))
                 .withMetricRegistry(metrics)
@@ -299,7 +297,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withSession(session)
                 .withIdGenerator(contentIdGenerator)
                 .withClock(new SystemClock())
-                .withHasher(content -> UUID.randomUUID().toString())
                 .withGraphStore(contentEquivalenceGraphStore)
                 .withMetricRegistry(metrics)
                 .withMetricPrefix(METRIC_PREFIX + "NullMessageCqlContentStore.")

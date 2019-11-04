@@ -3,6 +3,8 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
+import java.util.Objects;
+
 @UDT(name = "keyphrase")
 public class KeyPhrase {
 
@@ -25,5 +27,19 @@ public class KeyPhrase {
 
     public void setWeighting(Double weighting) {
         this.weighting = weighting;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        KeyPhrase keyPhrase = (KeyPhrase) object;
+        return Objects.equals(phrase, keyPhrase.phrase) &&
+                Objects.equals(weighting, keyPhrase.weighting);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(phrase, weighting);
     }
 }

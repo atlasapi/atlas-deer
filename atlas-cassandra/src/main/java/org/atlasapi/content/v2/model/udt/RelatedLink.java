@@ -3,6 +3,8 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
+import java.util.Objects;
+
 @UDT(name = "relatedlink")
 public class RelatedLink {
 
@@ -79,5 +81,25 @@ public class RelatedLink {
 
     public void setThumbnail(String thumbnail) {
         this.thumbnail = thumbnail;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        RelatedLink that = (RelatedLink) object;
+        return Objects.equals(url, that.url) &&
+                Objects.equals(type, that.type) &&
+                Objects.equals(sourceId, that.sourceId) &&
+                Objects.equals(shortName, that.shortName) &&
+                Objects.equals(title, that.title) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(image, that.image) &&
+                Objects.equals(thumbnail, that.thumbnail);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url, type, sourceId, shortName, title, description, image, thumbnail);
     }
 }

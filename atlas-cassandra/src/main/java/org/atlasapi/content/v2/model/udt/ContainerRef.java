@@ -1,10 +1,12 @@
 package org.atlasapi.content.v2.model.udt;
 
-import java.util.Set;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
+
+import java.util.Objects;
+import java.util.Set;
 
 @UDT(name = "containerref")
 public class ContainerRef {
@@ -84,5 +86,24 @@ public class ContainerRef {
     public void setCertificates(
             Set<Certificate> certificates) {
         this.certificates = certificates;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ContainerRef that = (ContainerRef) object;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(source, that.source) &&
+                Objects.equals(type, that.type) &&
+                Objects.equals(title, that.title) &&
+                Objects.equals(seriesNumber, that.seriesNumber) &&
+                Objects.equals(releaseYear, that.releaseYear) &&
+                NullOrEmptyEquality.equals(certificates, that.certificates);
+    }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, source, type, title, seriesNumber, releaseYear, certificates);
     }
 }

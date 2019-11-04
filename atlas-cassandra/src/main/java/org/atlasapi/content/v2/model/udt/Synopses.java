@@ -3,6 +3,8 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
+import java.util.Objects;
+
 @UDT(name = "synopses")
 public class Synopses {
 
@@ -34,5 +36,20 @@ public class Synopses {
 
     public void setLongDescr(String longDescr) {
         this.longDescr = longDescr;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Synopses synopses = (Synopses) object;
+        return Objects.equals(shortDescr, synopses.shortDescr) &&
+                Objects.equals(mediumDescr, synopses.mediumDescr) &&
+                Objects.equals(longDescr, synopses.longDescr);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(shortDescr, mediumDescr, longDescr);
     }
 }

@@ -5,9 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.atlasapi.content.v2.model.pojo.Location;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Ref;
+import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class Encoding implements Identified {
@@ -325,5 +327,56 @@ public class Encoding implements Identified {
         public Set<Encoding> getEncodings() {
             return encodings;
         }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) return true;
+            if (object == null || getClass() != object.getClass()) return false;
+            Wrapper wrapper = (Wrapper) object;
+            return NullOrEmptyEquality.equals(encodings, wrapper.encodings);
+        }
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Encoding encoding = (Encoding) object;
+        return Objects.equals(id, encoding.id) &&
+                Objects.equals(canonicalUri, encoding.canonicalUri) &&
+                Objects.equals(curie, encoding.curie) &&
+                NullOrEmptyEquality.equals(aliasUrls, encoding.aliasUrls) &&
+                NullOrEmptyEquality.equals(aliases, encoding.aliases) &&
+                NullOrEmptyEquality.equals(equivalentTo, encoding.equivalentTo) &&
+                NullOrEmptyEquality.equals(availableAt, encoding.availableAt) &&
+                Objects.equals(containsAdvertising, encoding.containsAdvertising) &&
+                Objects.equals(advertisingDuration, encoding.advertisingDuration) &&
+                Objects.equals(duration, encoding.duration) &&
+                Objects.equals(bitRate, encoding.bitRate) &&
+                Objects.equals(audioBitRate, encoding.audioBitRate) &&
+                Objects.equals(audioChannels, encoding.audioChannels) &&
+                Objects.equals(audioCoding, encoding.audioCoding) &&
+                Objects.equals(videoAspectRatio, encoding.videoAspectRatio) &&
+                Objects.equals(videoBitRate, encoding.videoBitRate) &&
+                Objects.equals(videoCoding, encoding.videoCoding) &&
+                Objects.equals(videoFrameRate, encoding.videoFrameRate) &&
+                Objects.equals(videoHorizontalSize, encoding.videoHorizontalSize) &&
+                Objects.equals(videoProgressiveScan, encoding.videoProgressiveScan) &&
+                Objects.equals(videoVerticalSize, encoding.videoVerticalSize) &&
+                Objects.equals(dataSize, encoding.dataSize) &&
+                Objects.equals(dataContainerFormat, encoding.dataContainerFormat) &&
+                Objects.equals(source, encoding.source) &&
+                Objects.equals(distributor, encoding.distributor) &&
+                Objects.equals(hasDog, encoding.hasDog) &&
+                Objects.equals(is3d, encoding.is3d) &&
+                Objects.equals(quality, encoding.quality) &&
+                Objects.equals(qualityDetail, encoding.qualityDetail) &&
+                Objects.equals(versionId, encoding.versionId) &&
+                NullOrEmptyEquality.equals(customFields, encoding.customFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, availableAt, containsAdvertising, advertisingDuration, duration, bitRate, audioBitRate, audioChannels, audioCoding, videoAspectRatio, videoBitRate, videoCoding, videoFrameRate, videoHorizontalSize, videoProgressiveScan, videoVerticalSize, dataSize, dataContainerFormat, source, distributor, hasDog, is3d, quality, qualityDetail, versionId, customFields);
     }
 }

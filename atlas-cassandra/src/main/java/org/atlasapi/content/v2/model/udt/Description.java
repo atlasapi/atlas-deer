@@ -3,6 +3,8 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
+import java.util.Objects;
+
 @UDT(name = "description")
 public class Description {
 
@@ -43,5 +45,21 @@ public class Description {
 
     public void setThumbnail(String thumbnail) {
         this.thumbnail = thumbnail;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Description that = (Description) object;
+        return Objects.equals(title, that.title) &&
+                Objects.equals(synopsis, that.synopsis) &&
+                Objects.equals(image, that.image) &&
+                Objects.equals(thumbnail, that.thumbnail);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(title, synopsis, image, thumbnail);
     }
 }

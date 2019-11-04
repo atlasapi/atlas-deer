@@ -1,11 +1,8 @@
 package org.atlasapi.content.v2.serialization;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.intl.Country;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.v2.model.Clip;
 import org.atlasapi.content.v2.model.Encoding;
 import org.atlasapi.content.v2.model.udt.Broadcast;
@@ -13,9 +10,11 @@ import org.atlasapi.content.v2.model.udt.SegmentEvent;
 import org.atlasapi.content.v2.model.udt.UpdateTimes;
 import org.atlasapi.content.v2.serialization.setters.ContentSetter;
 
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.intl.Country;
-import com.metabroadcast.common.stream.MoreCollectors;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.content.v2.serialization.DateTimeUtils.toInstant;
@@ -71,6 +70,10 @@ public class ClipSerialization {
                 .stream()
                 .map(segmentEvent::serialize)
                 .filter(Objects::nonNull)
+                // Order is not preserved when fetched from Owl since it is originally stored in a set
+                // we need to preserve order in the resulting list so that content change checks will succeed
+                // if nothing has changed
+                .sorted(SegmentEvent.COMPARATOR)
                 .collect(Collectors.toList()));
 
         internal.setRestrictions(
@@ -81,7 +84,11 @@ public class ClipSerialization {
                                         toInstant(r.getLastUpdated()),
                                         toInstant(r.getEquivalenceUpdate())
                                 )
-                        )).collect(MoreCollectors.toImmutableList())
+                        ))
+                        // We are iterating from a set so we need to preserve order in the resulting list so that
+                        // content change checks will succeed if nothing has changed
+                        .sorted(Clip.RestrictionWithTimes.COMPARATOR)
+                        .collect(MoreCollectors.toImmutableList())
 
         );
         internal.setClipOf(clip.getClipOf());

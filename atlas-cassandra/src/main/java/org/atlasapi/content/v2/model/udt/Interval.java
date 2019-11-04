@@ -1,10 +1,11 @@
 package org.atlasapi.content.v2.model.udt;
 
-import javax.annotation.Nullable;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
+
+import javax.annotation.Nullable;
+import java.util.Objects;
 
 @UDT(name = "interval")
 public class Interval {
@@ -30,5 +31,19 @@ public class Interval {
 
     public void setEnd(@Nullable Instant end) {
         this.end = end;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Interval interval = (Interval) object;
+        return Objects.equals(start, interval.start) &&
+                Objects.equals(end, interval.end);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(start, end);
     }
 }

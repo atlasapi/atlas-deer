@@ -3,9 +3,11 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.atlasapi.content.v2.model.Identified;
+import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @UDT(name = "crewmember")
@@ -138,5 +140,29 @@ public class CrewMember implements Identified {
 
     public void setCustomFields(Map<String, String> customFields) {
         this.customFields = customFields;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        CrewMember that = (CrewMember) object;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(canonicalUri, that.canonicalUri) &&
+                Objects.equals(curie, that.curie) &&
+                NullOrEmptyEquality.equals(aliasUrls, that.aliasUrls) &&
+                NullOrEmptyEquality.equals(aliases, that.aliases) &&
+                NullOrEmptyEquality.equals(equivalentTo, that.equivalentTo) &&
+                Objects.equals(role, that.role) &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(publisher, that.publisher) &&
+                Objects.equals(type, that.type) &&
+                Objects.equals(character, that.character) &&
+                NullOrEmptyEquality.equals(customFields, that.customFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, role, name, publisher, type, character, customFields);
     }
 }

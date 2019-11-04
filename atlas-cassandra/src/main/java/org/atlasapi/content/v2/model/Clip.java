@@ -25,10 +25,13 @@ import org.atlasapi.content.v2.model.udt.SegmentEvent;
 import org.atlasapi.content.v2.model.udt.Synopses;
 import org.atlasapi.content.v2.model.udt.Tag;
 import org.atlasapi.content.v2.model.udt.UpdateTimes;
+import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class Clip implements ContentIface {
@@ -567,9 +570,20 @@ public class Clip implements ContentIface {
         public List<Clip> getClips() {
             return clips;
         }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) return true;
+            if (object == null || getClass() != object.getClass()) return false;
+            Wrapper wrapper = (Wrapper) object;
+            return NullOrEmptyEquality.equals(clips, wrapper.clips);
+        }
     }
 
     public static class RestrictionWithTimes {
+
+        public static final Comparator<RestrictionWithTimes> COMPARATOR =
+                Comparator.comparing(r -> r.getRestriction().getCanonicalUri());
 
         private Restriction restriction;
         private UpdateTimes updateTimes;
@@ -595,6 +609,15 @@ public class Clip implements ContentIface {
 
         public void setUpdateTimes(UpdateTimes updateTimes) {
             this.updateTimes = updateTimes;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) return true;
+            if (object == null || getClass() != object.getClass()) return false;
+            RestrictionWithTimes that = (RestrictionWithTimes) object;
+            return Objects.equals(restriction, that.restriction) &&
+                    Objects.equals(updateTimes, that.updateTimes);
         }
     }
 
@@ -625,5 +648,75 @@ public class Clip implements ContentIface {
         public void setInterval(Interval interval) {
             this.interval = interval;
         }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) return true;
+            if (object == null || getClass() != object.getClass()) return false;
+            ImageWithInterval that = (ImageWithInterval) object;
+            return Objects.equals(image, that.image) &&
+                    Objects.equals(interval, that.interval);
+        }
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Clip clip = (Clip) object;
+        return Objects.equals(id, clip.id) &&
+                Objects.equals(canonicalUri, clip.canonicalUri) &&
+                Objects.equals(curie, clip.curie) &&
+                NullOrEmptyEquality.equals(aliasUrls, clip.aliasUrls) &&
+                NullOrEmptyEquality.equals(aliases, clip.aliases) &&
+                NullOrEmptyEquality.equals(equivalentTo, clip.equivalentTo) &&
+                Objects.equals(title, clip.title) &&
+                Objects.equals(shortDescription, clip.shortDescription) &&
+                Objects.equals(mediumDescription, clip.mediumDescription) &&
+                Objects.equals(longDescription, clip.longDescription) &&
+                Objects.equals(synopses, clip.synopses) &&
+                Objects.equals(description, clip.description) &&
+                Objects.equals(mediaType, clip.mediaType) &&
+                Objects.equals(specialization, clip.specialization) &&
+                NullOrEmptyEquality.equals(genres, clip.genres) &&
+                Objects.equals(publisher, clip.publisher) &&
+                Objects.equals(image, clip.image) &&
+                NullOrEmptyEquality.equals(images, clip.images) &&
+                Objects.equals(thumbnail, clip.thumbnail) &&
+                Objects.equals(scheduleOnly, clip.scheduleOnly) &&
+                Objects.equals(activelyPublished, clip.activelyPublished) &&
+                Objects.equals(presentationChannel, clip.presentationChannel) &&
+                Objects.equals(priority, clip.priority) &&
+                NullOrEmptyEquality.equals(relatedLinks, clip.relatedLinks) &&
+                NullOrEmptyEquality.equals(awards, clip.awards) &&
+                NullOrEmptyEquality.equals(keyPhrases, clip.keyPhrases) &&
+                NullOrEmptyEquality.equals(tags, clip.tags) &&
+                NullOrEmptyEquality.equals(contentGroupRefs, clip.contentGroupRefs) &&
+                NullOrEmptyEquality.equals(people, clip.people) &&
+                NullOrEmptyEquality.equals(languages, clip.languages) &&
+                NullOrEmptyEquality.equals(certificates, clip.certificates) &&
+                Objects.equals(year, clip.year) &&
+                NullOrEmptyEquality.equals(manifestedAs, clip.manifestedAs) &&
+                Objects.equals(genericDescription, clip.genericDescription) &&
+                NullOrEmptyEquality.equals(eventRefs, clip.eventRefs) &&
+                Objects.equals(containerRef, clip.containerRef) &&
+                Objects.equals(isLongForm, clip.isLongForm) &&
+                Objects.equals(blackAndWhite, clip.blackAndWhite) &&
+                NullOrEmptyEquality.equals(countriesOfOrigin, clip.countriesOfOrigin) &&
+                Objects.equals(sortKey, clip.sortKey) &&
+                Objects.equals(containerSummary, clip.containerSummary) &&
+                NullOrEmptyEquality.equals(broadcasts, clip.broadcasts) &&
+                NullOrEmptyEquality.equals(segmentEvents, clip.segmentEvents) &&
+                NullOrEmptyEquality.equals(restrictions, clip.restrictions) &&
+                Objects.equals(clipOf, clip.clipOf) &&
+                NullOrEmptyEquality.equals(reviews, clip.reviews) &&
+                NullOrEmptyEquality.equals(ratings, clip.ratings) &&
+                Objects.equals(encodings, clip.encodings) &&
+                NullOrEmptyEquality.equals(customFields, clip.customFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, manifestedAs, genericDescription, eventRefs, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, containerSummary, broadcasts, segmentEvents, restrictions, clipOf, reviews, ratings, encodings, customFields);
     }
 }

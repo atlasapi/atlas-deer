@@ -1,7 +1,8 @@
 package org.atlasapi.content.v2;
 
-import java.util.List;
-
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableList;
+import com.metabroadcast.common.time.DateTimeZones;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.CassandraContentStoreIT;
 import org.atlasapi.content.Content;
@@ -14,16 +15,13 @@ import org.atlasapi.content.Series;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.segment.SegmentEvent;
-
-import com.metabroadcast.common.time.DateTimeZones;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -40,7 +38,6 @@ public class CqlContentStoreIT extends CassandraContentStoreIT {
                 .withSender(sender)
                 .withIdGenerator(idGenerator)
                 .withClock(clock)
-                .withHasher(hasher)
                 .withGraphStore(graphStore)
                 .withMetricRegistry(new MetricRegistry())
                 .withMetricPrefix("test.CqlContentStore.")

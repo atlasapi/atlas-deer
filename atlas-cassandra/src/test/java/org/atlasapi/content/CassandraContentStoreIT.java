@@ -228,7 +228,7 @@ public abstract class CassandraContentStoreIT {
     }
 
     @Test
-    public void testContentNotWrittenWhenHashNotChanged() throws Exception {
+    public void testContentNotWrittenWhenContentNotChanged() throws Exception {
         Content content = create(new Item());
         content.setTitle("title");
 
@@ -244,9 +244,8 @@ public abstract class CassandraContentStoreIT {
         writeResult = store.writeContent(writeResult.getResource());
         assertFalse(writeResult.written());
 
-        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
+//        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
         verify(idGenerator, times(1)).generateRaw();
-        verify(clock, times(1)).now();
 
         Content item = resolve(content.getId().longValue());
 
@@ -259,7 +258,7 @@ public abstract class CassandraContentStoreIT {
     }
 
     @Test
-    public void testContentWrittenWhenHashChanged() throws Exception {
+    public void testContentWrittenWhenContentChanged() throws Exception {
         Content content = create(new Item());
         content.setTitle("title");
 
@@ -276,16 +275,17 @@ public abstract class CassandraContentStoreIT {
         Content resolved = resolve(content.getId().longValue());
         assertThat(resolved.getTitle(), is(content.getTitle()));
 
+        content.setTitle("differentTitle");
+
         when(hasher.hash(argThat(isA(Content.class))))
                 .thenReturn("different")
                 .thenReturn("differentAgain");
 
-        writeResult = store.writeContent(writeResult.getResource());
+        writeResult = store.writeContent(content);
         assertTrue(writeResult.written());
 
-        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
+//        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
         verify(idGenerator, times(1)).generateRaw();
-        verify(clock, times(2)).now();
 
         Content item = resolve(content.getId().longValue());
 

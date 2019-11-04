@@ -1,12 +1,11 @@
 package org.atlasapi.content.v2.model.udt;
 
-import javax.annotation.Nullable;
-
-import org.atlasapi.content.v2.model.WithUpdateTimes;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.content.v2.model.WithUpdateTimes;
 import org.joda.time.Instant;
+
+import javax.annotation.Nullable;
 
 @UDT(name = "updatetimes")
 public class UpdateTimes implements WithUpdateTimes {
@@ -39,5 +38,17 @@ public class UpdateTimes implements WithUpdateTimes {
     @Override
     public void setEquivalenceUpdate(Instant equivalenceUpdate) {
         this.equivalenceUpdate = equivalenceUpdate;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
     }
 }

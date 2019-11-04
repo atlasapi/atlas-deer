@@ -2,6 +2,9 @@ package org.atlasapi.content.v2.model.udt;
 
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.util.NullOrEmptyEquality;
+
+import java.util.Objects;
 
 @UDT(name = "tag")
 public class Tag {
@@ -61,5 +64,23 @@ public class Tag {
 
     public void setOffset(Integer offset) {
         this.offset = offset;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Tag tag = (Tag) object;
+        return Objects.equals(topic, tag.topic) &&
+                Objects.equals(publisher, tag.publisher) &&
+                Objects.equals(supervised, tag.supervised) &&
+                Objects.equals(weighting, tag.weighting) &&
+                Objects.equals(relationship, tag.relationship) &&
+                Objects.equals(offset, tag.offset);
+    }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(topic, publisher, supervised, weighting, relationship, offset);
     }
 }

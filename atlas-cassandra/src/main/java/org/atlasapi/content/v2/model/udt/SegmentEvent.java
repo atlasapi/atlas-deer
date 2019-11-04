@@ -3,13 +3,20 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.atlasapi.content.v2.model.Identified;
+import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
+import java.util.Comparator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @UDT(name = "segmentevent")
 public class SegmentEvent implements Identified {
+
+    public static final Comparator<SegmentEvent> COMPARATOR =
+            Comparator.comparing(SegmentEvent::getPosition, Comparator.nullsLast(Comparator.naturalOrder()))
+                    .thenComparing(SegmentEvent::getCanonicalUri);
 
     @Field(name = "id") private Long id;
     @Field(name = "canonical_uri") private String canonicalUri;
@@ -157,5 +164,31 @@ public class SegmentEvent implements Identified {
 
     public void setCustomFields(Map<String, String> customFields) {
         this.customFields = customFields;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        SegmentEvent that = (SegmentEvent) object;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(canonicalUri, that.canonicalUri) &&
+                Objects.equals(curie, that.curie) &&
+                NullOrEmptyEquality.equals(aliasUrls, that.aliasUrls) &&
+                NullOrEmptyEquality.equals(aliases, that.aliases) &&
+                NullOrEmptyEquality.equals(equivalentTo, that.equivalentTo) &&
+                Objects.equals(position, that.position) &&
+                Objects.equals(offset, that.offset) &&
+                Objects.equals(isChapter, that.isChapter) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(segmentRef, that.segmentRef) &&
+                Objects.equals(versionId, that.versionId) &&
+                Objects.equals(publisher, that.publisher) &&
+                NullOrEmptyEquality.equals(customFields, that.customFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, position, offset, isChapter, description, segmentRef, versionId, publisher, customFields);
     }
 }

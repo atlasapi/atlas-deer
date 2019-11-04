@@ -3,9 +3,11 @@ package org.atlasapi.content.v2.model.pojo;
 import org.atlasapi.content.v2.model.Identified;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Ref;
+import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class Location implements Identified {
@@ -162,5 +164,32 @@ public class Location implements Identified {
 
     public void setCustomFields(Map<String, String> customFields) {
         this.customFields = customFields;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Location location = (Location) object;
+        return Objects.equals(id, location.id) &&
+                Objects.equals(canonicalUri, location.canonicalUri) &&
+                Objects.equals(curie, location.curie) &&
+                NullOrEmptyEquality.equals(aliasUrls, location.aliasUrls) &&
+                NullOrEmptyEquality.equals(aliases, location.aliases) &&
+                NullOrEmptyEquality.equals(equivalentTo, location.equivalentTo) &&
+                Objects.equals(available, location.available) &&
+                Objects.equals(transportIsLive, location.transportIsLive) &&
+                Objects.equals(transportSubType, location.transportSubType) &&
+                Objects.equals(transportType, location.transportType) &&
+                Objects.equals(uri, location.uri) &&
+                Objects.equals(embedCode, location.embedCode) &&
+                Objects.equals(embedId, location.embedId) &&
+                Objects.equals(policy, location.policy) &&
+                NullOrEmptyEquality.equals(customFields, location.customFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, available, transportIsLive, transportSubType, transportType, uri, embedCode, embedId, policy, customFields);
     }
 }

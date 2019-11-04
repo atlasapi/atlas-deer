@@ -4,6 +4,8 @@ import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.Frozen;
 import com.datastax.driver.mapping.annotations.UDT;
 
+import java.util.Objects;
+
 @UDT(name = "broadcastref")
 public class BroadcastRef {
 
@@ -35,5 +37,20 @@ public class BroadcastRef {
 
     public void setInterval(Interval interval) {
         this.interval = interval;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        BroadcastRef that = (BroadcastRef) object;
+        return Objects.equals(sourceId, that.sourceId) &&
+                Objects.equals(channelId, that.channelId) &&
+                Objects.equals(interval, that.interval);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sourceId, channelId, interval);
     }
 }

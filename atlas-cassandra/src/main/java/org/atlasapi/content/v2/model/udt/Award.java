@@ -3,6 +3,8 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
+import java.util.Objects;
+
 @UDT(name = "award")
 public class Award {
 
@@ -43,5 +45,21 @@ public class Award {
 
     public void setYear(Integer year) {
         this.year = year;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Award award = (Award) object;
+        return Objects.equals(outcome, award.outcome) &&
+                Objects.equals(title, award.title) &&
+                Objects.equals(description, award.description) &&
+                Objects.equals(year, award.year);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(outcome, title, description, year);
     }
 }

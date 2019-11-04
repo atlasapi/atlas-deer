@@ -3,8 +3,10 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.atlasapi.content.v2.model.IdentifiedWithoutUpdateTimes;
+import org.atlasapi.util.NullOrEmptyEquality;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @UDT(name = "restriction")
@@ -120,5 +122,29 @@ public class Restriction implements IdentifiedWithoutUpdateTimes {
 
     public void setCustomFields(Map<String, String> customFields) {
         this.customFields = customFields;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Restriction that = (Restriction) object;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(canonicalUri, that.canonicalUri) &&
+                Objects.equals(curie, that.curie) &&
+                NullOrEmptyEquality.equals(aliasUrls, that.aliasUrls) &&
+                NullOrEmptyEquality.equals(aliases, that.aliases) &&
+                NullOrEmptyEquality.equals(equivalentTo, that.equivalentTo) &&
+                Objects.equals(restricted, that.restricted) &&
+                Objects.equals(minimumAge, that.minimumAge) &&
+                Objects.equals(message, that.message) &&
+                Objects.equals(authority, that.authority) &&
+                Objects.equals(rating, that.rating) &&
+                NullOrEmptyEquality.equals(customFields, that.customFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, restricted, minimumAge, message, authority, rating, customFields);
     }
 }

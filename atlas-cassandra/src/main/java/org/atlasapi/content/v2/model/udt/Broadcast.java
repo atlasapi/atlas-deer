@@ -3,10 +3,12 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.atlasapi.content.v2.model.Identified;
+import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 import org.joda.time.LocalDate;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @UDT(name = "broadcast")
@@ -303,5 +305,47 @@ public class Broadcast implements Identified {
 
     public void setCustomFields(Map<String, String> customFields) {
         this.customFields = customFields;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Broadcast broadcast = (Broadcast) object;
+        return Objects.equals(id, broadcast.id) &&
+                Objects.equals(canonicalUri, broadcast.canonicalUri) &&
+                Objects.equals(curie, broadcast.curie) &&
+                NullOrEmptyEquality.equals(aliasUrls, broadcast.aliasUrls) &&
+                NullOrEmptyEquality.equals(aliases, broadcast.aliases) &&
+                NullOrEmptyEquality.equals(equivalentTo, broadcast.equivalentTo) &&
+                Objects.equals(channelId, broadcast.channelId) &&
+                Objects.equals(transmissionStart, broadcast.transmissionStart) &&
+                Objects.equals(transmissionEnd, broadcast.transmissionEnd) &&
+                Objects.equals(broadcastDuration, broadcast.broadcastDuration) &&
+                Objects.equals(scheduleDate, broadcast.scheduleDate) &&
+                Objects.equals(activelyPublished, broadcast.activelyPublished) &&
+                Objects.equals(versionId, broadcast.versionId) &&
+                Objects.equals(repeat, broadcast.repeat) &&
+                Objects.equals(subtitled, broadcast.subtitled) &&
+                Objects.equals(signed, broadcast.signed) &&
+                Objects.equals(audioDescribed, broadcast.audioDescribed) &&
+                Objects.equals(highDefinition, broadcast.highDefinition) &&
+                Objects.equals(widescreen, broadcast.widescreen) &&
+                Objects.equals(surround, broadcast.surround) &&
+                Objects.equals(live, broadcast.live) &&
+                Objects.equals(newSeries, broadcast.newSeries) &&
+                Objects.equals(newEpisode, broadcast.newEpisode) &&
+                Objects.equals(newOneOff, broadcast.newOneOff) &&
+                Objects.equals(premiere, broadcast.premiere) &&
+                Objects.equals(continuation, broadcast.continuation) &&
+                Objects.equals(is3d, broadcast.is3d) &&
+                Objects.equals(blackoutRestriction, broadcast.blackoutRestriction) &&
+                Objects.equals(revisedRepeat, broadcast.revisedRepeat) &&
+                NullOrEmptyEquality.equals(customFields, broadcast.customFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, channelId, transmissionStart, transmissionEnd, broadcastDuration, scheduleDate, activelyPublished, versionId, repeat, subtitled, signed, audioDescribed, highDefinition, widescreen, surround, live, newSeries, newEpisode, newOneOff, premiere, continuation, is3d, blackoutRestriction, revisedRepeat, customFields);
     }
 }

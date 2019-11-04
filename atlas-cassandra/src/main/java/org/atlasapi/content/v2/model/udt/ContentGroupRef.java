@@ -3,6 +3,8 @@ package org.atlasapi.content.v2.model.udt;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
+import java.util.Objects;
+
 @UDT(name = "contentgroupref")
 public class ContentGroupRef {
 
@@ -25,5 +27,19 @@ public class ContentGroupRef {
 
     public void setUri(String uri) {
         this.uri = uri;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ContentGroupRef that = (ContentGroupRef) object;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(uri, that.uri);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, uri);
     }
 }
