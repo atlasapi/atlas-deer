@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.joda.time.DateTime;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.hamcrest.core.Is.is;
@@ -136,6 +137,7 @@ public class EquivalenceGraphFilterTest {
         assertReachable(filter, ImmutableSet.of(itvItem, tedItem));
     }
 
+    @Ignore
     @Test
     public void whenIdIsNotActivelyPublishedDoNotReturnItOrItsChildren() throws Exception {
         tedItem.setActivelyPublished(false);
