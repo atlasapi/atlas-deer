@@ -458,7 +458,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                             .withActivelyPublishedIds(
                                     content.get(setId)
                                             .stream()
-                                            .filter(Content::isActivelyPublished)
+                                            //.filter(Content::isActivelyPublished)
                                             .map(Content::getId)
                                             .collect(MoreCollectors.toImmutableSet())
                             )
