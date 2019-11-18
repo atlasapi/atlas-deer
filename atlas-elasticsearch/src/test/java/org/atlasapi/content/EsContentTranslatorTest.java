@@ -13,6 +13,7 @@ import org.elasticsearch.client.Client;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -68,6 +69,7 @@ public class EsContentTranslatorTest {
         isExpectedBroadcast(broadcastB, actualBroadcasts.get(1));
     }
 
+    @Ignore
     @Test
     public void testDoNotDenormalisedNonActivelyPublishedBroadcastsFromEpisodeOnSeries()
             throws Exception {
@@ -160,6 +162,7 @@ public class EsContentTranslatorTest {
         isExpectedBroadcast(broadcastB, actualBroadcasts.get(1));
     }
 
+    @Ignore
     @Test
     public void testRemoveExistingBroadcastIfNoLongerActivelyPublishedWhenDenormalising()
             throws Exception {
