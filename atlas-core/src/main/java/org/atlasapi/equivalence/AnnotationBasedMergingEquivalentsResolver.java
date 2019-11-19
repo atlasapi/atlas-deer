@@ -63,6 +63,12 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
                     getRequestedReadConsistencyLevel(operands, application.getAccessRoles())
             );
         } else {
+            if (activeAnnotations.contains(Annotation.IS_PUBLISHED)) {
+                throw new IllegalArgumentException(
+                        "Resolving content without NON_MERGED and with "
+                        + "IS_PUBLISHED annotations is currently unsupported.");
+            }
+
             ListenableFuture<ResolvedEquivalents<E>> unmerged = resolver.resolveIds(
                     ids,
                     application.getConfiguration().getEnabledReadSources(),

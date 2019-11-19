@@ -12,6 +12,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.annotation.Nullable;
@@ -377,7 +378,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 activeAnnotations
         );
 
-        return filterContentSets(selectedSources, content, graphs, index);
+        return filterContentSets(selectedSources, content, graphs, index, activeAnnotations);
     }
 
     private ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> deserializeGraphs(
@@ -428,7 +429,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             Set<Publisher> selectedSources,
             ImmutableSetMultimap<Long, Content> content,
             ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs,
-            Map<Long, Long> index
+            Map<Long, Long> index,
+            Set<Annotation> activeAnnotations
     ) {
         ImmutableSetMultimap.Builder<Long, Content> filteredContentBuilder =
                 ImmutableSetMultimap.builder();
@@ -441,6 +443,17 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 ));
 
         for (Long setId : content.keySet()) {
+
+            Stream<Content> contentStream = content.get(setId).stream();
+
+            if (!activeAnnotations.contains(Annotation.IS_PUBLISHED)) {
+                contentStream = contentStream.filter(Content::isActivelyPublished);
+            }
+
+            ImmutableSet<Id> ids = contentStream
+                    .map(Content::getId)
+                    .collect(MoreCollectors.toImmutableSet());
+
             ImmutableSet<Content> filteredContent = content.get(setId)
                     .stream()
                     .filter(EquivalenceGraphFilter
@@ -453,13 +466,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                             .withGraph(graphs.get(setId))
                             .withSelectedSources(selectedSources)
                             .withSelectedGraphSources(selectedSources)
-                            .withIds(
-                                    content.get(setId)
-                                            .stream()
-                                            //.filter(Content::isActivelyPublished)
-                                            .map(Content::getId)
-                                            .collect(MoreCollectors.toImmutableSet())
-                            )
+                            .withIds(ids)
                             .build()
                     )
                     .collect(MoreCollectors.toImmutableSet());
