@@ -61,6 +61,7 @@ public abstract class Content extends Described
     private Boolean genericDescription = Boolean.FALSE;
     private ImmutableSet<EventRef> eventRefs = ImmutableSet.of();
     private Set<Country> countriesOfOrigin = ImmutableSet.of();
+    private Boolean isPublished = null;
 
     public Content(String uri, String curie, Publisher publisher) {
         super(uri, curie, publisher);
@@ -324,5 +325,14 @@ public abstract class Content extends Described
                 .filter(Location::isAvailable)
                 .map(Location::toSummary)
                 .collect(Collectors.toSet());
+    }
+
+    @FieldName("is_published")
+    public Boolean getIsPublished() {
+        return isPublished;
+    }
+
+    public void setIsPublished(Boolean isPublished) {
+        this.isPublished = isPublished;
     }
 }

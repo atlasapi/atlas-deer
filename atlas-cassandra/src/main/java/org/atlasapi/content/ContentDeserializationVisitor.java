@@ -43,6 +43,7 @@ import static org.atlasapi.annotation.Annotation.BROADCASTS;
 import static org.atlasapi.annotation.Annotation.CURRENT_AND_FUTURE_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.EXTENDED_DESCRIPTION;
 import static org.atlasapi.annotation.Annotation.FIRST_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.IS_PUBLISHED;
 import static org.atlasapi.annotation.Annotation.LOCATIONS;
 import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
@@ -301,6 +302,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
 
         content.setCountriesOfOrigin(Countries.fromCodes(msg.getCountriesList()));
+
+        boolean hasIsPublishedAnnotation = annotations.contains(IS_PUBLISHED);
+        content.setIsPublished(hasIsPublishedAnnotation);
 
         return content;
     }

@@ -60,7 +60,7 @@ public class EquivalenceGraphFilterTest {
                 .withGraph(Optional.of(graph))
                 .withSelectedSources(Publisher.all())
                 .withSelectedGraphSources(Publisher.all())
-                .withActivelyPublishedIds(graph.getEquivalenceSet())
+                .withIds(graph.getEquivalenceSet())
                 .build();
 
         assertReachable(
@@ -90,7 +90,7 @@ public class EquivalenceGraphFilterTest {
                                 ImmutableSet.of(Publisher.TED)
                         )
                 )
-                .withActivelyPublishedIds(graph.getEquivalenceSet())
+                .withIds(graph.getEquivalenceSet())
                 .build();
 
         assertReachable(filter, ImmutableSet.of(bbcItem, c4Item, huluItem, paItem, tedItem));
@@ -104,7 +104,7 @@ public class EquivalenceGraphFilterTest {
                 .withGraph(Optional.of(graph))
                 .withSelectedSources(Publisher.all())
                 .withSelectedGraphSources(ImmutableSet.of())
-                .withActivelyPublishedIds(graph.getEquivalenceSet())
+                .withIds(graph.getEquivalenceSet())
                 .build();
 
         assertReachable(filter, ImmutableSet.of(paItem));
@@ -118,7 +118,7 @@ public class EquivalenceGraphFilterTest {
                 .withGraph(Optional.of(graph))
                 .withSelectedSources(Publisher.all())
                 .withSelectedGraphSources(ImmutableSet.of(Publisher.VIMEO))
-                .withActivelyPublishedIds(graph.getEquivalenceSet())
+                .withIds(graph.getEquivalenceSet())
                 .build();
 
         assertReachable(filter, ImmutableSet.of(vimeoItem, tedItem));
@@ -131,7 +131,7 @@ public class EquivalenceGraphFilterTest {
                 .withGraph(Optional.of(graph))
                 .withSelectedSources(Publisher.all())
                 .withSelectedGraphSources(ImmutableSet.of(Publisher.ITV))
-                .withActivelyPublishedIds(graph.getEquivalenceSet())
+                .withIds(graph.getEquivalenceSet())
                 .build();
 
         assertReachable(filter, ImmutableSet.of(itvItem, tedItem));
@@ -147,7 +147,7 @@ public class EquivalenceGraphFilterTest {
                 .withGraph(Optional.of(graph))
                 .withSelectedSources(Publisher.all())
                 .withSelectedGraphSources(Publisher.all())
-                .withActivelyPublishedIds(
+                .withIds(
                         Sets.difference(
                                 graph.getEquivalenceSet(),
                                 ImmutableSet.of(tedItem.getId())
@@ -168,7 +168,7 @@ public class EquivalenceGraphFilterTest {
                 .withGraph(Optional.of(graph))
                 .withSelectedSources(Publisher.all())
                 .withSelectedGraphSources(Publisher.all())
-                .withActivelyPublishedIds(
+                .withIds(
                         Sets.difference(
                                 graph.getEquivalenceSet(),
                                 ImmutableSet.of(tedItem.getId())
@@ -198,7 +198,7 @@ public class EquivalenceGraphFilterTest {
                 .withGraph(Optional.of(graph))
                 .withSelectedSources(ImmutableSet.of(Publisher.PA))
                 .withSelectedGraphSources(Publisher.all())
-                .withActivelyPublishedIds(graph.getEquivalenceSet())
+                .withIds(graph.getEquivalenceSet())
                 .build();
 
         assertReachable(filter, ImmutableSet.of(paItem));
@@ -222,7 +222,7 @@ public class EquivalenceGraphFilterTest {
                 .withGraph(Optional.of(graph))
                 .withSelectedSources(ImmutableSet.of(Publisher.VIMEO))
                 .withSelectedGraphSources(Publisher.all())
-                .withActivelyPublishedIds(graph.getEquivalenceSet())
+                .withIds(graph.getEquivalenceSet())
                 .build();
 
         assertReachable(filter, ImmutableSet.of(vimeoItem));
@@ -252,7 +252,7 @@ public class EquivalenceGraphFilterTest {
                         )
                 )
                 .withSelectedGraphSources(ImmutableSet.of())
-                .withActivelyPublishedIds(Sets.difference(
+                .withIds(Sets.difference(
                         graph.getEquivalenceSet(),
                         ImmutableSet.of(tedItem.getId()))
                 )

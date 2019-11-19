@@ -10,6 +10,7 @@ import java.util.Map;
 
 public enum Annotation {
     //The order of these entries defines the order of output fields
+    IS_PUBLISHED,
     LICENSE,
     ID_SUMMARY,
     ID,
@@ -80,7 +81,7 @@ public enum Annotation {
     CHANNEL_GROUP_INFO,
     CHANNEL_IDS,
     FUTURE_CHANNELS,
-    CUSTOM_FIELDS
+    CUSTOM_FIELDS,
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());

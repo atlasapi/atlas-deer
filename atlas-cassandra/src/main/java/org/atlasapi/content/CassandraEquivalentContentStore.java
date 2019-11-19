@@ -17,8 +17,6 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.criteria.AttributeQuerySet;
-import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
@@ -455,7 +453,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                             .withGraph(graphs.get(setId))
                             .withSelectedSources(selectedSources)
                             .withSelectedGraphSources(selectedSources)
-                            .withActivelyPublishedIds(
+                            .withIds(
                                     content.get(setId)
                                             .stream()
                                             //.filter(Content::isActivelyPublished)
