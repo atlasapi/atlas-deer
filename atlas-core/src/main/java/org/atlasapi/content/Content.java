@@ -326,13 +326,4 @@ public abstract class Content extends Described
                 .map(Location::toSummary)
                 .collect(Collectors.toSet());
     }
-
-    @FieldName("is_published")
-    public Boolean getIsPublished() {
-        return isPublished;
-    }
-
-    public void setIsPublished(Boolean isPublished) {
-        this.isPublished = isPublished;
-    }
 }

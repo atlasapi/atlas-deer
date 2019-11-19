@@ -303,9 +303,6 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
         content.setCountriesOfOrigin(Countries.fromCodes(msg.getCountriesList()));
 
-        boolean hasIsPublishedAnnotation = annotations.contains(IS_PUBLISHED);
-        content.setIsPublished(hasIsPublishedAnnotation);
-
         return content;
     }
 
