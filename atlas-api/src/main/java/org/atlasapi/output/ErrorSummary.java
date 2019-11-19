@@ -8,6 +8,7 @@ import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 import org.atlasapi.query.common.exceptions.InvalidIdentifierException;
 import org.atlasapi.query.common.exceptions.InvalidParameterException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 
 import com.metabroadcast.common.http.HttpStatusCode;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -166,6 +167,13 @@ public class ErrorSummary {
                         InvalidTransitionException.class,
                         new DefaultErrorSummaryFactory(
                                 "INVALID_TRANSITION",
+                                HttpStatusCode.BAD_REQUEST
+                        )
+                )
+                .put(
+                        QueryExecutionException.class,
+                        new DefaultErrorSummaryFactory(
+                                "QUERY_EXECUTION",
                                 HttpStatusCode.BAD_REQUEST
                         )
                 )
