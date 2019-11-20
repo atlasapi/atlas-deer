@@ -1,10 +1,13 @@
 package org.atlasapi.query.v4.content;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
 import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
@@ -22,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import scala.actors.threadpool.Arrays;
 
 /**
  * An endpoint for serving pieces of Content. Content can be fetched either by unique ID or by
@@ -58,6 +62,14 @@ public class ContentController {
         try {
             writer = writerResolver.writerFor(request, response);
             Query<Content> contentQuery = requestParser.parse(request);
+
+            Collection<Annotation> annotations = contentQuery.getContext().getAnnotations().values();
+            if (annotations.contains(Annotation.IS_PUBLISHED) && !annotations.contains(Annotation.NON_MERGED)) {
+                throw new IllegalArgumentException(
+                        "Resolving content without NON_MERGED and with "
+                        + "IS_PUBLISHED annotations is currently unsupported.");
+            }
+
             QueryResult<Content> queryResult = queryExecutor.execute(contentQuery);
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {

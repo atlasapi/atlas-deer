@@ -170,13 +170,6 @@ public class ErrorSummary {
                                 HttpStatusCode.BAD_REQUEST
                         )
                 )
-                .put(
-                        QueryExecutionException.class,
-                        new DefaultErrorSummaryFactory(
-                                "QUERY_EXECUTION",
-                                HttpStatusCode.BAD_REQUEST
-                        )
-                )
                 .build();
     }
 

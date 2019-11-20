@@ -137,9 +137,8 @@ public class EquivalenceGraphFilterTest {
         assertReachable(filter, ImmutableSet.of(itvItem, tedItem));
     }
 
-    @Ignore
     @Test
-    public void whenIdIsNotActivelyPublishedDoNotReturnItOrItsChildren() throws Exception {
+    public void whenIdIsNotActivelyPublishedReturnItButNotItsChildren() throws Exception {
         tedItem.setActivelyPublished(false);
 
         EquivalenceGraphFilter filter = EquivalenceGraphFilter.builder()
@@ -155,8 +154,8 @@ public class EquivalenceGraphFilterTest {
                 )
                 .build();
 
-        assertReachable(filter, ImmutableSet.of(bbcItem, c4Item, huluItem, paItem));
-        assertUnreachable(filter, ImmutableSet.of(tedItem, vimeoItem, itvItem));
+        assertReachable(filter, ImmutableSet.of(bbcItem, c4Item, huluItem, paItem, tedItem));
+        assertUnreachable(filter, ImmutableSet.of(vimeoItem, itvItem));
     }
 
     @Test

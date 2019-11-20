@@ -49,7 +49,6 @@ import org.joda.time.DateTimeZone;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -165,7 +164,6 @@ public abstract class CassandraContentStoreIT {
         assertThat(item.getThisOrChildLastUpdated(), is(now));
     }
 
-    @Ignore
     @Test
     public void testWriteAndReadTopLevelItemWithActivelyPublishedFalse() throws Exception {
         Content content = create(new Item());
@@ -1272,7 +1270,6 @@ public abstract class CassandraContentStoreIT {
 
     }
 
-    @Ignore
     @Test
     public void testDeleteSeriesReferenceIfContentIsNotActivelyPublished() throws Exception {
 
@@ -1318,7 +1315,6 @@ public abstract class CassandraContentStoreIT {
         verify(sender, times(7)).sendMessage(captor.capture(), any());
     }
 
-    @Ignore
     @Test
     public void testDeletesItemReferencesFromContainersWhenContentIsNoLongerActivelyPublished()
             throws WriteException, InterruptedException, ExecutionException, TimeoutException {
@@ -1421,7 +1417,6 @@ public abstract class CassandraContentStoreIT {
 
     }
 
-    @Ignore
     @Test
     public void testDeletesItemWithoutSeriesReferencesFromContainersWhenContentIsNoLongerActivelyPublished()
             throws WriteException, InterruptedException, ExecutionException, TimeoutException {
