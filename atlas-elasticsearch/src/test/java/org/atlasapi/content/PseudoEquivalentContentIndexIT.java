@@ -21,7 +21,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -83,7 +82,6 @@ public class PseudoEquivalentContentIndexIT {
         assertThat(ids, is(ImmutableList.of(Id.valueOf(2L), Id.valueOf(3L))));
     }
 
-    @Ignore
     @Test
     public void testRemovesNonActivelyPublishedContent()
             throws IndexException, ExecutionException, InterruptedException {

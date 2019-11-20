@@ -8,7 +8,6 @@ import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 import org.atlasapi.query.common.exceptions.InvalidIdentifierException;
 import org.atlasapi.query.common.exceptions.InvalidParameterException;
-import org.atlasapi.query.common.exceptions.QueryExecutionException;
 
 import com.metabroadcast.common.http.HttpStatusCode;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;

@@ -61,7 +61,6 @@ public abstract class Content extends Described
     private Boolean genericDescription = Boolean.FALSE;
     private ImmutableSet<EventRef> eventRefs = ImmutableSet.of();
     private Set<Country> countriesOfOrigin = ImmutableSet.of();
-    private Boolean isPublished = null;
 
     public Content(String uri, String curie, Publisher publisher) {
         super(uri, curie, publisher);

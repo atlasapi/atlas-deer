@@ -22,7 +22,6 @@ import com.google.common.collect.testing.AbstractTester;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.DateTime;
-import org.junit.Ignore;
 
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;

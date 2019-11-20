@@ -29,7 +29,6 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.instanceOf;
@@ -99,7 +98,6 @@ public class ContentSerializerTest {
         checkItemProperties(deserializedItem, item);
     }
 
-    @Ignore
     @Test
     public void testDeSerializesItemWithActivelyPublishedFalse() {
         Item item = new Item();
