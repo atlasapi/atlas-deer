@@ -23,9 +23,11 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
 
     private final ImmutableSet<Publisher> selectedSources;
     private final ImmutableSet<Id> selectedIds;
+    private final boolean allowUnpublished;
 
     private EquivalenceGraphFilter(Builder builder) {
         this.selectedSources = ImmutableSet.copyOf(builder.selectedSources);
+        this.allowUnpublished = builder.allowUnpublished;
 
         if (!builder.graph.isPresent() || !builder.graphEntryId.isPresent()) {
             this.selectedIds = ImmutableSet.copyOf(builder.ids);
@@ -65,7 +67,8 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
 
     @Override
     public boolean test(Content content) {
-        return selectedSources.contains(content.getSource())
+        return (allowUnpublished || content.isActivelyPublished())
+                && selectedSources.contains(content.getSource())
                 && selectedIds.contains(content.getId());
     }
 
@@ -128,7 +131,12 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
 
     public interface IdsStep {
 
-        BuildStep withIds(Set<Id> ids);
+        AllowUnpublishedStep withIds(Set<Id> ids);
+    }
+
+    public interface AllowUnpublishedStep {
+
+        BuildStep withAllowUnpublished(boolean allowUnpublished);
     }
 
     public interface BuildStep {
@@ -138,13 +146,14 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
 
     public static class Builder
             implements GraphEntryIdStep, GraphStep, SelectedSourcesStep, SelectedGraphSourcesStep,
-            IdsStep, BuildStep {
+            IdsStep, AllowUnpublishedStep, BuildStep {
 
         private Optional<Id> graphEntryId;
         private Optional<EquivalenceGraph> graph;
         private Set<Publisher> selectedSources;
         private Set<Publisher> selectedGraphSources;
         private Set<Id> ids;
+        private boolean allowUnpublished;
 
         private Builder() {
         }
@@ -192,8 +201,14 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
          * will neither be returned by the filter nor will its children get traversed
          */
         @Override
-        public BuildStep withIds(Set<Id> ids) {
+        public AllowUnpublishedStep withIds(Set<Id> ids) {
             this.ids = ids;
+            return this;
+        }
+
+        @Override
+        public BuildStep withAllowUnpublished(boolean allowUnpublished) {
+            this.allowUnpublished = allowUnpublished;
             return this;
         }
 

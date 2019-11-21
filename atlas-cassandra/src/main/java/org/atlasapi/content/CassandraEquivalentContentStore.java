@@ -442,11 +442,13 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         Entry::getKey
                 ));
 
+        boolean allowUnpublished = activeAnnotations.contains(Annotation.IS_PUBLISHED);
+
         for (Long setId : content.keySet()) {
 
             Stream<Content> contentStream = content.get(setId).stream();
 
-            if (!activeAnnotations.contains(Annotation.IS_PUBLISHED)) {
+            if (!allowUnpublished) {
                 contentStream = contentStream.filter(Content::isActivelyPublished);
             }
 
@@ -467,6 +469,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                             .withSelectedSources(selectedSources)
                             .withSelectedGraphSources(selectedSources)
                             .withIds(ids)
+                            .withAllowUnpublished(allowUnpublished)
                             .build()
                     )
                     .collect(MoreCollectors.toImmutableSet());

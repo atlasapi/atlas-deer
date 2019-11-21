@@ -60,6 +60,7 @@ public class EquivalenceGraphFilterTest {
                 .withSelectedSources(Publisher.all())
                 .withSelectedGraphSources(Publisher.all())
                 .withIds(graph.getEquivalenceSet())
+                .withAllowUnpublished(false)
                 .build();
 
         assertReachable(
@@ -90,6 +91,7 @@ public class EquivalenceGraphFilterTest {
                         )
                 )
                 .withIds(graph.getEquivalenceSet())
+                .withAllowUnpublished(false)
                 .build();
 
         assertReachable(filter, ImmutableSet.of(bbcItem, c4Item, huluItem, paItem, tedItem));
@@ -104,6 +106,7 @@ public class EquivalenceGraphFilterTest {
                 .withSelectedSources(Publisher.all())
                 .withSelectedGraphSources(ImmutableSet.of())
                 .withIds(graph.getEquivalenceSet())
+                .withAllowUnpublished(false)
                 .build();
 
         assertReachable(filter, ImmutableSet.of(paItem));
@@ -118,6 +121,7 @@ public class EquivalenceGraphFilterTest {
                 .withSelectedSources(Publisher.all())
                 .withSelectedGraphSources(ImmutableSet.of(Publisher.VIMEO))
                 .withIds(graph.getEquivalenceSet())
+                .withAllowUnpublished(false)
                 .build();
 
         assertReachable(filter, ImmutableSet.of(vimeoItem, tedItem));
@@ -131,6 +135,7 @@ public class EquivalenceGraphFilterTest {
                 .withSelectedSources(Publisher.all())
                 .withSelectedGraphSources(ImmutableSet.of(Publisher.ITV))
                 .withIds(graph.getEquivalenceSet())
+                .withAllowUnpublished(false)
                 .build();
 
         assertReachable(filter, ImmutableSet.of(itvItem, tedItem));
@@ -151,6 +156,7 @@ public class EquivalenceGraphFilterTest {
                                 ImmutableSet.of(tedItem.getId())
                         )
                 )
+                .withAllowUnpublished(false)
                 .build();
 
         assertReachable(filter, ImmutableSet.of(bbcItem, c4Item, huluItem, paItem, tedItem));
@@ -172,6 +178,7 @@ public class EquivalenceGraphFilterTest {
                                 ImmutableSet.of(tedItem.getId())
                         )
                 )
+                .withAllowUnpublished(false)
                 .build();
 
         assertReachable(filter, ImmutableSet.of());
@@ -197,6 +204,7 @@ public class EquivalenceGraphFilterTest {
                 .withSelectedSources(ImmutableSet.of(Publisher.PA))
                 .withSelectedGraphSources(Publisher.all())
                 .withIds(graph.getEquivalenceSet())
+                .withAllowUnpublished(false)
                 .build();
 
         assertReachable(filter, ImmutableSet.of(paItem));
@@ -221,6 +229,7 @@ public class EquivalenceGraphFilterTest {
                 .withSelectedSources(ImmutableSet.of(Publisher.VIMEO))
                 .withSelectedGraphSources(Publisher.all())
                 .withIds(graph.getEquivalenceSet())
+                .withAllowUnpublished(false)
                 .build();
 
         assertReachable(filter, ImmutableSet.of(vimeoItem));
@@ -254,6 +263,7 @@ public class EquivalenceGraphFilterTest {
                         graph.getEquivalenceSet(),
                         ImmutableSet.of(tedItem.getId()))
                 )
+                .withAllowUnpublished(false)
                 .build();
 
         assertReachable(
