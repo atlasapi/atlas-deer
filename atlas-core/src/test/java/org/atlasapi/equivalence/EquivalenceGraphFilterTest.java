@@ -159,8 +159,8 @@ public class EquivalenceGraphFilterTest {
                 .withAllowUnpublished(false)
                 .build();
 
-        assertReachable(filter, ImmutableSet.of(bbcItem, c4Item, huluItem, paItem, tedItem));
-        assertUnreachable(filter, ImmutableSet.of(vimeoItem, itvItem));
+        assertReachable(filter, ImmutableSet.of(bbcItem, c4Item, huluItem, paItem));
+        assertUnreachable(filter, ImmutableSet.of(tedItem, vimeoItem, itvItem));
     }
 
     @Test
