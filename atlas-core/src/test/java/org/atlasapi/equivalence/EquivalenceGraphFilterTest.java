@@ -142,7 +142,7 @@ public class EquivalenceGraphFilterTest {
     }
 
     @Test
-    public void whenIdIsNotActivelyPublishedReturnItButNotItsChildren() throws Exception {
+    public void whenIdIsNotActivelyPublishedDoNotReturnItOrItsChildren() throws Exception {
         tedItem.setActivelyPublished(false);
 
         EquivalenceGraphFilter filter = EquivalenceGraphFilter.builder()
