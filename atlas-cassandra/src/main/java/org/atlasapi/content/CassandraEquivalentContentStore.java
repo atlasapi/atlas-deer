@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -65,6 +66,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.google.inject.Key;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -444,6 +446,11 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         boolean allowUnpublished = activeAnnotations.contains(Annotation.IS_PUBLISHED);
 
+        ImmutableSet<Id> allowUnpublishedIds = (allowUnpublished)
+                ? index.keySet().stream().map(Id::valueOf).collect(MoreCollectors.toImmutableSet())
+                : ImmutableSet.of();
+
+
         for (Long setId : content.keySet()) {
 
             Stream<Content> contentStream = content.get(setId).stream();
@@ -469,7 +476,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                             .withSelectedSources(selectedSources)
                             .withSelectedGraphSources(selectedSources)
                             .withIds(ids)
-                            .withAllowUnpublished(allowUnpublished)
+                            .withAllowUnpublishedIds(allowUnpublishedIds)
                             .build()
                     )
                     .collect(MoreCollectors.toImmutableSet());

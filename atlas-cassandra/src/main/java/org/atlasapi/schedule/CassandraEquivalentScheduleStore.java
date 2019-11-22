@@ -796,7 +796,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                                                     .map(Item::getId)
                                                     .collect(MoreCollectors.toImmutableSet())
                                     )
-                                    .withAllowUnpublished(false)
+                                    .withAllowUnpublishedIds(ImmutableSet.of())
                                     .build()
                     )
                     .collect(MoreCollectors.toImmutableSet());
