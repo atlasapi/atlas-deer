@@ -10,10 +10,10 @@ import java.util.Map;
 
 public enum Annotation {
     //The order of these entries defines the order of output fields
-    IS_PUBLISHED,
     LICENSE,
     ID_SUMMARY,
     ID,
+    IS_PUBLISHED,
     EXTENDED_ID,
     DESCRIPTION,
     EXTENDED_DESCRIPTION,

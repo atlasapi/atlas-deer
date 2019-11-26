@@ -62,14 +62,6 @@ public class ContentController {
         try {
             writer = writerResolver.writerFor(request, response);
             Query<Content> contentQuery = requestParser.parse(request);
-
-            Collection<Annotation> annotations = contentQuery.getContext().getAnnotations().values();
-            if (annotations.contains(Annotation.IS_PUBLISHED) && !annotations.contains(Annotation.NON_MERGED)) {
-                throw new IllegalArgumentException(
-                        "Resolving content without NON_MERGED and with "
-                        + "IS_PUBLISHED annotations is currently unsupported.");
-            }
-
             QueryResult<Content> queryResult = queryExecutor.execute(contentQuery);
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {

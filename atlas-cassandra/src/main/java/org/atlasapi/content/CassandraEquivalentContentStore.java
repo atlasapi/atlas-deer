@@ -444,6 +444,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         Entry::getKey
                 ));
 
+        // If provided with IS_PUBLISHED annotation, we allow unpublished content to be displayed,
+        // and add the activelyPublished field to the output of the content call
         boolean allowUnpublished = activeAnnotations.contains(Annotation.IS_PUBLISHED);
 
         ImmutableSet<Id> allowUnpublishedIds = (allowUnpublished)

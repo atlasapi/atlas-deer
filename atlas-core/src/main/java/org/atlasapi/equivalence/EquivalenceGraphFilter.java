@@ -67,7 +67,7 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
 
     @Override
     public boolean test(Content content) {
-        return (allowUnpublishedIds.contains(content.getId()) || content.isActivelyPublished())
+        return (content.isActivelyPublished() || allowUnpublishedIds.contains(content.getId()))
                 && selectedSources.contains(content.getSource())
                 && selectedIds.contains(content.getId());
     }
