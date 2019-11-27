@@ -56,22 +56,24 @@ public class ChannelsBroadcastFilter {
                 )))
                 .collect(Collectors.toList());
 
-        ImmutableList.Builder<Broadcast> deduped = ImmutableList.builder();
+        // ENG-574: This logic is dumb and causes issues (missing broadcasts), so it was removed.
+        // (Maybe they had their reasons for adding them at the time, but we can't see any.)
 
-        // This logic will intentionally remove broadcasts starting at the same time on different
-        // channels. This is because channels tend to have multiple variants with the same
-        // schedule (e.g. SD and HD) and adding all of those broadcasts would significantly
-        // increase the size of the output. This logic will fail on the edge case where two
-        // broadcasts on two unrelated channels happen to start at exactly the same time.
-        DateTime lastTransmissionTime = null;
-        for (Broadcast broadcast : filteredSortedBroadcasts) {
-            if (broadcast.getTransmissionTime().equals(lastTransmissionTime)) {
-                continue;
-            }
-            lastTransmissionTime = broadcast.getTransmissionTime();
-            deduped.add(broadcast);
-        }
+//        ImmutableList.Builder<Broadcast> deduped = ImmutableList.builder();
+//        // This logic will intentionally remove broadcasts starting at the same time on different
+//        // channels. This is because channels tend to have multiple variants with the same
+//        // schedule (e.g. SD and HD) and adding all of those broadcasts would significantly
+//        // increase the size of the output. This logic will fail on the edge case where two
+//        // broadcasts on two unrelated channels happen to start at exactly the same time.
+//        DateTime lastTransmissionTime = null;
+//        for (Broadcast broadcast : filteredSortedBroadcasts) {
+//            if (broadcast.getTransmissionTime().equals(lastTransmissionTime)) {
+//                continue;
+//            }
+//            lastTransmissionTime = broadcast.getTransmissionTime();
+//            deduped.add(broadcast);
+//        }
 
-        return deduped.build();
+        return filteredSortedBroadcasts;
     }
 }
