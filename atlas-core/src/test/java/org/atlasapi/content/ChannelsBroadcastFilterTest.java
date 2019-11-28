@@ -12,6 +12,7 @@ import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.is;
@@ -50,6 +51,7 @@ public class ChannelsBroadcastFilterTest {
     }
 
     @Test
+    @Ignore // Removed as part of ENG-574
     public void broadcastsOnSameChannelWithSameStartDateTimeAreFilteredOut() throws Exception {
         Broadcast broadcastA = broadcast(channelIdA, now);
         Broadcast broadcastB = broadcast(channelIdA, now);
@@ -60,6 +62,7 @@ public class ChannelsBroadcastFilterTest {
     }
 
     @Test
+    @Ignore // Removed as part of ENG-574
     public void broadcastsOnDifferentChannelWithSameStartDateTimeAreFilteredOut() throws Exception {
         Broadcast broadcastA = broadcast(channelIdA, now);
         Broadcast broadcastB = broadcast(channelIdB, now);
