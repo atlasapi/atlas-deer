@@ -74,7 +74,8 @@ public class EpisodeSetter {
                     Payload payload = Payload.Builder.newBuilder()
                             .setSummary(
                                     String.format(
-                                            "Episode with id %s has more than one series ref",
+                                            "Episode with id %s has multiple series refs; search"
+                                                    + "for 'seriesref' in Current Support Concerns",
                                             episodeId
                                     )
                             )
