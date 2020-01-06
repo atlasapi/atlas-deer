@@ -79,7 +79,7 @@ public class EpisodeSetter {
                                             episodeId
                                     )
                             )
-                            .setSource("atlas-deer")
+                            .setSource("atlas-deer-processing")
                             .setSeverity(Severity.WARNING)
                             .setTimestamp(OffsetDateTime.now())
                             .build();
