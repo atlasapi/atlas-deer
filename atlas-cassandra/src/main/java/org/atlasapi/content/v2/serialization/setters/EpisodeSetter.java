@@ -27,9 +27,6 @@ public class EpisodeSetter {
     private final SeriesRefSerialization seriesRefSerialization = new SeriesRefSerialization();
     private final RefSerialization refSerialization = new RefSerialization();
 
-    private String pdIntegrationKey = null;
-    private boolean pdRaiseIncidents = false;   //disables alerting
-
     public void serialize(Content internal, org.atlasapi.content.Content content) {
         if (!Episode.class.isInstance(content)) {
             return;
@@ -65,8 +62,9 @@ public class EpisodeSetter {
             if (seriesRefs.size() > 1) {
                 log.error("Episode with id {} has more than one series ref", episodeId);
                 try {
-                    pdIntegrationKey = System.getenv("PD_INTEGRATION_KEY"); // NPE if missing
-                    pdRaiseIncidents = Boolean.parseBoolean(System.getenv("PD_RAISE_INCIDENTS"));
+                    String pdIntegrationKey = System.getenv("PD_INTEGRATION_KEY"); // NPE if missing
+                    boolean pdRaiseIncidents = Boolean.parseBoolean(System.getenv(
+                            "PD_RAISE_INCIDENTS"));     //disables alerting
 
                     PagerDutyClientWithKey pagerDutyClient = new PagerDutyClientWithKey(
                             PagerDutyEventsClient.create(),
@@ -85,8 +83,8 @@ public class EpisodeSetter {
                             .setTimestamp(OffsetDateTime.now())
                             .build();
                     pagerDutyClient.trigger(payload, String.valueOf(episodeId));
-                } catch (NullPointerException e) {
-                    log.warn("Cannot throw PagerDuty alert because no config found for it.");
+                } catch (Exception e) {
+                    log.warn("Triggering PagerDuty incident failed for {}", episodeId, e);
                 }
             }
 
