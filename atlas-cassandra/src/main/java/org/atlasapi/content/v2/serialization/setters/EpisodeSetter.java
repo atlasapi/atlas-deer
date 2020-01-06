@@ -20,13 +20,15 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.management.Sensor;
 
 public class EpisodeSetter {
     private static final Logger log = LoggerFactory.getLogger(EpisodeSetter.class);
 
     private final SeriesRefSerialization seriesRefSerialization = new SeriesRefSerialization();
     private final RefSerialization refSerialization = new RefSerialization();
+
+    private String pdIntegrationKey = null;
+    private boolean pdRaiseIncidents = false;   //disables alerting
 
     public void serialize(Content internal, org.atlasapi.content.Content content) {
         if (!Episode.class.isInstance(content)) {
@@ -59,27 +61,35 @@ public class EpisodeSetter {
 
         Map<Ref, SeriesRef> seriesRefs = internal.getSeriesRefs();
         if (seriesRefs != null && !seriesRefs.isEmpty()) {
-            PagerDutyClientWithKey pagerDutyClient = new PagerDutyClientWithKey(
-                    PagerDutyEventsClient.create(),
-                    System.getenv("PD_INTEGRATION_KEY"),
-                    Boolean.parseBoolean(System.getenv("PD_RAISE_INCIDENTS")) //disables both alerts.
-            );
 
-            if(seriesRefs.size() > 1) {
+            if (seriesRefs.size() > 1) {
                 log.error("Episode with id {} has more than one series ref", episodeId);
-                Payload payload = Payload.Builder.newBuilder()
-                        .setSummary(
-                                String.format(
-                                        "Episode with id %s has more than one series ref",
-                                        episodeId
-                                )
-                        )
-                        .setSource("atlas-deer")
-                        .setSeverity(Severity.WARNING)
-                        .setTimestamp(OffsetDateTime.now())
-                        .build();
-                pagerDutyClient.trigger(payload, String.valueOf(episodeId));
+                try {
+                    pdIntegrationKey = System.getenv("PD_INTEGRATION_KEY"); // NPE if missing
+                    pdRaiseIncidents = Boolean.parseBoolean(System.getenv("PD_RAISE_INCIDENTS"));
+
+                    PagerDutyClientWithKey pagerDutyClient = new PagerDutyClientWithKey(
+                            PagerDutyEventsClient.create(),
+                            pdIntegrationKey,
+                            pdRaiseIncidents
+                    );
+                    Payload payload = Payload.Builder.newBuilder()
+                            .setSummary(
+                                    String.format(
+                                            "Episode with id %s has more than one series ref",
+                                            episodeId
+                                    )
+                            )
+                            .setSource("atlas-deer")
+                            .setSeverity(Severity.WARNING)
+                            .setTimestamp(OffsetDateTime.now())
+                            .build();
+                    pagerDutyClient.trigger(payload, String.valueOf(episodeId));
+                } catch (NullPointerException e) {
+                    log.warn("Cannot throw PagerDuty alert because no config found for it.");
+                }
             }
+
             Map.Entry<Ref, SeriesRef> entry = Iterables.getOnlyElement(seriesRefs.entrySet());
 
             Ref ref = entry.getKey();
