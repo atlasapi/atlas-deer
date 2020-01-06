@@ -1,5 +1,6 @@
 package org.atlasapi.content.v2.serialization.setters;
 
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 import org.atlasapi.content.Episode;
@@ -10,11 +11,16 @@ import org.atlasapi.content.v2.serialization.RefSerialization;
 import org.atlasapi.content.v2.serialization.SeriesRefSerialization;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.PagerDutyClientWithKey;
 
+import com.github.dikhan.pagerduty.client.events.PagerDutyEventsClient;
+import com.github.dikhan.pagerduty.client.events.domain.Payload;
+import com.github.dikhan.pagerduty.client.events.domain.Severity;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.management.Sensor;
 
 public class EpisodeSetter {
     private static final Logger log = LoggerFactory.getLogger(EpisodeSetter.class);
@@ -52,8 +58,25 @@ public class EpisodeSetter {
 
         Map<Ref, SeriesRef> seriesRefs = internal.getSeriesRefs();
         if (seriesRefs != null && !seriesRefs.isEmpty()) {
+            PagerDutyClientWithKey pagerDutyClient = new PagerDutyClientWithKey(
+                    PagerDutyEventsClient.create(),
+                    System.getenv("PD_INTEGRATION_KEY"),
+                    Boolean.parseBoolean(System.getenv("PD_RAISE_INCIDENTS")) //disables both alerts.
+            );
+
             if(seriesRefs.size() > 1) {
                 log.error("Episode with id {} has more than one series ref", internal.getId());
+                Payload payload = Payload.Builder.newBuilder()
+                        .setSummary(
+                                String.format(
+                                        "Episode with id %s has more than one series ref",
+                                        internal.getId())
+                        )
+                        .setSource("atlas-deer")
+                        .setSeverity(Severity.WARNING)
+                        .setTimestamp(OffsetDateTime.now())
+                        .build();
+                pagerDutyClient.trigger(payload, String.valueOf(internal.getId()));
             }
             Map.Entry<Ref, SeriesRef> entry = Iterables.getOnlyElement(seriesRefs.entrySet());
 
