@@ -50,6 +50,7 @@ public class EpisodeSetter {
 
     public void deserialize(org.atlasapi.content.Content content, Content internal) {
         Episode episode = (Episode) content;
+        Long episodeId = internal.getId();
 
         episode.setSeriesNumber(internal.getSeriesNumber());
         episode.setEpisodeNumber(internal.getEpisodeNumber());
@@ -65,18 +66,19 @@ public class EpisodeSetter {
             );
 
             if(seriesRefs.size() > 1) {
-                log.error("Episode with id {} has more than one series ref", internal.getId());
+                log.error("Episode with id {} has more than one series ref", episodeId);
                 Payload payload = Payload.Builder.newBuilder()
                         .setSummary(
                                 String.format(
                                         "Episode with id %s has more than one series ref",
-                                        internal.getId())
+                                        episodeId
+                                )
                         )
                         .setSource("atlas-deer")
                         .setSeverity(Severity.WARNING)
                         .setTimestamp(OffsetDateTime.now())
                         .build();
-                pagerDutyClient.trigger(payload, String.valueOf(internal.getId()));
+                pagerDutyClient.trigger(payload, String.valueOf(episodeId));
             }
             Map.Entry<Ref, SeriesRef> entry = Iterables.getOnlyElement(seriesRefs.entrySet());
 
