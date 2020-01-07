@@ -13,6 +13,7 @@
 
   <properties>
     <protobuf.version>3.5.1</protobuf.version>
+    <pagerduty.client.version>3.0.2</pagerduty.client.version>
   </properties>
   <build>
     <plugins>
@@ -144,6 +145,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.dikhan</groupId>
+      <artifactId>pagerduty-client</artifactId>
+      <version>${pagerduty.client.version}</version>
     </dependency>
 
     <dependency>
