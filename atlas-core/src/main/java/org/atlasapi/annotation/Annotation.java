@@ -13,6 +13,7 @@ public enum Annotation {
     LICENSE,
     ID_SUMMARY,
     ID,
+    IS_PUBLISHED,
     EXTENDED_ID,
     DESCRIPTION,
     EXTENDED_DESCRIPTION,

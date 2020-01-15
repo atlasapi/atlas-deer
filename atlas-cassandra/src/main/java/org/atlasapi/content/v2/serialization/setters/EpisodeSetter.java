@@ -1,5 +1,6 @@
 package org.atlasapi.content.v2.serialization.setters;
 
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 import org.atlasapi.content.Episode;
@@ -10,7 +11,11 @@ import org.atlasapi.content.v2.serialization.RefSerialization;
 import org.atlasapi.content.v2.serialization.SeriesRefSerialization;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.PagerDutyClientWithKey;
 
+import com.github.dikhan.pagerduty.client.events.PagerDutyEventsClient;
+import com.github.dikhan.pagerduty.client.events.domain.Payload;
+import com.github.dikhan.pagerduty.client.events.domain.Severity;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
@@ -44,6 +49,7 @@ public class EpisodeSetter {
 
     public void deserialize(org.atlasapi.content.Content content, Content internal) {
         Episode episode = (Episode) content;
+        Long episodeId = internal.getId();
 
         episode.setSeriesNumber(internal.getSeriesNumber());
         episode.setEpisodeNumber(internal.getEpisodeNumber());
@@ -52,9 +58,37 @@ public class EpisodeSetter {
 
         Map<Ref, SeriesRef> seriesRefs = internal.getSeriesRefs();
         if (seriesRefs != null && !seriesRefs.isEmpty()) {
-            if(seriesRefs.size() > 1) {
-                log.error("Episode with id {} has more than one series ref", internal.getId());
+
+            if (seriesRefs.size() > 1) {
+                log.error("Episode with id {} has more than one series ref", episodeId);
+                try {
+                    String pdIntegrationKey = System.getenv("PD_INTEGRATION_KEY"); // NPE if missing
+                    boolean pdRaiseIncidents = Boolean.parseBoolean(System.getenv(
+                            "PD_RAISE_INCIDENTS"));     //disables alerting
+
+                    PagerDutyClientWithKey pagerDutyClient = new PagerDutyClientWithKey(
+                            PagerDutyEventsClient.create(),
+                            pdIntegrationKey,
+                            pdRaiseIncidents
+                    );
+                    Payload payload = Payload.Builder.newBuilder()
+                            .setSummary(
+                                    String.format(
+                                            "Episode with id %s has multiple series refs; search"
+                                                    + "for 'seriesref' in Current Support Concerns",
+                                            episodeId
+                                    )
+                            )
+                            .setSource("atlas-deer-processing")
+                            .setSeverity(Severity.WARNING)
+                            .setTimestamp(OffsetDateTime.now())
+                            .build();
+                    pagerDutyClient.trigger(payload, String.valueOf(episodeId));
+                } catch (Exception e) {
+                    log.warn("Triggering PagerDuty incident failed for {}", episodeId, e);
+                }
             }
+
             Map.Entry<Ref, SeriesRef> entry = Iterables.getOnlyElement(seriesRefs.entrySet());
 
             Ref ref = entry.getKey();

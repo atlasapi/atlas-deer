@@ -8,6 +8,7 @@ import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 import org.atlasapi.query.common.exceptions.InvalidIdentifierException;
 import org.atlasapi.query.common.exceptions.InvalidParameterException;
+import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 
 import com.metabroadcast.common.http.HttpStatusCode;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -119,6 +120,13 @@ public class ErrorSummary {
                 )
                 .put(
                         InvalidAnnotationException.class,
+                        new DefaultErrorSummaryFactory(
+                                "BAD_ANNOTATION_VALUE",
+                                HttpStatusCode.BAD_REQUEST
+                        )
+                )
+                .put(
+                        MissingAnnotationException.class,
                         new DefaultErrorSummaryFactory(
                                 "BAD_ANNOTATION_VALUE",
                                 HttpStatusCode.BAD_REQUEST

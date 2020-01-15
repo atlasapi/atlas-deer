@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -12,13 +13,12 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.annotation.Nullable;
 
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.criteria.AttributeQuerySet;
-import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
@@ -66,6 +66,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.google.inject.Key;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -379,7 +380,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 activeAnnotations
         );
 
-        return filterContentSets(selectedSources, content, graphs, index);
+        return filterContentSets(selectedSources, content, graphs, index, activeAnnotations);
     }
 
     private ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> deserializeGraphs(
@@ -430,7 +431,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             Set<Publisher> selectedSources,
             ImmutableSetMultimap<Long, Content> content,
             ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs,
-            Map<Long, Long> index
+            Map<Long, Long> index,
+            Set<Annotation> activeAnnotations
     ) {
         ImmutableSetMultimap.Builder<Long, Content> filteredContentBuilder =
                 ImmutableSetMultimap.builder();
@@ -442,7 +444,27 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         Entry::getKey
                 ));
 
+        // If provided with IS_PUBLISHED annotation, we allow unpublished content to be displayed,
+        // and add the activelyPublished field to the output of the content call
+        boolean allowUnpublished = activeAnnotations.contains(Annotation.IS_PUBLISHED);
+
+        ImmutableSet<Id> allowUnpublishedIds = (allowUnpublished)
+                ? index.keySet().stream().map(Id::valueOf).collect(MoreCollectors.toImmutableSet())
+                : ImmutableSet.of();
+
+
         for (Long setId : content.keySet()) {
+
+            Stream<Content> contentStream = content.get(setId).stream();
+
+            if (!allowUnpublished) {
+                contentStream = contentStream.filter(Content::isActivelyPublished);
+            }
+
+            ImmutableSet<Id> ids = contentStream
+                    .map(Content::getId)
+                    .collect(MoreCollectors.toImmutableSet());
+
             ImmutableSet<Content> filteredContent = content.get(setId)
                     .stream()
                     .filter(EquivalenceGraphFilter
@@ -455,13 +477,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                             .withGraph(graphs.get(setId))
                             .withSelectedSources(selectedSources)
                             .withSelectedGraphSources(selectedSources)
-                            .withActivelyPublishedIds(
-                                    content.get(setId)
-                                            .stream()
-                                            .filter(Content::isActivelyPublished)
-                                            .map(Content::getId)
-                                            .collect(MoreCollectors.toImmutableSet())
-                            )
+                            .withIds(ids)
+                            .withAllowUnpublishedIds(allowUnpublishedIds)
                             .build()
                     )
                     .collect(MoreCollectors.toImmutableSet());

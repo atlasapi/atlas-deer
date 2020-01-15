@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -161,13 +162,13 @@ public class ResourceAnnotationIndex implements AnnotationIndex {
 
     @Override
     public ActiveAnnotations resolveListContext(Iterable<String> keys)
-            throws InvalidAnnotationException {
+            throws InvalidAnnotationException, MissingAnnotationException {
         return listIndex.resolve(keys);
     }
 
     @Override
     public ActiveAnnotations resolveSingleContext(Iterable<String> keys)
-            throws InvalidAnnotationException {
+            throws InvalidAnnotationException, MissingAnnotationException {
         return singleIndex.resolve(keys);
     }
 }

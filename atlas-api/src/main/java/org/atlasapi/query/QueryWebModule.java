@@ -70,6 +70,7 @@ import org.atlasapi.output.annotation.ExtendedIdentificationAnnotation;
 import org.atlasapi.output.annotation.FirstBroadcastAnnotation;
 import org.atlasapi.output.annotation.IdentificationAnnotation;
 import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
+import org.atlasapi.output.annotation.IsPublishedAnnotation;
 import org.atlasapi.output.annotation.KeyPhrasesAnnotation;
 import org.atlasapi.output.annotation.LocationsAnnotation;
 import org.atlasapi.output.annotation.ModelInfoAnnotation;
@@ -214,6 +215,7 @@ import static org.atlasapi.annotation.Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY;
 import static org.atlasapi.annotation.Annotation.ID;
 import static org.atlasapi.annotation.Annotation.ID_SUMMARY;
 import static org.atlasapi.annotation.Annotation.IMAGES;
+import static org.atlasapi.annotation.Annotation.IS_PUBLISHED;
 import static org.atlasapi.annotation.Annotation.KEY_PHRASES;
 import static org.atlasapi.annotation.Annotation.LOCATIONS;
 import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
@@ -1208,6 +1210,7 @@ public class QueryWebModule {
                 )
                 .register(MODIFIED_DATES, new ModifiedDatesAnnotation())
                 .register(CUSTOM_FIELDS, new CustomFieldsAnnotation())
+                .register(IS_PUBLISHED, new IsPublishedAnnotation())
                 .register(AWARDS, new AwardsAnnotation(), commonImplied)
                 .build();
     }

@@ -17,6 +17,7 @@ import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 import org.atlasapi.query.common.validation.SetBasedRequestParameterValidator;
 import org.atlasapi.source.Sources;
 
@@ -204,7 +205,10 @@ class ScheduleRequestParser {
     }
 
     private QueryContext parseContext(HttpServletRequest request, Publisher publisher)
-            throws ApplicationResolutionException, InvalidAnnotationException {
+            throws ApplicationResolutionException,
+                InvalidAnnotationException,
+                MissingAnnotationException
+    {
         Application application = getConfiguration(request);
 
         checkArgument(application.getConfiguration().isReadEnabled(publisher), "Source %s not enabled", publisher);
