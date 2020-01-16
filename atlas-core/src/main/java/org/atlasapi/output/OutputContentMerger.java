@@ -1,18 +1,22 @@
 package org.atlasapi.output;
 
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import javax.annotation.Nullable;
-
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.stream.MoreStreams;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
@@ -37,6 +41,7 @@ import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
+import org.atlasapi.entity.Award;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Rating;
@@ -46,27 +51,22 @@ import org.atlasapi.entity.Sourceds;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
-
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -346,6 +346,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getShortDescription() == null) {
             chosen.setShortDescription(first(notChosen, TO_SHORT_DESCRIPTION));
         }
+
+        mergeAwards(chosen, notChosen);
     }
 
     private <T extends Identified> void mergeCustomFields(
@@ -464,6 +466,18 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 .collect(Collectors.toSet());
 
         chosen.setRatings(combinedRatings);
+    }
+
+    private <T extends Described> void mergeAwards(T chosen, Iterable<T> notChosen) {
+
+        Stream<T> allContent = Stream.concat(Stream.of(chosen), MoreStreams.stream(notChosen));
+
+        Set<Award> combinedAwards = allContent
+                .map(Described::getAwards)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        chosen.setAwards(combinedAwards);
     }
 
     private <T extends Item> void mergeIn(Application application, T chosen,
