@@ -76,13 +76,13 @@ public enum Annotation {
     NON_MERGED,
     REVIEWS,
     RATINGS,
+    AWARDS,
     PRIORITY_REASONS,
     MODIFIED_DATES,
     CHANNEL_GROUP_INFO,
     CHANNEL_IDS,
     FUTURE_CHANNELS,
     CUSTOM_FIELDS,
-    AWARDS,
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());
