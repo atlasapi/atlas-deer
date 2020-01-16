@@ -1208,10 +1208,10 @@ public class QueryWebModule {
                 .register(RATINGS, new RatingsAnnotation(
                         new RatingsWriter(SourceWriter.sourceWriter("source")))
                 )
+                .register(AWARDS, new AwardsAnnotation())
                 .register(MODIFIED_DATES, new ModifiedDatesAnnotation())
                 .register(CUSTOM_FIELDS, new CustomFieldsAnnotation())
                 .register(IS_PUBLISHED, new IsPublishedAnnotation())
-                .register(AWARDS, new AwardsAnnotation(), commonImplied)
                 .build();
     }
 
