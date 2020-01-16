@@ -76,6 +76,7 @@ public enum Annotation {
     NON_MERGED,
     REVIEWS,
     RATINGS,
+    AWARDS,
     PRIORITY_REASONS,
     MODIFIED_DATES,
     CHANNEL_GROUP_INFO,
