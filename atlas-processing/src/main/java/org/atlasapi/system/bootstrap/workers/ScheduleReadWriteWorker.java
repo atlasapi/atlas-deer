@@ -154,7 +154,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
                     interval
             ).call();
             LOG.debug("{}: processed: {}", updateMsg, result);
-            if (!Publisher.PA.equals(src)) {
+            if (Publisher.BBC_NITRO.equals(src) || Publisher.BT_BLACKOUT.equals(src)) {
                 updatePaSchedule(updateMsg, resolvedChannel, interval);
             }
 
