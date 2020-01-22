@@ -1,19 +1,17 @@
 package org.atlasapi.messaging;
 
-import java.util.concurrent.TimeUnit;
-
-import org.atlasapi.content.EquivalentContentStore;
-import org.atlasapi.entity.util.WriteException;
-
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.time.Timestamp;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.Timestamp;
+import org.atlasapi.content.EquivalentContentStore;
+import org.atlasapi.entity.util.WriteException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -28,6 +26,11 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
+    private final String publisherExecutionTimerName;
+    private final String publisherMeterName;
+    private final String publisherLatencyTimerName;
+
+    private final MetricRegistry metricRegistry;
 
     private EquivalentContentStoreContentUpdateWorker(
             EquivalentContentStore equivalentContentStore,
@@ -36,10 +39,15 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
     ) {
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
 
+        this.metricRegistry = metricRegistry;
+
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
+        this.publisherMeterName = metricPrefix + "source.%s.meter.received";
+        this.publisherExecutionTimerName = metricPrefix + "source.%s.timer.execution";
+        this.publisherLatencyTimerName = metricPrefix + "source.%s.timer.latency";
     }
 
     public static EquivalentContentStoreContentUpdateWorker create(
@@ -56,6 +64,8 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
 
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
+        long start = System.currentTimeMillis();
+
         messageReceivedMeter.mark();
 
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
@@ -63,14 +73,30 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
                 getTimeToProcessInMillis(message.getTimestamp()) / 1000L, message
         );
 
+        String metricSourceName = message.getUpdatedResource().getSource().key().replace('.', '_');
+
+        metricRegistry.meter(String.format(publisherMeterName, metricSourceName)).mark();
+
+        Timer publisherExecutionTimer = metricRegistry.timer(String.format(publisherExecutionTimerName, metricSourceName));
+        Timer publisherLatencyTimer = metricRegistry.timer(String.format(publisherLatencyTimerName, metricSourceName));
+
         Timer.Context time = executionTimer.time();
+        Timer.Context publisherTime = publisherExecutionTimer.time();
 
         try {
             equivalentContentStore.updateContent(message.getUpdatedResource().getId());
 
-            latencyTimer.update(
-                    getTimeToProcessInMillis(message.getTimestamp()),
-                    TimeUnit.MILLISECONDS
+            long timeToProcessInMillis = getTimeToProcessInMillis(message.getTimestamp());
+
+            latencyTimer.update(timeToProcessInMillis, TimeUnit.MILLISECONDS);
+            publisherLatencyTimer.update(timeToProcessInMillis, TimeUnit.MILLISECONDS);
+
+            long end = System.currentTimeMillis();
+            LOG.info(
+                    "Timings - Source: {}, Execution Time (ms): {}, Latency (ms): {}",
+                    message.getUpdatedResource().getSource().key(),
+                    end - start,
+                    timeToProcessInMillis
             );
         } catch (WriteException e) {
             failureMeter.mark();
@@ -79,6 +105,7 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
                     + message.getUpdatedResource(), e);
         } finally {
             time.stop();
+            publisherTime.stop();
         }
     }
 

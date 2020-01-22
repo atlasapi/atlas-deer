@@ -1,23 +1,5 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelResolver;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
-import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTask;
-import org.atlasapi.system.bootstrap.SourceChannelIntervalFactory;
-
-import com.metabroadcast.common.base.Maybe;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.scheduling.UpdateProgress;
-import com.metabroadcast.common.time.Timestamp;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -27,9 +9,25 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.base.Maybe;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.scheduling.UpdateProgress;
+import com.metabroadcast.common.time.Timestamp;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
+import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTask;
+import org.atlasapi.system.bootstrap.SourceChannelIntervalFactory;
 import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -47,7 +45,9 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
+    private final String publisherExecutionTimerName;
     private final String publisherMeterName;
+    private final String publisherLatencyTimerName;
 
     private final MetricRegistry metricRegistry;
 
@@ -69,6 +69,8 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
+        this.publisherExecutionTimerName = metricPrefix + "source.%s.timer.execution";
+        this.publisherLatencyTimerName = metricPrefix + "source.%s.timer.latency";
     }
 
     public static ScheduleReadWriteWorker create(
@@ -89,6 +91,8 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
 
     @Override
     public void process(ScheduleUpdateMessage msg) {
+        long start = System.currentTimeMillis();
+
         messageReceivedMeter.mark();
 
         LOG.debug(
@@ -114,17 +118,19 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
             return;
         }
 
-        metricRegistry.meter(String.format(
-                publisherMeterName,
-                src.key().replace('.', '_')
-        ))
-                .mark();
+        String metricSourceName = src.key().replace('.', '_');
+
+        metricRegistry.meter(String.format(publisherMeterName, metricSourceName)).mark();
+
+        Timer publisherExecutionTimer = metricRegistry.timer(String.format(publisherExecutionTimerName, metricSourceName));
+        Timer publisherLatencyTimer = metricRegistry.timer(String.format(publisherLatencyTimerName, metricSourceName));
 
         Id cid = Id.valueOf(idCodec.decode(msg.getChannel()));
 
         LOG.debug("Processing message on id {}, message: {}", cid, msg);
 
         Timer.Context time = executionTimer.time();
+        Timer.Context publisherTime = publisherExecutionTimer.time();
 
         try {
             ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(
@@ -152,11 +158,18 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
                 updatePaSchedule(updateMsg, resolvedChannel, interval);
             }
 
-            latencyTimer.update(
-                    getTimeToProcessInMillis(msg.getTimestamp()),
-                    TimeUnit.MILLISECONDS
+            long timeToProcessInMillis = getTimeToProcessInMillis(msg.getTimestamp());
+
+            latencyTimer.update(timeToProcessInMillis, TimeUnit.MILLISECONDS);
+            publisherLatencyTimer.update(timeToProcessInMillis, TimeUnit.MILLISECONDS);
+
+            long end = System.currentTimeMillis();
+            LOG.info(
+                    "Timings - Source: {}, Execution Time (ms): {}, Latency (ms): {}",
+                    src.key(),
+                    end - start,
+                    timeToProcessInMillis
             );
-            time.stop();
         } catch (Exception e) {
             failureMeter.mark();
             LOG.error("failed " + updateMsg, e);
@@ -164,6 +177,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
             throw Throwables.propagate(e);
         } finally {
             time.stop();
+            publisherTime.stop();
         }
     }
 
