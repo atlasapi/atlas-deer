@@ -106,7 +106,10 @@ public class BootstrapWorkersModule {
 
     private final Set<Publisher> ignoredScheduleSources = Sets.difference(
             Publisher.all(),
-            ImmutableSet.of(Publisher.PA, Publisher.BBC_NITRO, Publisher.BT_BLACKOUT)
+            ImmutableSet.of(
+                    Publisher.PA, Publisher.BBC_NITRO, Publisher.BT_BLACKOUT,
+                    Publisher.YOUVIEW, Publisher.YOUVIEW_SCOTLAND_RADIO, Publisher.YOUVIEW_BT
+            )
     );
 
     @Autowired
