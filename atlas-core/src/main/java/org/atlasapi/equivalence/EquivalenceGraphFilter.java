@@ -31,7 +31,8 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
 
         try {
             if (!builder.graph.isPresent() || !builder.graphEntryId.isPresent()) {
-                //log.info("No problem with graph or graph entry id.");
+                this.selectedIds = ImmutableSet.copyOf(builder.ids);
+                return;
             }
         } catch (Exception e) {
 
@@ -56,10 +57,7 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
                         builder.selectedSources);
             }
 
-            if (!builder.graph.isPresent() || !builder.graphEntryId.isPresent()) {
-                this.selectedIds = ImmutableSet.copyOf(builder.ids);
-                return;
-            }
+            throw new NullPointerException("Equiv Graph Filter problem");
         }
 
         if (!builder.ids.contains(builder.graphEntryId.get())) {
