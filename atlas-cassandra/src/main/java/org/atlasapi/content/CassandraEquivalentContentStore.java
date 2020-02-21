@@ -358,12 +358,16 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 Collection<Row> graphRowsForId = graphRows.get(id);
                 for (Row row : setRowsForId) {
                     for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
-                        rowBytes += row.getBytesUnsafe(i).remaining();
+                        if (row.getBytesUnsafe(i) != null) {
+                            rowBytes += row.getBytesUnsafe(i).remaining();
+                        }
                     }
                 }
                 for (Row row : graphRowsForId) {
                     for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
-                        rowBytes += row.getBytesUnsafe(i).remaining();
+                        if (row.getBytesUnsafe(i) != null) {
+                            rowBytes += row.getBytesUnsafe(i).remaining();
+                        }
                     }
                 }
                 if(rowBytes > 100000) {
