@@ -29,9 +29,37 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
         this.selectedSources = ImmutableSet.copyOf(builder.selectedSources);
         this.allowUnpublishedIds = ImmutableSet.copyOf(builder.allowUnpublishedIds);
 
-        if (!builder.graph.isPresent() || !builder.graphEntryId.isPresent()) {
-            this.selectedIds = ImmutableSet.copyOf(builder.ids);
-            return;
+        try {
+            if (!builder.graph.isPresent() || !builder.graphEntryId.isPresent()) {
+                //log.info("No problem with graph or graph entry id.");
+            }
+        } catch (Exception e) {
+
+            if (builder.graph == null) {
+                log.error("Builder graph is the problem.");
+                log.warn("graphEntryId:{}\ngraph:{}\nallowUnpublishedIds:{}\nids:{}\nselectedGraphSources:{}\nselectedSources{}",
+                        builder.graphEntryId,
+                        builder.graph,
+                        builder.allowUnpublishedIds,
+                        builder.ids,
+                        builder.selectedGraphSources,
+                        builder.selectedSources);
+            }
+            if (builder.graphEntryId == null) {
+                log.error("Builder graph entry id is the problem.");
+                log.warn("graphEntryId:{}\ngraph:{}\nallowUnpublishedIds:{}\nids:{}\nselectedGraphSources:{}\nselectedSources{}",
+                        builder.graphEntryId,
+                        builder.graph,
+                        builder.allowUnpublishedIds,
+                        builder.ids,
+                        builder.selectedGraphSources,
+                        builder.selectedSources);
+            }
+
+            if (!builder.graph.isPresent() || !builder.graphEntryId.isPresent()) {
+                this.selectedIds = ImmutableSet.copyOf(builder.ids);
+                return;
+            }
         }
 
         if (!builder.ids.contains(builder.graphEntryId.get())) {
