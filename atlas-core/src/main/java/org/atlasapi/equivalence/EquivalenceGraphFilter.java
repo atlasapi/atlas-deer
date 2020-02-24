@@ -29,35 +29,9 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
         this.selectedSources = ImmutableSet.copyOf(builder.selectedSources);
         this.allowUnpublishedIds = ImmutableSet.copyOf(builder.allowUnpublishedIds);
 
-        try {
-            if (!builder.graph.isPresent() || !builder.graphEntryId.isPresent()) {
-                this.selectedIds = ImmutableSet.copyOf(builder.ids);
-                return;
-            }
-        } catch (Exception e) {
-
-            if (builder.graph == null) {
-                log.error("Builder graph is the problem.");
-                log.warn("graphEntryId:{}\ngraph:{}\nallowUnpublishedIds:{}\nids:{}\nselectedGraphSources:{}\nselectedSources{}",
-                        builder.graphEntryId,
-                        builder.graph,
-                        builder.allowUnpublishedIds,
-                        builder.ids,
-                        builder.selectedGraphSources,
-                        builder.selectedSources);
-            }
-            if (builder.graphEntryId == null) {
-                log.error("Builder graph entry id is the problem.");
-                log.warn("graphEntryId:{}\ngraph:{}\nallowUnpublishedIds:{}\nids:{}\nselectedGraphSources:{}\nselectedSources{}",
-                        builder.graphEntryId,
-                        builder.graph,
-                        builder.allowUnpublishedIds,
-                        builder.ids,
-                        builder.selectedGraphSources,
-                        builder.selectedSources);
-            }
-
-            throw new NullPointerException("Equiv Graph Filter problem");
+        if (!builder.graph.isPresent() || !builder.graphEntryId.isPresent()) {
+            this.selectedIds = ImmutableSet.copyOf(builder.ids);
+            return;
         }
 
         if (!builder.ids.contains(builder.graphEntryId.get())) {

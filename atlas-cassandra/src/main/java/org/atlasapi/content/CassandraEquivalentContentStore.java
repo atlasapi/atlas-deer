@@ -478,7 +478,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                                     // times from different IDs then arbitrarily pick one
                                     inverseIndex.get(setId).iterator().next()
                             )))
-                            .withGraph(graphs.get(setId))
+                            .withGraph(graphs.get(setId) == null
+                                    ? java.util.Optional.empty()
+                                    : graphs.get(setId)
+                            )
                             .withSelectedSources(selectedSources)
                             .withSelectedGraphSources(selectedSources)
                             .withIds(ids)
