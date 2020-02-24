@@ -469,6 +469,11 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                     .map(Content::getId)
                     .collect(MoreCollectors.toImmutableSet());
 
+            java.util.Optional<EquivalenceGraph> graph = graphs.get(setId);
+            if (graph == null) {
+                log.warn("Graph was expected to exist as an optional, but was null. SetId: {}.", setId);
+            }
+
             ImmutableSet<Content> filteredContent = content.get(setId)
                     .stream()
                     .filter(EquivalenceGraphFilter
@@ -478,10 +483,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                                     // times from different IDs then arbitrarily pick one
                                     inverseIndex.get(setId).iterator().next()
                             )))
-                            .withGraph(graphs.get(setId) == null
-                                    ? java.util.Optional.empty()
-                                    : graphs.get(setId)
-                            )
+                            .withGraph(graph)
                             .withSelectedSources(selectedSources)
                             .withSelectedGraphSources(selectedSources)
                             .withIds(ids)
