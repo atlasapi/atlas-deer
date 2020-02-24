@@ -471,7 +471,11 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
             java.util.Optional<EquivalenceGraph> graph = graphs.get(setId);
             if (graph == null) {
-                log.warn("Graph was expected to exist as an optional, but was null. SetId: {}.", setId);
+                log.warn("Graph was expected to exist as an optional, but was null for SetId: {}."
+                         + "\nContent keyset: {}\n Graph keyset: {}",
+                        setId,
+                        content.keySet(),
+                        graphs.keySet());
             }
 
             ImmutableSet<Content> filteredContent = content.get(setId)
