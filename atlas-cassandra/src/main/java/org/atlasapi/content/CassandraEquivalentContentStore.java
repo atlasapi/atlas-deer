@@ -358,12 +358,16 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 Collection<Row> graphRowsForId = graphRows.get(id);
                 for (Row row : setRowsForId) {
                     for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
-                        rowBytes += row.getBytesUnsafe(i).remaining();
+                        if (row.getBytesUnsafe(i) != null) {
+                            rowBytes += row.getBytesUnsafe(i).remaining();
+                        }
                     }
                 }
                 for (Row row : graphRowsForId) {
                     for (int i = 0; i < row.getColumnDefinitions().size(); i++) {
-                        rowBytes += row.getBytesUnsafe(i).remaining();
+                        if (row.getBytesUnsafe(i) != null) {
+                            rowBytes += row.getBytesUnsafe(i).remaining();
+                        }
                     }
                 }
                 if(rowBytes > 100000) {
@@ -465,6 +469,15 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                     .map(Content::getId)
                     .collect(MoreCollectors.toImmutableSet());
 
+            java.util.Optional<EquivalenceGraph> graph = graphs.get(setId);
+            if (graph == null) {
+                log.warn("Graph was expected to exist as an optional, but was null for SetId: {}."
+                         + "\nContent keyset: {}\n Graph keyset: {}",
+                        setId,
+                        content.keySet(),
+                        graphs.keySet());
+            }
+
             ImmutableSet<Content> filteredContent = content.get(setId)
                     .stream()
                     .filter(EquivalenceGraphFilter
@@ -474,7 +487,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                                     // times from different IDs then arbitrarily pick one
                                     inverseIndex.get(setId).iterator().next()
                             )))
-                            .withGraph(graphs.get(setId))
+                            .withGraph(graph)
                             .withSelectedSources(selectedSources)
                             .withSelectedGraphSources(selectedSources)
                             .withIds(ids)
