@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Import;
         ApplicationModule.class,
         QueryWebModule.class,
         SourcesModule.class,
-        InternalClientsModule.class
+        InternalClientsModule.class,
 })
 public class AtlasApiModule {
 

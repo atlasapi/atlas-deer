@@ -26,8 +26,14 @@ public class InternalClientsModule {
 
     @Bean
     public RepIdClient repIdClient() {
-        String host = checkNotNull(Configurer.get("representative-id-service.host").get());
-        Integer port = Integer.parseInt(checkNotNull(Configurer.get("representative-id-service.port").get()));
+        String host = checkNotNull(
+                Configurer.get("representative-id-service.host").get(),
+                "Representative ID Service Host is undefined."
+        );
+        Integer port = Integer.parseInt(checkNotNull(
+                Configurer.get("representative-id-service.port").get(),
+                "Representative ID Service Port is undefined.")
+        );
 
         HttpExecutor httpExecutor = HttpExecutor.create(getHttpClient(),host,port);
         return new RepIdClient(httpExecutor);
