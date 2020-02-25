@@ -34,7 +34,7 @@ public enum ApplicationAccessRole {
     PREFER_EBS_SCHEDULE("prefer-ebs-schedule"),
 
     /** Allows access to {@link org.atlasapi.annotation.Annotation.REP_ID}*/
-    REP_ID_SERVICE("representative-id"),
+    REP_ID_SERVICE("deer-access.representative-id"),
     ;
 
     private final String role;
