@@ -8,6 +8,8 @@ import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
 import com.metabroadcast.common.time.SystemClock;
+import com.metabroadcast.representative.client.RepIdClient;
+
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -314,6 +316,9 @@ public class QueryWebModule {
     @Autowired
     @Qualifier("licenseWriter")
     EntityWriter<Object> licenseWriter;
+
+    @Autowired
+    private RepIdClient repIdClient;
 
     @Bean
     NumberToShortStringCodec idCodec() {
@@ -1214,7 +1219,7 @@ public class QueryWebModule {
                 .register(MODIFIED_DATES, new ModifiedDatesAnnotation())
                 .register(CUSTOM_FIELDS, new CustomFieldsAnnotation())
                 .register(IS_PUBLISHED, new IsPublishedAnnotation())
-                .register(REP_ID, new RepIdAnnotation())
+                .register(REP_ID, new RepIdAnnotation(repIdClient))
                 .build();
     }
 
