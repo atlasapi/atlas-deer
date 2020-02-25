@@ -83,6 +83,7 @@ import org.atlasapi.output.annotation.PlatformAnnotation;
 import org.atlasapi.output.annotation.RatingsAnnotation;
 import org.atlasapi.output.annotation.RegionsAnnotation;
 import org.atlasapi.output.annotation.RelatedLinksAnnotation;
+import org.atlasapi.output.annotation.RepIdAnnotation;
 import org.atlasapi.output.annotation.ReviewsAnnotation;
 import org.atlasapi.output.annotation.SegmentEventsAnnotation;
 import org.atlasapi.output.annotation.SeriesAnnotation;
@@ -229,6 +230,7 @@ import static org.atlasapi.annotation.Annotation.PLATFORM;
 import static org.atlasapi.annotation.Annotation.RATINGS;
 import static org.atlasapi.annotation.Annotation.REGIONS;
 import static org.atlasapi.annotation.Annotation.RELATED_LINKS;
+import static org.atlasapi.annotation.Annotation.REP_ID;
 import static org.atlasapi.annotation.Annotation.REVIEWS;
 import static org.atlasapi.annotation.Annotation.SEGMENT_EVENTS;
 import static org.atlasapi.annotation.Annotation.SERIES;
@@ -1212,6 +1214,7 @@ public class QueryWebModule {
                 .register(MODIFIED_DATES, new ModifiedDatesAnnotation())
                 .register(CUSTOM_FIELDS, new CustomFieldsAnnotation())
                 .register(IS_PUBLISHED, new IsPublishedAnnotation())
+                .register(REP_ID, new RepIdAnnotation())
                 .build();
     }
 
