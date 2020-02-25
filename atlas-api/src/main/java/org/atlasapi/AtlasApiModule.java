@@ -1,6 +1,7 @@
 package org.atlasapi;
 
 import org.atlasapi.application.ApplicationModule;
+import org.atlasapi.application.InternalClientsModule;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.query.QueryWebModule;
 import org.atlasapi.system.HealthModule;
@@ -21,7 +22,8 @@ import org.springframework.context.annotation.Import;
         KafkaMessagingModule.class,
         ApplicationModule.class,
         QueryWebModule.class,
-        SourcesModule.class
+        SourcesModule.class,
+        InternalClientsModule.class
 })
 public class AtlasApiModule {
 
