@@ -36,27 +36,28 @@ import static org.atlasapi.application.ApplicationAccessRole.REP_ID_SERVICE;
 
 public class RepIdAnnotation extends OutputAnnotation<Content> {
 
-    private final SubstitutionTableNumberCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
-    private static final int CONNECTION_TIMEOUT_MS = 10 * 1000;
-    private static final int SOCKET_TIMEOUT_MS = 120 * 1000;
-    HttpExecutor httpExecutor = HttpExecutor.create(
-            getHttpClient(), //probably an overkill
-            Configurer.get("representative-id-service.host").get(),
-            Integer.parseInt(Configurer.get("representative-id-service.port").get())
-    );
-
-    RepIdClient repIdClient = new RepIdClient(httpExecutor);
-
-    CacheLoader<Long, String> loader = new CacheLoader<Long, String>() {
-        @Override
-        public String load(Long id) {
-            return codec.encode(BigInteger.valueOf(id));
-        }
-    };
-
-    LoadingCache<Long, String> appCache = CacheBuilder.newBuilder().build(loader);
-
     private static Logger log = LoggerFactory.getLogger(RepIdAnnotation.class);
+
+    private final SubstitutionTableNumberCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
+    RepIdClient repIdClient;
+    LoadingCache<Long, String> appIdCache;
+
+    public RepIdAnnotation() {
+        HttpExecutor httpExecutor = HttpExecutor.create(
+                getHttpClient(), //probably an overkill
+                Configurer.get("representative-id-service.host").get(),
+                Integer.parseInt(Configurer.get("representative-id-service.port").get())
+        );
+        repIdClient = new RepIdClient(httpExecutor);
+
+        appIdCache = CacheBuilder.newBuilder().build(
+                new CacheLoader<Long, String>() {
+                    @Override
+                    public String load(Long id) {
+                        return codec.encode(BigInteger.valueOf(id));
+                    }
+                });
+    }
 
     @Override
     public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
@@ -72,7 +73,7 @@ public class RepIdAnnotation extends OutputAnnotation<Content> {
 
         String appId;
         try {
-            appId = appCache.get(ctxt.getApplication().getId());
+            appId = appIdCache.get(ctxt.getApplication().getId());
             RepresentativeIdResponse repIdResponse;
             repIdResponse = repIdClient.getRepId(appId, entity.getId().longValue());
             repId = repIdResponse.getRepresentative().getId();
@@ -88,12 +89,14 @@ public class RepIdAnnotation extends OutputAnnotation<Content> {
         writer.writeField("rep_id", repId);
     }
 
-    private CloseableHttpClient getHttpClient() {
+    private static CloseableHttpClient getHttpClient() {
+        int connectionTimeoutMs = 10 * 1000;
+        int sockerTimeoutMs = 120 * 1000;
         //REQUEST CONFIG
         RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectionRequestTimeout(CONNECTION_TIMEOUT_MS)
-                .setConnectTimeout(CONNECTION_TIMEOUT_MS)
-                .setSocketTimeout(SOCKET_TIMEOUT_MS)
+                .setConnectionRequestTimeout(connectionTimeoutMs)
+                .setConnectTimeout(connectionTimeoutMs)
+                .setSocketTimeout(sockerTimeoutMs)
                 .build();
         //RETRY STRATEGY
         ServiceUnavailableRetryStrategy serviceUnavailableRetryStrategy = new ServiceUnavailableRetryStrategy() {
