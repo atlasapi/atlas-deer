@@ -288,17 +288,6 @@
       <artifactId>client</artifactId>
       <version>${representative-id-service.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.metabroadcast.representative</groupId>
-      <artifactId>api</artifactId>
-      <version>${representative-id-service.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.metabroadcast.representative</groupId>
-      <artifactId>parent</artifactId>
-      <version>1.1-SNAPSHOT</version>
-      <scope>compile</scope>
-    </dependency>
   </dependencies>
 
   <distributionManagement>
