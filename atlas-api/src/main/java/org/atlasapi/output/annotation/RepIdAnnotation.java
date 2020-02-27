@@ -2,15 +2,21 @@ package org.atlasapi.output.annotation;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import org.atlasapi.content.Content;
+import org.atlasapi.entity.Id;
+import org.atlasapi.event.EventRef;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.representative.api.RepresentativeIdResponse;
+import com.metabroadcast.representative.api.Version;
 import com.metabroadcast.representative.client.RepIdClient;
+import com.metabroadcast.representative.client.RepIdQuery;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -28,6 +34,10 @@ public class RepIdAnnotation extends OutputAnnotation<Content> {
     RepIdClient repIdClient;
     LoadingCache<Long, String> appIdCache;
 
+    /**
+     * Includes the REP ID for this application //TODO do not include in other annotations as it is expensive and b dangerous if this fails.
+     * @param repIdClient
+     */
     public RepIdAnnotation(RepIdClient repIdClient) {
         this.repIdClient = repIdClient;
         this.appIdCache = CacheBuilder.newBuilder().build(
@@ -55,7 +65,19 @@ public class RepIdAnnotation extends OutputAnnotation<Content> {
         try {
             appId = appIdCache.get(ctxt.getApplication().getId());
             RepresentativeIdResponse repIdResponse;
-            repIdResponse = repIdClient.getRepId(appId, entity.getId().longValue());
+
+            Set<Long> equivs= entity.getEventRefs()
+                    .stream()
+                    .map(EventRef::getId)
+                    .map(Id::longValue)
+                    .collect(MoreCollectors.toImmutableSet());
+            repIdResponse = repIdClient.getRepId(
+                    RepIdQuery.create()
+                            .withAppId(appId)
+                            .withVersion(Version.DEER)
+                            .withId(entity.getId().longValue())
+                            .withSameAsLong(equivs)
+                            .withCached(false));
             repId = repIdResponse.getRepresentative().getId();
         } catch (ExecutionException e) {
             log.error(
