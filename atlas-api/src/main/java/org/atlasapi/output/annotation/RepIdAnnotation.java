@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.entity.Id;
+import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.event.EventRef;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -66,9 +67,9 @@ public class RepIdAnnotation extends OutputAnnotation<Content> {
             appId = appIdCache.get(ctxt.getApplication().getId());
             RepresentativeIdResponse repIdResponse;
 
-            Set<Long> equivs= entity.getEventRefs()
+            Set<Long> equivs= entity.getEquivalentTo()
                     .stream()
-                    .map(EventRef::getId)
+                    .map(EquivalenceRef::getId)
                     .map(Id::longValue)
                     .collect(MoreCollectors.toImmutableSet());
             repIdResponse = repIdClient.getRepId(
