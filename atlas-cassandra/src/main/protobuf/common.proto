@@ -172,6 +172,7 @@ message Rating {
     optional string type = 1;
     optional float value = 2;
     optional string source = 3;
+    optional int64 numberOfVotes = 4;
 }
 
 message Review {

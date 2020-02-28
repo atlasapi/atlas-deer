@@ -12,6 +12,7 @@ public class RatingSerializer {
         ratingBuilder.setSource(rating.getPublisher().key());
         ratingBuilder.setType(rating.getType());
         ratingBuilder.setValue(rating.getValue());
+        ratingBuilder.setNumberOfVotes(rating.getNumberOfVotes());
 
         return ratingBuilder.build();
     }
@@ -23,7 +24,10 @@ public class RatingSerializer {
             return Optional.of(new Rating(
                             ratingBuffer.getType(),
                             ratingBuffer.getValue(),
-                            Sources.fromPossibleKey(ratingBuffer.getSource()).get()));
+                            Sources.fromPossibleKey(ratingBuffer.getSource()).get(),
+                            ratingBuffer.hasNumberOfVotes() ? ratingBuffer.getNumberOfVotes() : null
+                    )
+            );
         }
 
         return Optional.empty();

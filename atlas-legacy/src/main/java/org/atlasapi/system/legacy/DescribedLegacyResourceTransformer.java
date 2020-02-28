@@ -1,8 +1,11 @@
 package org.atlasapi.system.legacy;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.PriorityScoreReasons;
 import org.atlasapi.content.Specialization;
@@ -19,15 +22,13 @@ import org.atlasapi.media.entity.Identified;
 import org.atlasapi.media.entity.Topic;
 import org.atlasapi.media.entity.Version;
 import org.atlasapi.source.Sources;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public abstract class DescribedLegacyResourceTransformer<F extends Described, T extends org.atlasapi.content.Described>
         extends BaseLegacyResourceTransformer<F, T> {
@@ -180,7 +181,12 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
     protected Iterable<Rating> transformRatings(Iterable<org.atlasapi.media.entity.Rating> legacyRatings) {
         return Iterables.transform(
                 legacyRatings,
-                legacyRating -> new Rating(legacyRating.getType(), legacyRating.getValue(), legacyRating.getPublisher())
+                legacyRating -> new Rating(
+                        legacyRating.getType(),
+                        legacyRating.getValue(),
+                        legacyRating.getPublisher(),
+                        legacyRating.getNumberOfVotes()
+                )
         );
     }
 }

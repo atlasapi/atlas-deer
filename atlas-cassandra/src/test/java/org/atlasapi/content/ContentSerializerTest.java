@@ -608,8 +608,8 @@ public class ContentSerializerTest {
         ));
 
         described.setRatings(Arrays.asList(
-                new Rating("5STAR", 3.0f, Publisher.RADIO_TIMES),
-                new Rating("MOOSE", 1.0f, Publisher.BBC)
+                new Rating("5STAR", 3.0f, Publisher.RADIO_TIMES, 4321L),
+                new Rating("MOOSE", 1.0f, Publisher.BBC, 1234L)
         ));
     }
 

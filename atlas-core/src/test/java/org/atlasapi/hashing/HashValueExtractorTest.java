@@ -466,7 +466,7 @@ public class HashValueExtractorTest {
                         .build()
         ));
         described.setRatings(ImmutableSet.of(
-                new Rating("type", 5F, Publisher.METABROADCAST)
+                new Rating("type", 5F, Publisher.METABROADCAST, 1234L)
         ));
 
         Award award = new Award();

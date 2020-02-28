@@ -32,7 +32,7 @@ public class RatingsWriterTest {
     @Test
     public void testRating() throws IOException {
         RatingsWriter writerUnderTest = new RatingsWriter(sourceWriter);
-        Rating rating = new Rating("MOOSE", 1.0f, Publisher.BBC);
+        Rating rating = new Rating("MOOSE", 1.0f, Publisher.BBC, 1234L);
 
         OutputContext ctxt = OutputContext.valueOf(
                 QueryContext.create(application, ActiveAnnotations.standard(), request)
