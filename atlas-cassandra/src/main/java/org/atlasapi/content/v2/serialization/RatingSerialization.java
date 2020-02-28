@@ -11,6 +11,7 @@ public class RatingSerialization {
         internal.setValue(rating.getValue());
         internal.setType(rating.getType());
         internal.setPublisher(rating.getPublisher().key());
+        internal.setNumberOfVotes(rating.getNumberOfVotes());
 
         return internal;
     }
@@ -19,7 +20,8 @@ public class RatingSerialization {
         return new org.atlasapi.entity.Rating(
                 rating.getType(),
                 rating.getValue(),
-                Publisher.fromKey(rating.getPublisher()).requireValue()
+                Publisher.fromKey(rating.getPublisher()).requireValue(),
+                rating.getNumberOfVotes()
         );
     }
 }

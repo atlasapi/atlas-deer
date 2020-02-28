@@ -38,6 +38,7 @@ public class RatingsWriter implements EntityListWriter<Rating> {
 
         writer.writeField("type", entity.getType());
         writer.writeField("value", entity.getValue());
+        writer.writeField("numberOfVotes", entity.getNumberOfVotes());
         writer.writeObject(sourceWriter, entity.getPublisher(), ctxt);
     }
 

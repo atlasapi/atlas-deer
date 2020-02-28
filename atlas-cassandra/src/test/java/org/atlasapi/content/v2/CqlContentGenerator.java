@@ -180,7 +180,7 @@ public class CqlContentGenerator {
         c.setGenericDescription(Boolean.FALSE);
         c.setEventRefs(ImmutableSet.of(new EventRef(Id.valueOf(23), Publisher.ARQIVA)));
 
-        c.setRatings(ImmutableList.of(new Rating("sometype", 4.2f, Publisher.AMAZON_UK)));
+        c.setRatings(ImmutableList.of(new Rating("sometype", 4.2f, Publisher.AMAZON_UK, 1234L)));
 
         c.setReviews(ImmutableList.of(
                 Review.builder("hao aboot this one, eh?")
