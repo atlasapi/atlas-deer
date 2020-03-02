@@ -185,8 +185,6 @@ public class ContentSerializerTest {
 
         song.setIsrc("isrc");
         serializeAndCheck(song);
-        song.setDuration(Duration.standardSeconds(1));
-        serializeAndCheck(song);
     }
 
     @Test
@@ -357,6 +355,7 @@ public class ContentSerializerTest {
         assertThat(actual.getBroadcasts().isEmpty(), is(false));
         assertThat(actual.getSegmentEvents().isEmpty(), is(false));
         assertThat(actual.getRestrictions().isEmpty(), is(false));
+        assertThat(actual.getDuration(), is(expected.getDuration()));
     }
 
     private void checkContentProperties(Content actual, Content expected) {

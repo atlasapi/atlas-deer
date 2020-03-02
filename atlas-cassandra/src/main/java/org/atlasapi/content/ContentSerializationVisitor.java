@@ -249,6 +249,9 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         builder.addAllBroadcasts(serializeBroadcasts(item.getBroadcasts()));
         builder.addAllSegmentEvents(serializeSegmentEvents(item.getSegmentEvents()));
         builder.addAllRestrictions(serializeRestrictions(item.getRestrictions()));
+        if (item.getDuration() != null) {
+            builder.setDuration(item.getDuration().getMillis());
+        }
         return builder;
     }
 
@@ -410,9 +413,6 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         Builder builder = visitItem(song);
         if (song.getIsrc() != null) {
             builder.setIsrc(song.getIsrc());
-        }
-        if (song.getDuration() != null) {
-            builder.setDuration(song.getDuration().getMillis());
         }
         return builder;
     }

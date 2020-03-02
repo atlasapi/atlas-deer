@@ -9,7 +9,6 @@ import org.joda.time.Duration;
 public class Song extends Item {
 
     private String isrc;
-    private Long duration;
 
     public Song() {
         setMediaType(MediaType.AUDIO);
@@ -37,15 +36,6 @@ public class Song extends Item {
         return isrc;
     }
 
-    public void setDuration(Duration duration) {
-        this.duration = duration != null ? duration.getStandardSeconds() : null;
-    }
-
-    @FieldName("duration")
-    public Duration getDuration() {
-        return duration != null ? Duration.standardSeconds(duration) : null;
-    }
-
     @Override
     public SongRef toRef() {
         return new SongRef(
@@ -59,7 +49,6 @@ public class Song extends Item {
     public static Song copyTo(Song from, Song to) {
         Item.copyTo(from, to);
         to.isrc = from.isrc;
-        to.duration = from.duration;
         return to;
     }
 

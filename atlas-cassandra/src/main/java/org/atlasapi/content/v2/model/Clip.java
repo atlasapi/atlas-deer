@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 public class Clip implements ContentIface {
 
     private Long id;
@@ -81,6 +83,7 @@ public class Clip implements ContentIface {
     private Boolean blackAndWhite;
     private Set<String> countriesOfOrigin;
     private String sortKey;
+    private Long duration;
     private ContainerSummary containerSummary;
     private Map<String, Broadcast> broadcasts;
     private List<SegmentEvent> segmentEvents;
@@ -503,6 +506,15 @@ public class Clip implements ContentIface {
         this.sortKey = sortKey;
     }
 
+    @Nullable
+    public Long getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Long duration) {
+        this.duration = duration;
+    }
+
     public ContainerSummary getContainerSummary() {
         return containerSummary;
     }
@@ -704,6 +716,7 @@ public class Clip implements ContentIface {
                 Objects.equals(blackAndWhite, clip.blackAndWhite) &&
                 NullOrEmptyEquality.equals(countriesOfOrigin, clip.countriesOfOrigin) &&
                 Objects.equals(sortKey, clip.sortKey) &&
+                Objects.equals(duration, clip.duration) &&
                 Objects.equals(containerSummary, clip.containerSummary) &&
                 NullOrEmptyEquality.equals(broadcasts, clip.broadcasts) &&
                 NullOrEmptyEquality.equals(segmentEvents, clip.segmentEvents) &&
@@ -717,6 +730,6 @@ public class Clip implements ContentIface {
 
     @Override
     public int hashCode() {
-        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, manifestedAs, genericDescription, eventRefs, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, containerSummary, broadcasts, segmentEvents, restrictions, clipOf, reviews, ratings, encodings, customFields);
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, manifestedAs, genericDescription, eventRefs, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, duration, containerSummary, broadcasts, segmentEvents, restrictions, clipOf, reviews, ratings, encodings, customFields);
     }
 }

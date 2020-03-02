@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 @Table(name = "content_v2")
 public class Content implements ContentIface {
 
@@ -746,6 +748,7 @@ public class Content implements ContentIface {
         this.isrc = isrc;
     }
 
+    @Nullable
     public Long getDuration() {
         return duration;
     }

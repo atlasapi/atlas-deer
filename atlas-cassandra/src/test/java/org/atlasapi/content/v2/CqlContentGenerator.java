@@ -397,6 +397,7 @@ public class CqlContentGenerator {
         i.setBroadcasts(ImmutableSet.of(makeBroadcast()));
         i.setSegmentEvents(ImmutableList.of(makeSegmentEvent()));
         i.setRestrictions(ImmutableSet.of(makeRestriction()));
+        i.setDuration(Duration.standardHours(1));
     }
 
     private static Restriction makeRestriction() {
@@ -530,7 +531,6 @@ public class CqlContentGenerator {
         setItemFields(song);
 
         song.setIsrc("some isrc");
-        song.setDuration(Duration.standardHours(1));
 
         return song;
     }
