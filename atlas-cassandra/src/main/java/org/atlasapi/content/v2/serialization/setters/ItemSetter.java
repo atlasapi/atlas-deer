@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.joda.time.Duration;
+
 import static org.atlasapi.content.v2.serialization.DateTimeUtils.toInstant;
 
 public class ItemSetter {
@@ -39,6 +41,11 @@ public class ItemSetter {
         internal.setIsLongForm(item.getIsLongForm());
         internal.setBlackAndWhite(item.getBlackAndWhite());
         internal.setSortKey(item.sortKey());
+
+        Duration duration = item.getDuration();
+        if(duration != null) {
+            internal.setDuration(duration.getMillis());
+        }
 
         internal.setContainerSummary(containerSummary.serialize(item.getContainerSummary()));
 
@@ -81,6 +88,11 @@ public class ItemSetter {
         item.setBlackAndWhite(internal.getBlackAndWhite());
 
         item = item.withSortKey(internal.getSortKey());
+
+        Long duration = internal.getDuration();
+        if (duration != null) {
+            item.setDuration(new Duration(duration));
+        }
 
         item.setContainerSummary(containerSummary.deserialize(internal.getContainerSummary()));
 

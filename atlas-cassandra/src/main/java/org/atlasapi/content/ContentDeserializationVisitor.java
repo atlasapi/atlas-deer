@@ -432,7 +432,6 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     public Song visit(Song song) {
         song = visitItem(song);
         song.setIsrc(msg.hasIsrc() ? msg.getIsrc() : null);
-        song.setDuration(msg.hasDuration() ? Duration.millis(msg.getDuration()) : null);
         return song;
     }
 
@@ -455,6 +454,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         if (msg.hasLongform()) {
             item.setIsLongForm(msg.getLongform());
+        }
+        if (msg.hasDuration()) {
+            item.setDuration(Duration.millis(msg.getDuration()));
         }
 
         boolean hasBroadcastAnnotation = annotations

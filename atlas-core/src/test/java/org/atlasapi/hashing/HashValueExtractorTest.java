@@ -581,6 +581,7 @@ public class HashValueExtractorTest {
         item.setContainerRef(new BrandRef(Id.valueOf(10L), Publisher.METABROADCAST));
         item.setIsLongForm(true);
         item.setBlackAndWhite(false);
+        item.setDuration(Duration.standardMinutes(1));
         item.setContainerSummary(ContainerSummary.create(
                 "type", "title", "description", 5, 5
         ));
@@ -641,7 +642,6 @@ public class HashValueExtractorTest {
 
     private void setSongFields(Song song) {
         song.setIsrc("isrc");
-        song.setDuration(Duration.standardMinutes(1));
     }
 
     private void setClipFields(Clip clip) {
