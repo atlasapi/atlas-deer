@@ -36,7 +36,10 @@ public class RepIdAnnotation extends OutputAnnotation<Content> {
     LoadingCache<Long, String> appIdCache;
 
     /**
-     * Includes the REP ID for this application //TODO do not include in other annotations as it is expensive and b dangerous if this fails.
+     * Adds the RepId to the result of the call by calling the RepId Service. Do not include this
+     * in any annotation groups (such as description or extended_ids), as it is expensive, it is
+     * optional (i.e. depended on your key having access to this service), and it is dangerous, i.e.
+     * if the repId service call fails the whole call will fail.
      * @param repIdClient
      */
     public RepIdAnnotation(RepIdClient repIdClient) {
