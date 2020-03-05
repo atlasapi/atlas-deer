@@ -3,6 +3,7 @@ package org.atlasapi.content.v2.model;
 import java.util.Map;
 import java.util.Set;
 
+import org.atlasapi.content.v2.model.udt.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Image;
 import org.atlasapi.content.v2.model.udt.Interval;
@@ -19,6 +20,10 @@ public interface Described extends Identified {
     String getTitle();
 
     void setTitle(String title);
+
+    Set<LocalizedTitle> getLocalizedTitles();
+
+    void setLocalizedTitles(Set<LocalizedTitle> localizedTitles);
 
     String getShortDescription();
 

@@ -143,6 +143,16 @@ public class DescribedInfo implements ModelClassInfo {
             )
             .add(
                     FieldInfo.builder()
+                            .withName("titles")
+                            .withDescription("")
+                            .withType("LocalizedTitle")
+                            .withIsMultiple(true)
+                            .withIsModelType(true)
+                            .withJsonType(JsonType.ARRAY)
+                            .build()
+            )
+            .add(
+                    FieldInfo.builder()
                             .withName("this_or_child_last_updated")
                             .withDescription("")
                             .withType("DateTime")

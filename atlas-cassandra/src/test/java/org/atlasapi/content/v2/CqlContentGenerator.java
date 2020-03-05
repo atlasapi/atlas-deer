@@ -28,6 +28,7 @@ import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.KeyPhrase;
+import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.MediaType;
@@ -102,6 +103,11 @@ public class CqlContentGenerator {
         setIdentifiedFields(c);
 
         c.setTitle("title");
+        LocalizedTitle localizedTitle = new LocalizedTitle();
+        localizedTitle.setTitle("titlu");
+        localizedTitle.setLocale("ro","RO");
+        c.setTitles(ImmutableSet.of(localizedTitle));
+
         c.setShortDescription("short description");
         c.setMediumDescription("medium description");
         c.setLongDescription("long description");

@@ -36,6 +36,7 @@ import org.atlasapi.content.Film;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Series;
@@ -91,6 +92,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private static final Function<Described, String> TO_TITLE =
             input -> input == null ? null : input.getTitle();
+
+    private static final Function<Described, Set<LocalizedTitle>> TO_TITLES =
+            input -> input == null ? null : input.getTitles();
 
     private static final Function<Described, String> TO_DESCRIPTION =
             input -> input == null ? null : input.getDescription();
@@ -320,6 +324,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getTitle() == null) {
             chosen.setTitle(first(notChosen, TO_TITLE));
         }
+        mergeLocalizedTitles(chosen, notChosen);
+
         if (chosen.getDescription() == null) {
             chosen.setDescription(first(notChosen, TO_DESCRIPTION));
         }
@@ -436,6 +442,18 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 notChosen,
                 Content::getCountriesOfOrigin
         ));
+    }
+
+
+    private <T extends Described> void mergeLocalizedTitles(T chosen, Iterable<T> notChosen) {
+        Stream<T> allContent = Stream.concat(Stream.of(chosen), MoreStreams.stream(notChosen));
+
+        Set<LocalizedTitle> combinedLocalizedTitles = allContent
+                .map(Described::getTitles)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        chosen.setTitles(combinedLocalizedTitles);
     }
 
     private <T extends Content> void mergeReviews(T chosen, Iterable<T> notChosen) {

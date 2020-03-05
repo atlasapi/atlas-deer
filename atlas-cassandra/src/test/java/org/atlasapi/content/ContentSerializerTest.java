@@ -3,7 +3,6 @@ package org.atlasapi.content;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -26,7 +25,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.junit.Test;
@@ -593,6 +591,12 @@ public class ContentSerializerTest {
         described.setPresentationChannel("bbcone");
         described.setScheduleOnly(true);
         described.setShortDescription("shortDesc");
+
+        LocalizedTitle localizedTitle = new LocalizedTitle();
+        localizedTitle.setTitle("titlu");
+        localizedTitle.setLocale("ro","RO");
+        described.setTitles(ImmutableSet.of(localizedTitle));
+
         described.setSpecialization(Specialization.RADIO);
         described.setThisOrChildLastUpdated(DateTime.parse("2015-09-09T10:08:18.543Z"));
         described.setThumbnail("thumbnail");
