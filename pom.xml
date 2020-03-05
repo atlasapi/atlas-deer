@@ -575,12 +575,12 @@
     <repository>
       <id>metabroadcast-mvn</id>
       <name>Public Releases MetaBroadcast Repo</name>
-      <url>dav:http://mvn.metabroadcast.com:80/public-releases-local</url>
+      <url>dav:http://artifactory.infra/artifactory/public-releases-local</url>
     </repository>
     <snapshotRepository>
       <id>metabroadcast-mvn</id>
       <name>Public Snapshots MetaBroadcast Repo</name>
-      <url>dav:http://mvn.metabroadcast.com:80/public-snapshots-local</url>
+      <url>dav:http://artifactory.infra/artifactory/public-snapshots-local</url>
       <uniqueVersion>false</uniqueVersion>
     </snapshotRepository>
   </distributionManagement>
@@ -589,7 +589,7 @@
     <repository>
       <id>metabroadcast-mvn</id>
       <name>Metabroadcast</name>
-      <url>http://mvn.metabroadcast.com/all</url>
+      <url>http://artifactory.infra/artifactory/all</url>
       <layout>default</layout>
       <snapshots>
         <enabled>true</enabled>
