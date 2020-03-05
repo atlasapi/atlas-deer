@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
@@ -27,6 +29,7 @@ import org.atlasapi.serialization.protobuf.ContentProtos.Synopsis;
 import org.atlasapi.source.Sources;
 import org.joda.time.Duration;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -153,6 +156,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         if (msg.getTitlesCount() > 0) {
             described.setTitle(msg.getTitles(0).getValue());
+            described.setTitles(getLocalizedTitles());
         }
         if (msg.hasDescription()) {
             described.setDescription(msg.getDescription());
@@ -488,6 +492,19 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             encodings.add(encodingSerializer.deserialize(encoding));
         }
         return encodings.build();
+    }
+
+    private Set<LocalizedTitle> getLocalizedTitles() {
+        return msg.getTitlesList().stream()
+                .map(localeString -> {
+                    LocalizedTitle localizedTitle = new LocalizedTitle();
+                    localizedTitle.setTitle(localeString.getValue());
+                    if(localeString.getLocale() != null) {
+                        localizedTitle.setLocale(Locale.forLanguageTag(localeString.getLocale()));
+                    }
+                    return localizedTitle;
+                })
+                .collect(MoreCollectors.toImmutableSet());
     }
 
     private ImmutableSet<SegmentEvent> getSegmentEvents() {

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.metabroadcast.common.stream.MoreCollectors;
+
+import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
@@ -47,6 +49,7 @@ public class Clip implements ContentIface {
     private Instant lastUpdated;
     private Instant equivalenceUpdate;
     private String title;
+    private Set<LocalizedTitle> titles;
     private String shortDescription;
     private String mediumDescription;
     private String longDescription;
@@ -164,6 +167,14 @@ public class Clip implements ContentIface {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public Set<LocalizedTitle> getLocalizedTitles() {
+        return titles;
+    }
+
+    public void setLocalizedTitles(Set<LocalizedTitle> titles) {
+        this.titles = titles;
     }
 
     public String getShortDescription() {
@@ -683,6 +694,7 @@ public class Clip implements ContentIface {
                 NullOrEmptyEquality.equals(aliases, clip.aliases) &&
                 NullOrEmptyEquality.equals(equivalentTo, clip.equivalentTo) &&
                 Objects.equals(title, clip.title) &&
+                NullOrEmptyEquality.equals(titles, clip.titles) &&
                 Objects.equals(shortDescription, clip.shortDescription) &&
                 Objects.equals(mediumDescription, clip.mediumDescription) &&
                 Objects.equals(longDescription, clip.longDescription) &&
@@ -730,6 +742,6 @@ public class Clip implements ContentIface {
 
     @Override
     public int hashCode() {
-        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, manifestedAs, genericDescription, eventRefs, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, duration, containerSummary, broadcasts, segmentEvents, restrictions, clipOf, reviews, ratings, encodings, customFields);
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, titles, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, manifestedAs, genericDescription, eventRefs, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, duration, containerSummary, broadcasts, segmentEvents, restrictions, clipOf, reviews, ratings, encodings, customFields);
     }
 }

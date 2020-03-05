@@ -1,8 +1,13 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.Iterables;
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.stream.MoreCollectors;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.AwardSerializer;
@@ -18,15 +23,13 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
+
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
+
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
 
@@ -107,6 +110,16 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
         if (content.getTitle() != null) {
             builder.addTitlesBuilder().setValue(content.getTitle()).build();
+        }
+        if (content.getTitles() != null) {
+            for (LocalizedTitle localizedTitle : content.getTitles()) {
+                if (localizedTitle.getLocale() != null) {
+                    builder.addTitlesBuilder()
+                            .setValue(localizedTitle.getTitle())
+                            .setLocale(localizedTitle.getLanguageTag())
+                    .build();
+                }
+            }
         }
         if (content.getDescription() != null) {
             builder.setDescription(content.getDescription());

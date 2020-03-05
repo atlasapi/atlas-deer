@@ -6,6 +6,8 @@ import com.datastax.driver.mapping.annotations.FrozenKey;
 import com.datastax.driver.mapping.annotations.FrozenValue;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
+
+import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
@@ -78,6 +80,9 @@ public class Content implements ContentIface {
 
     @Column(name = "title")
     private String title;
+
+    @Column(name = "titles")
+    private Set<LocalizedTitle> titles;
 
     @Column(name = "short_descr")
     private String shortDescription;
@@ -388,6 +393,16 @@ public class Content implements ContentIface {
     @Override
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    @Override
+    public Set<LocalizedTitle> getLocalizedTitles() {
+        return titles;
+    }
+
+    @Override
+    public void setLocalizedTitles(Set<LocalizedTitle> titles) {
+        this.titles = titles;
     }
 
     @Override
@@ -956,6 +971,7 @@ public class Content implements ContentIface {
                 NullOrEmptyEquality.equals(aliases, content.aliases) &&
                 NullOrEmptyEquality.equals(equivalentTo, content.equivalentTo) &&
                 Objects.equals(title, content.title) &&
+                NullOrEmptyEquality.equals(titles, content.titles) &&
                 Objects.equals(shortDescription, content.shortDescription) &&
                 Objects.equals(mediumDescription, content.mediumDescription) &&
                 Objects.equals(longDescription, content.longDescription) &&
@@ -1018,6 +1034,6 @@ public class Content implements ContentIface {
 
     @Override
     public int hashCode() {
-        return NullOrEmptyEquality.hash(id, type, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, genericDescription, eventRefs, isrc, duration, seriesNumber, totalEpisodes, brandRef, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, containerSummary, broadcasts, segmentEvents, restrictions, websiteUrl, subtitles, releaseDates, episodeNumber, partNumber, special, seriesRefs, itemRefs, upcomingContent, availableContent, itemSummaries, reviews, ratings, clips, encodings, customFields);
+        return NullOrEmptyEquality.hash(id, type, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, titles, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, genericDescription, eventRefs, isrc, duration, seriesNumber, totalEpisodes, brandRef, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, containerSummary, broadcasts, segmentEvents, restrictions, websiteUrl, subtitles, releaseDates, episodeNumber, partNumber, special, seriesRefs, itemRefs, upcomingContent, availableContent, itemSummaries, reviews, ratings, clips, encodings, customFields);
     }
 }

@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.PriorityScoreReasons;
 import org.atlasapi.content.Specialization;
@@ -50,6 +51,7 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         described.setImage(input.getImage());
         described.setImages(transformImages(input.getImages()));
         described.setLastFetched(input.getLastFetched());
+        described.setTitles(transformLocalizedTitles(input.getLocalizedTitles()));
         described.setLongDescription(input.getLongDescription());
         described.setMediaType(transformEnum(input.getMediaType(), MediaType.class));
         described.setMediumDescription(input.getMediumDescription());
@@ -67,6 +69,7 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         }
         described.setThumbnail(input.getThumbnail());
         described.setTitle(input.getTitle());
+//        Locale locale = new Locale();
         described.setPriority(transformPriority(input.getPriority()));
         described.setAwards(transformAwards(input.getAwards()));
 
@@ -139,6 +142,26 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         award.setDescription(awardLegacy.getDescription());
         award.setYear(awardLegacy.getYear());
         return award;
+    }
+
+    protected Set<org.atlasapi.content.LocalizedTitle> transformLocalizedTitles(
+            Collection<org.atlasapi.media.entity.LocalizedTitle> legacyLocalizedTitles)
+    {
+        if (legacyLocalizedTitles == null) {
+            return ImmutableSet.of();
+        }
+        return legacyLocalizedTitles.stream()
+                .map(this::transformLocalizedTitle)
+                .collect(Collectors.toSet());
+    }
+
+    private LocalizedTitle transformLocalizedTitle(
+            org.atlasapi.media.entity.LocalizedTitle legacyLocalizedTitle
+    ) {
+        LocalizedTitle localizedTitle = new LocalizedTitle();
+        localizedTitle.setTitle(legacyLocalizedTitle.getTitle());
+        localizedTitle.setLocale(legacyLocalizedTitle.getLocale());
+        return localizedTitle;
     }
 
     protected Iterable<Review> transformReviews(Collection<org.atlasapi.media.entity.Review> legacyReviews) {

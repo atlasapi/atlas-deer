@@ -72,6 +72,7 @@ import org.atlasapi.output.annotation.IdentificationAnnotation;
 import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
 import org.atlasapi.output.annotation.IsPublishedAnnotation;
 import org.atlasapi.output.annotation.KeyPhrasesAnnotation;
+import org.atlasapi.output.annotation.LocalizedTitlesAnnotation;
 import org.atlasapi.output.annotation.LocationsAnnotation;
 import org.atlasapi.output.annotation.ModelInfoAnnotation;
 import org.atlasapi.output.annotation.ModifiedDatesAnnotation;
@@ -217,6 +218,7 @@ import static org.atlasapi.annotation.Annotation.ID_SUMMARY;
 import static org.atlasapi.annotation.Annotation.IMAGES;
 import static org.atlasapi.annotation.Annotation.IS_PUBLISHED;
 import static org.atlasapi.annotation.Annotation.KEY_PHRASES;
+import static org.atlasapi.annotation.Annotation.LOCALIZED_TITLES;
 import static org.atlasapi.annotation.Annotation.LOCATIONS;
 import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
 import static org.atlasapi.annotation.Annotation.META_MODEL;
@@ -1133,7 +1135,7 @@ public class QueryWebModule {
                         )
                 )
                 .register(
-                        CONTENT_DETAIL,
+                        CONTENT_DETAIL,     //TODO doesn't work?
                         NullWriter.create(Content.class),
                         ImmutableSet.of(
                                 EXTENDED_DESCRIPTION,
@@ -1145,7 +1147,12 @@ public class QueryWebModule {
                                 BROADCASTS,
                                 LOCATIONS,
                                 KEY_PHRASES,
-                                RELATED_LINKS
+                                RELATED_LINKS,
+                                RATINGS,
+                                REVIEWS,
+                                AWARDS,
+                                LOCALIZED_TITLES,
+                                CUSTOM_FIELDS
                         )
                 )
                 .register(
@@ -1212,6 +1219,7 @@ public class QueryWebModule {
                 .register(MODIFIED_DATES, new ModifiedDatesAnnotation())
                 .register(CUSTOM_FIELDS, new CustomFieldsAnnotation())
                 .register(IS_PUBLISHED, new IsPublishedAnnotation())
+                .register(LOCALIZED_TITLES, new LocalizedTitlesAnnotation(), commonImplied)
                 .build();
     }
 
