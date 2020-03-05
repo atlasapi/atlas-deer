@@ -1,8 +1,13 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.entity.Id;
@@ -15,18 +20,11 @@ import org.atlasapi.media.entity.LookupRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
-
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -65,15 +63,12 @@ public class DirectAndExplicitEquivalenceMigrator {
         try {
             Id contentId = ref.getId();
             LookupEntry legacyLookupEntry = resolveLegacyEquivalents(contentId);
-            Set<LookupRef> legacyEquivRefs = Sets.union(
-                    legacyLookupEntry.explicitEquivalents(),
-                    legacyLookupEntry.directEquivalents()
-            );
+            Set<LookupRef> legacyEquivRefs = legacyLookupEntry.getOutgoing();
             if (!legacyEquivRefs.isEmpty()) {
-                log.debug("Resolved {} legacy explicit equiv refs for {}",
+                log.debug("Resolved {} legacy equiv refs for {}",
                         legacyEquivRefs.size(), contentId
                 );
-                log.trace("Legacy explicit refs for {} resolved as {}", contentId, legacyEquivRefs);
+                log.trace("Legacy equiv refs for {} resolved as {}", contentId, legacyEquivRefs);
                 Set<ResourceRef> equivRefs = resolveLegacyContent(legacyEquivRefs);
                 log.debug("Dereferenced {} of {} explicit equivalents for {}",
                         equivRefs.size(), legacyEquivRefs.size(), contentId

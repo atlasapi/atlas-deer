@@ -1,7 +1,17 @@
 package org.atlasapi.messaging;
 
-import java.util.concurrent.TimeUnit;
-
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.entity.Id;
@@ -13,23 +23,10 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
-
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.time.Timestamp;
-
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -153,10 +150,7 @@ public class Neo4jContentStoreGraphUpdateWorker
     }
 
     private ImmutableSet<ResourceRef> getAdjacents(LookupEntry lookupEntry) {
-        ImmutableSet<Id> adjacentIds = Sets.union(
-                lookupEntry.explicitEquivalents(),
-                lookupEntry.directEquivalents()
-        )
+        ImmutableSet<Id> adjacentIds = lookupEntry.getOutgoing()
                 .stream()
                 .map(LookupRef::id)
                 .map(Id::valueOf)
