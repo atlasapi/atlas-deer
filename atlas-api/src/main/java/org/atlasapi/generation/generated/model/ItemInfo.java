@@ -623,7 +623,7 @@ public class ItemInfo implements ModelClassInfo {
             )
             .add(
                     FieldInfo.builder()
-                            .withName("year")
+                            .withName("duration")
                             .withDescription("")
                             .withType("Integer")
                             .withIsMultiple(false)
