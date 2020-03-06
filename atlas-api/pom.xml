@@ -283,6 +283,11 @@
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jdk8</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.metabroadcast.representative</groupId>
+      <artifactId>client</artifactId>
+      <version>${representative-id-service.version}</version>
+    </dependency>
   </dependencies>
 
   <distributionManagement>
