@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Alias;
@@ -195,6 +196,10 @@ public class ContentSerializerTest {
 
         Series expected = new Series();
         setContainerProperties(expected);
+
+        // the legacy piece of content is missing localizedTitles, but since we don't want to add
+        // it because we risk corrupting it, we instead remove them from the expected content
+        expected.setTitles(ImmutableSet.of());
 
         assertThat(actual, is(instanceOf(Series.class)));
         checkContainerProperties((Series) actual, expected);
@@ -388,9 +393,14 @@ public class ContentSerializerTest {
         assertThat(actual.getSpecialization(), is(expected.getSpecialization()));
         assertThat(actual.getThisOrChildLastUpdated(), is(expected.getThisOrChildLastUpdated()));
         assertThat(actual.getThumbnail(), is(expected.getThumbnail()));
+        Set<LocalizedTitle> actualTitles = actual.getTitles();
+        Set<LocalizedTitle> expectedTitles = expected.getTitles();
         assertThat(actual.getTitle(), is(expected.getTitle()));
+        assertThat(actual.getTitles(), is(expected.getTitles()));
         assertThat(actual.isActivelyPublished(), is(expected.isActivelyPublished()));
 
+        assertThat("Same number of localizedTitles", actual.getTitles().size(), is(expected.getTitles().size()));
+        assertThat("All localizedTitles present", actual.getTitles().containsAll(expected.getTitles()), is(true));
         assertThat("Same number of reviews", actual.getReviews().size(), is(expected.getReviews().size()));
         assertThat("All reviews present", actual.getReviews().containsAll(expected.getReviews()), is(true));
         assertThat("Same number of ratings", actual.getRatings().size(), is(expected.getRatings().size()));
