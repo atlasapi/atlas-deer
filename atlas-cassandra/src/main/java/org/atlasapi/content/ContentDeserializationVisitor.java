@@ -1,12 +1,10 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.stream.MoreCollectors;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Alias;
@@ -27,13 +25,16 @@ import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Subtitle;
 import org.atlasapi.serialization.protobuf.ContentProtos.Synopsis;
 import org.atlasapi.source.Sources;
-import org.joda.time.Duration;
 
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
+import org.joda.time.Duration;
 
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.ALL_AGGREGATED_BROADCASTS;
@@ -156,7 +157,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         if (msg.getTitlesCount() > 0) {
             described.setTitle(msg.getTitles(0).getValue());
-            described.setTitles(getLocalizedTitles());
+            if(msg.getTitlesCount() > 1) {
+                described.setTitles(getLocalizedTitles());
+            }
         }
         if (msg.hasDescription()) {
             described.setDescription(msg.getDescription());
@@ -495,11 +498,14 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     }
 
     private Set<LocalizedTitle> getLocalizedTitles() {
-        return msg.getTitlesList().stream()
+        // first one is the actual title, so skip it
+        return msg.getTitlesList()
+                .stream()
+                .skip(1)
                 .map(localeString -> {
                     LocalizedTitle localizedTitle = new LocalizedTitle();
                     localizedTitle.setTitle(localeString.getValue());
-                    if(localeString.getLocale() != null) {
+                    if (localeString.getLocale() != null) {
                         localizedTitle.setLocale(Locale.forLanguageTag(localeString.getLocale()));
                     }
                     return localizedTitle;

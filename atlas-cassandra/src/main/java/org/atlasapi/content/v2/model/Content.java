@@ -7,7 +7,7 @@ import com.datastax.driver.mapping.annotations.FrozenValue;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
 
-import org.atlasapi.content.LocalizedTitle;
+import org.atlasapi.content.v2.model.udt.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
