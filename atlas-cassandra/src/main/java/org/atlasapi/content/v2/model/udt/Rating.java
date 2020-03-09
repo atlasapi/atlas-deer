@@ -11,7 +11,7 @@ public class Rating {
     @Field(name = "value") private float value;
     @Field(name = "type") private String type;
     @Field(name = "publisher") private String publisher;
-    @Field(name = "numberOfVotes") private Long numberOfVotes;
+    @Field(name = "number_of_votes") private Long numberOfVotes;
 
     public Rating() {}
 

@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
-@UDT(name = "localizedTitle")
+@UDT(name = "localizedtitle")
 public class LocalizedTitle {
 
     @Field(name = "title") private String title;
