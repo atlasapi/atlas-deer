@@ -25,6 +25,7 @@ public abstract class Localized implements Hashable {
     private Locale locale;
 
     /**Constructs & sets the Locale of this object based on a language code, a region code, or both.
+     * If either are null or empty, then they will not be set.
      *
      * @param languageCode  - preferably a 2 character language code (ISO 639).
      * @param regionCode    - preferably a 2 character region code (ISO 3166).
@@ -32,19 +33,7 @@ public abstract class Localized implements Hashable {
      * @see java.util.Locale for more info on the codes.
      */
     public void setLocale(@Nullable String languageCode, @Nullable String regionCode) {
-        Locale locale = null;
-
-        if (!Strings.isNullOrEmpty(languageCode) && !Strings.isNullOrEmpty(regionCode)) {
-            locale = Locale.forLanguageTag(String.join("/", languageCode, regionCode));
-        }
-        else if (!Strings.isNullOrEmpty(languageCode)) {
-            locale = Locale.forLanguageTag(languageCode);   // undefined region is assumed by Locale
-        }
-        else if (!Strings.isNullOrEmpty(regionCode)) {
-            locale = Locale.forLanguageTag(String.join("/", UNDEFINED_LANGUAGE, regionCode));
-        }
-
-        this.locale = locale;
+        this.locale = new Locale.Builder().setLanguage(languageCode).setRegion(regionCode).build();
     }
 
     public void setLocale(Locale locale) {

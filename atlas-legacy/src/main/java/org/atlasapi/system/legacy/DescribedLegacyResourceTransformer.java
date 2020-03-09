@@ -69,7 +69,6 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         }
         described.setThumbnail(input.getThumbnail());
         described.setTitle(input.getTitle());
-//        Locale locale = new Locale();
         described.setPriority(transformPriority(input.getPriority()));
         described.setAwards(transformAwards(input.getAwards()));
 
