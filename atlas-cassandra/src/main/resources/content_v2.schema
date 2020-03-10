@@ -245,7 +245,7 @@ CREATE TYPE IF NOT EXISTS Rating (
   value float,
   type text,
   publisher text,
-  numberOfVotes bigint
+  number_of_votes bigint
 );
 
 CREATE TYPE IF NOT EXISTS ContainerSummary (

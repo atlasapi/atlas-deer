@@ -12,8 +12,6 @@ import com.google.common.base.Strings;
 
 public abstract class Localized implements Hashable {
 
-    private static final String UNDEFINED_LANGUAGE = "und";
-
     private final static Function<Localized, String> TO_LANGUAGE_TAG = new Function<Localized, String>() {
         @Override
         @Nullable
