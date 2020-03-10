@@ -93,9 +93,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private static final Function<Described, String> TO_TITLE =
             input -> input == null ? null : input.getTitle();
 
-    private static final Function<Described, Set<LocalizedTitle>> TO_TITLES =
-            input -> input == null ? null : input.getTitles();
-
     private static final Function<Described, String> TO_DESCRIPTION =
             input -> input == null ? null : input.getDescription();
 
