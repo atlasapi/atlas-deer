@@ -41,7 +41,7 @@ public class DescribedSetter {
         identifiedSetter.serialize(internal, content);
 
         internal.setTitle(content.getTitle());
-        internal.setTitles(content.getTitles().stream()
+        internal.setLocalizedTitles(content.getLocalizedTitles().stream()
                 .map(localizedTitle::serialize)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
@@ -111,9 +111,9 @@ public class DescribedSetter {
 
         content.setTitle(internal.getTitle());
 
-        Set<LocalizedTitle> localizedTitles = internal.getTitles();
+        Set<LocalizedTitle> localizedTitles = internal.getLocalizedTitles();
         if (localizedTitles != null) {
-            content.setTitles(localizedTitles.stream()
+            content.setLocalizedTitles(localizedTitles.stream()
             .map(localizedTitle::deserialize)
             .collect(Collectors.toSet()));
         }

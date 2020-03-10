@@ -51,7 +51,7 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         described.setImage(input.getImage());
         described.setImages(transformImages(input.getImages()));
         described.setLastFetched(input.getLastFetched());
-        described.setTitles(transformLocalizedTitles(input.getLocalizedTitles()));
+        described.setLocalizedTitles(transformLocalizedTitles(input.getLocalizedTitles()));
         described.setLongDescription(input.getLongDescription());
         described.setMediaType(transformEnum(input.getMediaType(), MediaType.class));
         described.setMediumDescription(input.getMediumDescription());

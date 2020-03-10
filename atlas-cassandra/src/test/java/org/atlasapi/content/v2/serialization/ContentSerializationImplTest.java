@@ -61,7 +61,7 @@ public class ContentSerializationImplTest {
                 "Song#specialization", // explicitly initialised to MUSIC
                 "Film#specialization", // explicitly initialised to FILM,
                 "customFields", //explicitly initialised to an empty map
-                "titles"   // explicitly initialised to an empty set
+                "localizedTitles"   // explicitly initialised to an empty set
         );
 
         for (Content original : contents) {
