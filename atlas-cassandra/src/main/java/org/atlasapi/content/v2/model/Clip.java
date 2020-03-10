@@ -169,11 +169,11 @@ public class Clip implements ContentIface {
         this.title = title;
     }
 
-    public Set<LocalizedTitle> getLocalizedTitles() {
+    public Set<LocalizedTitle> getTitles() {
         return titles;
     }
 
-    public void setLocalizedTitles(Set<LocalizedTitle> titles) {
+    public void setTitles(Set<LocalizedTitle> titles) {
         this.titles = titles;
     }
 
