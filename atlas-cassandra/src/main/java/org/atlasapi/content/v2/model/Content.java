@@ -81,6 +81,7 @@ public class Content implements ContentIface {
     @Column(name = "title")
     private String title;
 
+    @FrozenValue
     @Column(name = "titles")
     private Set<LocalizedTitle> titles;
 
@@ -396,12 +397,12 @@ public class Content implements ContentIface {
     }
 
     @Override
-    public Set<LocalizedTitle> getLocalizedTitles() {
+    public Set<LocalizedTitle> getTitles() {
         return titles;
     }
 
     @Override
-    public void setLocalizedTitles(Set<LocalizedTitle> titles) {
+    public void setTitles(Set<LocalizedTitle> titles) {
         this.titles = titles;
     }
 

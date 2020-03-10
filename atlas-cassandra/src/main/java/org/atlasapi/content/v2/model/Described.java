@@ -21,9 +21,9 @@ public interface Described extends Identified {
 
     void setTitle(String title);
 
-    Set<LocalizedTitle> getLocalizedTitles();
+    Set<LocalizedTitle> getTitles();
 
-    void setLocalizedTitles(Set<LocalizedTitle> localizedTitles);
+    void setTitles(Set<LocalizedTitle> localizedTitles);
 
     String getShortDescription();
 
