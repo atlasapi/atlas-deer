@@ -143,7 +143,7 @@ public class DescribedInfo implements ModelClassInfo {
             )
             .add(
                     FieldInfo.builder()
-                            .withName("titles")
+                            .withName("localized_titles")
                             .withDescription("")
                             .withType("LocalizedTitle")
                             .withIsMultiple(true)

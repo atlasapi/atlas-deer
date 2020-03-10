@@ -158,7 +158,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.getTitlesCount() > 0) {
             described.setTitle(msg.getTitles(0).getValue());
             if(msg.getTitlesCount() > 1) {
-                described.setTitles(getLocalizedTitles());
+                described.setLocalizedTitles(getLocalizedTitles());
             }
         }
         if (msg.hasDescription()) {

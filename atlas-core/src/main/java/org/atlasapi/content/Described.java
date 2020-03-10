@@ -38,7 +38,7 @@ import static java.util.Optional.ofNullable;
 public abstract class Described extends Identified implements Sourced {
 
     private String title;
-    private Set<LocalizedTitle> titles = ImmutableSet.of();
+    private Set<LocalizedTitle> localizedTitles = ImmutableSet.of();
 
     private String shortDescription;
     private String mediumDescription;
@@ -140,13 +140,13 @@ public abstract class Described extends Identified implements Sourced {
         this.title = title;
     }
 
-    @FieldName("titles")
-    public Set<LocalizedTitle> getTitles() {
-        return titles;
+    @FieldName("localized_titles")
+    public Set<LocalizedTitle> getLocalizedTitles() {
+        return localizedTitles;
     }
 
-    public void setTitles(Set<LocalizedTitle> titles) {
-        this.titles = ImmutableSet.copyOf(titles);
+    public void setLocalizedTitles(Set<LocalizedTitle> localizedTitles) {
+        this.localizedTitles = ImmutableSet.copyOf(localizedTitles);
     }
 
     @FieldName("synopses")
@@ -346,7 +346,7 @@ public abstract class Described extends Identified implements Sourced {
         to.thisOrChildLastUpdated = from.thisOrChildLastUpdated;
         to.thumbnail = from.thumbnail;
         to.title = from.title;
-        to.titles = from.titles;
+        to.localizedTitles = from.localizedTitles;
         to.scheduleOnly = from.scheduleOnly;
         to.presentationChannel = from.presentationChannel;
         to.images = from.images;
@@ -379,7 +379,8 @@ public abstract class Described extends Identified implements Sourced {
         to.thisOrChildLastUpdated = ofNullable(from.thisOrChildLastUpdated).orElse(to.thisOrChildLastUpdated);
         to.thumbnail = isNullOrEmpty(from.thumbnail) ? to.thumbnail : from.thumbnail;
         to.title = isNullOrEmpty(from.title) ? to.title : from.title;
-        to.titles = from.titles.isEmpty() ? to.titles : from.titles;
+        to.localizedTitles = from.localizedTitles.isEmpty() ? to.localizedTitles
+                                                            : from.localizedTitles;
         to.scheduleOnly = from.scheduleOnly;
         to.presentationChannel = isNullOrEmpty(from.presentationChannel) ? to.presentationChannel : from.presentationChannel;
         to.images = from.images.isEmpty() ? to.images : from.images;

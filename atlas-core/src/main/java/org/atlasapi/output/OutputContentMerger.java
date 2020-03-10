@@ -446,11 +446,11 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         Stream<T> allContent = Stream.concat(Stream.of(chosen), MoreStreams.stream(notChosen));
 
         Set<LocalizedTitle> combinedLocalizedTitles = allContent
-                .map(Described::getTitles)
+                .map(Described::getLocalizedTitles)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
 
-        chosen.setTitles(combinedLocalizedTitles);
+        chosen.setLocalizedTitles(combinedLocalizedTitles);
     }
 
     private <T extends Content> void mergeReviews(T chosen, Iterable<T> notChosen) {

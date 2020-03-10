@@ -111,8 +111,8 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         if (content.getTitle() != null) {
             builder.addTitlesBuilder().setValue(content.getTitle()).build();
         }
-        if (content.getTitles() != null) {
-            for (LocalizedTitle localizedTitle : content.getTitles()) {
+        if (content.getLocalizedTitles() != null) {
+            for (LocalizedTitle localizedTitle : content.getLocalizedTitles()) {
                 if (localizedTitle.getLocale() != null) {
                     builder.addTitlesBuilder()
                             .setValue(localizedTitle.getTitle())

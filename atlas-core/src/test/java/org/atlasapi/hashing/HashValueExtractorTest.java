@@ -403,7 +403,7 @@ public class HashValueExtractorTest {
         LocalizedTitle localizedTitle = new LocalizedTitle();
         localizedTitle.setTitle("titlu");
         localizedTitle.setLocale(Locale.forLanguageTag("ro-RO"));
-        described.setTitles(ImmutableSet.of(localizedTitle));
+        described.setLocalizedTitles(ImmutableSet.of(localizedTitle));
 
         described.setShortDescription("short");
         described.setMediumDescription("medium");

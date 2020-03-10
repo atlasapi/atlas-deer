@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.Set;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Alias;
@@ -199,7 +198,7 @@ public class ContentSerializerTest {
 
         // the legacy piece of content is missing localizedTitles, but since we don't want to add
         // it because we risk corrupting it, we instead remove them from the expected content
-        expected.setTitles(ImmutableSet.of());
+        expected.setLocalizedTitles(ImmutableSet.of());
 
         assertThat(actual, is(instanceOf(Series.class)));
         checkContainerProperties((Series) actual, expected);
@@ -394,11 +393,11 @@ public class ContentSerializerTest {
         assertThat(actual.getThisOrChildLastUpdated(), is(expected.getThisOrChildLastUpdated()));
         assertThat(actual.getThumbnail(), is(expected.getThumbnail()));
         assertThat(actual.getTitle(), is(expected.getTitle()));
-        assertThat(actual.getTitles(), is(expected.getTitles()));
+        assertThat(actual.getLocalizedTitles(), is(expected.getLocalizedTitles()));
         assertThat(actual.isActivelyPublished(), is(expected.isActivelyPublished()));
 
-        assertThat("Same number of localizedTitles", actual.getTitles().size(), is(expected.getTitles().size()));
-        assertThat("All localizedTitles present", actual.getTitles().containsAll(expected.getTitles()), is(true));
+        assertThat("Same number of localizedTitles", actual.getLocalizedTitles().size(), is(expected.getLocalizedTitles().size()));
+        assertThat("All localizedTitles present", actual.getLocalizedTitles().containsAll(expected.getLocalizedTitles()), is(true));
         assertThat("Same number of reviews", actual.getReviews().size(), is(expected.getReviews().size()));
         assertThat("All reviews present", actual.getReviews().containsAll(expected.getReviews()), is(true));
         assertThat("Same number of ratings", actual.getRatings().size(), is(expected.getRatings().size()));
@@ -603,7 +602,7 @@ public class ContentSerializerTest {
         LocalizedTitle localizedTitle = new LocalizedTitle();
         localizedTitle.setTitle("titlu");
         localizedTitle.setLocale("ro","RO");
-        described.setTitles(ImmutableSet.of(localizedTitle));
+        described.setLocalizedTitles(ImmutableSet.of(localizedTitle));
 
         described.setSpecialization(Specialization.RADIO);
         described.setThisOrChildLastUpdated(DateTime.parse("2015-09-09T10:08:18.543Z"));
