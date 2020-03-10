@@ -413,6 +413,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 notChosen,
                 Identified::getAliases
         ));
+        mergeDuration(chosen, notChosen);
 
         if (chosen instanceof Episode && ((Episode) chosen).getEpisodeNumber() == null) {
             Episode chosenEpisode = (Episode) chosen;
@@ -441,6 +442,19 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         ));
     }
 
+    private <T extends Content> void mergeDuration(T chosen, Iterable<T> notChosen) {
+        if(chosen instanceof Item && ((Item) chosen).getDuration() == null) {
+            Item chosenItem = (Item) chosen;
+            StreamSupport.stream(notChosen.spliterator(), false)
+                    .filter(Item.class::isInstance)
+                    .map(Item.class::cast)
+                    .filter(item -> item.getDuration() != null)
+                    .findFirst()
+                    .ifPresent(item -> {
+                        chosenItem.setDuration(item.getDuration());
+                    });
+        }
+    }
 
     private <T extends Described> void mergeLocalizedTitles(T chosen, Iterable<T> notChosen) {
         Stream<T> allContent = Stream.concat(Stream.of(chosen), MoreStreams.stream(notChosen));
