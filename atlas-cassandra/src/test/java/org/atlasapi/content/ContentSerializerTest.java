@@ -393,8 +393,6 @@ public class ContentSerializerTest {
         assertThat(actual.getSpecialization(), is(expected.getSpecialization()));
         assertThat(actual.getThisOrChildLastUpdated(), is(expected.getThisOrChildLastUpdated()));
         assertThat(actual.getThumbnail(), is(expected.getThumbnail()));
-        Set<LocalizedTitle> actualTitles = actual.getTitles();
-        Set<LocalizedTitle> expectedTitles = expected.getTitles();
         assertThat(actual.getTitle(), is(expected.getTitle()));
         assertThat(actual.getTitles(), is(expected.getTitles()));
         assertThat(actual.isActivelyPublished(), is(expected.isActivelyPublished()));
