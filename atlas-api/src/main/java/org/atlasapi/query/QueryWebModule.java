@@ -989,6 +989,7 @@ public class QueryWebModule {
         return new ContentListWriter(contentAnnotations());
     }
 
+    // Registration order matters: if annotation A implies annotation B, then B needs to be registered first
     private AnnotationRegistry<Content> contentAnnotations() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
         return AnnotationRegistry.<Content>builder()
@@ -1142,27 +1143,6 @@ public class QueryWebModule {
                         )
                 )
                 .register(
-                        CONTENT_DETAIL,     //TODO doesn't work?
-                        NullWriter.create(Content.class),
-                        ImmutableSet.of(
-                                EXTENDED_DESCRIPTION,
-                                SUB_ITEMS,
-                                CLIPS,
-                                PEOPLE,
-                                BRAND_SUMMARY,
-                                SERIES_SUMMARY,
-                                BROADCASTS,
-                                LOCATIONS,
-                                KEY_PHRASES,
-                                RELATED_LINKS,
-                                RATINGS,
-                                REVIEWS,
-                                AWARDS,
-                                LOCALIZED_TITLES,
-                                CUSTOM_FIELDS
-                        )
-                )
-                .register(
                         UPCOMING_CONTENT_DETAIL,
                         new UpcomingContentDetailAnnotation(
                                 queryModule.mergingContentResolver(),
@@ -1228,6 +1208,27 @@ public class QueryWebModule {
                 .register(IS_PUBLISHED, new IsPublishedAnnotation())
                 .register(REP_ID, new RepIdAnnotation(repIdClient))
                 .register(LOCALIZED_TITLES, new LocalizedTitlesAnnotation())
+                .register(
+                        CONTENT_DETAIL,     //TODO doesn't work?
+                        NullWriter.create(Content.class),
+                        ImmutableSet.of(
+                                EXTENDED_DESCRIPTION,
+                                SUB_ITEMS,
+                                CLIPS,
+                                PEOPLE,
+                                BRAND_SUMMARY,
+                                SERIES_SUMMARY,
+                                BROADCASTS,
+                                LOCATIONS,
+                                KEY_PHRASES,
+                                RELATED_LINKS,
+                                RATINGS,
+                                REVIEWS,
+                                AWARDS,
+                                LOCALIZED_TITLES,
+                                CUSTOM_FIELDS
+                        )
+                )
                 .build();
     }
 
