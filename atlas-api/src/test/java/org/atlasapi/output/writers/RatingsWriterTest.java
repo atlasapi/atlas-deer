@@ -45,7 +45,7 @@ public class RatingsWriterTest {
 
         verify(fieldWriter).writeField("type", rating.getType());
         verify(fieldWriter).writeField("value", rating.getValue());
-        verify(fieldWriter).writeField("numberOfVotes", rating.getNumberOfVotes());
+        verify(fieldWriter).writeField("number_of_votes", rating.getNumberOfVotes());
         verify(fieldWriter).writeObject(sourceWriter, rating.getPublisher(), ctxt);
         verifyNoMoreInteractions(fieldWriter);
     }
