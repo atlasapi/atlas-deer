@@ -1227,7 +1227,7 @@ public class QueryWebModule {
                 .register(CUSTOM_FIELDS, new CustomFieldsAnnotation())
                 .register(IS_PUBLISHED, new IsPublishedAnnotation())
                 .register(REP_ID, new RepIdAnnotation(repIdClient))
-                .register(LOCALIZED_TITLES, new LocalizedTitlesAnnotation(), commonImplied)
+                .register(LOCALIZED_TITLES, new LocalizedTitlesAnnotation())
                 .build();
     }
 
