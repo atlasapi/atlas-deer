@@ -21,12 +21,12 @@ public class LocalizedTitlesWriter implements EntityListWriter<LocalizedTitle> {
 
     @Override
     public String listName() {
-        return "localizedTitles";
+        return "localized_titles";
     }
 
     @Override
     public String fieldName(LocalizedTitle entity) {
-        return "localizedTitle";
+        return "localized_titles";
     }
 
 }
