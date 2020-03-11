@@ -12,7 +12,9 @@ public class RatingSerializer {
         ratingBuilder.setSource(rating.getPublisher().key());
         ratingBuilder.setType(rating.getType());
         ratingBuilder.setValue(rating.getValue());
-        ratingBuilder.setNumberOfVotes(rating.getNumberOfVotes());
+        if(rating.getNumberOfVotes() != null) {
+            ratingBuilder.setNumberOfVotes(rating.getNumberOfVotes());
+        }
 
         return ratingBuilder.build();
     }
