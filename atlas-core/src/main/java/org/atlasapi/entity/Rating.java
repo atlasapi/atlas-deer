@@ -16,6 +16,10 @@ public class Rating implements Hashable {
     private final Publisher publisher;
     private final Long numberOfVotes;
 
+    public Rating(String type, float value, Publisher publisher) {
+       this(type, value, publisher, null);
+    }
+
     public Rating(String type, float value, Publisher publisher, @Nullable Long numberOfVotes) {
         this.type = checkNotNull(type);
         this.value = value;
