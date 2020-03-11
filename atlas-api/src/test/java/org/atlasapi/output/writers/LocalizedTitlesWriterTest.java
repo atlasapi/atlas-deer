@@ -46,7 +46,7 @@ public class LocalizedTitlesWriterTest {
                 fieldWriter,
                 ctxt);
 
-        verify(fieldWriter).writeField("title", localizedTitle.getTitle());
+        verify(fieldWriter).writeField("value", localizedTitle.getTitle());
         verify(fieldWriter).writeField("locale", localizedTitle.getLanguageTag());
         verifyNoMoreInteractions(fieldWriter);
     }
