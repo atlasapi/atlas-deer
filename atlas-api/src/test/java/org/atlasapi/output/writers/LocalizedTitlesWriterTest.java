@@ -15,13 +15,15 @@ import org.atlasapi.query.common.context.QueryContext;
 import com.metabroadcast.applications.client.model.internal.Application;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LocalizedTitlesWriterTest {
-
 
     private @Mock FieldWriter fieldWriter;
     private @Mock EntityWriter<Publisher> sourceWriter;
@@ -29,7 +31,7 @@ public class LocalizedTitlesWriterTest {
     private @Mock HttpServletRequest request;
 
     @Test
-    public void testRating() throws IOException {
+    public void testLocalizedTitle() throws IOException {
         LocalizedTitlesWriter writerUnderTest = new LocalizedTitlesWriter();
         LocalizedTitle localizedTitle = new LocalizedTitle();
         localizedTitle.setTitle("Titlu");
