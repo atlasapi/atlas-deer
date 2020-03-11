@@ -11,8 +11,9 @@ public class RatingSerialization {
         internal.setValue(rating.getValue());
         internal.setType(rating.getType());
         internal.setPublisher(rating.getPublisher().key());
-        internal.setNumberOfVotes(rating.getNumberOfVotes());
-
+        if(rating.getNumberOfVotes() != null) {
+            internal.setNumberOfVotes(rating.getNumberOfVotes());
+        }
         return internal;
     }
 
