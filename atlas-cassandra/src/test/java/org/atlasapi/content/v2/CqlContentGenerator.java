@@ -106,7 +106,9 @@ public class CqlContentGenerator {
         LocalizedTitle localizedTitle = new LocalizedTitle();
         localizedTitle.setTitle("titlu");
         localizedTitle.setLocale("ro","RO");
-        c.setLocalizedTitles(ImmutableSet.of(localizedTitle));
+        LocalizedTitle localizedTitle1 = new LocalizedTitle();
+        localizedTitle1.setTitle("titolo");
+        c.setLocalizedTitles(ImmutableSet.of(localizedTitle,localizedTitle1));
 
         c.setShortDescription("short description");
         c.setMediumDescription("medium description");

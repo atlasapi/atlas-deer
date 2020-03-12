@@ -113,12 +113,12 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
         if (content.getLocalizedTitles() != null) {
             for (LocalizedTitle localizedTitle : content.getLocalizedTitles()) {
+                CommonProtos.LocaleString.Builder localeStringBuilder = CommonProtos.LocaleString.newBuilder();
+                localeStringBuilder.setValue(localizedTitle.getTitle());
                 if (localizedTitle.getLocale() != null) {
-                    builder.addTitlesBuilder()
-                            .setValue(localizedTitle.getTitle())
-                            .setLocale(localizedTitle.getLanguageTag())
-                    .build();
+                    localeStringBuilder.setLocale(localizedTitle.getLanguageTag());
                 }
+                builder.addTitles(localeStringBuilder.build());
             }
         }
         if (content.getDescription() != null) {

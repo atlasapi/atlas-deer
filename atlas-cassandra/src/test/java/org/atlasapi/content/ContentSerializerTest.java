@@ -602,7 +602,9 @@ public class ContentSerializerTest {
         LocalizedTitle localizedTitle = new LocalizedTitle();
         localizedTitle.setTitle("titlu");
         localizedTitle.setLocale("ro","RO");
-        described.setLocalizedTitles(ImmutableSet.of(localizedTitle));
+        LocalizedTitle localizedTitle1 = new LocalizedTitle();
+        localizedTitle1.setTitle("titolo");
+        described.setLocalizedTitles(ImmutableSet.of(localizedTitle,localizedTitle1));
 
         described.setSpecialization(Specialization.RADIO);
         described.setThisOrChildLastUpdated(DateTime.parse("2015-09-09T10:08:18.543Z"));

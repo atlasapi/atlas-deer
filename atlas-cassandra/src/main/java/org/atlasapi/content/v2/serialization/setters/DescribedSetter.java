@@ -114,8 +114,8 @@ public class DescribedSetter {
         Set<LocalizedTitle> localizedTitles = internal.getLocalizedTitles();
         if (localizedTitles != null) {
             content.setLocalizedTitles(localizedTitles.stream()
-            .map(localizedTitle::deserialize)
-            .collect(Collectors.toSet()));
+                    .map(localizedTitle::deserialize)
+                    .collect(Collectors.toSet()));
         }
 
         content.setShortDescription(internal.getShortDescription());
