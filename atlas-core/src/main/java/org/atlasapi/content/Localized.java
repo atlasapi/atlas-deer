@@ -38,10 +38,12 @@ public abstract class Localized implements Hashable {
         this.locale = locale;
     }
 
+    @Nullable
     public Locale getLocale() {
         return locale;
     }
 
+    @Nullable
     public String getLanguageTag() {
         return TO_LANGUAGE_TAG.apply(this);
     }

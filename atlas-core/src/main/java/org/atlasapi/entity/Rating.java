@@ -39,6 +39,7 @@ public class Rating implements Hashable {
         return publisher;
     }
 
+    @Nullable
     public Long getNumberOfVotes() {
         return numberOfVotes;
     }

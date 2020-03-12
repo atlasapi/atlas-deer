@@ -26,7 +26,7 @@ public class LocalizedTitlesWriter implements EntityListWriter<LocalizedTitle> {
 
     @Override
     public String fieldName(LocalizedTitle entity) {
-        return "localized_titles";
+        return "localized_title";
     }
 
 }
