@@ -74,6 +74,7 @@ import org.atlasapi.output.annotation.IdentificationAnnotation;
 import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
 import org.atlasapi.output.annotation.IsPublishedAnnotation;
 import org.atlasapi.output.annotation.KeyPhrasesAnnotation;
+import org.atlasapi.output.annotation.LocalizedTitlesAnnotation;
 import org.atlasapi.output.annotation.LocationsAnnotation;
 import org.atlasapi.output.annotation.ModelInfoAnnotation;
 import org.atlasapi.output.annotation.ModifiedDatesAnnotation;
@@ -220,6 +221,7 @@ import static org.atlasapi.annotation.Annotation.ID_SUMMARY;
 import static org.atlasapi.annotation.Annotation.IMAGES;
 import static org.atlasapi.annotation.Annotation.IS_PUBLISHED;
 import static org.atlasapi.annotation.Annotation.KEY_PHRASES;
+import static org.atlasapi.annotation.Annotation.LOCALIZED_TITLES;
 import static org.atlasapi.annotation.Annotation.LOCATIONS;
 import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
 import static org.atlasapi.annotation.Annotation.META_MODEL;
@@ -987,6 +989,7 @@ public class QueryWebModule {
         return new ContentListWriter(contentAnnotations());
     }
 
+    // Registration order matters: if annotation A implies annotation B, then B needs to be registered first
     private AnnotationRegistry<Content> contentAnnotations() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
         return AnnotationRegistry.<Content>builder()
@@ -1140,22 +1143,6 @@ public class QueryWebModule {
                         )
                 )
                 .register(
-                        CONTENT_DETAIL,
-                        NullWriter.create(Content.class),
-                        ImmutableSet.of(
-                                EXTENDED_DESCRIPTION,
-                                SUB_ITEMS,
-                                CLIPS,
-                                PEOPLE,
-                                BRAND_SUMMARY,
-                                SERIES_SUMMARY,
-                                BROADCASTS,
-                                LOCATIONS,
-                                KEY_PHRASES,
-                                RELATED_LINKS
-                        )
-                )
-                .register(
                         UPCOMING_CONTENT_DETAIL,
                         new UpcomingContentDetailAnnotation(
                                 queryModule.mergingContentResolver(),
@@ -1220,6 +1207,28 @@ public class QueryWebModule {
                 .register(CUSTOM_FIELDS, new CustomFieldsAnnotation())
                 .register(IS_PUBLISHED, new IsPublishedAnnotation())
                 .register(REP_ID, new RepIdAnnotation(repIdClient))
+                .register(LOCALIZED_TITLES, new LocalizedTitlesAnnotation())
+                .register(
+                        CONTENT_DETAIL,     //TODO doesn't work?
+                        NullWriter.create(Content.class),
+                        ImmutableSet.of(
+                                EXTENDED_DESCRIPTION,
+                                SUB_ITEMS,
+                                CLIPS,
+                                PEOPLE,
+                                BRAND_SUMMARY,
+                                SERIES_SUMMARY,
+                                BROADCASTS,
+                                LOCATIONS,
+                                KEY_PHRASES,
+                                RELATED_LINKS,
+                                RATINGS,
+                                REVIEWS,
+                                AWARDS,
+                                LOCALIZED_TITLES,
+                                CUSTOM_FIELDS
+                        )
+                )
                 .build();
     }
 

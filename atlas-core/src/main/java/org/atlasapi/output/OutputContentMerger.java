@@ -36,6 +36,7 @@ import org.atlasapi.content.Film;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Series;
@@ -320,6 +321,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getTitle() == null) {
             chosen.setTitle(first(notChosen, TO_TITLE));
         }
+        mergeLocalizedTitles(chosen, notChosen);
+
         if (chosen.getDescription() == null) {
             chosen.setDescription(first(notChosen, TO_DESCRIPTION));
         }
@@ -410,6 +413,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 notChosen,
                 Identified::getAliases
         ));
+        mergeDuration(chosen, notChosen);
 
         if (chosen instanceof Episode && ((Episode) chosen).getEpisodeNumber() == null) {
             Episode chosenEpisode = (Episode) chosen;
@@ -436,6 +440,31 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 notChosen,
                 Content::getCountriesOfOrigin
         ));
+    }
+
+    private <T extends Content> void mergeDuration(T chosen, Iterable<T> notChosen) {
+        if(chosen instanceof Item && ((Item) chosen).getDuration() == null) {
+            Item chosenItem = (Item) chosen;
+            StreamSupport.stream(notChosen.spliterator(), false)
+                    .filter(Item.class::isInstance)
+                    .map(Item.class::cast)
+                    .filter(item -> item.getDuration() != null)
+                    .findFirst()
+                    .ifPresent(item -> {
+                        chosenItem.setDuration(item.getDuration());
+                    });
+        }
+    }
+
+    private <T extends Described> void mergeLocalizedTitles(T chosen, Iterable<T> notChosen) {
+        Stream<T> allContent = Stream.concat(Stream.of(chosen), MoreStreams.stream(notChosen));
+
+        Set<LocalizedTitle> combinedLocalizedTitles = allContent
+                .map(Described::getLocalizedTitles)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        chosen.setLocalizedTitles(combinedLocalizedTitles);
     }
 
     private <T extends Content> void mergeReviews(T chosen, Iterable<T> notChosen) {

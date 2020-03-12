@@ -223,6 +223,9 @@ public class LegacyContentTransformer
         i.setIsLongForm(input.getIsLongForm());
         i.setBlackAndWhite(input.getBlackAndWhite());
         i.withSortKey(input.sortKey());
+        if(input.getDuration() != null) {
+            i.setDuration(input.getDuration());
+        }
         return i;
     }
 
@@ -499,7 +502,6 @@ public class LegacyContentTransformer
     private org.atlasapi.content.Content createSong(Song input) {
         org.atlasapi.content.Song s = new org.atlasapi.content.Song();
         s.setIsrc(input.getIsrc());
-        s.setDuration(input.getDuration());
         return setItemFields(s, input);
     }
 

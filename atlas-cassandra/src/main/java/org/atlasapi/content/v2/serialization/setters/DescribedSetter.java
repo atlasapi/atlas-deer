@@ -11,8 +11,10 @@ import org.atlasapi.content.v2.model.Described;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Image;
 import org.atlasapi.content.v2.model.udt.Interval;
+import org.atlasapi.content.v2.model.udt.LocalizedTitle;
 import org.atlasapi.content.v2.serialization.AwardSerialization;
 import org.atlasapi.content.v2.serialization.ImageSerialization;
+import org.atlasapi.content.v2.serialization.LocalizedTitleSerialization;
 import org.atlasapi.content.v2.serialization.PrioritySerialization;
 import org.atlasapi.content.v2.serialization.RelatedLinkSerialization;
 import org.atlasapi.content.v2.serialization.SynopsesSerialization;
@@ -32,12 +34,18 @@ public class DescribedSetter {
     private final PrioritySerialization priority = new PrioritySerialization();
     private final SynopsesSerialization synopses = new SynopsesSerialization();
     private final RelatedLinkSerialization relatedLink = new RelatedLinkSerialization();
+    private final LocalizedTitleSerialization localizedTitle = new LocalizedTitleSerialization();
     private final AwardSerialization award = new AwardSerialization();
 
     public void serialize(Described internal, org.atlasapi.content.Described content) {
         identifiedSetter.serialize(internal, content);
 
         internal.setTitle(content.getTitle());
+        internal.setLocalizedTitles(content.getLocalizedTitles().stream()
+                .map(localizedTitle::serialize)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()));
+
         internal.setShortDescription(content.getShortDescription());
         internal.setMediumDescription(content.getMediumDescription());
         internal.setLongDescription(content.getLongDescription());
@@ -102,6 +110,13 @@ public class DescribedSetter {
         identifiedSetter.deserialize(content, internal);
 
         content.setTitle(internal.getTitle());
+
+        Set<LocalizedTitle> localizedTitles = internal.getLocalizedTitles();
+        if (localizedTitles != null) {
+            content.setLocalizedTitles(localizedTitles.stream()
+            .map(localizedTitle::deserialize)
+            .collect(Collectors.toSet()));
+        }
 
         content.setShortDescription(internal.getShortDescription());
         content.setMediumDescription(internal.getMediumDescription());

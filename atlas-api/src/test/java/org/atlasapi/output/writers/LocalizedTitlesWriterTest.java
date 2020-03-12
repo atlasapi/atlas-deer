@@ -4,14 +4,15 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.metabroadcast.applications.client.model.internal.Application;
-import org.atlasapi.entity.Rating;
+import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.context.QueryContext;
+
+import com.metabroadcast.applications.client.model.internal.Application;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(MockitoJUnitRunner.class)
-public class RatingsWriterTest {
+public class LocalizedTitlesWriterTest {
 
     private @Mock FieldWriter fieldWriter;
     private @Mock EntityWriter<Publisher> sourceWriter;
@@ -30,23 +31,23 @@ public class RatingsWriterTest {
     private @Mock HttpServletRequest request;
 
     @Test
-    public void testRating() throws IOException {
-        RatingsWriter writerUnderTest = new RatingsWriter(sourceWriter);
-        Rating rating = new Rating("MOOSE", 1.0f, Publisher.BBC, 1234L);
+    public void testLocalizedTitle() throws IOException {
+        LocalizedTitlesWriter writerUnderTest = new LocalizedTitlesWriter();
+        LocalizedTitle localizedTitle = new LocalizedTitle();
+        localizedTitle.setTitle("Titlu");
+        localizedTitle.setLocale("","RO");
 
         OutputContext ctxt = OutputContext.valueOf(
                 QueryContext.create(application, ActiveAnnotations.standard(), request)
         );
 
         writerUnderTest.write(
-                rating,
+                localizedTitle,
                 fieldWriter,
                 ctxt);
 
-        verify(fieldWriter).writeField("type", rating.getType());
-        verify(fieldWriter).writeField("value", rating.getValue());
-        verify(fieldWriter).writeField("number_of_votes", rating.getNumberOfVotes());
-        verify(fieldWriter).writeObject(sourceWriter, rating.getPublisher(), ctxt);
+        verify(fieldWriter).writeField("value", localizedTitle.getTitle());
+        verify(fieldWriter).writeField("locale", localizedTitle.getLanguageTag());
         verifyNoMoreInteractions(fieldWriter);
     }
 

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.metabroadcast.common.stream.MoreCollectors;
+
+import org.atlasapi.content.v2.model.udt.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
@@ -34,6 +36,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 public class Clip implements ContentIface {
 
     private Long id;
@@ -45,6 +49,7 @@ public class Clip implements ContentIface {
     private Instant lastUpdated;
     private Instant equivalenceUpdate;
     private String title;
+    private Set<LocalizedTitle> localizedTitles;
     private String shortDescription;
     private String mediumDescription;
     private String longDescription;
@@ -81,6 +86,7 @@ public class Clip implements ContentIface {
     private Boolean blackAndWhite;
     private Set<String> countriesOfOrigin;
     private String sortKey;
+    private Long duration;
     private ContainerSummary containerSummary;
     private Map<String, Broadcast> broadcasts;
     private List<SegmentEvent> segmentEvents;
@@ -161,6 +167,14 @@ public class Clip implements ContentIface {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public Set<LocalizedTitle> getLocalizedTitles() {
+        return localizedTitles;
+    }
+
+    public void setLocalizedTitles(Set<LocalizedTitle> localizedTitles) {
+        this.localizedTitles = localizedTitles;
     }
 
     public String getShortDescription() {
@@ -503,6 +517,15 @@ public class Clip implements ContentIface {
         this.sortKey = sortKey;
     }
 
+    @Nullable
+    public Long getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Long duration) {
+        this.duration = duration;
+    }
+
     public ContainerSummary getContainerSummary() {
         return containerSummary;
     }
@@ -671,6 +694,7 @@ public class Clip implements ContentIface {
                 NullOrEmptyEquality.equals(aliases, clip.aliases) &&
                 NullOrEmptyEquality.equals(equivalentTo, clip.equivalentTo) &&
                 Objects.equals(title, clip.title) &&
+                NullOrEmptyEquality.equals(localizedTitles, clip.localizedTitles) &&
                 Objects.equals(shortDescription, clip.shortDescription) &&
                 Objects.equals(mediumDescription, clip.mediumDescription) &&
                 Objects.equals(longDescription, clip.longDescription) &&
@@ -704,6 +728,7 @@ public class Clip implements ContentIface {
                 Objects.equals(blackAndWhite, clip.blackAndWhite) &&
                 NullOrEmptyEquality.equals(countriesOfOrigin, clip.countriesOfOrigin) &&
                 Objects.equals(sortKey, clip.sortKey) &&
+                Objects.equals(duration, clip.duration) &&
                 Objects.equals(containerSummary, clip.containerSummary) &&
                 NullOrEmptyEquality.equals(broadcasts, clip.broadcasts) &&
                 NullOrEmptyEquality.equals(segmentEvents, clip.segmentEvents) &&
@@ -717,6 +742,7 @@ public class Clip implements ContentIface {
 
     @Override
     public int hashCode() {
-        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, manifestedAs, genericDescription, eventRefs, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, containerSummary, broadcasts, segmentEvents, restrictions, clipOf, reviews, ratings, encodings, customFields);
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title,
+                localizedTitles, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, manifestedAs, genericDescription, eventRefs, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, duration, containerSummary, broadcasts, segmentEvents, restrictions, clipOf, reviews, ratings, encodings, customFields);
     }
 }

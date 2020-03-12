@@ -28,6 +28,7 @@ import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.KeyPhrase;
+import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.MediaType;
@@ -102,6 +103,11 @@ public class CqlContentGenerator {
         setIdentifiedFields(c);
 
         c.setTitle("title");
+        LocalizedTitle localizedTitle = new LocalizedTitle();
+        localizedTitle.setTitle("titlu");
+        localizedTitle.setLocale("ro","RO");
+        c.setLocalizedTitles(ImmutableSet.of(localizedTitle));
+
         c.setShortDescription("short description");
         c.setMediumDescription("medium description");
         c.setLongDescription("long description");
@@ -180,7 +186,7 @@ public class CqlContentGenerator {
         c.setGenericDescription(Boolean.FALSE);
         c.setEventRefs(ImmutableSet.of(new EventRef(Id.valueOf(23), Publisher.ARQIVA)));
 
-        c.setRatings(ImmutableList.of(new Rating("sometype", 4.2f, Publisher.AMAZON_UK)));
+        c.setRatings(ImmutableList.of(new Rating("sometype", 4.2f, Publisher.AMAZON_UK, 1234L)));
 
         c.setReviews(ImmutableList.of(
                 Review.builder("hao aboot this one, eh?")
@@ -397,6 +403,7 @@ public class CqlContentGenerator {
         i.setBroadcasts(ImmutableSet.of(makeBroadcast()));
         i.setSegmentEvents(ImmutableList.of(makeSegmentEvent()));
         i.setRestrictions(ImmutableSet.of(makeRestriction()));
+        i.setDuration(Duration.standardHours(1));
     }
 
     private static Restriction makeRestriction() {
@@ -530,7 +537,6 @@ public class CqlContentGenerator {
         setItemFields(song);
 
         song.setIsrc("some isrc");
-        song.setDuration(Duration.standardHours(1));
 
         return song;
     }
