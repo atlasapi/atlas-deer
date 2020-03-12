@@ -14,8 +14,9 @@ public class LocalizedTitleSerialization {
         LocalizedTitle localizedTitle = new LocalizedTitle();
 
         localizedTitle.setTitle(lt.getTitle());
-        localizedTitle.setLocale(lt.getLanguageTag());
-
+        if(lt.getLanguageTag() != null) {
+            localizedTitle.setLocale(lt.getLanguageTag());
+        }
         return localizedTitle;
     }
 
@@ -27,8 +28,9 @@ public class LocalizedTitleSerialization {
 
         org.atlasapi.content.LocalizedTitle localizedTitle = new org.atlasapi.content.LocalizedTitle();
         localizedTitle.setTitle(lt.getTitle());
-        localizedTitle.setLocale(Locale.forLanguageTag(lt.getLocale()));
-
+        if(lt.getLocale() != null) {
+            localizedTitle.setLocale(Locale.forLanguageTag(lt.getLocale()));
+        }
         return localizedTitle;
     }
 }
