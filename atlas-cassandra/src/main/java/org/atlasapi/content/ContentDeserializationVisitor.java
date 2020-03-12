@@ -29,6 +29,7 @@ import org.atlasapi.source.Sources;
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
@@ -505,7 +506,8 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
                 .map(localeString -> {
                     LocalizedTitle localizedTitle = new LocalizedTitle();
                     localizedTitle.setTitle(localeString.getValue());
-                    if (localeString.getLocale() != null) {
+                    //protobuf converts null to empty strings, so we convert back to null to make .equals() work
+                    if(!Strings.isNullOrEmpty(localeString.getLocale())) {
                         localizedTitle.setLocale(Locale.forLanguageTag(localeString.getLocale()));
                     }
                     return localizedTitle;
