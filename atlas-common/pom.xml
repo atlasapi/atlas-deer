@@ -1,0 +1,50 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.atlasapi</groupId>
+        <artifactId>atlas</artifactId>
+        <version>7.0.698-SNAPSHOT</version>
+    </parent>
+    <artifactId>atlas-common</artifactId>
+    <packaging>jar</packaging>
+    <dependencies>
+        <dependency>
+            <groupId>org.atlasapi</groupId>
+            <artifactId>atlas-model</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.metabroadcast.common</groupId>
+                    <artifactId>common</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.metabroadcast.common</groupId>
+            <artifactId>common</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <distributionManagement>
+        <repository>
+            <id>metabroadcast-mvn</id>
+            <name>Public Releases MetaBroadcast Repo</name>
+            <url>dav:http://mvn.metabroadcast.com:80/deploy-releases-local</url>
+        </repository>
+        <snapshotRepository>
+            <id>metabroadcast-mvn</id>
+            <name>Public Snapshots MetaBroadcast Repo</name>
+            <url>dav:http://mvn.metabroadcast.com:80/deploy-snapshots-local</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <name>Atlas Common</name>
+    <description>Common library of some core classes and interfaces that can be more easily imported into other projects</description>
+</project>

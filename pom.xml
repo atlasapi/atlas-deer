@@ -16,6 +16,7 @@
     <module>atlas-api</module>
     <module>atlas-legacy</module>
     <module>atlas-neo4j</module>
+    <module>atlas-common</module>
   </modules>
 
   <build>

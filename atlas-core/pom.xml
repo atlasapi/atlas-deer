@@ -13,13 +13,8 @@
   <dependencies>
     <dependency>
       <groupId>org.atlasapi</groupId>
-      <artifactId>atlas-model</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>com.metabroadcast.common</groupId>
-          <artifactId>common</artifactId>
-        </exclusion>
-      </exclusions>
+      <version>${atlas.version}</version>
+      <artifactId>atlas-common</artifactId>
     </dependency>
     <dependency>
       <groupId>org.atlasapi</groupId>
@@ -28,16 +23,6 @@
         <exclusion>
             <groupId>com.metabroadcast.common</groupId>
             <artifactId>common</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.metabroadcast.common</groupId>
-      <artifactId>common</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpcore</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
