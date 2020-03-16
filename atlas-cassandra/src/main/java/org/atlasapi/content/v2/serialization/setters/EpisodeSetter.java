@@ -11,7 +11,8 @@ import org.atlasapi.content.v2.serialization.RefSerialization;
 import org.atlasapi.content.v2.serialization.SeriesRefSerialization;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.PagerDutyClientWithKey;
+
+import com.metabroadcast.common.http.PagerDutyClientWithKey;
 
 import com.github.dikhan.pagerduty.client.events.PagerDutyEventsClient;
 import com.github.dikhan.pagerduty.client.events.domain.Payload;
