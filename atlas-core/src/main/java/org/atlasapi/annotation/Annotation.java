@@ -81,6 +81,7 @@ public enum Annotation {
     AWARDS,
     PRIORITY_REASONS,
     MODIFIED_DATES,
+    CHANNEL_INFO,
     CHANNEL_GROUP_INFO,
     CHANNEL_IDS,
     FUTURE_CHANNELS,
