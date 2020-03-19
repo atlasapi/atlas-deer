@@ -70,9 +70,6 @@ final class Index {
             );
         }
 
-        if (activeAnnotations.all().contains(Annotation.CHANNEL_INFO)
-        && !(activeAnnotations.all().))
-
         return activeAnnotations;
     }
 
