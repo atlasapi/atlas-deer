@@ -1,6 +1,5 @@
 package org.atlasapi.query.annotation;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -15,7 +14,6 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import scala.actors.threadpool.Arrays;
 
 final class Index {
 
@@ -71,6 +69,9 @@ final class Index {
                     Lists.newArrayList(Annotation.NON_MERGED)
             );
         }
+
+        if (activeAnnotations.all().contains(Annotation.CHANNEL_INFO)
+        && !(activeAnnotations.all().))
 
         return activeAnnotations;
     }
