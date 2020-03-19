@@ -84,7 +84,7 @@ public final class BroadcastWriter implements EntityListWriter<ResolvedBroadcast
         );
         writer.writeField("broadcast_on", codec.encode(resolvedChannel.getChannel().getId().toBigInteger()));
 
-        if (!contextHasAnnotation(ctxt, Annotation.NO_CHANNEL)) {
+        if (!contextHasAnnotation(ctxt, Annotation.NO_CHANNEL_INFO)) {
             writer.writeObject(channelWriter, resolvedChannel, ctxt);
         }
 
