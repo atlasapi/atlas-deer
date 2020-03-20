@@ -2,6 +2,7 @@ package org.atlasapi.output.writers;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;

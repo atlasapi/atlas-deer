@@ -14,7 +14,9 @@ public class QueryUtils {
                 Splitter.on(',')
                         .splitToList(
                                 ctxt.getRequest().getParameter("annotations")
-                        ).contains(annotation.toKey());
+                        )
+                        .stream()
+                        .anyMatch(input -> input.contains(annotation.toKey()));
     }
 
 }
