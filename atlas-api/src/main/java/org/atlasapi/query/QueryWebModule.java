@@ -1209,7 +1209,6 @@ public class QueryWebModule {
                 .register(IS_PUBLISHED, new IsPublishedAnnotation())
                 .register(REP_ID, new RepIdAnnotation(repIdClient))
                 .register(LOCALIZED_TITLES, new LocalizedTitlesAnnotation())
-                .register(NO_CHANNEL_INFO, NullWriter.create(Content.class))
                 .register(
                         CONTENT_DETAIL,     //TODO doesn't work?
                         NullWriter.create(Content.class),
