@@ -7,6 +7,7 @@ import com.google.common.base.Splitter;
 
 public class QueryUtils {
 
+    //also checks for nested annotations (e.g. content.no_channel_info on schedule calls)
     public static boolean contextHasAnnotation(OutputContext ctxt, Annotation annotation) {
 
         return !com.google.common.base.Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations"))
