@@ -43,7 +43,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
         this.languageWriter = new LanguageWriter(initLocalMap());
         this.certificateWriter = new CertificateWriter();
         this.subtitleWriter = new SubtitleWriter(languageWriter);
-        releaseDateWriter = new ReleaseDateWriter();
+        this.releaseDateWriter = new ReleaseDateWriter();
         this.restrictionWriter = new RestrictionWriter();
         this.priorityReasonsWriter = new PriorityReasonsWriter();
     }

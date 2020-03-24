@@ -1,11 +1,11 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.metabroadcast.common.intl.Countries;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
@@ -25,12 +25,17 @@ import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Subtitle;
 import org.atlasapi.serialization.protobuf.ContentProtos.Synopsis;
 import org.atlasapi.source.Sources;
-import org.joda.time.Duration;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
+import org.joda.time.Duration;
 
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.ALL_AGGREGATED_BROADCASTS;
@@ -153,6 +158,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         if (msg.getTitlesCount() > 0) {
             described.setTitle(msg.getTitles(0).getValue());
+            if(msg.getTitlesCount() > 1) {
+                described.setLocalizedTitles(getLocalizedTitles());
+            }
         }
         if (msg.hasDescription()) {
             described.setDescription(msg.getDescription());
@@ -432,7 +440,6 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     public Song visit(Song song) {
         song = visitItem(song);
         song.setIsrc(msg.hasIsrc() ? msg.getIsrc() : null);
-        song.setDuration(msg.hasDuration() ? Duration.millis(msg.getDuration()) : null);
         return song;
     }
 
@@ -455,6 +462,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         if (msg.hasLongform()) {
             item.setIsLongForm(msg.getLongform());
+        }
+        if (msg.hasDuration()) {
+            item.setDuration(Duration.millis(msg.getDuration()));
         }
 
         boolean hasBroadcastAnnotation = annotations
@@ -486,6 +496,23 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             encodings.add(encodingSerializer.deserialize(encoding));
         }
         return encodings.build();
+    }
+
+    private Set<LocalizedTitle> getLocalizedTitles() {
+        // first one is the actual title, so skip it
+        return msg.getTitlesList()
+                .stream()
+                .skip(1)
+                .map(localeString -> {
+                    LocalizedTitle localizedTitle = new LocalizedTitle();
+                    localizedTitle.setTitle(localeString.getValue());
+                    //protobuf converts null to empty strings, so we convert back to null to make .equals() work
+                    if(!Strings.isNullOrEmpty(localeString.getLocale())) {
+                        localizedTitle.setLocale(Locale.forLanguageTag(localeString.getLocale()));
+                    }
+                    return localizedTitle;
+                })
+                .collect(MoreCollectors.toImmutableSet());
     }
 
     private ImmutableSet<SegmentEvent> getSegmentEvents() {

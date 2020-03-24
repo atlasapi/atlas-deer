@@ -13,10 +13,12 @@ public enum Annotation {
     LICENSE,
     ID_SUMMARY,
     ID,
+    REP_ID,
     IS_PUBLISHED,
     EXTENDED_ID,
     DESCRIPTION,
     EXTENDED_DESCRIPTION,
+    LOCALIZED_TITLES,
     BRAND_REFERENCE,
     BRAND_SUMMARY,
     SERIES_REFERENCE,
@@ -82,7 +84,7 @@ public enum Annotation {
     CHANNEL_GROUP_INFO,
     CHANNEL_IDS,
     FUTURE_CHANNELS,
-    CUSTOM_FIELDS
+    CUSTOM_FIELDS,
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());

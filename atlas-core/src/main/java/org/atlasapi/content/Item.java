@@ -17,6 +17,8 @@ package org.atlasapi.content;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import org.joda.time.Duration;
+
 import com.metabroadcast.common.intl.Country;
 import org.atlasapi.entity.Id;
 import org.atlasapi.hashing.ExcludeFromHash;
@@ -37,6 +39,7 @@ public class Item extends Content {
     private ContainerRef containerRef;
     private boolean isLongForm = false;
     private Boolean blackAndWhite;
+    private Long duration;
 
     @ExcludeFromHash
     private String sortKey;
@@ -147,6 +150,15 @@ public class Item extends Content {
                 .addAll(segmentEvents)
                 .addAll(this.segmentEvents).build());
     }
+    public void setDuration(Duration duration) {
+        this.duration = duration != null ? duration.getStandardSeconds() : null;
+    }
+
+    @Nullable
+    @FieldName("duration")
+    public Duration getDuration() {
+        return duration != null ? Duration.standardSeconds(duration) : null;
+    }
 
     public static Item copyTo(Item from, Item to) {
         Content.copyTo(from, to);
@@ -157,6 +169,7 @@ public class Item extends Content {
         to.segmentEvents = SegmentEvent.ORDERING.immutableSortedCopy(from.segmentEvents);
         to.restrictions = Sets.newHashSet(from.restrictions);
         to.blackAndWhite = from.blackAndWhite;
+        to.duration = from.duration;
         return to;
     }
 
@@ -169,6 +182,7 @@ public class Item extends Content {
         to.segmentEvents = from.segmentEvents.isEmpty() ? to.segmentEvents : SegmentEvent.ORDERING.immutableSortedCopy(from.segmentEvents);
         to.restrictions = from.restrictions.isEmpty() ? to.restrictions : Sets.newHashSet(from.restrictions);
         to.blackAndWhite = ofNullable(from.blackAndWhite).orElse(to.blackAndWhite);
+        to.duration = ofNullable(from.duration).orElse(to.duration);
         return to;
     }
 

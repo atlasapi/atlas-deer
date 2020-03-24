@@ -884,7 +884,7 @@ public class OutputContentMergerTest {
     private List<Rating> addRatings(Item item, Float... ratingValues) {
         Publisher publisher = item.getSource();
         List<Rating> ratings = Arrays.asList(ratingValues).stream()
-                .map(rating -> new Rating("5STAR", rating, publisher))
+                .map(rating -> new Rating("5STAR", rating, publisher, 1234L))
                 .collect(Collectors.toList());
 
         item.setRatings(ratings);
