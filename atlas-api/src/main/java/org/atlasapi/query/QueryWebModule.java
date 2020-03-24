@@ -228,7 +228,6 @@ import static org.atlasapi.annotation.Annotation.META_MODEL;
 import static org.atlasapi.annotation.Annotation.MODIFIED_DATES;
 import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.NON_MERGED;
-import static org.atlasapi.annotation.Annotation.NO_CHANNEL_INFO;
 import static org.atlasapi.annotation.Annotation.PARENT;
 import static org.atlasapi.annotation.Annotation.PEOPLE;
 import static org.atlasapi.annotation.Annotation.PLATFORM;
