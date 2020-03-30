@@ -233,7 +233,6 @@ message Location {
     repeated string subscription_packages = 20;
     repeated common.Alias aliases = 21 [(column)=IDENT];
     repeated Pricing pricing = 22;
-    optional Provider provider = 23;
 }
 
 message Pricing {
@@ -241,11 +240,6 @@ message Pricing {
     required string currency = 2;
     optional common.DateTime start = 3;
     optional common.DateTime end = 4;
-}
-
-message Provider {
-    required string name = 1;
-    optional string icon_url = 2;
 }
 
 message SegmentEvent {
