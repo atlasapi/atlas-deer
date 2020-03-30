@@ -2,6 +2,8 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Objects;
 
+import javax.annotation.Nullable;
+
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
@@ -11,6 +13,7 @@ public class Provider {
     @Field(name = "name") private String name;
     @Field(name = "icon_url") private String iconUrl;
 
+    @Nullable
     public String getIconUrl() {
         return iconUrl;
     }

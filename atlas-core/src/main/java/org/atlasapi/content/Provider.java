@@ -25,6 +25,7 @@ public class Provider {
         this.name = name;
     }
 
+    @Nullable
     public String getIconUrl() {
         return iconUrl;
     }
