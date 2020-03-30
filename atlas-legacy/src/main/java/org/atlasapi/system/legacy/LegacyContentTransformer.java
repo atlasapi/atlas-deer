@@ -399,10 +399,10 @@ public class LegacyContentTransformer
         l.setUri(input.getUri());
         l.setEmbedCode(input.getEmbedCode());
         l.setEmbedId(input.getEmbedId());
-        l.setPolicy(transformPolicy(input.getPolicy()));
         if(input.getProvider() != null) {
             l.setProvider(transformProvider(input.getProvider()));
         }
+        l.setPolicy(transformPolicy(input.getPolicy()));
         return l;
     }
 
