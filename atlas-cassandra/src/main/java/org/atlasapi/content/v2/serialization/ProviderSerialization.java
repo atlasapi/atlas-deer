@@ -1,6 +1,6 @@
 package org.atlasapi.content.v2.serialization;
 
-import org.atlasapi.content.v2.model.udt.Provider;
+import org.atlasapi.content.v2.model.pojo.Provider;
 
 public class ProviderSerialization {
 

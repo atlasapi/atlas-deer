@@ -2,7 +2,6 @@ package org.atlasapi.content.v2.model.pojo;
 
 import org.atlasapi.content.v2.model.Identified;
 import org.atlasapi.content.v2.model.udt.Alias;
-import org.atlasapi.content.v2.model.udt.Provider;
 import org.atlasapi.content.v2.model.udt.Ref;
 import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;

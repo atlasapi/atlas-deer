@@ -1,17 +1,14 @@
-package org.atlasapi.content.v2.model.udt;
+package org.atlasapi.content.v2.model.pojo;
 
 import java.util.Objects;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.datastax.driver.mapping.annotations.Field;
-import com.datastax.driver.mapping.annotations.UDT;
-
-@UDT(name = "provider")
 public class Provider {
 
-    @Field(name = "name") private String name;
-    @Field(name = "icon_url") private String iconUrl;
+    private String name;
+    private String iconUrl;
 
     @Nullable
     public String getIconUrl() {
@@ -22,6 +19,7 @@ public class Provider {
         this.iconUrl = iconUrl;
     }
 
+    @Nonnull
     public String getName() {
         return name;
     }
@@ -42,11 +40,12 @@ public class Provider {
             return false;
         }
         Provider provider = (Provider) o;
-        return Objects.equals(name, provider.name);
+        return name.equals(provider.name) &&
+                Objects.equals(iconUrl, provider.iconUrl);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(name, iconUrl);
     }
 }
