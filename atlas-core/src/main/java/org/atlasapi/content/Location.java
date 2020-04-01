@@ -42,6 +42,8 @@ public class Location extends Identified implements Hashable {
 
     private String embedId;
 
+    private Provider provider;
+
     private Policy policy;
 
     @Nullable
@@ -117,6 +119,16 @@ public class Location extends Identified implements Hashable {
         this.embedId = embedId;
     }
 
+    @Nullable
+    @FieldName("provider")
+    public Provider getProvider() {
+        return this.provider;
+    }
+
+    public void setProvider(@Nullable Provider provider) {
+        this.provider = provider;
+    }
+
     public Boolean isAvailable() {
         return AVAILABLE.apply(this);
     }
@@ -143,6 +155,7 @@ public class Location extends Identified implements Hashable {
         copy.transportSubType = transportSubType;
         copy.transportType = transportType;
         copy.uri = uri;
+        copy.provider = provider;
         return copy;
     }
 

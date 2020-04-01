@@ -21,6 +21,7 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.Policy;
 import org.atlasapi.content.Pricing;
+import org.atlasapi.content.Provider;
 import org.atlasapi.content.Quality;
 import org.atlasapi.content.ReleaseDate.ReleaseType;
 import org.atlasapi.content.Restriction;
@@ -398,8 +399,18 @@ public class LegacyContentTransformer
         l.setUri(input.getUri());
         l.setEmbedCode(input.getEmbedCode());
         l.setEmbedId(input.getEmbedId());
+        if(input.getProvider() != null) {
+            l.setProvider(transformProvider(input.getProvider()));
+        }
         l.setPolicy(transformPolicy(input.getPolicy()));
         return l;
+    }
+
+    private Provider transformProvider(org.atlasapi.media.entity.Provider inputProvider) {
+        Provider provider = new Provider();
+        provider.setName(inputProvider.getName());
+        provider.setIconUrl(inputProvider.getIconUrl());
+        return provider;
     }
 
     private Policy transformPolicy(org.atlasapi.media.entity.Policy input) {
