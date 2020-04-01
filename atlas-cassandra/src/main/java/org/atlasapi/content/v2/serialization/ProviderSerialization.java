@@ -5,7 +5,7 @@ import org.atlasapi.content.v2.model.pojo.Provider;
 public class ProviderSerialization {
 
     public Provider serialize(org.atlasapi.content.Provider provider) {
-        if (provider == null) {
+        if (provider == null || provider.getName() == null) {
             return null;
         }
         Provider internal = new Provider();
