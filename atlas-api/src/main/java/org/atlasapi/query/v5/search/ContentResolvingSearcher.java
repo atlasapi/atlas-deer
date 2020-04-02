@@ -7,23 +7,17 @@ import java.util.stream.StreamSupport;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
-import org.atlasapi.content.ContentTitleSearcher;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.search.SearchQuery;
-import org.atlasapi.search.SearchResolver;
 
-import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.sherlock.client.search.ContentSearcher;
 import com.metabroadcast.sherlock.client.search.SearchHelper;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -78,6 +72,4 @@ public class ContentResolvingSearcher {
                     .collect(Collectors.toList());
         }
     }
-
-
 }
