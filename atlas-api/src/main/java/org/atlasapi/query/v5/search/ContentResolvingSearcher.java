@@ -21,7 +21,9 @@ import com.metabroadcast.sherlock.client.search.SearchHelper;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -50,15 +52,12 @@ public class ContentResolvingSearcher {
                     Futures.transformAsync(
                             searcher.searchForIds(searchHelper),
                             input -> {
-                                List<Id> ids = StreamSupport.stream(input.spliterator(), false)
-                                        .map(idCodec::decode)
-                                        .map(Id::valueOf)
-                                        .collect(Collectors.toList());
-
+                                List<Id> ids = decodeIds(input);
                                 if (ids.isEmpty()) {
                                     return Futures.immediateFuture(Resolved.empty());
+                                } else {
+                                    return contentResolver.resolveIds(ids);
                                 }
-                                return contentResolver.resolveIds(ids);
                             }
                     ),
                     (Function<Resolved<Content>, List<Identified>>) input ->
@@ -68,4 +67,17 @@ public class ContentResolvingSearcher {
             throw new RuntimeException(ex.getMessage(), ex);
         }
     }
+
+    private List<Id> decodeIds(Iterable<String> input) {
+        if (input == null) {
+            return ImmutableList.of();
+        } else {
+            return StreamSupport.stream(input.spliterator(), false)
+                    .map(idCodec::decode)
+                    .map(Id::valueOf)
+                    .collect(Collectors.toList());
+        }
+    }
+
+
 }

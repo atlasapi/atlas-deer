@@ -290,7 +290,7 @@
     </dependency>
     <dependency>
       <groupId>com.metabroadcast.sherlock</groupId>
-      <artifactId>client</artifactId>
+      <artifactId>client-shaded</artifactId>
       <version>${sherlock.version}</version>
     </dependency>
   </dependencies>
