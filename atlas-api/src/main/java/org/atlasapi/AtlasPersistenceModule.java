@@ -22,6 +22,11 @@ import com.metabroadcast.common.properties.Parameter;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
 import com.metabroadcast.common.time.SystemClock;
+import com.metabroadcast.sherlock.client.search.ContentSearcher;
+import com.metabroadcast.sherlock.common.SherlockIndex;
+import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
+import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
+
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.ReadPreference;
@@ -34,6 +39,7 @@ import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.ContentTitleSearcher;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
@@ -161,6 +167,11 @@ public class AtlasPersistenceModule {
     private final String esIndex = Configurer.get("elasticsearch.index").get();
     private final String esRequestTimeout = Configurer.get("elasticsearch.requestTimeout").get();
     private final Parameter processingConfig = Configurer.get("processing.config");
+
+    private final String sherlockScheme = Configurer.get("sherlock.scheme").get();
+    private final String sherlockHostname = Configurer.get("sherlock.hostname").get();
+    private final Integer sherlockPort = Configurer.get("sherlock.port").toInt();
+    private final Integer sherlockTimeoutMilliseconds = Configurer.get("sherlock.timeout.milliseconds").toInt();
 
     private final String neo4jHost = Configurer.get("neo4j.host").get();
     private final Integer neo4jPort = Configurer.get("neo4j.port").toInt();
@@ -437,6 +448,19 @@ public class AtlasPersistenceModule {
 
     @Bean
     @Primary
+    public ContentSearcher contentSearcherV5() {
+        return ContentSearcher.builder()
+                .withElasticSearchProcessor(
+                        new ElasticSearchProcessor(
+                                sherlockElasticSearchConfig().getElasticSearchClient()
+                        )
+                )
+                .withIndex(SherlockIndex.CONTENT)
+                .build();
+    }
+
+    @Bean
+    @Primary
     public ServiceChannelStore channelStore() {
         MongoChannelStore rawStore = new MongoChannelStore(
                 databasedReadMongo(),
@@ -640,5 +664,14 @@ public class AtlasPersistenceModule {
     @Bean
     public Neo4jContentStore neo4jContentStore() {
         return neo4jModule().neo4jContentStore(metricsModule.metrics());
+    }
+
+    @Bean
+    public ElasticSearchConfig sherlockElasticSearchConfig() {
+        return ElasticSearchConfig.builder()
+                .withScheme(sherlockScheme)
+                .withHostname(sherlockHostname)
+                .withPort(sherlockPort)
+                .build();
     }
 }

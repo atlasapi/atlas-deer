@@ -44,6 +44,13 @@ import org.atlasapi.schedule.FlexibleBroadcastMatcher;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.topic.Topic;
 
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.sherlock.client.search.ContentSearcher;
+import com.metabroadcast.sherlock.common.SherlockIndex;
+import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
+import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -54,6 +61,11 @@ import org.springframework.context.annotation.Configuration;
 public class QueryModule {
 
     private @Autowired AtlasPersistenceModule persistenceModule;
+
+    @Bean
+    NumberToShortStringCodec idCodec() {
+        return SubstitutionTableNumberCodec.lowerCaseOnly();
+    }
 
     @Bean
     QueryExecutor<Topic> topicQueryExecutor() {
@@ -137,6 +149,16 @@ public class QueryModule {
         return new ContentResolvingSearcher(
                 persistenceModule.contentSearcher(),
                 persistenceModule.contentStore(),
+                60000
+        );
+    }
+
+    @Bean
+    public org.atlasapi.query.v5.search.ContentResolvingSearcher v5SearchResolver() {
+        return new org.atlasapi.query.v5.search.ContentResolvingSearcher(
+                persistenceModule.contentSearcherV5(),
+                persistenceModule.contentStore(),
+                idCodec(),
                 60000
         );
     }

@@ -51,6 +51,10 @@ CMD java \
     -Delasticsearch.index="$ELASTICSEARCH_INDEX" \
     -Delasticsearch.requestTimeout="$ELASTICSEARCH_REQUESTTIMEOUT" \
     -Delasticsearch.seeds="$ELASTICSEARCH_SEEDS" \
+    -Dsherlock.scheme="$SHERLOCK_SCHEME" \
+    -Dsherlock.hostname="$SHERLOCK_HOSTNAME" \
+    -Dsherlock.port="$SHERLOCK_PORT" \
+    -Dsherlock.timeout.milliseconds="$SHERLOCK_TIMOUT_MILLIS" \
     -Dequiv.update.producer.system="$EQUIV_UPDATE_PRODUCER_SYSTEM" \
     -Dhttp.nonProxyHosts="$HTTP_NONPROXYHOSTS" \
     -Dhttp.proxyHost="$HTTP_PROXYHOST" \

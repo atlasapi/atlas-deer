@@ -288,6 +288,11 @@
       <artifactId>client</artifactId>
       <version>${representative-id-service.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.metabroadcast.sherlock</groupId>
+      <artifactId>client</artifactId>
+      <version>${sherlock.version}</version>
+    </dependency>
   </dependencies>
 
   <distributionManagement>
