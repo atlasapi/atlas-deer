@@ -31,6 +31,7 @@ import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
@@ -189,8 +190,12 @@ public class SearchController {
     }
 
     private List<String> distinctSplit(String parameter) {
-        return Arrays.stream(parameter.split(String.valueOf(VALUE_SEPARATOR), -1))
-                .distinct()
-                .collect(Collectors.toList());
+        if (parameter == null) {
+            return ImmutableList.of();
+        } else {
+            return Arrays.stream(parameter.split(String.valueOf(VALUE_SEPARATOR), -1))
+                    .distinct()
+                    .collect(Collectors.toList());
+        }
     }
 }
