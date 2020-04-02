@@ -137,7 +137,7 @@ public class SearchController {
                 searchHelper.addFilter(CONTENT_MAPPING.getSource().getKey(), publisher);
             }
 
-            if (scheduleUpcomingParam) {
+            if (scheduleUpcomingParam != null && scheduleUpcomingParam) {
                 searchHelper.addFilter(
                         CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
                         Range.from(Instant.now())
