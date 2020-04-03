@@ -12,13 +12,13 @@ import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.ContentSearcher;
-import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.SearchHelper;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -41,12 +41,12 @@ public class ContentResolvingSearcher {
         this.timeout = timeout;
     }
 
-    public List<Identified> search(SearchHelper searchHelper) {
+    public List<Identified> search(SearchQuery searchQuery) {
         try {
             return Futures.transform(
                     Futures.transformAsync(
-                            searcher.searchForIds(searchHelper),
-                            (AsyncFunction<? super Iterable<String>, ? extends Resolved<Content>>)
+                            searcher.searchForIds(searchQuery),
+                            (AsyncFunction<Iterable<String>, Resolved<Content>>)
                             input -> {
                                 List<Id> ids = decodeIds(input);
                                 if (ids.isEmpty()) {

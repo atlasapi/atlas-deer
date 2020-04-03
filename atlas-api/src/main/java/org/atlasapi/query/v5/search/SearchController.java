@@ -26,6 +26,7 @@ import org.atlasapi.query.v4.topic.TopicController;
 
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.Range;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
@@ -119,26 +120,25 @@ public class SearchController {
                 throw new IllegalArgumentException("You must specify a limit parameter");
             }
 
-            SearchHelper.Builder searchHelper = SearchHelper
-                    .getDefaultQuerySearcher(query);
+            SearchQuery.Builder searchQuery = SearchQuery.getDefaultQuerySearcher(query);
 
             List<Range<Integer>> years = integerRangeCoercer.apply(distinctSplit(yearParam));
             for (Range<Integer> year : years) {
-                searchHelper.addFilter(CONTENT_MAPPING.getYear(), year);
+                searchQuery.addFilter(CONTENT_MAPPING.getYear(), year);
             }
 
             List<String> types = distinctSplit(typeParam);
             for (String type : types) {
-                searchHelper.addFilter(CONTENT_MAPPING.getType(), type);
+                searchQuery.addFilter(CONTENT_MAPPING.getType(), type);
             }
 
             List<String> publishers = distinctSplit(publisherParam);
             for (String publisher : publishers) {
-                searchHelper.addFilter(CONTENT_MAPPING.getSource().getKey(), publisher);
+                searchQuery.addFilter(CONTENT_MAPPING.getSource().getKey(), publisher);
             }
 
             if (scheduleUpcomingParam != null && scheduleUpcomingParam) {
-                searchHelper.addFilter(
+                searchQuery.addFilter(
                         CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
                         Range.from(Instant.now())
                 );
@@ -146,7 +146,7 @@ public class SearchController {
 
             List<Range<Instant>> scheduleTimes = instantRangeCoercer.apply(distinctSplit(scheduleTimeParam));
             for (Range<Instant> scheduleTime : scheduleTimes) {
-                searchHelper.addFilter(
+                searchQuery.addFilter(
                         CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
                         scheduleTime
                 );
@@ -154,7 +154,7 @@ public class SearchController {
 
             List<String> scheduleChannels = distinctSplit(scheduleChannelParam);
             for (String scheduleChannel : scheduleChannels) {
-                searchHelper.addFilter(
+                searchQuery.addFilter(
                         CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
                         scheduleChannel
                 );
@@ -170,13 +170,13 @@ public class SearchController {
 //            }
 
             if (onDemandAvailableParam != null) {
-                searchHelper.addFilter(
+                searchQuery.addFilter(
                         CONTENT_MAPPING.getLocations().getAvailable(),
                         onDemandAvailableParam
                 );
             }
 
-            List<Identified> content = searcher.search(searchHelper.build());
+            List<Identified> content = searcher.search(searchQuery.build());
             resultWriter.write(QueryResult.listResult(
                     Iterables.filter(content, Content.class),
                     QueryContext.standard(request),
