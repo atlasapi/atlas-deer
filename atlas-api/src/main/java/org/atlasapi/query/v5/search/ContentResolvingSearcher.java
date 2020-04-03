@@ -17,6 +17,7 @@ import com.metabroadcast.sherlock.client.search.SearchHelper;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -45,6 +46,7 @@ public class ContentResolvingSearcher {
             return Futures.transform(
                     Futures.transformAsync(
                             searcher.searchForIds(searchHelper),
+                            (AsyncFunction<? super Iterable<String>, ? extends Resolved<Content>>)
                             input -> {
                                 List<Id> ids = decodeIds(input);
                                 if (ids.isEmpty()) {
