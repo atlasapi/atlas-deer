@@ -1,45 +1,17 @@
 package org.atlasapi;
 
-import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.extras.codecs.joda.InstantCodec;
-import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
-import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Predicates;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.primitives.Ints;
-import com.metabroadcast.common.health.HealthProbe;
-import com.metabroadcast.common.ids.IdGeneratorBuilder;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongoClient;
-import com.metabroadcast.common.persistence.mongo.health.MongoConnectionPoolProbe;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.properties.Parameter;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessageSenders;
-import com.metabroadcast.common.time.SystemClock;
-import com.metabroadcast.sherlock.client.search.ContentSearcher;
-import com.metabroadcast.sherlock.common.SherlockIndex;
-import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
-import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
+import java.util.List;
+import java.util.UUID;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.ReadPreference;
-import com.mongodb.ServerAddress;
-import com.netflix.astyanax.AstyanaxContext;
-import com.netflix.astyanax.Keyspace;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
-import org.atlasapi.content.ContentTitleSearcher;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
@@ -112,17 +84,46 @@ import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
 import org.atlasapi.util.CassandraSecondaryIndex;
+
+import com.metabroadcast.common.health.HealthProbe;
+import com.metabroadcast.common.ids.IdGeneratorBuilder;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongoClient;
+import com.metabroadcast.common.persistence.mongo.health.MongoConnectionPoolProbe;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.properties.Parameter;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessageSenders;
+import com.metabroadcast.common.time.SystemClock;
+import com.metabroadcast.sherlock.client.search.ContentSearcher;
+import com.metabroadcast.sherlock.common.SherlockIndex;
+
+import com.datastax.driver.core.CodecRegistry;
+import com.datastax.driver.extras.codecs.joda.InstantCodec;
+import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
+import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Predicates;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.primitives.Ints;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.ReadPreference;
+import com.mongodb.ServerAddress;
+import com.netflix.astyanax.AstyanaxContext;
+import com.netflix.astyanax.Keyspace;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.util.List;
-import java.util.UUID;
+import sherlock_client_shaded.com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
+import sherlock_client_shaded.com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
 
 @Configuration
 @Import({ KafkaMessagingModule.class })

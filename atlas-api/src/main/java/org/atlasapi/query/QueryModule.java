@@ -46,10 +46,6 @@ import org.atlasapi.topic.Topic;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.sherlock.client.search.ContentSearcher;
-import com.metabroadcast.sherlock.common.SherlockIndex;
-import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
-import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
