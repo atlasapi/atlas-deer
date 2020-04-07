@@ -121,9 +121,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
-import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.ContentSearcher;
-import sherlock_client_shaded.com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
-import sherlock_client_shaded.com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
+import com.metabroadcast.sherlock.client.search.ContentSearcher;
+import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
+import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
 
 @Configuration
 @Import({ KafkaMessagingModule.class })

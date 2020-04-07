@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.SearchHelper;
 
 @Controller
 public class SearchController {
