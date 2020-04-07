@@ -12,8 +12,8 @@ import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.sherlock.client.search.ContentSearcher;
-import com.metabroadcast.sherlock.client.search.SearchQuery;
+import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.ContentSearcher;
+import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.SearchQuery;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;

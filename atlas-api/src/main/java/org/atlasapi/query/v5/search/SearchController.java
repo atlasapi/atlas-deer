@@ -25,10 +25,10 @@ import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 
 import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.sherlock.client.search.Range;
-import com.metabroadcast.sherlock.client.search.SearchQuery;
-import com.metabroadcast.sherlock.common.mapping.ContentMapping;
-import com.metabroadcast.sherlock.common.mapping.IndexMapping;
+import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.Range;
+import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.SearchQuery;
+import sherlock_client_shaded.com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import sherlock_client_shaded.com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;

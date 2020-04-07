@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
-import com.metabroadcast.sherlock.client.search.Range;
+import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.Range;
 
 import com.google.common.collect.ImmutableList;
 import joptsimple.internal.Strings;

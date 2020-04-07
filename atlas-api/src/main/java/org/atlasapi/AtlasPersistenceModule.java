@@ -97,7 +97,10 @@ import com.metabroadcast.common.properties.Parameter;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
 import com.metabroadcast.common.time.SystemClock;
-import com.metabroadcast.sherlock.common.SherlockIndex;
+import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.ContentSearcher;
+import sherlock_client_shaded.com.metabroadcast.sherlock.common.SherlockIndex;
+import sherlock_client_shaded.com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
+import sherlock_client_shaded.com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
 
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.joda.InstantCodec;
@@ -121,9 +124,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
-import com.metabroadcast.sherlock.client.search.ContentSearcher;
-import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
-import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
 
 @Configuration
 @Import({ KafkaMessagingModule.class })
