@@ -92,7 +92,7 @@ public class SearchController {
 
     @RequestMapping({ "/5/search\\.[a-z]+", "/5/search" })
     public void search(
-            @RequestParam(QUERY_PARAM) String query,
+            @RequestParam(value = QUERY_PARAM, required = false) String query,
             @RequestParam(value = YEAR_PARAM, required = false) String yearParam,
             @RequestParam(value = TYPE_PARAM, required = false) String typeParam,
             @RequestParam(value = PUBLISHER_PARAM, required = false) String publisherParam,
