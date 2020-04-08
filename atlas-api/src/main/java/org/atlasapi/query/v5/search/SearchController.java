@@ -25,10 +25,10 @@ import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 
 import com.metabroadcast.common.query.Selection;
-import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.Range;
-import sherlock_client_shaded.com.metabroadcast.sherlock.client.search.SearchQuery;
-import sherlock_client_shaded.com.metabroadcast.sherlock.common.mapping.ContentMapping;
-import sherlock_client_shaded.com.metabroadcast.sherlock.common.mapping.IndexMapping;
+import com.metabroadcast.sherlock.client.search.Range;
+import com.metabroadcast.sherlock.client.search.SearchHelper;
+import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -119,7 +119,7 @@ public class SearchController {
                 throw new IllegalArgumentException("You must specify a limit parameter");
             }
 
-            SearchQuery.Builder searchQuery = SearchQuery.getDefaultQuerySearcher(query);
+            SearchHelper.Builder searchQuery = SearchHelper.getDefaultQuerySearcher(query);
 
             List<Range<Integer>> years = integerRangeCoercer.apply(distinctSplit(yearParam));
             for (Range<Integer> year : years) {

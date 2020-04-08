@@ -291,7 +291,7 @@
     <dependency>
       <groupId>com.metabroadcast.sherlock</groupId>
       <artifactId>client-shaded</artifactId>
-      <version>${sherlock.version}</version>
+      <version>1.1-SNAPSHOT</version>
     </dependency>
   </dependencies>
 
