@@ -219,9 +219,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     @Override
-    public <T extends Content> T merge(T chosen, final Iterable<? extends T> equivalents,
+    public <T extends Content> T merge(
+            T chosen,
+            final Iterable<? extends T> equivalents,
             final Application application,
-            Set<Annotation> activeAnnotations) {
+            Set<Annotation> activeAnnotations
+    ) {
         chosen = createChosen(chosen, equivalents);
         chosen = mergeIdAndEquivTo(chosen);
         return chosen.accept(new ContentVisitorAdapter<T>() {
@@ -577,6 +580,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private <T extends Described> void applyImagePrefs(Application application, T chosen,
             Iterable<T> notChosen) {
+        if(chosen.getImage() != null && isImageAvailableAndNotGenericImageContentPlayer(chosen.getImage(), chosen.getImages())) {
+            return;
+        }
         Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
         if (application.getConfiguration().isImagePrecedenceEnabled()) {
 

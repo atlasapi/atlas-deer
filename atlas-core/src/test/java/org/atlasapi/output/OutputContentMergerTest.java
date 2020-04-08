@@ -43,6 +43,7 @@ import org.atlasapi.segment.SegmentEvent;
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.google.common.collect.Sets;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
@@ -580,6 +581,99 @@ public class OutputContentMergerTest {
         );
         assertNull(merged.getImage());
         assertThat(merged.getImages().size(), is(0));
+    }
+
+    @Test
+    public void testNoImageDoesNotOverrideDespiteHigherPrecedence(){
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.PA,
+                Publisher.ITV,
+                Publisher.ITUNES
+        );
+
+        Item item1 = item(4L, "item1", Publisher.ITUNES);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(1));
+        image1.setAvailabilityEnd(DateTime.now().plusDays(1));
+        image1.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
+
+        item1.setImage(image1.getCanonicalUri());
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.ITV);
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item2.setImage(image2.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image2));
+
+        Item item3 = item(6L, "item3", Publisher.PA);
+
+        Set<EquivalenceRef> equivalentTo = Sets.newHashSet();
+        equivalentTo.add(new EquivalenceRef(Id.valueOf(4L), Publisher.ITUNES));
+        equivalentTo.add(new EquivalenceRef(Id.valueOf(5L), Publisher.ITV));
+
+        item3.setEquivalentTo(equivalentTo);
+
+        Content merged = merger.merge(item3,  ImmutableList.of(item1, item2), application,
+                Collections.emptySet()
+        );
+        assertThat(merged.getImage(), is("http://image2.org/"));
+        assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image2.org/"));
+    }
+
+    @Test
+    public void testImageMergeRespectsSourcePrecedenceDespiteLowestIdDifference(){
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.PA,
+                Publisher.ITV,
+                Publisher.ITUNES
+        );
+
+        Item item1 = item(4L, "item1", Publisher.ITUNES);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(1));
+        image1.setAvailabilityEnd(DateTime.now().plusDays(1));
+        image1.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
+
+        item1.setImage(image1.getCanonicalUri());
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.ITV);
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item2.setImage(image2.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image2));
+
+        Item item3 = item(6L, "item3", Publisher.PA);
+        Image image3 = new Image("http://image3.org/");
+
+        image3.setAvailabilityStart(DateTime.now().minusDays(1));
+        image3.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item3.setImage(image3.getCanonicalUri());
+        item3.setImages(ImmutableSet.of(image3));
+
+        Set<EquivalenceRef> equivalentTo = Sets.newHashSet();
+        equivalentTo.add(new EquivalenceRef(Id.valueOf(4L), Publisher.ITUNES));
+        equivalentTo.add(new EquivalenceRef(Id.valueOf(5L), Publisher.ITV));
+
+        item3.setEquivalentTo(equivalentTo);
+
+        Content merged = merger.merge(item3,  ImmutableList.of(item1, item2), application,
+                Collections.emptySet()
+        );
+        assertThat(merged.getImage(), is("http://image3.org/"));
+        assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image3.org/"));
     }
 
     @Test
