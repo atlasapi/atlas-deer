@@ -762,7 +762,7 @@ public class QueryWebModule {
 
         return StandardQueryParser.create(
                 Resource.CONTENT,
-                contentQueryAttributeParser(),
+                contentSearchQueryAttributeParser(),
                 idCodec,
                 contextParser
         );

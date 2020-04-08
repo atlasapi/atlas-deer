@@ -26,7 +26,7 @@ import org.atlasapi.query.v4.topic.TopicController;
 
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.Range;
-import com.metabroadcast.sherlock.client.search.SearchHelper;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
@@ -120,7 +120,7 @@ public class SearchController {
             }
 
 //            SearchHelper.Builder searchQuery = SearchHelper.getDefaultQuerySearcher(query);
-            SearchHelper.Builder searchQuery = SearchHelper.builder()
+            SearchQuery.Builder searchQuery = SearchQuery.builder()
                     .addSearcher(CONTENT_MAPPING.getTitle(), query);
 
             List<Range<Integer>> years = integerRangeCoercer.apply(distinctSplit(yearParam));

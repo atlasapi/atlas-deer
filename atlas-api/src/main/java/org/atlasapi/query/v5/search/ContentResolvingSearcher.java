@@ -13,7 +13,7 @@ import org.atlasapi.entity.util.Resolved;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.sherlock.client.search.ContentSearcher;
-import com.metabroadcast.sherlock.client.search.SearchHelper;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -41,7 +41,7 @@ public class ContentResolvingSearcher {
         this.timeout = timeout;
     }
 
-    public List<Identified> search(SearchHelper searchQuery) {
+    public List<Identified> search(SearchQuery searchQuery) {
         try {
             return Futures.transform(
                     Futures.transformAsync(
