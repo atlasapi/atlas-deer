@@ -124,11 +124,10 @@ public class Attributes {
             "ids",
             ChannelGroup.class
     );
-    // This attribute is used only to avoid Chrome caching the same channel group request and load
-    // the cached result
-    public static final Attribute<String> CHANNEL_GROUP_REQUEST_TIMESTAMP = StringAttribute.list(
+    // This attribute is used only to prevent browsers from using a cached result for the same request
+    public static final Attribute<String> T = StringAttribute.list(
             "t",
-            ChannelGroup.class
+            Identified.class
     );
     public static final Attribute<String> Q = StringAttribute.single(
             "q",

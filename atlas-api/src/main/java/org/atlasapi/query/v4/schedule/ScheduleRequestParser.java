@@ -1,13 +1,16 @@
 package org.atlasapi.query.v4.schedule;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
 import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.webapp.query.DateTimeInQueryParser;
 import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.content.QueryParseException;
@@ -20,21 +23,15 @@ import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 import org.atlasapi.query.common.validation.SetBasedRequestParameterValidator;
 import org.atlasapi.source.Sources;
-
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.webapp.query.DateTimeInQueryParser;
-
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Range;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.metabroadcast.common.webapp.query.DateTimeInQueryParser.queryDateTimeParser;
@@ -57,6 +54,7 @@ class ScheduleRequestParser {
     private static final String CALLBACK_PARAM = "callback";
     private static final String ID_PARAM = "id";
     private static final String ORDER_BY = "order_by";
+    private static final String TIMESTAMP_PARAM = "t";
 
     private final ApplicationFetcher applicationFetcher;
 
@@ -101,7 +99,7 @@ class ScheduleRequestParser {
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
             .withOptionalParameters(
-                    ANNOTATIONS_PARAM, CALLBACK_PARAM, ORDER_BY, OVERRIDE_SOURCE_PARAM)
+                    ANNOTATIONS_PARAM, CALLBACK_PARAM, ORDER_BY, OVERRIDE_SOURCE_PARAM, TIMESTAMP_PARAM)
             .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
@@ -116,7 +114,7 @@ class ScheduleRequestParser {
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
             .withOptionalParameters(
-                    ANNOTATIONS_PARAM, CALLBACK_PARAM, ORDER_BY, OVERRIDE_SOURCE_PARAM)
+                    ANNOTATIONS_PARAM, CALLBACK_PARAM, ORDER_BY, OVERRIDE_SOURCE_PARAM, TIMESTAMP_PARAM)
             .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
