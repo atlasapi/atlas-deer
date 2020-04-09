@@ -580,6 +580,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private <T extends Described> void applyImagePrefs(Application application, T chosen,
             Iterable<T> notChosen) {
+
+        // chosen might already have highest precedence source image, so no need to look for others
+        // (looking for others might even give us an incorrect result; see ENG-675)
         if(chosen.getImage() != null && isImageAvailableAndNotGenericImageContentPlayer(chosen.getImage(), chosen.getImages())) {
             return;
         }
