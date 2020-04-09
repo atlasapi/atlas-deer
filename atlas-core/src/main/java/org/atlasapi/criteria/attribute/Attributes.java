@@ -124,11 +124,6 @@ public class Attributes {
             "ids",
             ChannelGroup.class
     );
-    // This attribute is used only to prevent browsers from using a cached result for the same request
-    public static final Attribute<String> T = StringAttribute.list(
-            "t",
-            Identified.class
-    );
     public static final Attribute<String> Q = StringAttribute.single(
             "q",
             Identified.class

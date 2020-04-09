@@ -602,10 +602,6 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.HIGHER_READ_CONSISTENCY,
                                 BooleanCoercer.create()
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.T,
-                                StringCoercer.create()
                         )
                 )
         );
@@ -767,10 +763,6 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_IDS,
                                 IdCoercer.create(idCodec())
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.T,
-                                StringCoercer.create()
                         )
                 )
         );
@@ -830,10 +822,6 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.REFRESH_CACHE,
                                 StringCoercer.create()
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.T,
-                                StringCoercer.create()
                         )
                 )
         );
@@ -869,10 +857,6 @@ public class QueryWebModule {
                                 QueryAtomParser.create(
                                         Attributes.ALIASES_VALUE,
                                         StringCoercer.create()
-                                ),
-                                QueryAtomParser.create(
-                                        Attributes.T,
-                                        StringCoercer.create()
                                 )
                         )
                 ),
@@ -906,10 +890,6 @@ public class QueryWebModule {
                                 QueryAtomParser.create(
                                         Attributes.ALIASES_VALUE,
                                         StringCoercer.create()
-                                ),
-                                QueryAtomParser.create(
-                                        Attributes.T,
-                                        StringCoercer.create()
                                 )
                         )
                 ),
@@ -929,10 +909,6 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.ID,
                                 IdCoercer.create(idCodec())
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.T,
-                                StringCoercer.create()
                         )
                 )),
                 idCodec(), contextParser
