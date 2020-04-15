@@ -952,6 +952,9 @@ public class QueryWebModule {
     org.atlasapi.query.v5.search.SearchController v5SearchController() {
         return new org.atlasapi.query.v5.search.SearchController(
                 v5SearchResolver,
+                configFetcher,
+                new IndexAnnotationsExtractor(contentAnnotationIndex()),
+                selectionBuilder(),
                 new ContentQueryResultWriter(
                         contentListWriter(),
                         licenseWriter,

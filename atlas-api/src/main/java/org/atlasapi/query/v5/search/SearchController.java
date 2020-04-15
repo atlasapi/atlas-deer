@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.application.ApiKeyApplicationFetcher;
+import org.atlasapi.application.ApplicationFetcher;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Content;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.output.ErrorResultWriter;
@@ -18,13 +20,16 @@ import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
+import org.atlasapi.query.annotation.AnnotationsExtractor;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.coercers.InstantRangeCoercer;
 import org.atlasapi.query.common.coercers.IntegerRangeCoercer;
 import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.common.context.QueryContextParser;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.Range;
 import com.metabroadcast.sherlock.client.search.SearchHelper;
@@ -63,6 +68,9 @@ public class SearchController {
     private static final String ON_DEMAND_AVAILABLE_PARAM = "filter.ondemand.available";
 
     private final ContentResolvingSearcher searcher;
+    private final ApplicationFetcher applicationFetcher;
+    private final AnnotationsExtractor annotationsExtractor;
+    private final Selection.SelectionBuilder selectionBuilder;
     private final QueryResultWriter<Content> resultWriter;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
@@ -88,9 +96,15 @@ public class SearchController {
 
     public SearchController(
             ContentResolvingSearcher searcher,
+            ApplicationFetcher applicationFetcher,
+            AnnotationsExtractor annotationsExtractor,
+            Selection.SelectionBuilder selectionBuilder,
             QueryResultWriter<Content> resultWriter
     ) {
         this.searcher = searcher;
+        this.applicationFetcher = applicationFetcher;
+        this.annotationsExtractor = annotationsExtractor;
+        this.selectionBuilder = selectionBuilder;
         this.resultWriter = resultWriter;
     }
 
@@ -176,9 +190,16 @@ public class SearchController {
             }
 
             List<Identified> content = searcher.search(searchQuery.build());
+
             resultWriter.write(QueryResult.listResult(
                     Iterables.filter(content, Content.class),
-                    QueryContext.standard(request),
+                    QueryContext.create(
+                            applicationFetcher.applicationFor(request)
+                                    .orElse(DefaultApplication.create()),
+                            annotationsExtractor.extractFromSingleRequest(request),
+                            selectionBuilder.build(request),
+                            request
+                    ),
                     Long.valueOf(content.size())
             ), writer);
         } catch (Exception e) {
