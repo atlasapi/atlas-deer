@@ -114,7 +114,12 @@ public class SearchController {
             writer = writerResolver.writerFor(request, response);
             paramChecker.checkParameters(request);
 
-            SearchQuery.Builder searchQuery = SearchQuery.getDefaultQuerySearcher(query);
+            SearchQuery.Builder searchQuery;
+            if (Strings.isNullOrEmpty(query)) {
+                 searchQuery = SearchQuery.builder();
+            } else {
+                searchQuery = SearchQuery.getDefaultQuerySearcher(query);
+            }
 
             List<Range<Integer>> years = integerRangeCoercer.apply(distinctSplit(yearParam));
             for (Range<Integer> year : years) {
