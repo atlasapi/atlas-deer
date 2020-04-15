@@ -54,7 +54,6 @@ class ScheduleRequestParser {
     private static final String CALLBACK_PARAM = "callback";
     private static final String ID_PARAM = "id";
     private static final String ORDER_BY = "order_by";
-    private static final String TIMESTAMP_PARAM = "t";
 
     private final ApplicationFetcher applicationFetcher;
 
@@ -99,7 +98,7 @@ class ScheduleRequestParser {
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
             .withOptionalParameters(
-                    ANNOTATIONS_PARAM, CALLBACK_PARAM, ORDER_BY, OVERRIDE_SOURCE_PARAM, TIMESTAMP_PARAM)
+                    ANNOTATIONS_PARAM, CALLBACK_PARAM, ORDER_BY, OVERRIDE_SOURCE_PARAM)
             .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
@@ -114,7 +113,7 @@ class ScheduleRequestParser {
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
             .withOptionalParameters(
-                    ANNOTATIONS_PARAM, CALLBACK_PARAM, ORDER_BY, OVERRIDE_SOURCE_PARAM, TIMESTAMP_PARAM)
+                    ANNOTATIONS_PARAM, CALLBACK_PARAM, ORDER_BY, OVERRIDE_SOURCE_PARAM)
             .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
