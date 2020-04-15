@@ -14,6 +14,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
+import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
@@ -50,6 +51,7 @@ public class SearchController {
 
     private static final char VALUE_SEPARATOR = ',';
 
+    private static final String ANNOTATIONS_PARAM = "annotations";
     private static final String QUERY_PARAM = "q";
     private static final String YEAR_PARAM = "filter.year";
     private static final String TYPE_PARAM = "filter.type";
@@ -62,16 +64,17 @@ public class SearchController {
 
     private final ContentResolvingSearcher searcher;
     private final QueryResultWriter<Content> resultWriter;
+    private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     private final InstantRangeCoercer instantRangeCoercer = InstantRangeCoercer.create();
     private final IntegerRangeCoercer integerRangeCoercer = IntegerRangeCoercer.create();
 
-    private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
-
     private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.of(
-            ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER,
-            Selection.LIMIT_REQUEST_PARAM,
-            Selection.START_INDEX_REQUEST_PARAM,
+//            ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER,
+//            Selection.LIMIT_REQUEST_PARAM,
+//            Selection.START_INDEX_REQUEST_PARAM,
+//            JsonResponseWriter.CALLBACK,
+            ANNOTATIONS_PARAM,
             QUERY_PARAM,
             YEAR_PARAM,
             TYPE_PARAM,
@@ -93,7 +96,7 @@ public class SearchController {
 
     @RequestMapping({ "/5/search\\.[a-z]+", "/5/search" })
     public void search(
-            @RequestParam(value = QUERY_PARAM) String query,
+            @RequestParam(value = QUERY_PARAM, required = false) String query,
             @RequestParam(value = YEAR_PARAM, required = false) String yearParam,
             @RequestParam(value = TYPE_PARAM, required = false) String typeParam,
             @RequestParam(value = PUBLISHER_PARAM, required = false) String publisherParam,
@@ -110,15 +113,6 @@ public class SearchController {
         try {
             writer = writerResolver.writerFor(request, response);
             paramChecker.checkParameters(request);
-
-            if (Strings.isNullOrEmpty(query)) {
-                throw new IllegalArgumentException("You must specify a query parameter");
-            }
-
-            Selection selection = Selection.builder().build(request);
-            if (!selection.hasLimit()) {
-                throw new IllegalArgumentException("You must specify a limit parameter");
-            }
 
             SearchQuery.Builder searchQuery = SearchQuery.getDefaultQuerySearcher(query);
 
