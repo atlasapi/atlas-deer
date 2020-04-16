@@ -21,6 +21,9 @@ import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
+import org.atlasapi.query.common.Query;
+import org.atlasapi.query.common.QueryExecutor;
+import org.atlasapi.query.common.QueryParser;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.coercers.InstantRangeCoercer;
 import org.atlasapi.query.common.coercers.IntegerRangeCoercer;
@@ -36,6 +39,7 @@ import com.metabroadcast.sherlock.client.search.SearchHelper;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
+import com.metabroadcast.sherlock.common.model.ContentIndexModel;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -78,10 +82,10 @@ public class SearchController {
     private final IntegerRangeCoercer integerRangeCoercer = IntegerRangeCoercer.create();
 
     private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.of(
-//            ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER,
-//            Selection.LIMIT_REQUEST_PARAM,
-//            Selection.START_INDEX_REQUEST_PARAM,
-//            JsonResponseWriter.CALLBACK,
+            ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER,
+            Selection.LIMIT_REQUEST_PARAM,
+            Selection.START_INDEX_REQUEST_PARAM,
+            JsonResponseWriter.CALLBACK,
             ANNOTATIONS_PARAM,
             QUERY_PARAM,
             YEAR_PARAM,
