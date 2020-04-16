@@ -21,25 +21,18 @@ import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
-import org.atlasapi.query.common.Query;
-import org.atlasapi.query.common.QueryExecutor;
-import org.atlasapi.query.common.QueryParser;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.coercers.InstantRangeCoercer;
 import org.atlasapi.query.common.coercers.IntegerRangeCoercer;
 import org.atlasapi.query.common.context.QueryContext;
-import org.atlasapi.query.common.context.QueryContextParser;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 
-import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.Range;
-import com.metabroadcast.sherlock.client.search.SearchHelper;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
-import com.metabroadcast.sherlock.common.model.ContentIndexModel;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
