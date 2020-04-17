@@ -581,28 +581,35 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private <T extends Described> void applyImagePrefs(Application application, T chosen,
             Iterable<T> notChosen) {
 
-        // chosen might already have highest precedence source image, so no need to look for others
-        // (looking for others might even give us an incorrect result; see ENG-675)
-        if(chosen.getImage() != null && isImageAvailableAndNotGenericImageContentPlayer(chosen.getImage(), chosen.getImages())) {
-            return;
-        }
         Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
         if (application.getConfiguration().isImagePrecedenceEnabled()) {
 
-            List<T> topImageMatches = application.getConfiguration()
-                    .getImageReadPrecedenceOrdering()
-                    .onResultOf(Sourceds.toPublisher())
-                    .leastOf(
-                            Iterables.filter(
-                                    all,
-                                    HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET
-                            ),
-                            1
-                    );
+            T top = null;
 
-            if (!topImageMatches.isEmpty()) {
-                T top = topImageMatches.get(0);
-                top.getImages().forEach(img -> img.setSource(top.getSource()));
+            // chosen might already have highest precedence source image, so no need to look for others
+            // (looking for others might even give us an incorrect result; see ENG-675)
+            if(HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET.apply(chosen)) {
+                top = chosen;
+            } else {
+                List<T> topImageMatches = application.getConfiguration()
+                        .getImageReadPrecedenceOrdering()
+                        .onResultOf(Sourceds.toPublisher())
+                        .leastOf(
+                                Iterables.filter(
+                                        all,
+                                        HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET
+                                ),
+                                1
+                        );
+
+                if (!topImageMatches.isEmpty()) {
+                    top = topImageMatches.get(0);
+                }
+            }
+
+            if (top != null) {
+                Publisher source = top.getSource();
+                top.getImages().forEach(img -> img.setSource(source));
                 chosen.setImages(top.getImages());
                 chosen.setImage(top.getImage());
                 chosen.setThumbnail(top.getThumbnail());
