@@ -605,8 +605,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
             if (!topImageMatches.isEmpty()) {
                 T top = topImageMatches.get(0);
-                Publisher source = top.getSource();
-                top.getImages().forEach(img -> img.setSource(source));
+                top.getImages().forEach(img -> img.setSource(top.getSource()));
                 chosen.setImages(top.getImages());
                 chosen.setImage(top.getImage());
                 chosen.setThumbnail(top.getThumbnail());
