@@ -581,9 +581,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private <T extends Described> void applyImagePrefs(Application application, T chosen,
             Iterable<T> notChosen) {
 
-        Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
         if (application.getConfiguration().isImagePrecedenceEnabled()) {
-
             T top = null;
 
             // chosen might already have highest precedence source image, so no need to look for others
@@ -591,6 +589,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             if(HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET.apply(chosen)) {
                 top = chosen;
             } else {
+                Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
                 List<T> topImageMatches = application.getConfiguration()
                         .getImageReadPrecedenceOrdering()
                         .onResultOf(Sourceds.toPublisher())
