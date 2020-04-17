@@ -584,8 +584,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (application.getConfiguration().isImagePrecedenceEnabled()) {
             T top = null;
 
-            // chosen might already have highest precedence source image, so no need to look for others
-            // (looking for others might even give us an incorrect result; see ENG-675)
+            // ENG-675: chosen's publisher and id have been modified at this point and so might have become
+            // lower precedence. We perform this check separately so that we can keep the chosen content's image
+            // if applicable, since it will be highest precedence.
             if(HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET.apply(chosen)) {
                 top = chosen;
             } else {
