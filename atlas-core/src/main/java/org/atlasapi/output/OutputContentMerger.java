@@ -582,32 +582,29 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<T> notChosen) {
 
         if (application.getConfiguration().isImagePrecedenceEnabled()) {
-            T top = null;
 
             // ENG-675: chosen's publisher and id have been modified at this point and so might have become
             // lower precedence. We perform this check separately so that we can keep the chosen content's image
             // if applicable, since it will be highest precedence.
             if(HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET.apply(chosen)) {
-                top = chosen;
-            } else {
-                Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
-                List<T> topImageMatches = application.getConfiguration()
-                        .getImageReadPrecedenceOrdering()
-                        .onResultOf(Sourceds.toPublisher())
-                        .leastOf(
-                                Iterables.filter(
-                                        all,
-                                        HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET
-                                ),
-                                1
-                        );
-
-                if (!topImageMatches.isEmpty()) {
-                    top = topImageMatches.get(0);
-                }
+                // We're not setting the image source here since we don't know the actual publisher at this point
+                return;
             }
 
-            if (top != null) {
+            Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
+            List<T> topImageMatches = application.getConfiguration()
+                    .getImageReadPrecedenceOrdering()
+                    .onResultOf(Sourceds.toPublisher())
+                    .leastOf(
+                            Iterables.filter(
+                                    all,
+                                    HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET
+                            ),
+                            1
+                    );
+
+            if (!topImageMatches.isEmpty()) {
+                T top = topImageMatches.get(0);
                 Publisher source = top.getSource();
                 top.getImages().forEach(img -> img.setSource(source));
                 chosen.setImages(top.getImages());
