@@ -955,7 +955,7 @@ public class QueryWebModule {
                 configFetcher,
                 new IndexAnnotationsExtractor(contentAnnotationIndex()),
                 selectionBuilder(),
-                new ContentQueryResultWriter(
+                new org.atlasapi.query.v5.search.ContentQueryResultWriter(
                         contentListWriter(),
                         licenseWriter,
                         requestWriter(),

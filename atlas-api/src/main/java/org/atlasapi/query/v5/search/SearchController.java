@@ -44,6 +44,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import static org.atlasapi.criteria.attribute.Attributes.CHANNEL_GROUP;
+
 @Controller
 public class SearchController {
 
@@ -88,7 +90,8 @@ public class SearchController {
             SCHEDULE_TIME_PARAM,
             SCHEDULE_CHANNEL_PARAM,
             SCHEDULE_CHANNEL_GROUP_PARAM,
-            ON_DEMAND_AVAILABLE_PARAM
+            ON_DEMAND_AVAILABLE_PARAM,
+            CHANNEL_GROUP.externalName()
     ));
 
     public SearchController(
@@ -169,15 +172,6 @@ public class SearchController {
                         scheduleChannel
                 );
             }
-
-            // TODO
-//            List<String> scheduleChannelGroups = extractValuesFromParameter(scheduleChannelGroupParam);
-//            for (String scheduleChannelGroup : scheduleChannelGroups) {
-//                searchHelper.addFilter(
-//                        CONTENT_MAPPING.getBroadcasts().getChannelGroup(),
-//                        scheduleChannelGroup
-//                );
-//            }
 
             if (onDemandAvailableParam != null) {
                 searchQuery.addFilter(
