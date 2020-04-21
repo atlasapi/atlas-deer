@@ -84,7 +84,7 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
         OutputContext.Builder builder = OutputContext.builder(queryContext);
 
         List<String> channelGroups;
-        if (!Strings.isNullOrEmpty(SearchController.SCHEDULE_CHANNEL_GROUP_PARAM)) {
+        if (!Strings.isNullOrEmpty(channelGroupParam)) {
             channelGroups = Arrays.asList(channelGroupParam.split("\\s*,\\s*"));
         } else {
             channelGroups = new ArrayList<>();
