@@ -17,7 +17,7 @@ public class InstantRangeCoercer extends RangeCoercer<Instant> {
 
     @Override
     protected Instant[] bisectAndCoerce(String value) throws InvalidAttributeValueException {
-        if (value.length() % 2 == 1) { // Instant range values must be in the same format
+        if (value.length() % 2 != 1) { // Instant range values must be in the same format
             throw new InvalidAttributeValueException(value);
         }
 

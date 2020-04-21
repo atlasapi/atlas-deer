@@ -53,10 +53,6 @@ public class Attributes {
             "platform",
             Platform.class
     );
-    public static final Attribute<Id> CHANNEL_GROUP = IdAttribute.list(
-            "channelGroup",
-            ChannelGroup.class
-    );
     public static final Attribute<Id> DOWNWEIGH = IdAttribute.list(
             "downweigh",
             Identified.class

@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
+import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Content;
 import org.atlasapi.entity.Identified;
@@ -25,6 +26,8 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.coercers.InstantRangeCoercer;
 import org.atlasapi.query.common.coercers.IntegerRangeCoercer;
 import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 
@@ -44,8 +47,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import static org.atlasapi.criteria.attribute.Attributes.CHANNEL_GROUP;
-
 @Controller
 public class SearchController {
 
@@ -63,7 +64,7 @@ public class SearchController {
     private static final String SCHEDULE_UPCOMING_PARAM = "filter.schedule.upcoming";
     private static final String SCHEDULE_TIME_PARAM = "filter.schedule.time";
     private static final String SCHEDULE_CHANNEL_PARAM = "filterOption.schedule.channel";
-    private static final String SCHEDULE_CHANNEL_GROUP_PARAM = "filterOption.schedule.channelGroup";
+    public static final String SCHEDULE_CHANNEL_GROUP_PARAM = "filterOption.schedule.channelGroup";
     private static final String ON_DEMAND_AVAILABLE_PARAM = "filter.ondemand.available";
 
     private final ContentResolvingSearcher searcher;
@@ -90,8 +91,7 @@ public class SearchController {
             SCHEDULE_TIME_PARAM,
             SCHEDULE_CHANNEL_PARAM,
             SCHEDULE_CHANNEL_GROUP_PARAM,
-            ON_DEMAND_AVAILABLE_PARAM,
-            CHANNEL_GROUP.externalName()
+            ON_DEMAND_AVAILABLE_PARAM
     ));
 
     public SearchController(
@@ -117,7 +117,6 @@ public class SearchController {
             @RequestParam(value = SCHEDULE_UPCOMING_PARAM, required = false) Boolean scheduleUpcomingParam,
             @RequestParam(value = SCHEDULE_TIME_PARAM, required = false) String scheduleTimeParam,
             @RequestParam(value = SCHEDULE_CHANNEL_PARAM, required = false) String scheduleChannelParam,
-            @RequestParam(value = SCHEDULE_CHANNEL_GROUP_PARAM, required = false) String scheduleChannelGroupParam,
             @RequestParam(value = ON_DEMAND_AVAILABLE_PARAM, required = false) Boolean onDemandAvailableParam,
             HttpServletRequest request,
             HttpServletResponse response
@@ -184,13 +183,7 @@ public class SearchController {
 
             resultWriter.write(QueryResult.listResult(
                     Iterables.filter(content, Content.class),
-                    QueryContext.create(
-                            applicationFetcher.applicationFor(request)
-                                    .orElse(DefaultApplication.create()),
-                            annotationsExtractor.extractFromSingleRequest(request),
-                            selectionBuilder.build(request),
-                            request
-                    ),
+                    createQueryContext(request),
                     Long.valueOf(content.size())
             ), writer);
         } catch (Exception e) {
@@ -208,5 +201,18 @@ public class SearchController {
                     .distinct()
                     .collect(Collectors.toList());
         }
+    }
+
+    private QueryContext createQueryContext(HttpServletRequest request)
+            throws ApplicationResolutionException, InvalidAnnotationException,
+            MissingAnnotationException
+    {
+        return QueryContext.create(
+                applicationFetcher.applicationFor(request)
+                        .orElse(DefaultApplication.create()),
+                annotationsExtractor.extractFromSingleRequest(request),
+                selectionBuilder.build(request),
+                request
+        );
     }
 }

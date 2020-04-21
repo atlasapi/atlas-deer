@@ -79,11 +79,16 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
     private OutputContext outputContext(QueryContext queryContext) throws IOException {
 
         String channelGroupParam = queryContext.getRequest()
-                .getParameter(Attributes.CHANNEL_GROUP.externalName());
+                .getParameter(SearchController.SCHEDULE_CHANNEL_GROUP_PARAM);
 
         OutputContext.Builder builder = OutputContext.builder(queryContext);
 
-        List<String> channelGroups = Arrays.asList(channelGroupParam.split("\\s*,\\s*"));
+        List<String> channelGroups;
+        if (!Strings.isNullOrEmpty(SearchController.SCHEDULE_CHANNEL_GROUP_PARAM)) {
+            channelGroups = Arrays.asList(channelGroupParam.split("\\s*,\\s*"));
+        } else {
+            channelGroups = new ArrayList<>();
+        }
 
         List<Region> regions = new ArrayList<>();
         List<Platform> platforms = new ArrayList<>();
@@ -109,6 +114,7 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
         if (!platforms.isEmpty()) {
             builder.withPlatforms(platforms);
         }
+
 
         return builder.build();
     }
