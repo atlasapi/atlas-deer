@@ -76,7 +76,7 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
 
     }
 
-    private OutputContext outputContext(QueryContext queryContext) throws IOException {
+    private OutputContext outputContext(QueryContext queryContext) {
 
         String channelGroupParam = queryContext.getRequest()
                 .getParameter(SearchController.SCHEDULE_CHANNEL_GROUP_PARAM);
@@ -114,7 +114,6 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
         if (!platforms.isEmpty()) {
             builder.withPlatforms(platforms);
         }
-
 
         return builder.build();
     }
