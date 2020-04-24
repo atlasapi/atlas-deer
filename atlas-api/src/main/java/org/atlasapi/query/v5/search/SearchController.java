@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,24 +24,27 @@ import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
 import org.atlasapi.query.common.QueryResult;
-import org.atlasapi.query.common.coercers.InstantRangeCoercer;
-import org.atlasapi.query.common.coercers.IntegerRangeCoercer;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 
 import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.sherlock.client.search.Range;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
+import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
+import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
+import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
+import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import org.apache.lucene.index.Term;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -55,6 +59,8 @@ public class SearchController {
     private static final ContentMapping CONTENT_MAPPING = IndexMapping.getContentMapping();
 
     private static final char VALUE_SEPARATOR = ',';
+    private static final String EXISTS_KEYWORD = "nonNull";
+    private static final String NON_EXISTS_KEYWORD = "null";
 
     private static final String ANNOTATIONS_PARAM = "annotations";
     private static final String QUERY_PARAM = "q";
@@ -134,49 +140,70 @@ public class SearchController {
                 searchQuery = SearchQuery.getDefaultQuerySearcher(query);
             }
 
-            List<Range<Integer>> years = integerRangeCoercer.apply(distinctSplit(yearParam));
-            for (Range<Integer> year : years) {
-                searchQuery.addFilter(CONTENT_MAPPING.getYear(), year);
+            List<RangeOrTerm<?>> years = integerRangeCoercer.apply(
+                    CONTENT_MAPPING.getYear(),
+                    distinctSplit(searchQuery, CONTENT_MAPPING.getYear(), yearParam)
+            );
+            for (RangeOrTerm<?> year : years) {
+                if (year.getRangeOrTermClass() == RangeParameter.class) {
+                    searchQuery.addFilter(year.getRange());
+                } else {
+                    searchQuery.addFilter(year.getTerm());
+                }
             }
 
-            List<String> types = distinctSplit(typeParam);
+            List<String> types = distinctSplit(searchQuery, CONTENT_MAPPING.getType(), typeParam);
             for (String type : types) {
-                searchQuery.addFilter(CONTENT_MAPPING.getType(), type);
+                searchQuery.addFilter(TermParameter.of(CONTENT_MAPPING.getType(), type));
             }
 
-            List<String> publishers = distinctSplit(publisherParam);
+            List<String> publishers = distinctSplit(searchQuery, CONTENT_MAPPING.getSource().getKey(), publisherParam);
             for (String publisher : publishers) {
-                searchQuery.addFilter(CONTENT_MAPPING.getSource().getKey(), publisher);
+                searchQuery.addFilter(
+                        TermParameter.of(
+                                CONTENT_MAPPING.getSource().getKey(),
+                                publisher));
             }
 
             if (scheduleUpcomingParam != null && scheduleUpcomingParam) {
                 searchQuery.addFilter(
-                        CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
-                        Range.from(Instant.now())
-                );
+                        RangeParameter.from(
+                                CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                                Instant.now()));
             }
 
-            List<Range<Instant>> scheduleTimes = instantRangeCoercer.apply(distinctSplit(scheduleTimeParam));
-            for (Range<Instant> scheduleTime : scheduleTimes) {
-                searchQuery.addFilter(
-                        CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
-                        scheduleTime
-                );
+            List<RangeOrTerm<?>> scheduleTimes = instantRangeCoercer.apply(
+                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                    distinctSplit(
+                            searchQuery,
+                            CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                            scheduleTimeParam)
+            );
+            for (RangeOrTerm<?> scheduleTime : scheduleTimes) {
+                if (scheduleTime.getRangeOrTermClass() == RangeParameter.class) {
+                    searchQuery.addFilter(scheduleTime.getRange());
+                } else {
+                    searchQuery.addFilter(scheduleTime.getTerm());
+                }
             }
 
-            List<String> scheduleChannels = distinctSplit(scheduleChannelParam);
+            List<String> scheduleChannels = distinctSplit(
+                    searchQuery,
+                    CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
+                    scheduleChannelParam
+            );
             for (String scheduleChannel : scheduleChannels) {
                 searchQuery.addFilter(
-                        CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
-                        scheduleChannel
-                );
+                        TermParameter.of(
+                            CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
+                            scheduleChannel));
             }
 
             if (onDemandAvailableParam != null) {
                 searchQuery.addFilter(
-                        CONTENT_MAPPING.getLocations().getAvailable(),
-                        onDemandAvailableParam
-                );
+                        TermParameter.of(
+                            CONTENT_MAPPING.getLocations().getAvailable(),
+                            onDemandAvailableParam));
             }
 
             List<Identified> content = searcher.search(searchQuery.build());
@@ -193,13 +220,33 @@ public class SearchController {
         }
     }
 
-    private List<String> distinctSplit(String parameter) {
+    private List<String> distinctSplit(
+            SearchQuery.Builder searchQuery,
+            ChildTypeMapping<?> mapping,
+            String parameter
+    ) {
         if (parameter == null) {
             return ImmutableList.of();
         } else {
-            return Arrays.stream(parameter.split(String.valueOf(VALUE_SEPARATOR), -1))
+            List<String> parameters = Arrays.stream(parameter.split(String.valueOf(VALUE_SEPARATOR), -1))
                     .distinct()
                     .collect(Collectors.toList());
+            handleExists(searchQuery, mapping, parameters);
+            return parameters;
+        }
+    }
+
+    private void handleExists(
+            SearchQuery.Builder searchQuery,
+            ChildTypeMapping<?> mapping,
+            List<String> parameters
+    ) {
+        if (parameters.contains(EXISTS_KEYWORD)) {
+            searchQuery.addFilter(ExistParameter.exists(mapping));
+            parameters.remove(EXISTS_KEYWORD);
+        } else if (parameters.contains(NON_EXISTS_KEYWORD)) {
+            searchQuery.addFilter(ExistParameter.notExists(mapping));
+            parameters.remove(NON_EXISTS_KEYWORD);
         }
     }
 

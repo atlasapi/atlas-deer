@@ -1,4 +1,4 @@
-package org.atlasapi.query.common.coercers;
+package org.atlasapi.query.v5.search;
 
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 

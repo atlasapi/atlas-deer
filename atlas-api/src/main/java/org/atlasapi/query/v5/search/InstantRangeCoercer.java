@@ -1,4 +1,4 @@
-package org.atlasapi.query.common.coercers;
+package org.atlasapi.query.v5.search;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
