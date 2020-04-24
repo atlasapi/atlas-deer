@@ -45,6 +45,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.apache.lucene.index.Term;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -120,10 +121,10 @@ public class SearchController {
             @RequestParam(value = YEAR_PARAM, required = false) String yearParam,
             @RequestParam(value = TYPE_PARAM, required = false) String typeParam,
             @RequestParam(value = PUBLISHER_PARAM, required = false) String publisherParam,
-            @RequestParam(value = SCHEDULE_UPCOMING_PARAM, required = false) Boolean scheduleUpcomingParam,
+            @RequestParam(value = SCHEDULE_UPCOMING_PARAM, required = false) String scheduleUpcomingParam,
             @RequestParam(value = SCHEDULE_TIME_PARAM, required = false) String scheduleTimeParam,
             @RequestParam(value = SCHEDULE_CHANNEL_PARAM, required = false) String scheduleChannelParam,
-            @RequestParam(value = ON_DEMAND_AVAILABLE_PARAM, required = false) Boolean onDemandAvailableParam,
+            @RequestParam(value = ON_DEMAND_AVAILABLE_PARAM, required = false) String onDemandAvailableParam,
             HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
@@ -157,7 +158,11 @@ public class SearchController {
                 searchQuery.addFilter(TermParameter.of(CONTENT_MAPPING.getType(), type));
             }
 
-            List<String> publishers = distinctSplit(searchQuery, CONTENT_MAPPING.getSource().getKey(), publisherParam);
+            List<String> publishers = distinctSplit(
+                    searchQuery,
+                    CONTENT_MAPPING.getSource().getKey(),
+                    publisherParam
+            );
             for (String publisher : publishers) {
                 searchQuery.addFilter(
                         TermParameter.of(
@@ -165,11 +170,24 @@ public class SearchController {
                                 publisher));
             }
 
-            if (scheduleUpcomingParam != null && scheduleUpcomingParam) {
-                searchQuery.addFilter(
-                        RangeParameter.from(
-                                CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
-                                Instant.now()));
+            List<String> scheduleUpcomings = distinctSplit(
+                    searchQuery,
+                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                    scheduleUpcomingParam
+            );
+            for (String scheduleUpcoming : scheduleUpcomings) {
+                boolean scheduleUpcomingBoolean = Boolean.parseBoolean(scheduleUpcoming);
+                if (scheduleUpcomingBoolean) {
+                    searchQuery.addFilter(
+                            RangeParameter.from(
+                                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                                    Instant.now()));
+                } else {
+                    searchQuery.addFilter(
+                            RangeParameter.to(
+                                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                                    Instant.now()));
+                }
             }
 
             List<RangeOrTerm<?>> scheduleTimes = instantRangeCoercer.apply(
@@ -199,11 +217,17 @@ public class SearchController {
                             scheduleChannel));
             }
 
-            if (onDemandAvailableParam != null) {
+            List<String> onDemandAvailables = distinctSplit(
+                    searchQuery,
+                    CONTENT_MAPPING.getLocations().getAvailable(),
+                    onDemandAvailableParam
+            );
+            for (String onDemandAvailable : onDemandAvailables) {
+                boolean onDemandAvailableBoolean = Boolean.parseBoolean(onDemandAvailable);
                 searchQuery.addFilter(
                         TermParameter.of(
                             CONTENT_MAPPING.getLocations().getAvailable(),
-                            onDemandAvailableParam));
+                                onDemandAvailableBoolean));
             }
 
             List<Identified> content = searcher.search(searchQuery.build());
