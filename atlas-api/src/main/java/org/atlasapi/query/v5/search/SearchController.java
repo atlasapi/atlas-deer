@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import scala.Int;
 
 @Controller
 public class SearchController {
@@ -118,8 +119,8 @@ public class SearchController {
 
     @RequestMapping({ "/5/search\\.[a-z]+", "/5/search" })
     public void search(
-            @RequestParam(value = Selection.LIMIT_REQUEST_PARAM) String limit,
-            @RequestParam(value = Selection.START_INDEX_REQUEST_PARAM) String offset,
+            @RequestParam(value = Selection.LIMIT_REQUEST_PARAM) Integer limit,
+            @RequestParam(value = Selection.START_INDEX_REQUEST_PARAM) Integer offset,
             @RequestParam(value = QUERY_PARAM, required = false) String query,
             @RequestParam(value = YEAR_PARAM, required = false) String yearParam,
             @RequestParam(value = TYPE_PARAM, required = false) String typeParam,
