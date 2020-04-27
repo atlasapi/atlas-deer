@@ -235,12 +235,15 @@ public class SearchController {
                                 onDemandAvailableBoolean));
             }
 
-            SearchQuery searchQuery = queryBuilder
-                    .withLimit(limit)
-                    .withOffset(offset)
-                    .build();
+            if (limit != null) {
+                queryBuilder.withLimit(limit);
+            }
 
-            List<Identified> content = searcher.search(searchQuery);
+            if (offset != null) {
+                queryBuilder.withOffset(offset);
+            }
+
+            List<Identified> content = searcher.search(queryBuilder.build());
 
             resultWriter.write(QueryResult.listResult(
                     Iterables.filter(content, Content.class),
