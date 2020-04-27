@@ -119,8 +119,9 @@ public class SearchController {
 
     @RequestMapping({ "/5/search\\.[a-z]+", "/5/search" })
     public void search(
-            @RequestParam(value = Selection.LIMIT_REQUEST_PARAM) Integer limit,
-            @RequestParam(value = Selection.START_INDEX_REQUEST_PARAM) Integer offset,
+            @RequestParam(ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER) String apiKey,
+            @RequestParam(value = Selection.LIMIT_REQUEST_PARAM, required = false) Integer limit,
+            @RequestParam(value = Selection.START_INDEX_REQUEST_PARAM, required = false) Integer offset,
             @RequestParam(value = QUERY_PARAM, required = false) String query,
             @RequestParam(value = YEAR_PARAM, required = false) String yearParam,
             @RequestParam(value = TYPE_PARAM, required = false) String typeParam,
@@ -234,7 +235,11 @@ public class SearchController {
                                 onDemandAvailableBoolean));
             }
 
-            SearchQuery searchQuery = queryBuilder.withLimit(limit).withOffset(offset).build();
+            SearchQuery searchQuery = queryBuilder
+                    .withLimit(limit)
+                    .withOffset(offset)
+                    .build();
+
             List<Identified> content = searcher.search(searchQuery);
 
             resultWriter.write(QueryResult.listResult(
