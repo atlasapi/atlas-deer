@@ -27,6 +27,7 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
+import org.atlasapi.query.common.exceptions.InvalidParameterException;
 import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
@@ -117,6 +118,8 @@ public class SearchController {
 
     @RequestMapping({ "/5/search\\.[a-z]+", "/5/search" })
     public void search(
+            @RequestParam(value = Selection.LIMIT_REQUEST_PARAM) String limit,
+            @RequestParam(value = Selection.START_INDEX_REQUEST_PARAM) String offset,
             @RequestParam(value = QUERY_PARAM, required = false) String query,
             @RequestParam(value = YEAR_PARAM, required = false) String yearParam,
             @RequestParam(value = TYPE_PARAM, required = false) String typeParam,
@@ -134,56 +137,56 @@ public class SearchController {
             writer = writerResolver.writerFor(request, response);
             paramChecker.checkParameters(request);
 
-            SearchQuery.Builder searchQuery;
+            SearchQuery.Builder queryBuilder;
             if (Strings.isNullOrEmpty(query)) {
-                 searchQuery = SearchQuery.builder();
+                 queryBuilder = SearchQuery.builder();
             } else {
-                searchQuery = SearchQuery.getDefaultQuerySearcher(query);
+                queryBuilder = SearchQuery.getDefaultQuerySearcher(query);
             }
 
             List<RangeOrTerm<?>> years = integerRangeCoercer.apply(
                     CONTENT_MAPPING.getYear(),
-                    distinctSplit(searchQuery, CONTENT_MAPPING.getYear(), yearParam)
+                    distinctSplit(queryBuilder, CONTENT_MAPPING.getYear(), yearParam)
             );
             for (RangeOrTerm<?> year : years) {
                 if (year.getRangeOrTermClass() == RangeParameter.class) {
-                    searchQuery.addFilter(year.getRange());
+                    queryBuilder.addFilter(year.getRange());
                 } else {
-                    searchQuery.addFilter(year.getTerm());
+                    queryBuilder.addFilter(year.getTerm());
                 }
             }
 
-            List<String> types = distinctSplit(searchQuery, CONTENT_MAPPING.getType(), typeParam);
+            List<String> types = distinctSplit(queryBuilder, CONTENT_MAPPING.getType(), typeParam);
             for (String type : types) {
-                searchQuery.addFilter(TermParameter.of(CONTENT_MAPPING.getType(), type));
+                queryBuilder.addFilter(TermParameter.of(CONTENT_MAPPING.getType(), type));
             }
 
             List<String> publishers = distinctSplit(
-                    searchQuery,
+                    queryBuilder,
                     CONTENT_MAPPING.getSource().getKey(),
                     publisherParam
             );
             for (String publisher : publishers) {
-                searchQuery.addFilter(
+                queryBuilder.addFilter(
                         TermParameter.of(
                                 CONTENT_MAPPING.getSource().getKey(),
                                 publisher));
             }
 
             List<String> scheduleUpcomings = distinctSplit(
-                    searchQuery,
+                    queryBuilder,
                     CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
                     scheduleUpcomingParam
             );
             for (String scheduleUpcoming : scheduleUpcomings) {
                 boolean scheduleUpcomingBoolean = Boolean.parseBoolean(scheduleUpcoming);
                 if (scheduleUpcomingBoolean) {
-                    searchQuery.addFilter(
+                    queryBuilder.addFilter(
                             RangeParameter.from(
                                     CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
                                     Instant.now()));
                 } else {
-                    searchQuery.addFilter(
+                    queryBuilder.addFilter(
                             RangeParameter.to(
                                     CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
                                     Instant.now()));
@@ -193,44 +196,45 @@ public class SearchController {
             List<RangeOrTerm<?>> scheduleTimes = instantRangeCoercer.apply(
                     CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
                     distinctSplit(
-                            searchQuery,
+                            queryBuilder,
                             CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
                             scheduleTimeParam)
             );
             for (RangeOrTerm<?> scheduleTime : scheduleTimes) {
                 if (scheduleTime.getRangeOrTermClass() == RangeParameter.class) {
-                    searchQuery.addFilter(scheduleTime.getRange());
+                    queryBuilder.addFilter(scheduleTime.getRange());
                 } else {
-                    searchQuery.addFilter(scheduleTime.getTerm());
+                    queryBuilder.addFilter(scheduleTime.getTerm());
                 }
             }
 
             List<String> scheduleChannels = distinctSplit(
-                    searchQuery,
+                    queryBuilder,
                     CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
                     scheduleChannelParam
             );
             for (String scheduleChannel : scheduleChannels) {
-                searchQuery.addFilter(
+                queryBuilder.addFilter(
                         TermParameter.of(
                             CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
                             scheduleChannel));
             }
 
             List<String> onDemandAvailables = distinctSplit(
-                    searchQuery,
+                    queryBuilder,
                     CONTENT_MAPPING.getLocations().getAvailable(),
                     onDemandAvailableParam
             );
             for (String onDemandAvailable : onDemandAvailables) {
                 boolean onDemandAvailableBoolean = Boolean.parseBoolean(onDemandAvailable);
-                searchQuery.addFilter(
+                queryBuilder.addFilter(
                         TermParameter.of(
                             CONTENT_MAPPING.getLocations().getAvailable(),
                                 onDemandAvailableBoolean));
             }
 
-            List<Identified> content = searcher.search(searchQuery.build());
+            SearchQuery searchQuery = queryBuilder.withLimit(limit).withOffset(offset).build();
+            List<Identified> content = searcher.search(searchQuery);
 
             resultWriter.write(QueryResult.listResult(
                     Iterables.filter(content, Content.class),
@@ -276,11 +280,9 @@ public class SearchController {
 
     private QueryContext createQueryContext(HttpServletRequest request)
             throws ApplicationResolutionException, InvalidAnnotationException,
-            MissingAnnotationException
-    {
+            MissingAnnotationException, InvalidParameterException {
         return QueryContext.create(
-                applicationFetcher.applicationFor(request)
-                        .orElse(DefaultApplication.create()),
+                applicationFetcher.applicationFor(request).orElseThrow(InvalidParameterException::new),
                 annotationsExtractor.extractFromSingleRequest(request),
                 selectionBuilder.build(request),
                 request
