@@ -189,8 +189,6 @@ public class SearchController {
                     .withOffset(selection.getOffset())
                     .build();
 
-            List<Content> content = searcher.search(searchQuery);
-
             QueryContext queryContext = QueryContext.create(
                     applicationFetcher.applicationFor(request)
                             .orElseThrow(InvalidParameterException::new),
@@ -198,11 +196,8 @@ public class SearchController {
                     request
             );
 
-            resultWriter.write(QueryResult.listResult(
-                    content,
-                    queryContext,
-                    Long.valueOf(content.size())
-            ), writer);
+            QueryResult<Content> contentResult = searcher.search(searchQuery, queryContext);
+            resultWriter.write(contentResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
             ErrorSummary summary = ErrorSummary.forException(e);

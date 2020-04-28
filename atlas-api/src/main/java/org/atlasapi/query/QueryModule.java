@@ -153,7 +153,7 @@ public class QueryModule {
     public org.atlasapi.query.v5.search.ContentResolvingSearcher v5SearchResolver() {
         return new org.atlasapi.query.v5.search.ContentResolvingSearcher(
                 persistenceModule.contentSearcherV5(),
-                persistenceModule.contentStore(),
+                mergingContentResolver(),
                 idCodec(),
                 60000
         );
