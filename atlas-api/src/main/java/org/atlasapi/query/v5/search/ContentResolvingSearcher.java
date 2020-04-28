@@ -41,7 +41,7 @@ public class ContentResolvingSearcher {
         this.timeout = timeout;
     }
 
-    public List<Identified> search(SearchQuery searchQuery) {
+    public List<Content> search(SearchQuery searchQuery) {
         try {
             return Futures.transform(
                     Futures.transformAsync(
@@ -56,7 +56,7 @@ public class ContentResolvingSearcher {
                                 }
                             }
                     ),
-                    (Function<Resolved<Content>, List<Identified>>) input ->
+                    (Function<Resolved<Content>, List<Content>>) input ->
                             ImmutableList.copyOf(input.getResources())
             ).get(timeout, TimeUnit.MILLISECONDS);
         } catch (Exception ex) {

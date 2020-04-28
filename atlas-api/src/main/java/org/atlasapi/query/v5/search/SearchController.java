@@ -2,9 +2,11 @@ package org.atlasapi.query.v5.search;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -12,10 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
-import org.atlasapi.application.ApplicationResolutionException;
-import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Content;
-import org.atlasapi.entity.Identified;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.JsonResponseWriter;
@@ -24,35 +23,35 @@ import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.coercers.BooleanCoercer;
+import org.atlasapi.query.common.coercers.StringCoercer;
 import org.atlasapi.query.common.context.QueryContext;
-import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.common.exceptions.InvalidParameterException;
-import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
+import com.metabroadcast.sherlock.client.search.parameter.FilterParameter;
+import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import org.apache.lucene.index.Term;
-import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import scala.Int;
 
 @Controller
 public class SearchController {
@@ -61,7 +60,7 @@ public class SearchController {
 
     private static final ContentMapping CONTENT_MAPPING = IndexMapping.getContentMapping();
 
-    private static final char VALUE_SEPARATOR = ',';
+    private final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
     private static final String EXISTS_KEYWORD = "nonNull";
     private static final String NON_EXISTS_KEYWORD = "null";
 
@@ -83,9 +82,6 @@ public class SearchController {
     private final QueryResultWriter<Content> resultWriter;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
-    private final InstantRangeCoercer instantRangeCoercer = InstantRangeCoercer.create();
-    private final IntegerRangeCoercer integerRangeCoercer = IntegerRangeCoercer.create();
-
     private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.of(
             ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER,
             Selection.LIMIT_REQUEST_PARAM,
@@ -103,6 +99,44 @@ public class SearchController {
             ON_DEMAND_AVAILABLE_PARAM
     ));
 
+    private final List<SherlockAttribute<?, ?>> attributes =
+            ImmutableList.<SherlockAttribute<?, ?>>builder()
+                    .add(new RangeAttribute<>(
+                            YEAR_PARAM,
+                            CONTENT_MAPPING.getYear(),
+                            IntegerRangeCoercer.create()
+                    ))
+                    .add(new TermAttribute<>(
+                            TYPE_PARAM,
+                            CONTENT_MAPPING.getType(),
+                            StringCoercer.create()
+                    ))
+                    .add(new TermAttribute<>(
+                            PUBLISHER_PARAM,
+                            CONTENT_MAPPING.getSource().getKey(),
+                            StringCoercer.create()
+                    ))
+                    .add(new BooleanDateAttribute(
+                            SCHEDULE_UPCOMING_PARAM,
+                            CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime()
+                    ))
+                    .add(new RangeAttribute<>(
+                            SCHEDULE_TIME_PARAM,
+                            CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                            InstantRangeCoercer.create()
+                    ))
+                    .add(new TermAttribute<>(
+                            SCHEDULE_CHANNEL_PARAM,
+                            CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
+                            StringCoercer.create()
+                    ))
+                    .add(new TermAttribute<>(
+                            ON_DEMAND_AVAILABLE_PARAM,
+                            CONTENT_MAPPING.getLocations().getAvailable(),
+                            BooleanCoercer.create()
+                    ))
+                    .build();
+
     public SearchController(
             ContentResolvingSearcher searcher,
             ApplicationFetcher applicationFetcher,
@@ -119,17 +153,7 @@ public class SearchController {
 
     @RequestMapping({ "/5/search\\.[a-z]+", "/5/search" })
     public void search(
-            @RequestParam(ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER) String apiKey,
-            @RequestParam(value = Selection.LIMIT_REQUEST_PARAM, required = false) Integer limit,
-            @RequestParam(value = Selection.START_INDEX_REQUEST_PARAM, required = false) Integer offset,
             @RequestParam(value = QUERY_PARAM, required = false) String query,
-            @RequestParam(value = YEAR_PARAM, required = false) String yearParam,
-            @RequestParam(value = TYPE_PARAM, required = false) String typeParam,
-            @RequestParam(value = PUBLISHER_PARAM, required = false) String publisherParam,
-            @RequestParam(value = SCHEDULE_UPCOMING_PARAM, required = false) String scheduleUpcomingParam,
-            @RequestParam(value = SCHEDULE_TIME_PARAM, required = false) String scheduleTimeParam,
-            @RequestParam(value = SCHEDULE_CHANNEL_PARAM, required = false) String scheduleChannelParam,
-            @RequestParam(value = ON_DEMAND_AVAILABLE_PARAM, required = false) String onDemandAvailableParam,
             HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
@@ -139,115 +163,42 @@ public class SearchController {
             writer = writerResolver.writerFor(request, response);
             paramChecker.checkParameters(request);
 
+            List<NamedParameter<?>> parameters = parse(request);
+
             SearchQuery.Builder queryBuilder;
             if (Strings.isNullOrEmpty(query)) {
-                 queryBuilder = SearchQuery.builder();
+                queryBuilder = SearchQuery.builder();
             } else {
                 queryBuilder = SearchQuery.getDefaultQuerySearcher(query);
             }
 
-            List<RangeOrTerm<?>> years = integerRangeCoercer.apply(
-                    CONTENT_MAPPING.getYear(),
-                    distinctSplit(queryBuilder, CONTENT_MAPPING.getYear(), yearParam)
-            );
-            for (RangeOrTerm<?> year : years) {
-                if (year.getRangeOrTermClass() == RangeParameter.class) {
-                    queryBuilder.addFilter(year.getRange());
+            for (NamedParameter<?> parameter : parameters) {
+                if (parameter instanceof SearchParameter) {
+                    queryBuilder.addSearcher((SearchParameter)parameter);
                 } else {
-                    queryBuilder.addFilter(year.getTerm());
+                    queryBuilder.addFilter((FilterParameter<?>)parameter);
                 }
             }
 
-            List<String> types = distinctSplit(queryBuilder, CONTENT_MAPPING.getType(), typeParam);
-            for (String type : types) {
-                queryBuilder.addFilter(TermParameter.of(CONTENT_MAPPING.getType(), type));
-            }
+            Selection selection = selectionBuilder.build(request);
 
-            List<String> publishers = distinctSplit(
-                    queryBuilder,
-                    CONTENT_MAPPING.getSource().getKey(),
-                    publisherParam
+            SearchQuery searchQuery = queryBuilder
+                    .withLimit(selection.getLimit())
+                    .withOffset(selection.getOffset())
+                    .build();
+
+            List<Content> content = searcher.search(searchQuery);
+
+            QueryContext queryContext = QueryContext.create(
+                    applicationFetcher.applicationFor(request)
+                            .orElseThrow(InvalidParameterException::new),
+                    annotationsExtractor.extractFromSingleRequest(request),
+                    request
             );
-            for (String publisher : publishers) {
-                queryBuilder.addFilter(
-                        TermParameter.of(
-                                CONTENT_MAPPING.getSource().getKey(),
-                                publisher));
-            }
-
-            List<String> scheduleUpcomings = distinctSplit(
-                    queryBuilder,
-                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
-                    scheduleUpcomingParam
-            );
-            for (String scheduleUpcoming : scheduleUpcomings) {
-                boolean scheduleUpcomingBoolean = Boolean.parseBoolean(scheduleUpcoming);
-                if (scheduleUpcomingBoolean) {
-                    queryBuilder.addFilter(
-                            RangeParameter.from(
-                                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
-                                    Instant.now()));
-                } else {
-                    queryBuilder.addFilter(
-                            RangeParameter.to(
-                                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
-                                    Instant.now()));
-                }
-            }
-
-            List<RangeOrTerm<?>> scheduleTimes = instantRangeCoercer.apply(
-                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
-                    distinctSplit(
-                            queryBuilder,
-                            CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
-                            scheduleTimeParam)
-            );
-            for (RangeOrTerm<?> scheduleTime : scheduleTimes) {
-                if (scheduleTime.getRangeOrTermClass() == RangeParameter.class) {
-                    queryBuilder.addFilter(scheduleTime.getRange());
-                } else {
-                    queryBuilder.addFilter(scheduleTime.getTerm());
-                }
-            }
-
-            List<String> scheduleChannels = distinctSplit(
-                    queryBuilder,
-                    CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
-                    scheduleChannelParam
-            );
-            for (String scheduleChannel : scheduleChannels) {
-                queryBuilder.addFilter(
-                        TermParameter.of(
-                            CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
-                            scheduleChannel));
-            }
-
-            List<String> onDemandAvailables = distinctSplit(
-                    queryBuilder,
-                    CONTENT_MAPPING.getLocations().getAvailable(),
-                    onDemandAvailableParam
-            );
-            for (String onDemandAvailable : onDemandAvailables) {
-                boolean onDemandAvailableBoolean = Boolean.parseBoolean(onDemandAvailable);
-                queryBuilder.addFilter(
-                        TermParameter.of(
-                            CONTENT_MAPPING.getLocations().getAvailable(),
-                                onDemandAvailableBoolean));
-            }
-
-            if (limit != null) {
-                queryBuilder.withLimit(limit);
-            }
-
-            if (offset != null) {
-                queryBuilder.withOffset(offset);
-            }
-
-            List<Identified> content = searcher.search(queryBuilder.build());
 
             resultWriter.write(QueryResult.listResult(
-                    Iterables.filter(content, Content.class),
-                    createQueryContext(request),
+                    content,
+                    queryContext,
                     Long.valueOf(content.size())
             ), writer);
         } catch (Exception e) {
@@ -257,44 +208,35 @@ public class SearchController {
         }
     }
 
-    private List<String> distinctSplit(
-            SearchQuery.Builder searchQuery,
-            ChildTypeMapping<?> mapping,
-            String parameter
-    ) {
-        if (parameter == null) {
-            return ImmutableList.of();
-        } else {
-            List<String> parameters = Arrays.stream(parameter.split(String.valueOf(VALUE_SEPARATOR), -1))
-                    .distinct()
-                    .collect(Collectors.toList());
-            handleExists(searchQuery, mapping, parameters);
-            return parameters;
-        }
-    }
+    private List<NamedParameter<?>> parse(HttpServletRequest request)
+            throws InvalidAttributeValueException {
 
-    private void handleExists(
-            SearchQuery.Builder searchQuery,
-            ChildTypeMapping<?> mapping,
-            List<String> parameters
-    ) {
-        if (parameters.contains(EXISTS_KEYWORD)) {
-            searchQuery.addFilter(ExistParameter.exists(mapping));
-            parameters.remove(EXISTS_KEYWORD);
-        } else if (parameters.contains(NON_EXISTS_KEYWORD)) {
-            searchQuery.addFilter(ExistParameter.notExists(mapping));
-            parameters.remove(NON_EXISTS_KEYWORD);
-        }
-    }
+        List<NamedParameter<?>> sherlockParameters = new ArrayList<>();
 
-    private QueryContext createQueryContext(HttpServletRequest request)
-            throws ApplicationResolutionException, InvalidAnnotationException,
-            MissingAnnotationException, InvalidParameterException {
-        return QueryContext.create(
-                applicationFetcher.applicationFor(request).orElseThrow(InvalidParameterException::new),
-                annotationsExtractor.extractFromSingleRequest(request),
-                selectionBuilder.build(request),
-                request
-        );
+        Map<String, String[]> parameterMap = (Map<String, String[]>) request.getParameterMap();
+        for (SherlockAttribute<?, ?> attribute : attributes) {
+
+            String name = attribute.getParameterName();
+            if (parameterMap.containsKey(name)) {
+
+                List<String> values = Arrays.stream(parameterMap.get(name))
+                        .map(SPLITTER::splitToList)
+                        .flatMap(Collection::stream)
+                        .distinct()
+                        .collect(Collectors.toList());
+
+                if (values.contains(EXISTS_KEYWORD)) {
+                    sherlockParameters.add(ExistParameter.exists(attribute.getMapping()));
+                    values.remove(EXISTS_KEYWORD);
+                } else if (values.contains(NON_EXISTS_KEYWORD)) {
+                    sherlockParameters.add(ExistParameter.notExists(attribute.getMapping()));
+                    values.remove(NON_EXISTS_KEYWORD);
+                }
+
+                sherlockParameters.addAll(attribute.coerce(values));
+            }
+        }
+
+        return sherlockParameters;
     }
 }
