@@ -1,4 +1,4 @@
-package org.atlasapi.query.v5.search;
+package org.atlasapi.query.v5.search.attribute;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,7 +9,6 @@ import com.metabroadcast.sherlock.client.search.parameter.FilterParameter;
 import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
-import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
 
 public class RangeAttribute<T> extends SherlockAttribute<T, RangeTypeMapping<T>> {

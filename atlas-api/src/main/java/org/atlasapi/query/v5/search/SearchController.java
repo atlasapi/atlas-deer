@@ -1,7 +1,6 @@
 package org.atlasapi.query.v5.search;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,18 +29,21 @@ import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.common.exceptions.InvalidParameterException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
+import org.atlasapi.query.v5.search.attribute.BooleanDateAttribute;
+import org.atlasapi.query.v5.search.attribute.InstantRangeCoercer;
+import org.atlasapi.query.v5.search.attribute.IntegerRangeCoercer;
+import org.atlasapi.query.v5.search.attribute.RangeAttribute;
+import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
+import org.atlasapi.query.v5.search.attribute.TermAttribute;
 
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.search.parameter.FilterParameter;
 import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
-import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
 import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
-import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
-import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;

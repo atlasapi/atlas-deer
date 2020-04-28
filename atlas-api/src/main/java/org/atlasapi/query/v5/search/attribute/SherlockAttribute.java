@@ -1,4 +1,4 @@
-package org.atlasapi.query.v5.search;
+package org.atlasapi.query.v5.search.attribute;
 
 import java.util.List;
 import java.util.function.BiFunction;
