@@ -27,6 +27,7 @@ import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
@@ -79,7 +80,7 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
     private OutputContext outputContext(QueryContext queryContext) {
 
         String channelGroupParam = queryContext.getRequest()
-                .getParameter(SearchController.SCHEDULE_CHANNEL_GROUP_PARAM);
+                .getParameter(SherlockAttributes.SCHEDULE_CHANNEL_GROUP_PARAM);
 
         OutputContext.Builder builder = OutputContext.builder(queryContext);
 
