@@ -1,20 +1,19 @@
 package org.atlasapi.query.common.validation;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
-import org.atlasapi.query.common.ParameterNameProvider;
-import org.atlasapi.query.common.attributes.PrefixInTree;
-import org.atlasapi.query.common.attributes.QueryAttributeParser;
-
 import com.google.api.client.repackaged.com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import org.atlasapi.query.common.ParameterNameProvider;
+import org.atlasapi.query.common.attributes.PrefixInTree;
+import org.atlasapi.query.common.attributes.QueryAttributeParser;
+
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
@@ -33,7 +32,7 @@ public class QueryRequestParameterValidator extends AbstractRequestParameterVali
     ) {
         this.attributeParameters = initAttributeParams(attributeParser);
         this.requiredParameters = ImmutableSet.copyOf(requiredParameters);
-        this.optionalParameters = ImmutableSet.copyOf(optionalParameters);
+        this.optionalParameters = Sets.union(optionalParameters, ALWAYS_OPTIONAL_PARAMS).immutableCopy();
         this.replacementSuggestion = ReplacementSuggestion.create(
                 allParams(),
                 "Invalid parameters: ",
