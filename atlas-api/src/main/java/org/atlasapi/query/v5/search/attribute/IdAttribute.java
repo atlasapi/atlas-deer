@@ -3,8 +3,8 @@ package org.atlasapi.query.v5.search.attribute;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.atlasapi.query.common.coercers.AttributeCoercer;
 import org.atlasapi.query.common.coercers.EnumCoercer;
+import org.atlasapi.query.common.coercers.IdCoercer;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
 import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
@@ -12,23 +12,23 @@ import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
-public class EnumAttribute extends SherlockAttribute<String, KeywordMapping> {
+public class IdAttribute extends SherlockAttribute<String, KeywordMapping> {
 
-    private final EnumCoercer<?> coercer;
+    private final IdCoercer coercer;
 
-    public EnumAttribute(
+    public IdAttribute(
             String parameterName,
             KeywordMapping mapping,
-            EnumCoercer<?> coercer
+            IdCoercer coercer
     ) {
         super(parameterName, mapping);
         this.coercer = coercer;
     }
 
     @Override
-    public List<NamedParameter<String>> coerce(List<String> values) throws InvalidAttributeValueException {
-        return coercer.apply(values).stream()
-                .map(Enum::toString)
+    public List<NamedParameter<String>> coerce(List<String> values) {
+        coercer.apply(values); // throws exception if input are not ids
+        return values.stream()
                 .map(v -> TermParameter.of(getMapping(), v))
                 .collect(Collectors.toList());
     }

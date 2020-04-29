@@ -25,8 +25,8 @@ public class RangeAttribute<T> extends SherlockAttribute<T, RangeTypeMapping<T>>
     }
 
     @Override
-    public List<NamedParameter<T>> coerce(List<String> value) throws InvalidAttributeValueException {
-        return coercer.apply(value).stream()
+    public List<NamedParameter<T>> coerce(List<String> values) throws InvalidAttributeValueException {
+        return coercer.apply(values).stream()
                 .map(v -> coerceToRangeOrTerm(getMapping(), v))
                 .collect(Collectors.toList());
     }

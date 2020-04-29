@@ -9,7 +9,6 @@ import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
 import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
-import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 import com.metabroadcast.sherlock.common.type.DateMapping;
 
 public class BooleanDateAttribute extends SherlockAttribute<Instant, DateMapping> {
@@ -25,14 +24,14 @@ public class BooleanDateAttribute extends SherlockAttribute<Instant, DateMapping
     }
 
     @Override
-    public List<NamedParameter<Instant>> coerce(List<String> value) throws InvalidAttributeValueException {
-        return coercer.apply(value).stream()
+    public List<NamedParameter<Instant>> coerce(List<String> values) throws InvalidAttributeValueException {
+        return coercer.apply(values).stream()
                 .map(v -> coerceToScheduleRange(getMapping(), v))
                 .collect(Collectors.toList());
     }
 
     private RangeParameter<Instant> coerceToScheduleRange(
-            ChildTypeMapping<Instant> mapping,
+            DateMapping mapping,
             Boolean upcoming
     ) {
         if (upcoming) {

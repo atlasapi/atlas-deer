@@ -32,6 +32,6 @@ public abstract class SherlockAttribute<T, M extends ChildTypeMapping<T>> {
         return mapping;
     }
 
-    public abstract List<NamedParameter<T>> coerce(List<String> value)
+    public abstract List<NamedParameter<T>> coerce(List<String> values)
             throws InvalidAttributeValueException;
 }
