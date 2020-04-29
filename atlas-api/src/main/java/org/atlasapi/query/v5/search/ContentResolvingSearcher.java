@@ -54,7 +54,6 @@ public class ContentResolvingSearcher {
             return Futures.transform(
                     Futures.transformAsync(
                             searcher.searchForIds(searchQuery),
-                            (AsyncFunction<Iterable<String>, ResolvedEquivalents<Content>>)
                             input -> resolve(input, queryContext)
                     ),
                     (Function<ResolvedEquivalents<Content>, QueryResult<Content>>)
@@ -65,7 +64,10 @@ public class ContentResolvingSearcher {
         }
     }
 
-    private ListenableFuture<ResolvedEquivalents<Content>> resolve(Iterable<String> encodedIds, QueryContext queryContext) {
+    private ListenableFuture<ResolvedEquivalents<Content>> resolve(
+            Iterable<String> encodedIds,
+            QueryContext queryContext
+    ) {
         List<Id> ids = decodeIds(encodedIds);
         if (ids.isEmpty()) {
             return Futures.immediateFuture(ResolvedEquivalents.empty());

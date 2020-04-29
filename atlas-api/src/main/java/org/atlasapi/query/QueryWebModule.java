@@ -1,15 +1,7 @@
 package org.atlasapi.query;
 
 import javax.servlet.http.HttpServletRequest;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.query.Selection.SelectionBuilder;
-import com.metabroadcast.common.time.SystemClock;
-import com.metabroadcast.representative.client.RepIdClient;
+
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -774,11 +766,6 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_IDS,
-                                IdCoercer.create(idCodec)
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.CHANNEL_GROUP_REQUEST_TIMESTAMP,
-                                StringCoercer.create()
                                 IdCoercer.create(idCodec)
                         )
                 )
