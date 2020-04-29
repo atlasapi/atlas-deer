@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,7 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentType;
+import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.JsonResponseWriter;
@@ -24,39 +23,23 @@ import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
 import org.atlasapi.query.common.QueryResult;
-import org.atlasapi.query.common.coercers.BooleanCoercer;
-import org.atlasapi.query.common.coercers.EnumCoercer;
-import org.atlasapi.query.common.coercers.IdCoercer;
-import org.atlasapi.query.common.coercers.StringCoercer;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.common.exceptions.InvalidParameterException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
-import org.atlasapi.query.v5.search.attribute.BooleanDateAttribute;
-import org.atlasapi.query.v5.search.attribute.EnumAttribute;
-import org.atlasapi.query.v5.search.attribute.IdAttribute;
-import org.atlasapi.query.v5.search.attribute.InstantRangeCoercer;
-import org.atlasapi.query.v5.search.attribute.IntegerRangeCoercer;
-import org.atlasapi.query.v5.search.attribute.RangeAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
-import org.atlasapi.query.v5.search.attribute.TermAttribute;
-import org.atlasapi.source.Sources;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.search.parameter.FilterParameter;
 import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
 import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
-import com.metabroadcast.sherlock.common.mapping.ContentMapping;
-import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +47,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+@ProducesType(type = Content.class)
 @Controller
+@RequestMapping("/5/search")
 public class SearchController {
 
     private static Logger log = LoggerFactory.getLogger(TopicController.class);
@@ -110,7 +95,7 @@ public class SearchController {
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "/5/search\\.[a-z]+", "/5/search" })
+    @RequestMapping({ "\\.[a-z]+", "" })
     public void search(
             @RequestParam(value = QUERY_PARAM, required = false) String query,
             HttpServletRequest request,
