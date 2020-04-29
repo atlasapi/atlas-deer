@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ContentType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.JsonResponseWriter;
@@ -23,6 +24,7 @@ import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.coercers.BooleanCoercer;
+import org.atlasapi.query.common.coercers.EnumCoercer;
 import org.atlasapi.query.common.coercers.StringCoercer;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
@@ -30,11 +32,13 @@ import org.atlasapi.query.common.exceptions.InvalidParameterException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v5.search.attribute.BooleanDateAttribute;
+import org.atlasapi.query.v5.search.attribute.EnumAttribute;
 import org.atlasapi.query.v5.search.attribute.InstantRangeCoercer;
 import org.atlasapi.query.v5.search.attribute.IntegerRangeCoercer;
 import org.atlasapi.query.v5.search.attribute.RangeAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
 import org.atlasapi.query.v5.search.attribute.TermAttribute;
+import org.atlasapi.source.Sources;
 
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
@@ -84,23 +88,6 @@ public class SearchController {
     private final QueryResultWriter<Content> resultWriter;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
-    private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.of(
-            ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER,
-            Selection.LIMIT_REQUEST_PARAM,
-            Selection.START_INDEX_REQUEST_PARAM,
-            JsonResponseWriter.CALLBACK,
-            ANNOTATIONS_PARAM,
-            QUERY_PARAM,
-            YEAR_PARAM,
-            TYPE_PARAM,
-            PUBLISHER_PARAM,
-            SCHEDULE_UPCOMING_PARAM,
-            SCHEDULE_TIME_PARAM,
-            SCHEDULE_CHANNEL_PARAM,
-            SCHEDULE_CHANNEL_GROUP_PARAM,
-            ON_DEMAND_AVAILABLE_PARAM
-    ));
-
     private final List<SherlockAttribute<?, ?>> attributes =
             ImmutableList.<SherlockAttribute<?, ?>>builder()
                     .add(new RangeAttribute<>(
@@ -108,15 +95,15 @@ public class SearchController {
                             CONTENT_MAPPING.getYear(),
                             IntegerRangeCoercer.create()
                     ))
-                    .add(new TermAttribute<>(
+                    .add(new EnumAttribute<>(
                             TYPE_PARAM,
                             CONTENT_MAPPING.getType(),
-                            StringCoercer.create()
+                            EnumCoercer.create(ContentType.fromKey())
                     ))
-                    .add(new TermAttribute<>(
+                    .add(new EnumAttribute<>(
                             PUBLISHER_PARAM,
                             CONTENT_MAPPING.getSource().getKey(),
-                            StringCoercer.create()
+                            EnumCoercer.create(Sources.fromKey())
                     ))
                     .add(new BooleanDateAttribute(
                             SCHEDULE_UPCOMING_PARAM,
@@ -138,6 +125,21 @@ public class SearchController {
                             BooleanCoercer.create()
                     ))
                     .build();
+
+    private final ParameterChecker paramChecker = new ParameterChecker(
+            ImmutableSet.<String>builder()
+                    .add(ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER)
+                    .add(Selection.LIMIT_REQUEST_PARAM)
+                    .add(Selection.START_INDEX_REQUEST_PARAM)
+                    .add(JsonResponseWriter.CALLBACK)
+                    .add(ANNOTATIONS_PARAM)
+                    .add(QUERY_PARAM)
+                    .add(SCHEDULE_CHANNEL_GROUP_PARAM) // handled with output context
+                    .addAll(attributes.stream()
+                                .map(SherlockAttribute::getParameterName)
+                                .collect(Collectors.toList()))
+                    .build()
+    );
 
     public SearchController(
             ContentResolvingSearcher searcher,
