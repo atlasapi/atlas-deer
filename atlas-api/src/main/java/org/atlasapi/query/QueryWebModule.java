@@ -1,5 +1,6 @@
 package org.atlasapi.query;
 
+import java.time.Instant;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -125,6 +126,7 @@ import org.atlasapi.query.common.coercers.FloatCoercer;
 import org.atlasapi.query.common.coercers.IdCoercer;
 import org.atlasapi.query.common.coercers.StringCoercer;
 import org.atlasapi.query.common.context.QueryContextParser;
+import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.v4.channel.ChannelController;
 import org.atlasapi.query.v4.channel.ChannelIdWriter;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
@@ -165,15 +167,15 @@ import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v4.topic.TopicListWriter;
 import org.atlasapi.query.v4.topic.TopicQueryResultWriter;
 import org.atlasapi.query.v5.search.ContentResolvingSearcher;
-import org.atlasapi.query.v5.search.attribute.BooleanDateAttribute;
 import org.atlasapi.query.v5.search.attribute.EnumAttribute;
 import org.atlasapi.query.v5.search.attribute.IdAttribute;
-import org.atlasapi.query.v5.search.attribute.InstantRangeCoercer;
-import org.atlasapi.query.v5.search.attribute.IntegerRangeCoercer;
+import org.atlasapi.query.v5.search.coercer.InstantRangeCoercer;
+import org.atlasapi.query.v5.search.coercer.IntegerRangeCoercer;
 import org.atlasapi.query.v5.search.attribute.RangeAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
 import org.atlasapi.query.v5.search.attribute.TermAttribute;
+import org.atlasapi.query.v5.search.coercer.Range;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.source.Sources;
 import org.atlasapi.topic.PopularTopicIndex;
@@ -186,8 +188,11 @@ import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
 import com.metabroadcast.common.time.SystemClock;
 import com.metabroadcast.representative.client.RepIdClient;
+import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
+import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
+import com.metabroadcast.sherlock.common.type.DateMapping;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -957,28 +962,39 @@ public class QueryWebModule {
         );
     }
 
-    private List<SherlockAttribute<?, ?>> sherlockAttributes() {
+    private List<SherlockAttribute<?, ?, ?>> sherlockAttributes() {
         ContentMapping CONTENT_MAPPING = IndexMapping.getContentMapping();
-        return ImmutableList.<SherlockAttribute<?, ?>>builder()
+        return ImmutableList.<SherlockAttribute<?, ?, ?>>builder()
                 .add(new RangeAttribute<>(
                         SherlockAttributes.YEAR_PARAM,
                         CONTENT_MAPPING.getYear(),
                         IntegerRangeCoercer.create()
                 ))
-                .add(new EnumAttribute(
+                .add(new EnumAttribute<>(
                         SherlockAttributes.TYPE_PARAM,
                         CONTENT_MAPPING.getType(),
                         EnumCoercer.create(ContentType.fromKey())
                 ))
-                .add(new EnumAttribute(
+                .add(new EnumAttribute<>(
                         SherlockAttributes.PUBLISHER_PARAM,
                         CONTENT_MAPPING.getSource().getKey(),
                         EnumCoercer.create(Sources.fromKey())
                 ))
-                .add(new BooleanDateAttribute(
+                .add(new SherlockAttribute<Boolean, Instant, DateMapping>(
                         SherlockAttributes.SCHEDULE_UPCOMING_PARAM,
-                        CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime()
-                ))
+                        CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                        BooleanCoercer.create()
+                ) {
+                    @Override protected NamedParameter<Instant> createParameter(
+                            DateMapping mapping, Boolean value
+                    ) {
+                        if (value) {
+                            return RangeParameter.from(mapping, Instant.now());
+                        } else {
+                            return RangeParameter.to(mapping, Instant.now());
+                        }
+                    }
+                })
                 .add(new RangeAttribute<>(
                         SherlockAttributes.SCHEDULE_TIME_PARAM,
                         CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
@@ -987,7 +1003,7 @@ public class QueryWebModule {
                 .add(new IdAttribute(
                         SherlockAttributes.SCHEDULE_CHANNEL_PARAM,
                         CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
-                        IdCoercer.create(idCodec)
+                        idCodec
                 ))
                 .add(new TermAttribute<>(
                         SherlockAttributes.ON_DEMAND_AVAILABLE_PARAM,

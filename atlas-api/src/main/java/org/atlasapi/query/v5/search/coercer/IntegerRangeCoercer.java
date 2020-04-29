@@ -1,8 +1,8 @@
-package org.atlasapi.query.v5.search.attribute;
+package org.atlasapi.query.v5.search.coercer;
 
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
-public class IntegerRangeCoercer extends RangeCoercer<Integer> {
+public class IntegerRangeCoercer extends RangeCoercer<Integer, Range<Integer>> {
 
     private IntegerRangeCoercer() {
         super(Integer::parseInt);

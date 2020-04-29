@@ -1,35 +1,28 @@
 package org.atlasapi.query.v5.search.attribute;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.atlasapi.query.common.coercers.EnumCoercer;
+import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.coercers.IdCoercer;
-import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
-import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
-public class IdAttribute extends SherlockAttribute<String, KeywordMapping> {
+public class IdAttribute extends SherlockAttribute<Id, String, KeywordMapping> {
 
-    private final IdCoercer coercer;
+    private final NumberToShortStringCodec idCodec;
 
     public IdAttribute(
             String parameterName,
             KeywordMapping mapping,
-            IdCoercer coercer
+            NumberToShortStringCodec idCodec
     ) {
-        super(parameterName, mapping);
-        this.coercer = coercer;
+        super(parameterName, mapping, IdCoercer.create(idCodec));
+        this.idCodec = idCodec;
     }
 
     @Override
-    public List<NamedParameter<String>> coerce(List<String> values) {
-        coercer.apply(values); // throws exception if input are not ids
-        return values.stream()
-                .map(v -> TermParameter.of(getMapping(), v))
-                .collect(Collectors.toList());
+    protected NamedParameter<String> createParameter(KeywordMapping mapping, Id value) {
+        return TermParameter.of(mapping, idCodec.encode(value.toBigInteger()));
     }
 }

@@ -1,4 +1,4 @@
-package org.atlasapi.query.v5.search.attribute;
+package org.atlasapi.query.v5.search.coercer;
 
 public class Range<T> {
 

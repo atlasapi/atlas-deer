@@ -1,4 +1,4 @@
-package org.atlasapi.query.v5.search.attribute;
+package org.atlasapi.query.v5.search.coercer;
 
 import java.util.List;
 import java.util.function.Function;
@@ -9,7 +9,7 @@ import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import com.google.common.collect.ImmutableList;
 import joptsimple.internal.Strings;
 
-public abstract class RangeCoercer<T> implements AttributeCoercer<Range<T>> {
+public abstract class RangeCoercer<T, S extends Range<T>> implements AttributeCoercer<Range<T>> {
 
     protected final String RANGE_SEPARATOR = "-";
     protected final Function<String, T> coercerFunction;

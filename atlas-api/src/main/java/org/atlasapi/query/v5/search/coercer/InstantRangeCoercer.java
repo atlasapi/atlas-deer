@@ -1,11 +1,11 @@
-package org.atlasapi.query.v5.search.attribute;
+package org.atlasapi.query.v5.search.coercer;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
-public class InstantRangeCoercer extends RangeCoercer<Instant> {
+public class InstantRangeCoercer extends RangeCoercer<Instant, Range<Instant>> {
 
     private InstantRangeCoercer() {
         super(Instant::parse);

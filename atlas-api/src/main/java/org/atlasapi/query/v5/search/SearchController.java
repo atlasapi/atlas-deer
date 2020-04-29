@@ -66,7 +66,7 @@ public class SearchController {
     private final AnnotationsExtractor annotationsExtractor;
     private final Selection.SelectionBuilder selectionBuilder;
     private final QueryResultWriter<Content> resultWriter;
-    private final List<SherlockAttribute<?, ?>> sherlockAttributes;
+    private final List<SherlockAttribute<?, ?, ?>> sherlockAttributes;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.<String>builder()
                 .add(ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER)
@@ -82,7 +82,7 @@ public class SearchController {
     public SearchController(
             ContentResolvingSearcher searcher,
             ApplicationFetcher applicationFetcher,
-            List<SherlockAttribute<?, ?>> sherlockAttributes,
+            List<SherlockAttribute<?, ?, ?>> sherlockAttributes,
             AnnotationsExtractor annotationsExtractor,
             Selection.SelectionBuilder selectionBuilder,
             QueryResultWriter<Content> resultWriter
@@ -153,7 +153,7 @@ public class SearchController {
         List<NamedParameter<?>> sherlockParameters = new ArrayList<>();
 
         Map<String, String[]> parameterMap = (Map<String, String[]>) request.getParameterMap();
-        for (SherlockAttribute<?, ?> attribute : sherlockAttributes) {
+        for (SherlockAttribute<?, ?, ?> attribute : sherlockAttributes) {
 
             String name = attribute.getParameterName();
             if (parameterMap.containsKey(name)) {
@@ -176,10 +176,10 @@ public class SearchController {
                     sherlockParameters.addAll(attribute.coerce(values));
                 } catch (InvalidAttributeValueException e) {
                     throw new InvalidAttributeValueException(String.format(
-                            "Invalid values for %s: %s.",
+                            "Invalid value(s) for %s: %s.",
                             name,
                             e.getMessage()
-                    ));
+                    ), e);
                 }
             }
         }

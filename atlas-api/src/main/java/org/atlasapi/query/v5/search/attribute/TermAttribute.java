@@ -1,32 +1,23 @@
 package org.atlasapi.query.v5.search.attribute;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.atlasapi.query.common.coercers.AttributeCoercer;
-import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
 import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
-public class TermAttribute<T> extends SherlockAttribute<T, ChildTypeMapping<T>> {
-
-    private final AttributeCoercer<T> coercer;
+public class TermAttribute<T> extends SherlockAttribute<T, T, ChildTypeMapping<T>> {
 
     public TermAttribute(
             String parameterName,
             ChildTypeMapping<T> mapping,
             AttributeCoercer<T> coercer
     ) {
-        super(parameterName, mapping);
-        this.coercer = coercer;
+        super(parameterName, mapping, coercer);
     }
 
     @Override
-    public List<NamedParameter<T>> coerce(List<String> values) throws InvalidAttributeValueException {
-        return coercer.apply(values).stream()
-                .map(v -> TermParameter.of(getMapping(), v))
-                .collect(Collectors.toList());
+    protected NamedParameter<T> createParameter(ChildTypeMapping<T> mapping, T value) {
+        return TermParameter.of(mapping, value);
     }
 }
