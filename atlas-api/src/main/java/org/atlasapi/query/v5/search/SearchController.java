@@ -172,7 +172,15 @@ public class SearchController {
                     values.remove(NON_EXISTS_KEYWORD);
                 }
 
-                sherlockParameters.addAll(attribute.coerce(values));
+                try {
+                    sherlockParameters.addAll(attribute.coerce(values));
+                } catch (InvalidAttributeValueException e) {
+                    throw new InvalidAttributeValueException(String.format(
+                            "Invalid values for %s: %s.",
+                            name,
+                            e.getMessage()
+                    ));
+                }
             }
         }
 
