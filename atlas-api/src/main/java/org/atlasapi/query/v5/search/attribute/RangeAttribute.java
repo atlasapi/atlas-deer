@@ -15,7 +15,7 @@ public class RangeAttribute<T> extends SherlockAttribute<Range<T>, T, RangeTypeM
     public RangeAttribute(
             String parameterName,
             RangeTypeMapping<T> mapping,
-            RangeCoercer<T, Range<T>> coercer
+            RangeCoercer<T> coercer
     ) {
         super(parameterName, mapping, coercer);
     }
