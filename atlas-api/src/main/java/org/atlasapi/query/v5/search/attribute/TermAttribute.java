@@ -11,11 +11,11 @@ import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 public class TermAttribute<T> extends SherlockAttribute<T, T, ChildTypeMapping<T>> {
 
     public TermAttribute(
-            String parameterName,
+            SherlockParameter parameter,
             ChildTypeMapping<T> mapping,
             AttributeCoercer<T> coercer
     ) {
-        super(parameterName, mapping, coercer);
+        super(parameter, mapping, coercer);
     }
 
     @Override

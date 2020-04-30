@@ -1,7 +1,5 @@
 package org.atlasapi.query.v5.search.attribute;
 
-import java.util.Optional;
-
 import javax.annotation.Nonnull;
 
 import org.atlasapi.query.common.coercers.EnumCoercer;
@@ -12,8 +10,8 @@ import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
 public class EnumAttribute<T extends Enum<T>> extends SherlockAttribute<T, String, KeywordMapping> {
 
-    public EnumAttribute(String parameterName, KeywordMapping mapping, EnumCoercer<T> coercer) {
-        super(parameterName, mapping, coercer);
+    public EnumAttribute(SherlockParameter parameter, KeywordMapping mapping, EnumCoercer<T> coercer) {
+        super(parameter, mapping, coercer);
     }
 
     @Override

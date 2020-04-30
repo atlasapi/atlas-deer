@@ -13,11 +13,11 @@ import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
 public class RangeAttribute<T> extends SherlockAttribute<Range<T>, T, RangeTypeMapping<T>> {
 
     public RangeAttribute(
-            String parameterName,
+            SherlockParameter parameter,
             RangeTypeMapping<T> mapping,
             RangeCoercer<T> coercer
     ) {
-        super(parameterName, mapping, coercer);
+        super(parameter, mapping, coercer);
     }
 
     @Override

@@ -26,11 +26,10 @@ import org.atlasapi.query.annotation.AnnotationsExtractor;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
-import org.atlasapi.query.common.exceptions.InvalidParameterException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
-import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
+import org.atlasapi.query.v5.search.attribute.SherlockParameter;
 
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
@@ -76,7 +75,7 @@ public class SearchController {
                 .add(JsonResponseWriter.CALLBACK)
                 .add(ANNOTATIONS_PARAM)
                 .add(QUERY_PARAM)
-                .addAll(SherlockAttributes.all())
+                .addAll(SherlockParameter.getAllNames())
                 .build()
     );
 

@@ -2,7 +2,6 @@ package org.atlasapi.query.v5.search.attribute;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
@@ -15,22 +14,22 @@ import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 public abstract class SherlockAttribute<FROM, TO, M extends ChildTypeMapping<TO>> {
 
-    private final String parameterName;
+    private final SherlockParameter parameter;
     private final M mapping;
     private final AttributeCoercer<FROM> coercer;
 
     public SherlockAttribute(
-            String parameterName,
+            SherlockParameter parameter,
             M mapping,
             AttributeCoercer<FROM> coercer
     ) {
-        this.parameterName = parameterName;
+        this.parameter = parameter;
         this.mapping = mapping;
         this.coercer = coercer;
     }
 
     public String getParameterName() {
-        return parameterName;
+        return parameter.getName();
     }
 
     public M getMapping() {

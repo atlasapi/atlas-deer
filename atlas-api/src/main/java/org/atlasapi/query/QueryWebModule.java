@@ -173,7 +173,7 @@ import org.atlasapi.query.v5.search.coercer.InstantRangeCoercer;
 import org.atlasapi.query.v5.search.coercer.IntegerRangeCoercer;
 import org.atlasapi.query.v5.search.attribute.RangeAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
-import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
+import org.atlasapi.query.v5.search.attribute.SherlockParameter;
 import org.atlasapi.query.v5.search.attribute.TermAttribute;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.source.Sources;
@@ -965,22 +965,22 @@ public class QueryWebModule {
         ContentMapping content = IndexMapping.getContentMapping();
         return ImmutableList.<SherlockAttribute<?, ?, ?>>builder()
                 .add(new RangeAttribute<>(
-                        SherlockAttributes.YEAR_PARAM,
+                        SherlockParameter.YEAR,
                         content.getYear(),
                         IntegerRangeCoercer.create()
                 ))
                 .add(new EnumAttribute<>(
-                        SherlockAttributes.TYPE_PARAM,
+                        SherlockParameter.TYPE,
                         content.getType(),
                         EnumCoercer.create(ContentType.fromKey())
                 ))
                 .add(new EnumAttribute<>(
-                        SherlockAttributes.PUBLISHER_PARAM,
+                        SherlockParameter.PUBLISHER,
                         content.getSource().getKey(),
                         EnumCoercer.create(Sources.fromKey())
                 ))
                 .add(new SherlockAttribute<Boolean, Instant, DateMapping>(
-                        SherlockAttributes.SCHEDULE_UPCOMING_PARAM,
+                        SherlockParameter.SCHEDULE_UPCOMING,
                         content.getBroadcasts().getTransmissionStartTime(),
                         BooleanCoercer.create()
                 ) {
@@ -995,17 +995,17 @@ public class QueryWebModule {
                     }
                 })
                 .add(new RangeAttribute<>(
-                        SherlockAttributes.SCHEDULE_TIME_PARAM,
+                        SherlockParameter.SCHEDULE_TIME,
                         content.getBroadcasts().getTransmissionStartTime(),
                         InstantRangeCoercer.create()
                 ))
                 .add(new IdAttribute(
-                        SherlockAttributes.SCHEDULE_CHANNEL_PARAM,
+                        SherlockParameter.SCHEDULE_CHANNEL,
                         content.getBroadcasts().getBroadcastOn(),
                         idCodec
                 ))
                 .add(new TermAttribute<>(
-                        SherlockAttributes.ON_DEMAND_AVAILABLE_PARAM,
+                        SherlockParameter.ON_DEMAND_AVAILABLE,
                         content.getLocations().getAvailable(),
                         BooleanCoercer.create()
                 ))

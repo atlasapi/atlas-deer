@@ -1,7 +1,5 @@
 package org.atlasapi.query.v5.search.attribute;
 
-import java.util.Optional;
-
 import javax.annotation.Nonnull;
 
 import org.atlasapi.entity.Id;
@@ -17,11 +15,11 @@ public class IdAttribute extends SherlockAttribute<Id, String, KeywordMapping> {
     private final NumberToShortStringCodec idCodec;
 
     public IdAttribute(
-            String parameterName,
+            SherlockParameter parameter,
             KeywordMapping mapping,
             NumberToShortStringCodec idCodec
     ) {
-        super(parameterName, mapping, IdCoercer.create(idCodec));
+        super(parameter, mapping, IdCoercer.create(idCodec));
         this.idCodec = idCodec;
     }
 
