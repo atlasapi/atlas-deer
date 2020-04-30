@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.common.exceptions.InvalidIdentifierException;
 import org.atlasapi.query.common.exceptions.InvalidParameterException;
 import org.atlasapi.query.common.exceptions.MissingAnnotationException;
@@ -174,6 +175,13 @@ public class ErrorSummary {
                         InvalidTransitionException.class,
                         new DefaultErrorSummaryFactory(
                                 "INVALID_TRANSITION",
+                                HttpStatusCode.BAD_REQUEST
+                        )
+                )
+                .put(
+                        InvalidAttributeValueException.class,
+                        new DefaultErrorSummaryFactory(
+                                "BAD_QUERY_ATTRIBUTE",
                                 HttpStatusCode.BAD_REQUEST
                         )
                 )

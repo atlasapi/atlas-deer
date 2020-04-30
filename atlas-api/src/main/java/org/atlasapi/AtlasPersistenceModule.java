@@ -1,33 +1,11 @@
 package org.atlasapi;
 
-import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.extras.codecs.joda.InstantCodec;
-import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
-import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Predicates;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.primitives.Ints;
-import com.metabroadcast.common.health.HealthProbe;
-import com.metabroadcast.common.ids.IdGeneratorBuilder;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongoClient;
-import com.metabroadcast.common.persistence.mongo.health.MongoConnectionPoolProbe;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.properties.Parameter;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessageSenders;
-import com.metabroadcast.common.time.SystemClock;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.ReadPreference;
-import com.mongodb.ServerAddress;
-import com.netflix.astyanax.AstyanaxContext;
-import com.netflix.astyanax.Keyspace;
+import java.util.List;
+import java.util.UUID;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
@@ -106,17 +84,46 @@ import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
 import org.atlasapi.util.CassandraSecondaryIndex;
+
+import com.metabroadcast.common.health.HealthProbe;
+import com.metabroadcast.common.ids.IdGeneratorBuilder;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongoClient;
+import com.metabroadcast.common.persistence.mongo.health.MongoConnectionPoolProbe;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.properties.Parameter;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessageSenders;
+import com.metabroadcast.common.time.SystemClock;
+import com.metabroadcast.sherlock.client.search.ContentSearcher;
+import com.metabroadcast.sherlock.common.SherlockIndex;
+import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
+import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
+
+import com.datastax.driver.core.CodecRegistry;
+import com.datastax.driver.extras.codecs.joda.InstantCodec;
+import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
+import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Predicates;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.primitives.Ints;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.ReadPreference;
+import com.mongodb.ServerAddress;
+import com.netflix.astyanax.AstyanaxContext;
+import com.netflix.astyanax.Keyspace;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.util.List;
-import java.util.UUID;
 
 @Configuration
 @Import({ KafkaMessagingModule.class })
@@ -161,6 +168,10 @@ public class AtlasPersistenceModule {
     private final String esIndex = Configurer.get("elasticsearch.index").get();
     private final String esRequestTimeout = Configurer.get("elasticsearch.requestTimeout").get();
     private final Parameter processingConfig = Configurer.get("processing.config");
+
+    private final String sherlockScheme = Configurer.get("sherlock.scheme").get();
+    private final String sherlockHostname = Configurer.get("sherlock.hostname").get();
+    private final Integer sherlockPort = Configurer.get("sherlock.port").toInt();
 
     private final String neo4jHost = Configurer.get("neo4j.host").get();
     private final Integer neo4jPort = Configurer.get("neo4j.port").toInt();
@@ -437,6 +448,19 @@ public class AtlasPersistenceModule {
 
     @Bean
     @Primary
+    public ContentSearcher contentSearcherV5() {
+        return ContentSearcher.builder()
+                .withElasticSearchProcessor(
+                        new ElasticSearchProcessor(
+                                sherlockElasticSearchConfig().getElasticSearchClient()
+                        )
+                )
+                .withIndex(SherlockIndex.CONTENT)
+                .build();
+    }
+
+    @Bean
+    @Primary
     public ServiceChannelStore channelStore() {
         MongoChannelStore rawStore = new MongoChannelStore(
                 databasedReadMongo(),
@@ -640,5 +664,14 @@ public class AtlasPersistenceModule {
     @Bean
     public Neo4jContentStore neo4jContentStore() {
         return neo4jModule().neo4jContentStore(metricsModule.metrics());
+    }
+
+    @Bean
+    public ElasticSearchConfig sherlockElasticSearchConfig() {
+        return ElasticSearchConfig.builder()
+                .withScheme(sherlockScheme)
+                .withHostname(sherlockHostname)
+                .withPort(sherlockPort)
+                .build();
     }
 }

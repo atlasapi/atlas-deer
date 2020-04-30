@@ -1,14 +1,11 @@
 package org.atlasapi.query;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.query.Selection.SelectionBuilder;
-import com.metabroadcast.common.time.SystemClock;
-import com.metabroadcast.representative.client.RepIdClient;
+import java.time.Instant;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -169,19 +166,41 @@ import org.atlasapi.query.v4.topic.TopicContentResultWriter;
 import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v4.topic.TopicListWriter;
 import org.atlasapi.query.v4.topic.TopicQueryResultWriter;
+import org.atlasapi.query.v5.search.ContentResolvingSearcher;
+import org.atlasapi.query.v5.search.attribute.EnumAttribute;
+import org.atlasapi.query.v5.search.attribute.IdAttribute;
+import org.atlasapi.query.v5.search.coercer.InstantRangeCoercer;
+import org.atlasapi.query.v5.search.coercer.IntegerRangeCoercer;
+import org.atlasapi.query.v5.search.attribute.RangeAttribute;
+import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
+import org.atlasapi.query.v5.search.attribute.SherlockParameter;
+import org.atlasapi.query.v5.search.attribute.TermAttribute;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.source.Sources;
 import org.atlasapi.topic.PopularTopicIndex;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.time.SystemClock;
+import com.metabroadcast.representative.client.RepIdClient;
+import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
+import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
+import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.mapping.IndexMapping;
+import com.metabroadcast.sherlock.common.type.DateMapping;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-
-import javax.servlet.http.HttpServletRequest;
 
 import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
@@ -280,6 +299,10 @@ public class QueryWebModule {
 
     private
     @Autowired
+    ContentResolvingSearcher v5SearchResolver;
+
+    private
+    @Autowired
     TopicResolver topicResolver;
 
     private
@@ -321,10 +344,8 @@ public class QueryWebModule {
     @Autowired
     private RepIdClient repIdClient;
 
-    @Bean
-    NumberToShortStringCodec idCodec() {
-        return SubstitutionTableNumberCodec.lowerCaseOnly();
-    }
+    @Autowired
+    NumberToShortStringCodec idCodec;
 
     @Bean
     SelectionBuilder selectionBuilder() {
@@ -344,7 +365,7 @@ public class QueryWebModule {
                         BroadcastWriter.create(
                                 "broadcasts",
                                 "broadcast",
-                                idCodec()
+                                idCodec
                         ),
                         channelResolver
                 );
@@ -383,7 +404,7 @@ public class QueryWebModule {
                         licenseWriter,
                         requestWriter(),
                         channelGroupResolver,
-                        idCodec()
+                        idCodec
                 )
         );
     }
@@ -401,7 +422,7 @@ public class QueryWebModule {
         );
 
         ContextualQueryParser<Topic, Content> parser = new ContextualQueryParser<>(
-                Resource.TOPIC, Attributes.TOPIC_ID, Resource.CONTENT, idCodec(),
+                Resource.TOPIC, Attributes.TOPIC_ID, Resource.CONTENT, idCodec,
                 contentQueryAttributeParser(),
                 contextParser
         );
@@ -493,7 +514,7 @@ public class QueryWebModule {
                 ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
                         QueryAtomParser.create(
                                 Attributes.ID,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.CONTENT_TYPE,
@@ -541,7 +562,7 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.CONTENT_GROUP,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.SPECIALIZATION,
@@ -561,19 +582,19 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.REGION,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.PLATFORM,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_DTT_CHANNELS,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_IP_CHANNELS,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.BROADCAST_WEIGHT,
@@ -585,11 +606,11 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.BRAND_ID,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.EPISODE_BRAND_ID,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.ACTIONABLE_FILTER_PARAMETERS,
@@ -597,7 +618,7 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.SERIES_ID,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.HIGHER_READ_CONSISTENCY,
@@ -616,7 +637,7 @@ public class QueryWebModule {
         return StandardQueryParser.create(
                 Resource.CONTENT,
                 contentQueryAttributeParser(),
-                idCodec(),
+                idCodec,
                 contextParser
         );
     }
@@ -651,7 +672,7 @@ public class QueryWebModule {
         return MergingChannelWriter.create(
                 "channels",
                 "channel",
-                ChannelGroupSummaryWriter.create(idCodec()),
+                ChannelGroupSummaryWriter.create(idCodec),
                 ChannelMerger.create()
         );
     }
@@ -720,7 +741,7 @@ public class QueryWebModule {
         return StandardQueryParser.create(
                 Resource.CHANNEL_GROUP,
                 channelGroupQueryAttributeParser(),
-                idCodec(),
+                idCodec,
                 contextParser
         );
     }
@@ -734,7 +755,7 @@ public class QueryWebModule {
                 ImmutableList.of(
                         QueryAtomParser.create(
                                 Attributes.ID,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_TYPE,
@@ -746,11 +767,11 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_DTT_CHANNELS,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_IP_CHANNELS,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.SOURCE,
@@ -762,7 +783,7 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_IDS,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         )
                 )
         );
@@ -779,7 +800,7 @@ public class QueryWebModule {
         return StandardQueryParser.create(
                 Resource.CHANNEL,
                 channelQueryAttributeParser(),
-                idCodec(),
+                idCodec,
                 contextParser
         );
     }
@@ -789,7 +810,7 @@ public class QueryWebModule {
                 ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
                         QueryAtomParser.create(
                                 Attributes.ID,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         ),
                         QueryAtomParser.create(
                                 Attributes.AVAILABLE_FROM,
@@ -840,7 +861,7 @@ public class QueryWebModule {
                         ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
                                 QueryAtomParser.create(
                                         Attributes.ID,
-                                        IdCoercer.create(idCodec())
+                                        IdCoercer.create(idCodec)
                                 ),
                                 QueryAtomParser.create(
                                         Attributes.TOPIC_TYPE,
@@ -860,7 +881,7 @@ public class QueryWebModule {
                                 )
                         )
                 ),
-                idCodec(),
+                idCodec,
                 contextParser
         );
     }
@@ -877,7 +898,7 @@ public class QueryWebModule {
                         ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
                                 QueryAtomParser.create(
                                         Attributes.ID,
-                                        IdCoercer.create(idCodec())
+                                        IdCoercer.create(idCodec)
                                 ),
                                 QueryAtomParser.create(
                                         Attributes.SOURCE,
@@ -893,7 +914,7 @@ public class QueryWebModule {
                                 )
                         )
                 ),
-                idCodec(), contextParser
+                idCodec, contextParser
         );
     }
 
@@ -908,10 +929,10 @@ public class QueryWebModule {
                 QueryAttributeParser.create(ImmutableList.of(
                         QueryAtomParser.create(
                                 Attributes.ID,
-                                IdCoercer.create(idCodec())
+                                IdCoercer.create(idCodec)
                         )
                 )),
-                idCodec(), contextParser
+                idCodec, contextParser
         );
     }
 
@@ -935,7 +956,76 @@ public class QueryWebModule {
                         licenseWriter,
                         requestWriter(),
                         channelGroupResolver,
-                        idCodec()
+                        idCodec
+                )
+        );
+    }
+
+    private List<SherlockAttribute<?, ?, ?>> sherlockAttributes() {
+        ContentMapping content = IndexMapping.getContentMapping();
+        return ImmutableList.<SherlockAttribute<?, ?, ?>>builder()
+                .add(new RangeAttribute<>(
+                        SherlockParameter.YEAR,
+                        content.getYear(),
+                        IntegerRangeCoercer.create()
+                ))
+                .add(new EnumAttribute<>(
+                        SherlockParameter.TYPE,
+                        content.getType(),
+                        EnumCoercer.create(ContentType.fromKey())
+                ))
+                .add(new EnumAttribute<>(
+                        SherlockParameter.PUBLISHER,
+                        content.getSource().getKey(),
+                        EnumCoercer.create(Sources.fromKey())
+                ))
+                .add(new SherlockAttribute<Boolean, Instant, DateMapping>(
+                        SherlockParameter.SCHEDULE_UPCOMING,
+                        content.getBroadcasts().getTransmissionStartTime(),
+                        BooleanCoercer.create()
+                ) {
+                    @Override protected NamedParameter<Instant> createParameter(
+                            DateMapping mapping, @Nonnull Boolean value
+                    ) {
+                        if (value) {
+                            return RangeParameter.from(mapping, Instant.now());
+                        } else {
+                            return RangeParameter.to(mapping, Instant.now());
+                        }
+                    }
+                })
+                .add(new RangeAttribute<>(
+                        SherlockParameter.SCHEDULE_TIME,
+                        content.getBroadcasts().getTransmissionStartTime(),
+                        InstantRangeCoercer.create()
+                ))
+                .add(new IdAttribute(
+                        SherlockParameter.SCHEDULE_CHANNEL,
+                        content.getBroadcasts().getBroadcastOn(),
+                        idCodec
+                ))
+                .add(new TermAttribute<>(
+                        SherlockParameter.ON_DEMAND_AVAILABLE,
+                        content.getLocations().getAvailable(),
+                        BooleanCoercer.create()
+                ))
+                .build();
+    }
+
+    @Bean
+    org.atlasapi.query.v5.search.SearchController v5SearchController() {
+        return new org.atlasapi.query.v5.search.SearchController(
+                v5SearchResolver,
+                configFetcher,
+                sherlockAttributes(),
+                new IndexAnnotationsExtractor(contentAnnotationIndex()),
+                selectionBuilder(),
+                new org.atlasapi.query.v5.search.ContentQueryResultWriter(
+                        contentListWriter(),
+                        licenseWriter,
+                        requestWriter(),
+                        channelGroupResolver,
+                        idCodec
                 )
         );
     }
@@ -995,27 +1085,27 @@ public class QueryWebModule {
                 .register(ID, new IdentificationAnnotation(), commonImplied)
                 .register(
                         EXTENDED_ID,
-                        new ExtendedIdentificationAnnotation(idCodec()),
+                        new ExtendedIdentificationAnnotation(idCodec),
                         ImmutableSet.of(ID)
                 )
-                .register(SERIES_REFERENCE, new SeriesReferenceAnnotation(idCodec()), commonImplied)
+                .register(SERIES_REFERENCE, new SeriesReferenceAnnotation(idCodec), commonImplied)
                 .register(
                         SERIES_SUMMARY,
                         new SeriesSummaryAnnotation(SeriesSummaryWriter.create(
-                                idCodec(),
+                                idCodec,
                                 containerSummaryResolver,
                                 CommonContainerSummaryWriter.create()
                         )),
                         commonImplied,
                         ImmutableSet.of(SERIES_REFERENCE)
                 )
-                .register(BRAND_REFERENCE, new BrandReferenceAnnotation(idCodec()), commonImplied)
+                .register(BRAND_REFERENCE, new BrandReferenceAnnotation(idCodec), commonImplied)
                 .register(
                         BRAND_SUMMARY,
                         new ContainerSummaryAnnotation(
                                 CONTAINER_FIELD,
                                 ContainerSummaryWriter.create(
-                                        idCodec(),
+                                        idCodec,
                                         CONTAINER_FIELD,
                                         containerSummaryResolver,
                                         CommonContainerSummaryWriter.create()
@@ -1039,7 +1129,7 @@ public class QueryWebModule {
                         new ExtendedDescriptionAnnotation(),
                         ImmutableSet.of(DESCRIPTION, EXTENDED_ID)
                 )
-                .register(SUB_ITEMS, new SubItemAnnotation(idCodec()), commonImplied)
+                .register(SUB_ITEMS, new SubItemAnnotation(idCodec), commonImplied)
                 .register(CLIPS, new ClipsAnnotation(new LocationsAnnotation(
                         persistenceModule.playerResolver(),
                         persistenceModule.serviceResolver()
@@ -1066,33 +1156,33 @@ public class QueryWebModule {
                         commonImplied
                 )
                 .register(ALL_AGGREGATED_BROADCASTS,
-                        AggregatedBroadcastsAnnotation.create(idCodec(), channelResolver),
+                        AggregatedBroadcastsAnnotation.create(idCodec, channelResolver),
                         commonImplied
                 )
                 .register(
                         AGGREGATED_BROADCASTS,
-                        AggregatedBroadcastsAnnotation.create(idCodec(), channelResolver),
+                        AggregatedBroadcastsAnnotation.create(idCodec, channelResolver),
                         commonImplied
                 )
                 .register(
                         BROADCASTS,
-                        BroadcastsAnnotation.create(idCodec(), channelResolver),
+                        BroadcastsAnnotation.create(idCodec, channelResolver),
                         commonImplied
                 )
                 .register(
                         ALL_MERGED_BROADCASTS,
-                        BroadcastsAnnotation.create(idCodec(), channelResolver),
+                        BroadcastsAnnotation.create(idCodec, channelResolver),
                         commonImplied
                 )
                 .register(
                         ALL_BROADCASTS,
-                        BroadcastsAnnotation.create(idCodec(), channelResolver),
+                        BroadcastsAnnotation.create(idCodec, channelResolver),
                         commonImplied
                 )
                 .register(
                         UPCOMING_BROADCASTS,
                         UpcomingBroadcastsAnnotation.create(
-                                idCodec(),
+                                idCodec,
                                 channelResolver
                         ),
                         commonImplied
@@ -1100,7 +1190,7 @@ public class QueryWebModule {
                 .register(
                         CURRENT_AND_FUTURE_BROADCASTS,
                         CurrentAndFutureBroadcastsAnnotation.create(
-                                idCodec(),
+                                idCodec,
                                 channelResolver
                         ),
                         commonImplied
@@ -1108,7 +1198,7 @@ public class QueryWebModule {
                 .register(
                         FIRST_BROADCASTS,
                         FirstBroadcastAnnotation.create(
-                                idCodec(),
+                                idCodec,
                                 channelResolver
                         ),
                         commonImplied
@@ -1117,7 +1207,7 @@ public class QueryWebModule {
                         NEXT_BROADCASTS,
                         NextBroadcastAnnotation.create(
                                 new SystemClock(),
-                                idCodec(),
+                                idCodec,
                                 channelResolver
                         ),
                         commonImplied
@@ -1145,7 +1235,7 @@ public class QueryWebModule {
                                         BroadcastWriter.create(
                                                 "broadcasts",
                                                 "broadcast",
-                                                idCodec()
+                                                idCodec
                                         ),
                                         new ItemDetailWriter(
                                                 IdentificationSummaryAnnotation.create(
@@ -1173,14 +1263,14 @@ public class QueryWebModule {
                 .register(
                         AVAILABLE_CONTENT,
                         new AvailableContentAnnotation(
-                                new ItemRefWriter(idCodec(), AVAILABLE_CONTENT.toKey())
+                                new ItemRefWriter(idCodec, AVAILABLE_CONTENT.toKey())
                         ), commonImplied
                 )
                 .register(
                         SUB_ITEM_SUMMARIES,
                         new SubItemSummariesAnnotations(
                                 new SubItemSummaryListWriter(
-                                        new ItemRefWriter(idCodec(), "items", "item")
+                                        new ItemRefWriter(idCodec, "items", "item")
                                 )
                         )
                         ,
@@ -1237,7 +1327,7 @@ public class QueryWebModule {
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
-                        new ExtendedIdentificationAnnotation(idCodec()),
+                        new ExtendedIdentificationAnnotation(idCodec),
                         ImmutableSet.of(ID)
                 )
                 .register(DESCRIPTION, new DescriptionAnnotation<>(), ImmutableSet.of(EXTENDED_ID))
@@ -1254,13 +1344,13 @@ public class QueryWebModule {
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
-                        new ExtendedIdentificationAnnotation(idCodec()),
+                        new ExtendedIdentificationAnnotation(idCodec),
                         ImmutableSet.of(ID)
                 )
                 .register(
                         EVENT,
                         new EventAnnotation(
-                                new ItemRefWriter(idCodec(), "content"),
+                                new ItemRefWriter(idCodec, "content"),
                                 persistenceModule.organisationStore()
                         )
                 )
@@ -1282,7 +1372,7 @@ public class QueryWebModule {
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
-                        new ExtendedIdentificationAnnotation(idCodec()),
+                        new ExtendedIdentificationAnnotation(idCodec),
                         ImmutableSet.of(ID)
                 )
                 .register(DESCRIPTION, new DescriptionAnnotation<>(), ImmutableSet.of(EXTENDED_ID))
