@@ -3,6 +3,7 @@ package org.atlasapi.query;
 import java.time.Instant;
 import java.util.List;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.AtlasPersistenceModule;
@@ -126,7 +127,6 @@ import org.atlasapi.query.common.coercers.FloatCoercer;
 import org.atlasapi.query.common.coercers.IdCoercer;
 import org.atlasapi.query.common.coercers.StringCoercer;
 import org.atlasapi.query.common.context.QueryContextParser;
-import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.v4.channel.ChannelController;
 import org.atlasapi.query.v4.channel.ChannelIdWriter;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
@@ -175,7 +175,6 @@ import org.atlasapi.query.v5.search.attribute.RangeAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
 import org.atlasapi.query.v5.search.attribute.TermAttribute;
-import org.atlasapi.query.v5.search.coercer.Range;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.source.Sources;
 import org.atlasapi.topic.PopularTopicIndex;
@@ -963,30 +962,30 @@ public class QueryWebModule {
     }
 
     private List<SherlockAttribute<?, ?, ?>> sherlockAttributes() {
-        ContentMapping CONTENT_MAPPING = IndexMapping.getContentMapping();
+        ContentMapping content = IndexMapping.getContentMapping();
         return ImmutableList.<SherlockAttribute<?, ?, ?>>builder()
                 .add(new RangeAttribute<>(
                         SherlockAttributes.YEAR_PARAM,
-                        CONTENT_MAPPING.getYear(),
+                        content.getYear(),
                         IntegerRangeCoercer.create()
                 ))
                 .add(new EnumAttribute<>(
                         SherlockAttributes.TYPE_PARAM,
-                        CONTENT_MAPPING.getType(),
+                        content.getType(),
                         EnumCoercer.create(ContentType.fromKey())
                 ))
                 .add(new EnumAttribute<>(
                         SherlockAttributes.PUBLISHER_PARAM,
-                        CONTENT_MAPPING.getSource().getKey(),
+                        content.getSource().getKey(),
                         EnumCoercer.create(Sources.fromKey())
                 ))
                 .add(new SherlockAttribute<Boolean, Instant, DateMapping>(
                         SherlockAttributes.SCHEDULE_UPCOMING_PARAM,
-                        CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                        content.getBroadcasts().getTransmissionStartTime(),
                         BooleanCoercer.create()
                 ) {
                     @Override protected NamedParameter<Instant> createParameter(
-                            DateMapping mapping, Boolean value
+                            DateMapping mapping, @Nonnull Boolean value
                     ) {
                         if (value) {
                             return RangeParameter.from(mapping, Instant.now());
@@ -997,17 +996,17 @@ public class QueryWebModule {
                 })
                 .add(new RangeAttribute<>(
                         SherlockAttributes.SCHEDULE_TIME_PARAM,
-                        CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                        content.getBroadcasts().getTransmissionStartTime(),
                         InstantRangeCoercer.create()
                 ))
                 .add(new IdAttribute(
                         SherlockAttributes.SCHEDULE_CHANNEL_PARAM,
-                        CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
+                        content.getBroadcasts().getBroadcastOn(),
                         idCodec
                 ))
                 .add(new TermAttribute<>(
                         SherlockAttributes.ON_DEMAND_AVAILABLE_PARAM,
-                        CONTENT_MAPPING.getLocations().getAvailable(),
+                        content.getLocations().getAvailable(),
                         BooleanCoercer.create()
                 ))
                 .build();

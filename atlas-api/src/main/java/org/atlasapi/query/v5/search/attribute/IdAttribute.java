@@ -1,5 +1,9 @@
 package org.atlasapi.query.v5.search.attribute;
 
+import java.util.Optional;
+
+import javax.annotation.Nonnull;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.coercers.IdCoercer;
 
@@ -22,7 +26,7 @@ public class IdAttribute extends SherlockAttribute<Id, String, KeywordMapping> {
     }
 
     @Override
-    protected NamedParameter<String> createParameter(KeywordMapping mapping, Id value) {
+    protected NamedParameter<String> createParameter(KeywordMapping mapping, @Nonnull Id value) {
         return TermParameter.of(mapping, idCodec.encode(value.toBigInteger()));
     }
 }

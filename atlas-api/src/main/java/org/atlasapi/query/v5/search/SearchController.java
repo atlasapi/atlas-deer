@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Content;
 import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
@@ -119,7 +120,7 @@ public class SearchController {
             for (NamedParameter<?> parameter : parameters) {
                 if (parameter instanceof SearchParameter) {
                     queryBuilder.addSearcher((SearchParameter)parameter);
-                } else {
+                } else if (parameter instanceof FilterParameter) {
                     queryBuilder.addFilter((FilterParameter<?>)parameter);
                 }
             }
@@ -132,8 +133,7 @@ public class SearchController {
                     .build();
 
             QueryContext queryContext = QueryContext.create(
-                    applicationFetcher.applicationFor(request)
-                            .orElseThrow(InvalidParameterException::new),
+                    applicationFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                     annotationsExtractor.extractFromSingleRequest(request),
                     request
             );

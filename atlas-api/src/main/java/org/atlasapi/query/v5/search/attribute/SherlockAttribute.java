@@ -1,7 +1,11 @@
 package org.atlasapi.query.v5.search.attribute;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
 
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
@@ -35,9 +39,10 @@ public abstract class SherlockAttribute<FROM, TO, M extends ChildTypeMapping<TO>
 
     public List<NamedParameter<TO>> coerce(List<String> values) throws InvalidAttributeValueException {
         return coercer.apply(values).stream()
+                .filter(Objects::nonNull)
                 .map(v -> createParameter(mapping, v))
                 .collect(Collectors.toList());
     }
 
-    protected abstract NamedParameter<TO> createParameter(M mapping, FROM value);
+    protected abstract NamedParameter<TO> createParameter(M mapping, @Nonnull FROM value);
 }

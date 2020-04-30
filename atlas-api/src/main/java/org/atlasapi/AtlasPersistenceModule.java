@@ -172,7 +172,6 @@ public class AtlasPersistenceModule {
     private final String sherlockScheme = Configurer.get("sherlock.scheme").get();
     private final String sherlockHostname = Configurer.get("sherlock.hostname").get();
     private final Integer sherlockPort = Configurer.get("sherlock.port").toInt();
-    private final Integer sherlockTimeoutMilliseconds = Configurer.get("sherlock.timeout.milliseconds").toInt();
 
     private final String neo4jHost = Configurer.get("neo4j.host").get();
     private final Integer neo4jPort = Configurer.get("neo4j.port").toInt();

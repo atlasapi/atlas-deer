@@ -5,7 +5,7 @@ import java.time.format.DateTimeParseException;
 
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
-public class InstantRangeCoercer extends RangeCoercer<Instant, Range<Instant>> {
+public class InstantRangeCoercer extends RangeCoercer<Instant> {
 
     private InstantRangeCoercer() {
         super(Instant::parse);
@@ -15,18 +15,23 @@ public class InstantRangeCoercer extends RangeCoercer<Instant, Range<Instant>> {
         return new InstantRangeCoercer();
     }
 
+    // Only accepts values containing two Instants separated by the RANGE_SEPARATOR.
+    // For example yyyy-MM-ddTHH:mm:ssZ-yyyy-MM-ddTHH:mm:ssZ
     @Override
     protected Instant[] bisectAndCoerce(String value) throws InvalidAttributeValueException {
-        if (value.length() % 2 != 1) { // Instant range values must be in the same format
+
+        if (value.length() != 41 && value.charAt(20) == RANGE_SEPARATOR_CHAR) {
             throw new InvalidAttributeValueException(value);
         }
 
-        int mid = (value.length()-1)/2;
-        String from = value.substring(0, mid);
-        String to = value.substring(mid+1);
+        String from = value.substring(0, 20);
+        String to = value.substring(21);
 
         try {
-           return new Instant[] { coercerFunction.apply(from), coercerFunction.apply(to) };
+           return new Instant[] {
+                   coercerFunction.apply(from),
+                   coercerFunction.apply(to)
+           };
         } catch (DateTimeParseException e) {
            throw new InvalidAttributeValueException(value);
         }

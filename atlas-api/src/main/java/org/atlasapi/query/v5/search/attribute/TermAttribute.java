@@ -1,5 +1,7 @@
 package org.atlasapi.query.v5.search.attribute;
 
+import javax.annotation.Nonnull;
+
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 
 import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
@@ -17,7 +19,7 @@ public class TermAttribute<T> extends SherlockAttribute<T, T, ChildTypeMapping<T
     }
 
     @Override
-    protected NamedParameter<T> createParameter(ChildTypeMapping<T> mapping, T value) {
+    protected NamedParameter<T> createParameter(ChildTypeMapping<T> mapping, @Nonnull T value) {
         return TermParameter.of(mapping, value);
     }
 }

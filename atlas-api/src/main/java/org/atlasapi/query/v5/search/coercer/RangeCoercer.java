@@ -1,6 +1,7 @@
 package org.atlasapi.query.v5.search.coercer;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.atlasapi.query.common.coercers.AttributeCoercer;
@@ -8,10 +9,12 @@ import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
 import com.google.common.collect.ImmutableList;
 import joptsimple.internal.Strings;
+import scala.Char;
 
-public abstract class RangeCoercer<T, S extends Range<T>> implements AttributeCoercer<Range<T>> {
+public abstract class RangeCoercer<T> implements AttributeCoercer<Range<T>> {
 
-    protected final String RANGE_SEPARATOR = "-";
+    protected static final char RANGE_SEPARATOR_CHAR = '-';
+    protected static final String RANGE_SEPARATOR = String.valueOf(RANGE_SEPARATOR_CHAR);
     protected final Function<String, T> coercerFunction;
 
     protected RangeCoercer(Function<String, T> coercerFunction) {
@@ -26,13 +29,22 @@ public abstract class RangeCoercer<T, S extends Range<T>> implements AttributeCo
         } else if (value.endsWith(RANGE_SEPARATOR)) {
             return new Range<>(coercerFunction.apply(value.substring(0, value.length()-1)), null);
         } else {
-            try {
-                T parsedValue = coercerFunction.apply(value);
-                return new Range<>(parsedValue, parsedValue);
-            } catch (Exception e) {
+            Optional<T> parsedValue = maybeCoerce(value);
+            if (parsedValue.isPresent()) {
+                return new Range<>(parsedValue.get(), parsedValue.get());
+            } else {
                 T[] parseValues = bisectAndCoerce(value);
                 return new Range<>(parseValues[0], parseValues[1]);
             }
+        }
+    }
+
+    private Optional<T> maybeCoerce(String value) {
+        try {
+            T parsedValue = coercerFunction.apply(value);
+            return Optional.of(parsedValue);
+        } catch (Exception e) {
+            return Optional.empty();
         }
     }
 

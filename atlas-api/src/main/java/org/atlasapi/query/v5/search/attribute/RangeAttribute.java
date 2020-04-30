@@ -1,5 +1,7 @@
 package org.atlasapi.query.v5.search.attribute;
 
+import javax.annotation.Nonnull;
+
 import org.atlasapi.query.v5.search.coercer.Range;
 import org.atlasapi.query.v5.search.coercer.RangeCoercer;
 
@@ -19,7 +21,7 @@ public class RangeAttribute<T> extends SherlockAttribute<Range<T>, T, RangeTypeM
     }
 
     @Override
-    protected NamedParameter<T> createParameter(RangeTypeMapping<T> mapping, Range<T> value) {
+    protected NamedParameter<T> createParameter(RangeTypeMapping<T> mapping, @Nonnull Range<T> value) {
         if (value.getFrom() == value.getTo()) {
             return TermParameter.of(mapping, value.getFrom());
         } else {
