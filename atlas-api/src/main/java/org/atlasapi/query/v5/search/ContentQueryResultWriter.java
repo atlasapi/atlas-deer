@@ -78,25 +78,27 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
 
         OutputContext.Builder builder = OutputContext.builder(queryContext);
 
-        List<String> channelGroupsParams = SPLITTER.splitToList(channelGroupParam);
-        List<ChannelGroup<?>> channelGroups = resolveChannelGroups(channelGroupsParams);
+        if (channelGroupParam != null) {
+            List<String> channelGroupsParams = SPLITTER.splitToList(channelGroupParam);
+            List<ChannelGroup<?>> channelGroups = resolveChannelGroups(channelGroupsParams);
 
-        List<Region> regions = channelGroups.stream()
-                .filter(cg -> cg instanceof Region)
-                .map(cg -> (Region) cg)
-                .collect(Collectors.toList());
+            List<Region> regions = channelGroups.stream()
+                    .filter(cg -> cg instanceof Region)
+                    .map(cg -> (Region) cg)
+                    .collect(Collectors.toList());
 
-        if (!regions.isEmpty()) {
-            builder.withRegions(regions);
-        }
+            if (!regions.isEmpty()) {
+                builder.withRegions(regions);
+            }
 
-        List<Platform> platforms = channelGroups.stream()
-                .filter(cg -> cg instanceof Platform)
-                .map(cg -> (Platform) cg)
-                .collect(Collectors.toList());
+            List<Platform> platforms = channelGroups.stream()
+                    .filter(cg -> cg instanceof Platform)
+                    .map(cg -> (Platform) cg)
+                    .collect(Collectors.toList());
 
-        if (!platforms.isEmpty()) {
-            builder.withPlatforms(platforms);
+            if (!platforms.isEmpty()) {
+                builder.withPlatforms(platforms);
+            }
         }
 
         return builder.build();
