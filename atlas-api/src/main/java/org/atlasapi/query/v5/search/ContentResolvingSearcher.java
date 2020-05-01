@@ -2,21 +2,16 @@ package org.atlasapi.query.v5.search;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentResolver;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
-import org.atlasapi.output.NotFoundException;
-import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
-import org.atlasapi.query.common.exceptions.UncheckedQueryExecutionException;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.sherlock.client.search.ContentSearcher;
@@ -24,7 +19,6 @@ import com.metabroadcast.sherlock.client.search.SearchQuery;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -51,13 +45,21 @@ public class ContentResolvingSearcher {
 
     public QueryResult<Content> search(SearchQuery searchQuery, QueryContext queryContext) {
         try {
+            AtomicLong totalResults = new AtomicLong();
             return Futures.transform(
                     Futures.transformAsync(
                             searcher.searchForIds(searchQuery),
-                            input -> resolve(input, queryContext)
+                            input -> {
+                                totalResults.set(input.getTotalResults());
+                                return resolve(input.getIds(), queryContext);
+                            }
                     ),
                     (Function<ResolvedEquivalents<Content>, QueryResult<Content>>)
-                    resolved -> result(resolved, queryContext)
+                    resolved -> QueryResult.listResult(
+                            resolved.getFirstElems(),
+                            queryContext,
+                            totalResults.get()
+                    )
             ).get(timeout, TimeUnit.MILLISECONDS);
         } catch (Exception ex) {
             throw new RuntimeException(ex.getMessage(), ex);
@@ -90,14 +92,5 @@ public class ContentResolvingSearcher {
                     .map(Id::valueOf)
                     .collect(Collectors.toList());
         }
-    }
-
-    private QueryResult<Content> result(ResolvedEquivalents<Content> resolved, QueryContext queryContext) {
-        Iterable<Content> resources = resolved.getFirstElems();
-        return QueryResult.listResult(
-                resources,
-                queryContext,
-                resolved.size()
-        );
     }
 }

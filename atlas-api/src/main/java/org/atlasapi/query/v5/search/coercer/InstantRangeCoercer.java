@@ -15,17 +15,23 @@ public class InstantRangeCoercer extends RangeCoercer<Instant> {
         return new InstantRangeCoercer();
     }
 
-    // Only accepts values containing two Instants separated by the RANGE_SEPARATOR.
-    // For example yyyy-MM-ddTHH:mm:ssZ-yyyy-MM-ddTHH:mm:ssZ
+    // Only accepts values containing two Instants of equal length separated by the RANGE_SEPARATOR.
     @Override
     protected Instant[] bisectAndCoerce(String value) throws InvalidAttributeValueException {
 
-        if (value.length() != 41 && value.charAt(20) == RANGE_SEPARATOR_CHAR) {
+        int len = value.length();
+        if (len < 41) {
             throw new InvalidAttributeValueException(value);
         }
 
-        String from = value.substring(0, 20);
-        String to = value.substring(21);
+        int mid = (len-1)/2;
+
+        if (len % 2 != 1 || value.charAt(mid) != RANGE_SEPARATOR_CHAR) {
+            throw new InvalidAttributeValueException(value);
+        }
+
+        String from = value.substring(0, mid);
+        String to = value.substring(mid+1);
 
         try {
            return new Instant[] {
