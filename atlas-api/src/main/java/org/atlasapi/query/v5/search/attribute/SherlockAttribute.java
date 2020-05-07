@@ -29,7 +29,7 @@ public abstract class SherlockAttribute<FROM, TO, M extends ChildTypeMapping<TO>
     }
 
     public String getParameterName() {
-        return parameter.getName();
+        return parameter.getParameterName();
     }
 
     public M getMapping() {

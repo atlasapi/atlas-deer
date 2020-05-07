@@ -17,7 +17,7 @@ public class InstantRangeCoercer extends RangeCoercer<Instant> {
 
     // Only accepts values containing two Instants of equal length separated by the RANGE_SEPARATOR.
     @Override
-    protected Instant[] bisectAndCoerce(String value) throws InvalidAttributeValueException {
+    protected Range<Instant> bisectAndCoerce(String value) throws InvalidAttributeValueException {
 
         int len = value.length();
         if (len < 41) {
@@ -34,10 +34,10 @@ public class InstantRangeCoercer extends RangeCoercer<Instant> {
         String to = value.substring(mid+1);
 
         try {
-           return new Instant[] {
+           return new Range<>(
                    coercerFunction.apply(from),
                    coercerFunction.apply(to)
-           };
+           );
         } catch (DateTimeParseException e) {
            throw new InvalidAttributeValueException(value);
         }
