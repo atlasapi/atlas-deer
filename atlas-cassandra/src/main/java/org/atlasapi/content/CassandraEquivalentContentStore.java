@@ -544,9 +544,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private ListenableFuture<List<GraphAndDataResults>> resultOf(Iterable<GraphAndDataSelect> queries) {
         return Futures.allAsList(MoreStreams.stream(queries)
+                //we know this causes race conditions. ENG-726.
                 .map(query -> new SetSelectFuture(
-                        session.executeAsync(query.graphStatement),
-                        session.executeAsync(query.dataStatement)))
+                        session.executeAsync(query.dataStatement),
+                        session.executeAsync(query.graphStatement)))
                 .collect(MoreCollectors.toImmutableList()));
     }
 
@@ -778,7 +779,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private class SetSelectFuture implements ListenableFuture<GraphAndDataResults> {
         final ListenableFuture<List<ResultSet>> combinedFuture;
 
-        SetSelectFuture(ListenableFuture<ResultSet> graphResult, ListenableFuture<ResultSet> setResult) {
+        SetSelectFuture(ListenableFuture<ResultSet> setResult, ListenableFuture<ResultSet> graphResult) {
             combinedFuture = Futures.allAsList(graphResult, setResult); //order after get is same order as given on input
         }
 
