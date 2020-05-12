@@ -357,6 +357,9 @@ public abstract class Described extends Identified implements Sourced {
         to.reviews = from.reviews;
         to.ratings = from.ratings;
         to.awards = from.awards;
+        to.synopses = from.synopses;
+        to.priority = from.priority;
+        to.relatedLinks = from.relatedLinks;
         return to;
     }
 
@@ -391,6 +394,10 @@ public abstract class Described extends Identified implements Sourced {
         to.reviews = from.reviews.isEmpty() ? to.reviews : from.reviews;
         to.ratings = from.ratings.isEmpty() ? to.ratings : from.ratings;
         to.awards = from.awards.isEmpty() ? to.awards : from.awards;
+        //the following were added here later (they seemed to be missing)
+        to.synopses = ofNullable(from.synopses).orElse(to.synopses);
+        to.priority = ofNullable(from.priority).orElse(to.priority);
+        to.relatedLinks = from.relatedLinks.isEmpty() ? to.relatedLinks : from.relatedLinks;
         return to;
     }
 

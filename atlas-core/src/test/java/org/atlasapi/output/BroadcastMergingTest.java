@@ -140,7 +140,7 @@ public class BroadcastMergingTest {
         chosenItem.addEquivalentTo(notChosenItem);
         notChosenItem.addEquivalentTo(chosenItem);
 
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application,
+        executor.merge(chosenItem, ImmutableList.of(chosenItem, notChosenItem), application,
                 Collections.emptySet()
         );
 
@@ -229,7 +229,7 @@ public class BroadcastMergingTest {
 
         executor.merge(
                 chosenItemWithoutBroadcasts,
-                ImmutableList.of(notChosenFirstBbcItem, notChosenBbcItem, notChosenFbItem),
+                ImmutableList.of(chosenItemWithoutBroadcasts, notChosenFirstBbcItem, notChosenBbcItem, notChosenFbItem),
                 application,
                 Collections.emptySet()
         );
@@ -291,7 +291,7 @@ public class BroadcastMergingTest {
 
         //merge all broadcasts from all sources, even if different channel and start time
         activeAnnotations.add(Annotation.ALL_BROADCASTS);
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application, activeAnnotations);
+        executor.merge(chosenItem, ImmutableList.of(chosenItem, notChosenItem), application, activeAnnotations);
         assertEquals(4, chosenItem.getBroadcasts().size());
 
     }
@@ -340,7 +340,7 @@ public class BroadcastMergingTest {
         Set<Annotation> activeAnnotations = new HashSet<>();
         //get broadcasts from all sources, merging on matching channel+start time
         activeAnnotations.add(Annotation.ALL_MERGED_BROADCASTS);
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application, activeAnnotations);
+        executor.merge(chosenItem, ImmutableList.of(chosenItem, notChosenItem), application, activeAnnotations);
 
         assertEquals(3, chosenItem.getBroadcasts().size());
     }

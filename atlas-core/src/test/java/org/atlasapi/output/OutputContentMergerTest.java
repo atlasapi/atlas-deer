@@ -136,7 +136,7 @@ public class OutputContentMergerTest {
                 Publisher.PA
         );
 
-        Item merged = merger.merge(one, ImmutableList.of(two), application, Collections.emptySet());
+        Item merged = merger.merge(one, ImmutableList.of(one, two), application, Collections.emptySet());
         assertThat(merged.getAliases().size(), is(2));
     }
 
@@ -201,7 +201,7 @@ public class OutputContentMergerTest {
                 Publisher.PA
         );
 
-        Item merged = merger.merge(one, ImmutableList.of(two, three), application,
+        Item merged = merger.merge(one, ImmutableList.of(one, two, three), application,
                 Collections.emptySet()
         );
 
@@ -252,7 +252,7 @@ public class OutputContentMergerTest {
                 Publisher.BBC_MUSIC
         );
 
-        Item merged = merger.merge(one, ImmutableList.of(two, three), application,
+        Item merged = merger.merge(one, ImmutableList.of(one, two, three), application,
                 Collections.emptySet()
         );
 
@@ -304,7 +304,7 @@ public class OutputContentMergerTest {
                 Publisher.BBC_MUSIC
         );
 
-        Container merged = merger.merge(one, ImmutableList.of(two, three), application,
+        Container merged = merger.merge(one, ImmutableList.of(one, two, three), application,
                 Collections.emptySet()
         );
 
@@ -415,7 +415,7 @@ public class OutputContentMergerTest {
                 Publisher.BBC_MUSIC
         );
 
-        Container merged = merger.merge(one, ImmutableList.of(two, three), application,
+        Container merged = merger.merge(one, ImmutableList.of(one, two, three), application,
                 Collections.emptySet()
         );
 
@@ -452,7 +452,7 @@ public class OutputContentMergerTest {
                 Publisher.BBC_MUSIC
         );
 
-        Container merged = merger.merge(one, ImmutableList.of(two, three), application,
+        Container merged = merger.merge(one, ImmutableList.of(one, two, three), application,
                 Collections.emptySet()
         );
 
@@ -474,7 +474,7 @@ public class OutputContentMergerTest {
         Item item2 = item(5L, "item2", Publisher.PA);
         item2.setImages(ImmutableSet.of(new Image("http://image2.org/")));
 
-        Content merged = merger.merge(item1, ImmutableList.of(item2), application,
+        Content merged = merger.merge(item1, ImmutableList.of(item1, item2), application,
                 Collections.emptySet()
         );
         assertThat(merged.getImages().size(), is(2));
@@ -507,7 +507,7 @@ public class OutputContentMergerTest {
         item2.setImage(image2.getCanonicalUri());
         item2.setImages(ImmutableSet.of(image2));
 
-        Content merged = merger.merge(item2,  ImmutableList.of(item1), application,
+        Content merged = merger.merge(item2,  ImmutableList.of(item1, item2), application,
                 Collections.emptySet()
         );
         assertThat(merged.getImage(), is("http://image2.org/"));
@@ -625,7 +625,7 @@ public class OutputContentMergerTest {
         );
         item3.setBroadcasts(ImmutableSet.of(b3));
 
-        Item merged = merger.merge(item1, ImmutableList.of(item2, item3), application,
+        Item merged = merger.merge(item1, ImmutableList.of(item1, item2, item3), application,
                 Collections.emptySet()
         );
         assertThat(merged.getBroadcasts().size(), is(2));
@@ -660,7 +660,7 @@ public class OutputContentMergerTest {
         item2.setBroadcasts(ImmutableSet.of(b2));
         b2.addAlias(new Alias("ns2", "v2"));
 
-        Item merged = merger.merge(item1, ImmutableList.of(item2), application,
+        Item merged = merger.merge(item1, ImmutableList.of(item1, item2), application,
                 Collections.emptySet()
         );
         assertThat(Iterables.getOnlyElement(merged.getBroadcasts()).getAliases().size(), is(2));
@@ -696,7 +696,7 @@ public class OutputContentMergerTest {
         secondItem.addBroadcast(secondItemBroadcast);
 
 
-        Item merged = merger.merge(firstItem, ImmutableList.of(secondItem), application,
+        Item merged = merger.merge(firstItem, ImmutableList.of(firstItem, secondItem), application,
                 Collections.emptySet()
         );
 
@@ -736,7 +736,7 @@ public class OutputContentMergerTest {
         // chosenItem is mutated by merge, so calculate this first
         int expectedReviewsCount = expectedReviews.size();
 
-        Item merged = merger.merge(chosenItem, ImmutableList.of(firstEquivItem, secondEquivItem), application,
+        Item merged = merger.merge(chosenItem, ImmutableList.of(chosenItem, firstEquivItem, secondEquivItem), application,
                 Collections.emptySet()
         );
 
@@ -779,7 +779,7 @@ public class OutputContentMergerTest {
         // chosenItem is mutated by merge, so calculate this first
         int expectedRatingsCount = expectedRatings.size();
 
-        Item merged = merger.merge(chosenItem, ImmutableList.of(firstEquivItem, secondEquivItem), application,
+        Item merged = merger.merge(chosenItem, ImmutableList.of(chosenItem, firstEquivItem, secondEquivItem), application,
                 Collections.emptySet()
         );
 
@@ -952,7 +952,7 @@ public class OutputContentMergerTest {
                 Publisher.BBC
         );
 
-        Item merged = merger.merge(chosen, ImmutableList.of(notChosen), application,
+        Item merged = merger.merge(chosen, ImmutableList.of(chosen, notChosen), application,
                 Collections.emptySet()
         );
 

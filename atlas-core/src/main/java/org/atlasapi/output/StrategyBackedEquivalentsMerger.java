@@ -1,8 +1,10 @@
 package org.atlasapi.output;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 
@@ -67,11 +69,8 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
             }
         }
 
-        Iterable<T> notChosen = Iterables.filter(
-                sortedEquivalents,
-                Predicates.not(idIs(chosen.getId()))
-        );
-        return ImmutableList.of(strategy.merge(chosen, notChosen, application, activeAnnotations));
+        return ImmutableList.of(strategy.merge(chosen,
+                new HashSet<>(sortedEquivalents), application, activeAnnotations));
     }
 
     private boolean trivialMerge(ImmutableList<?> sortedEquivalents) {

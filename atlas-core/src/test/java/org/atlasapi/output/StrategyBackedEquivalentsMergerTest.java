@@ -124,7 +124,7 @@ public class StrategyBackedEquivalentsMergerTest {
                 verify(strategy)
                         .merge(
                                 argThat(is(one)),
-                                argThat(contains(two, three)),
+                                argThat(contains(one, two, three)),
                                 argThat(is(mergingApplication)),
                                 Matchers.anySetOf(Annotation.class)
                         );
@@ -132,7 +132,7 @@ public class StrategyBackedEquivalentsMergerTest {
                 verify(strategy)
                         .merge(
                                 argThat(is(one)),
-                                argThat(contains(two, three)),
+                                argThat(contains(one, two, three)),
                                 argThat(is(mergingApplication)),
                                 Matchers.anySetOf(Annotation.class)
                         );
@@ -140,7 +140,7 @@ public class StrategyBackedEquivalentsMergerTest {
                 verify(strategy)
                         .merge(
                                 argThat(is(one)),
-                                argThat(contains(two, three)),
+                                argThat(contains(one, two, three)),
                                 argThat(is(mergingApplication)),
                                 Matchers.anySetOf(Annotation.class)
                         );
@@ -173,7 +173,7 @@ public class StrategyBackedEquivalentsMergerTest {
         verify(strategy)
                 .merge(
                         argThat(is(retrieved1)),
-                        argThat(contains(retrieved2)),
+                        argThat(contains(retrieved1, retrieved2)),
                         argThat(is(mergingApplication)),
                         Matchers.anySetOf(Annotation.class)
                 );
@@ -197,7 +197,7 @@ public class StrategyBackedEquivalentsMergerTest {
         verify(strategy)
                 .merge(
                         argThat(is(one)),
-                        argThat(contains(two, three)),
+                        argThat(contains(one, two, three)),
                         argThat(is(mergingApplication)),
                         Matchers.anySetOf(Annotation.class)
                 );
@@ -210,7 +210,7 @@ public class StrategyBackedEquivalentsMergerTest {
         verify(strategy)
                 .merge(
                         argThat(is(two)),
-                        argThat(contains(one, three)),
+                        argThat(contains(one, two, three)),
                         argThat(is(mergingApplication)),
                         Matchers.anySetOf(Annotation.class)
                 );
@@ -223,7 +223,7 @@ public class StrategyBackedEquivalentsMergerTest {
         verify(strategy)
                 .merge(
                         argThat(is(one)),
-                        argThat(contains(two, three)),
+                        argThat(contains(one, two, three)),
                         argThat(is(mergingApplication)),
                         Matchers.anySetOf(Annotation.class)
                 );
