@@ -9,16 +9,18 @@ import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.query.common.coercers.BooleanCoercer;
 import org.atlasapi.query.common.coercers.EnumCoercer;
+import org.atlasapi.query.v5.search.coercer.DateRangeCoercer;
 import org.atlasapi.query.v5.search.coercer.InstantRangeCoercer;
 import org.atlasapi.query.v5.search.coercer.NumberRangeCoercer;
 import org.atlasapi.source.Sources;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.media.MimeType;
 import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
-import com.metabroadcast.sherlock.common.type.DateMapping;
+import com.metabroadcast.sherlock.common.type.InstantMapping;
 
 import com.google.common.collect.ImmutableList;
 
@@ -182,7 +184,7 @@ public class SherlockAttributes {
                 new RangeAttribute<>(
                         SherlockParameter.RELEASE_DATES,
                         content.getReleaseDates().getReleaseDate(),
-                        InstantRangeCoercer.create()
+                        DateRangeCoercer.create()
                 ),
                 new KeywordAttribute(
                         SherlockParameter.RELEASE_DATES_COUNTRY,
@@ -197,14 +199,14 @@ public class SherlockAttributes {
 
     private List<SherlockAttribute<?, ?, ?>> getScheduleAttributes() {
         return ImmutableList.of(
-                new SherlockAttribute<Boolean, Instant, DateMapping>(
+                new SherlockAttribute<Boolean, Instant, InstantMapping>(
                         SherlockParameter.SCHEDULE_UPCOMING,
                         content.getBroadcasts().getTransmissionStartTime(),
                         BooleanCoercer.create()
                 ) {
                     @Override
                     protected NamedParameter<Instant> createParameter(
-                            DateMapping mapping, @Nonnull Boolean value
+                            InstantMapping mapping, @Nonnull Boolean value
                     ) {
                         if (value) {
                             return RangeParameter.from(mapping, Instant.now());
@@ -321,9 +323,10 @@ public class SherlockAttributes {
                         content.getLocations().getAudioBitRate(),
                         NumberRangeCoercer.createIntegerCoercer()
                 ),
-                new KeywordAttribute(
+                new EnumAttribute<>(
                         SherlockParameter.LOCATIONS_AUDIO_CODING,
-                        content.getLocations().getAudioCoding()
+                        content.getLocations().getAudioCoding(),
+                        EnumCoercer.create(MimeType::possibleFromString)
                 ),
                 new KeywordAttribute(
                         SherlockParameter.LOCATIONS_VIDEO_ASPECT_RATIO,
@@ -334,9 +337,10 @@ public class SherlockAttributes {
                         content.getLocations().getVideoBitRate(),
                         NumberRangeCoercer.createIntegerCoercer()
                 ),
-                new KeywordAttribute(
+                new EnumAttribute<>(
                         SherlockParameter.LOCATIONS_VIDEO_CODING,
-                        content.getLocations().getVideoCoding()
+                        content.getLocations().getVideoCoding(),
+                        EnumCoercer.create(MimeType::possibleFromString)
                 ),
                 new RangeAttribute<>(
                         SherlockParameter.LOCATIONS_VIDEO_FRAME_RATE,
@@ -362,9 +366,10 @@ public class SherlockAttributes {
                         content.getLocations().getDataSize(),
                         NumberRangeCoercer.createLongCoercer()
                 ),
-                new KeywordAttribute(
+                new EnumAttribute<>(
                         SherlockParameter.LOCATIONS_DATA_CONTAINER_FORMAT,
-                        content.getLocations().getDataContainerFormat()
+                        content.getLocations().getDataContainerFormat(),
+                        EnumCoercer.create(MimeType::possibleFromString)
                 ),
                 new KeywordAttribute(
                         SherlockParameter.LOCATIONS_SOURCE,
