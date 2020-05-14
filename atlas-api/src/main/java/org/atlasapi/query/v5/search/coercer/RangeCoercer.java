@@ -33,8 +33,7 @@ public abstract class RangeCoercer<T> implements AttributeCoercer<Range<T>> {
             if (parsedValue.isPresent()) {
                 return new Range<>(parsedValue.get(), parsedValue.get());
             } else {
-                T[] parseValues = bisectAndCoerce(value);
-                return new Range<>(parseValues[0], parseValues[1]);
+                return bisectAndCoerce(value);
             }
         }
     }
@@ -48,7 +47,7 @@ public abstract class RangeCoercer<T> implements AttributeCoercer<Range<T>> {
         }
     }
 
-    protected abstract T[] bisectAndCoerce(String value) throws InvalidAttributeValueException;
+    protected abstract Range<T> bisectAndCoerce(String value) throws InvalidAttributeValueException;
 
     @Override
     public List<Range<T>> apply(Iterable<String> values) throws InvalidAttributeValueException {

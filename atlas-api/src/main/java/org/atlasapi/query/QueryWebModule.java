@@ -1,9 +1,5 @@
 package org.atlasapi.query;
 
-import java.time.Instant;
-import java.util.List;
-
-import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.AtlasPersistenceModule;
@@ -167,14 +163,7 @@ import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v4.topic.TopicListWriter;
 import org.atlasapi.query.v4.topic.TopicQueryResultWriter;
 import org.atlasapi.query.v5.search.ContentResolvingSearcher;
-import org.atlasapi.query.v5.search.attribute.EnumAttribute;
-import org.atlasapi.query.v5.search.attribute.IdAttribute;
-import org.atlasapi.query.v5.search.coercer.InstantRangeCoercer;
-import org.atlasapi.query.v5.search.coercer.IntegerRangeCoercer;
-import org.atlasapi.query.v5.search.attribute.RangeAttribute;
-import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
-import org.atlasapi.query.v5.search.attribute.SherlockParameter;
-import org.atlasapi.query.v5.search.attribute.TermAttribute;
+import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.source.Sources;
 import org.atlasapi.topic.PopularTopicIndex;
@@ -187,11 +176,6 @@ import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
 import com.metabroadcast.common.time.SystemClock;
 import com.metabroadcast.representative.client.RepIdClient;
-import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
-import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
-import com.metabroadcast.sherlock.common.mapping.ContentMapping;
-import com.metabroadcast.sherlock.common.mapping.IndexMapping;
-import com.metabroadcast.sherlock.common.type.DateMapping;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -961,63 +945,12 @@ public class QueryWebModule {
         );
     }
 
-    private List<SherlockAttribute<?, ?, ?>> sherlockAttributes() {
-        ContentMapping content = IndexMapping.getContentMapping();
-        return ImmutableList.<SherlockAttribute<?, ?, ?>>builder()
-                .add(new RangeAttribute<>(
-                        SherlockParameter.YEAR,
-                        content.getYear(),
-                        IntegerRangeCoercer.create()
-                ))
-                .add(new EnumAttribute<>(
-                        SherlockParameter.TYPE,
-                        content.getType(),
-                        EnumCoercer.create(ContentType.fromKey())
-                ))
-                .add(new EnumAttribute<>(
-                        SherlockParameter.PUBLISHER,
-                        content.getSource().getKey(),
-                        EnumCoercer.create(Sources.fromKey())
-                ))
-                .add(new SherlockAttribute<Boolean, Instant, DateMapping>(
-                        SherlockParameter.SCHEDULE_UPCOMING,
-                        content.getBroadcasts().getTransmissionStartTime(),
-                        BooleanCoercer.create()
-                ) {
-                    @Override protected NamedParameter<Instant> createParameter(
-                            DateMapping mapping, @Nonnull Boolean value
-                    ) {
-                        if (value) {
-                            return RangeParameter.from(mapping, Instant.now());
-                        } else {
-                            return RangeParameter.to(mapping, Instant.now());
-                        }
-                    }
-                })
-                .add(new RangeAttribute<>(
-                        SherlockParameter.SCHEDULE_TIME,
-                        content.getBroadcasts().getTransmissionStartTime(),
-                        InstantRangeCoercer.create()
-                ))
-                .add(new IdAttribute(
-                        SherlockParameter.SCHEDULE_CHANNEL,
-                        content.getBroadcasts().getBroadcastOn(),
-                        idCodec
-                ))
-                .add(new TermAttribute<>(
-                        SherlockParameter.ON_DEMAND_AVAILABLE,
-                        content.getLocations().getAvailable(),
-                        BooleanCoercer.create()
-                ))
-                .build();
-    }
-
     @Bean
     org.atlasapi.query.v5.search.SearchController v5SearchController() {
         return new org.atlasapi.query.v5.search.SearchController(
                 v5SearchResolver,
                 configFetcher,
-                sherlockAttributes(),
+                new SherlockAttributes(idCodec).getAttributes(),
                 new IndexAnnotationsExtractor(contentAnnotationIndex()),
                 selectionBuilder(),
                 new org.atlasapi.query.v5.search.ContentQueryResultWriter(

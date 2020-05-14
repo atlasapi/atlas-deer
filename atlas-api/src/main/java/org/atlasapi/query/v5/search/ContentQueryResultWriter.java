@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -74,7 +73,7 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
     private OutputContext outputContext(QueryContext queryContext) {
 
         String channelGroupParam = queryContext.getRequest()
-                .getParameter(SherlockParameter.SCHEDULE_CHANNEL_GROUP.getName());
+                .getParameter(SherlockParameter.SCHEDULE_CHANNEL_GROUP.getParameterName());
 
         OutputContext.Builder builder = OutputContext.builder(queryContext);
 
