@@ -44,6 +44,9 @@ public class SherlockAttributes {
                 .addAll(getScheduleAttributes())
                 .addAll(getPeopleAttributes())
                 .addAll(getLocationsAttributes())
+                .addAll(getVideoAttributes())
+                .addAll(getAudioAttributes())
+                .addAll(getDataAttributes())
                 .addAll(getPricingAttributes())
                 .addAll(getContainerAttributes())
                 .addAll(getSeriesAttributes())
@@ -182,7 +185,7 @@ public class SherlockAttributes {
     private List<SherlockAttribute<?, ?, ?>> getReleaseDatesAttributes() {
         return ImmutableList.of(
                 new RangeAttribute<>(
-                        SherlockParameter.RELEASE_DATES,
+                        SherlockParameter.RELEASE_DATE,
                         content.getReleaseDates().getReleaseDate(),
                         DateRangeCoercer.create()
                 ),
@@ -273,11 +276,6 @@ public class SherlockAttributes {
 
     private List<SherlockAttribute<?, ?, ?>> getLocationsAttributes() {
         return ImmutableList.of(
-                new RangeAttribute<>(
-                        SherlockParameter.LOCATIONS_DURATION,
-                        content.getLocations().getDuration(),
-                        NumberRangeCoercer.createIntegerCoercer()
-                ),
                 new BooleanAttribute(
                         SherlockParameter.LOCATIONS_AVAILABLE,
                         content.getLocations().getAvailable()
@@ -297,79 +295,12 @@ public class SherlockAttributes {
                         content.getLocations().getAvailabilityCountries()
                 ),
                 new KeywordAttribute(
-                        SherlockParameter.LOCATIONS_CURRENCY,
-                        content.getLocations().getCurrency()
-                ),
-                new RangeAttribute<>(
-                        SherlockParameter.LOCATIONS_AMOUNT,
-                        content.getLocations().getAmount(),
-                        NumberRangeCoercer.createIntegerCoercer()
-                ),
-                new KeywordAttribute(
                         SherlockParameter.LOCATIONS_REVENUE_CONTRACT,
                         content.getLocations().getRevenueContract()
                 ),
                 new KeywordAttribute(
                         SherlockParameter.LOCATIONS_SUBSCRIPTION_PACKAGES,
                         content.getLocations().getSubscriptionPackages()
-                ),
-                new RangeAttribute<>(
-                        SherlockParameter.LOCATIONS_BIT_RATE,
-                        content.getLocations().getBitRate(),
-                        NumberRangeCoercer.createIntegerCoercer()
-                ),
-                new RangeAttribute<>(
-                        SherlockParameter.LOCATIONS_AUDIO_BIT_RATE,
-                        content.getLocations().getAudioBitRate(),
-                        NumberRangeCoercer.createIntegerCoercer()
-                ),
-                new EnumAttribute<>(
-                        SherlockParameter.LOCATIONS_AUDIO_CODING,
-                        content.getLocations().getAudioCoding(),
-                        EnumCoercer.create(MimeType::possibleFromString)
-                ),
-                new KeywordAttribute(
-                        SherlockParameter.LOCATIONS_VIDEO_ASPECT_RATIO,
-                        content.getLocations().getVideoAspectRatio()
-                ),
-                new RangeAttribute<>(
-                        SherlockParameter.LOCATIONS_VIDEO_BIT_RATE,
-                        content.getLocations().getVideoBitRate(),
-                        NumberRangeCoercer.createIntegerCoercer()
-                ),
-                new EnumAttribute<>(
-                        SherlockParameter.LOCATIONS_VIDEO_CODING,
-                        content.getLocations().getVideoCoding(),
-                        EnumCoercer.create(MimeType::possibleFromString)
-                ),
-                new RangeAttribute<>(
-                        SherlockParameter.LOCATIONS_VIDEO_FRAME_RATE,
-                        content.getLocations().getVideoFrameRate(),
-                        NumberRangeCoercer.createFloatCoercer()
-                ),
-                new RangeAttribute<>(
-                        SherlockParameter.LOCATIONS_VIDEO_HORIZONTAL_SIZE,
-                        content.getLocations().getVideoHorizontalSize(),
-                        NumberRangeCoercer.createIntegerCoercer()
-                ),
-                new BooleanAttribute(
-                        SherlockParameter.LOCATIONS_VIDEO_PROGRESSIVE_SCAN,
-                        content.getLocations().getVideoProgressiveScan()
-                ),
-                new RangeAttribute<>(
-                        SherlockParameter.LOCATIONS_VIDEO_VERTICAL_SIZE,
-                        content.getLocations().getVideoVerticalSize(),
-                        NumberRangeCoercer.createIntegerCoercer()
-                ),
-                new RangeAttribute<>(
-                        SherlockParameter.LOCATIONS_DATA_SIZE,
-                        content.getLocations().getDataSize(),
-                        NumberRangeCoercer.createLongCoercer()
-                ),
-                new EnumAttribute<>(
-                        SherlockParameter.LOCATIONS_DATA_CONTAINER_FORMAT,
-                        content.getLocations().getDataContainerFormat(),
-                        EnumCoercer.create(MimeType::possibleFromString)
                 ),
                 new KeywordAttribute(
                         SherlockParameter.LOCATIONS_SOURCE,
@@ -378,24 +309,111 @@ public class SherlockAttributes {
                 new KeywordAttribute(
                         SherlockParameter.LOCATIONS_DISTRIBUTOR,
                         content.getLocations().getDistributor()
+                )
+        );
+    }
+
+    private List<SherlockAttribute<?, ?, ?>> getVideoAttributes() {
+        return ImmutableList.of(
+                new RangeAttribute<>(
+                        SherlockParameter.VIDEO_DURATION,
+                        content.getLocations().getDuration(),
+                        NumberRangeCoercer.createIntegerCoercer()
+                ),
+                new KeywordAttribute(
+                        SherlockParameter.VIDEO_ASPECT_RATIO,
+                        content.getLocations().getVideoAspectRatio()
+                ),
+                new RangeAttribute<>(
+                        SherlockParameter.VIDEO_BIT_RATE,
+                        content.getLocations().getVideoBitRate(),
+                        NumberRangeCoercer.createIntegerCoercer()
+                ),
+                new EnumAttribute<>(
+                        SherlockParameter.VIDEO_CODING,
+                        content.getLocations().getVideoCoding(),
+                        EnumCoercer.create(MimeType::possibleFromString)
+                ),
+                new RangeAttribute<>(
+                        SherlockParameter.VIDEO_FRAME_RATE,
+                        content.getLocations().getVideoFrameRate(),
+                        NumberRangeCoercer.createFloatCoercer()
+                ),
+                new RangeAttribute<>(
+                        SherlockParameter.VIDEO_HORIZONTAL_SIZE,
+                        content.getLocations().getVideoHorizontalSize(),
+                        NumberRangeCoercer.createIntegerCoercer()
                 ),
                 new BooleanAttribute(
-                        SherlockParameter.LOCATIONS_HAS_DOG,
+                        SherlockParameter.VIDEO_PROGRESSIVE_SCAN,
+                        content.getLocations().getVideoProgressiveScan()
+                ),
+                new RangeAttribute<>(
+                        SherlockParameter.VIDEO_VERTICAL_SIZE,
+                        content.getLocations().getVideoVerticalSize(),
+                        NumberRangeCoercer.createIntegerCoercer()
+                ),
+                new BooleanAttribute(
+                        SherlockParameter.VIDEO_HAS_DOG,
                         content.getLocations().getHasDog()
                 ),
                 new BooleanAttribute(
-                        SherlockParameter.LOCATIONS_IS_3D,
+                        SherlockParameter.VIDEO_IS_3D,
                         content.getLocations().getIs3d()
                 ),
                 new KeywordAttribute(
-                        SherlockParameter.LOCATIONS_QUALITY,
+                        SherlockParameter.VIDEO_QUALITY,
                         content.getLocations().getQuality()
+                )
+        );
+    }
+
+    private List<SherlockAttribute<?, ?, ?>> getAudioAttributes() {
+        return ImmutableList.of(
+                new RangeAttribute<>(
+                        SherlockParameter.AUDIO_BIT_RATE,
+                        content.getLocations().getAudioBitRate(),
+                        NumberRangeCoercer.createIntegerCoercer()
+                ),
+                new EnumAttribute<>(
+                        SherlockParameter.AUDIO_CODING,
+                        content.getLocations().getAudioCoding(),
+                        EnumCoercer.create(MimeType::possibleFromString)
+                )
+        );
+    }
+
+    private List<SherlockAttribute<?, ?, ?>> getDataAttributes() {
+        return ImmutableList.of(
+                new RangeAttribute<>(
+                        SherlockParameter.DATA_BIT_RATE,
+                        content.getLocations().getBitRate(),
+                        NumberRangeCoercer.createIntegerCoercer()
+                ),
+                new RangeAttribute<>(
+                        SherlockParameter.DATA_SIZE,
+                        content.getLocations().getDataSize(),
+                        NumberRangeCoercer.createLongCoercer()
+                ),
+                new EnumAttribute<>(
+                        SherlockParameter.DATA_CONTAINER_FORMAT,
+                        content.getLocations().getDataContainerFormat(),
+                        EnumCoercer.create(MimeType::possibleFromString)
                 )
         );
     }
 
     private List<SherlockAttribute<?, ?, ?>> getPricingAttributes() {
         return ImmutableList.of(
+                new KeywordAttribute(
+                        SherlockParameter.PRICING_CURRENCY,
+                        content.getLocations().getCurrency()
+                ),
+                new RangeAttribute<>(
+                        SherlockParameter.PRICING_AMOUNT,
+                        content.getLocations().getAmount(),
+                        NumberRangeCoercer.createIntegerCoercer()
+                ),
                 new RangeAttribute<>(
                         SherlockParameter.PRICING_START_TIME,
                         content.getLocations().getPricing().getStartTime(),
@@ -407,12 +425,12 @@ public class SherlockAttributes {
                         InstantRangeCoercer.create()
                 ),
                 new RangeAttribute<>(
-                        SherlockParameter.PRICING_PRICE,
+                        SherlockParameter.PRICING_TIMED_AMOUNT,
                         content.getLocations().getPricing().getPrice(),
                         NumberRangeCoercer.createIntegerCoercer()
                 ),
                 new KeywordAttribute(
-                        SherlockParameter.PRICING_CURRENCY,
+                        SherlockParameter.PRICING_TIMED_CURRENCY,
                         content.getLocations().getPricing().getCurrency()
                 )
         );
