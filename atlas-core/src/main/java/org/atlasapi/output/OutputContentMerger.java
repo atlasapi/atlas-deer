@@ -165,8 +165,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private <T extends Described> T createChosen(Iterable<? extends T> orderedContent) {
 
+        T highestPrecedenceContent = orderedContent.iterator().next();
+
         // First, we need to get the most specific type in the equiv set for chosen
-        T mostSpecificTypeContent = orderedContent.iterator().next();
+        T mostSpecificTypeContent = highestPrecedenceContent;
         for (T next : ImmutableList.copyOf(orderedContent)) {
             if (!mostSpecificTypeContent.getClass().equals(next.getClass())
                     && mostSpecificTypeContent.getClass().isAssignableFrom(next.getClass())) {
@@ -175,9 +177,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         T chosen = mostSpecificTypeContent;
 
-        //TODO to remove, probably? since merging happens later on on a field-by-field basis.
-        //TODO perhaps only leave: chosen = highestPrecedenceContent.copyToPrferNonNull(chosen);
-//        // Then we need as much data as possible from the highest precedence source possible
+        // Then we need as much data as possible from the highest precedence source possible
+        chosen = highestPrecedenceContent.copyToPreferNonNull(chosen);
+
+        //TODO following is probably unnecessary? since merging happens later on on a field-by-field basis.
 //        List<T> reverseOrderedContent = new ArrayList<>(orderedContent);
 //        Collections.reverse(reverseOrderedContent);
 //        for(T next : reverseOrderedContent) {
