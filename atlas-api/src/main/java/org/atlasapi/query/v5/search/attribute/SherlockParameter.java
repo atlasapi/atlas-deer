@@ -21,7 +21,7 @@ public enum SherlockParameter {
     YEAR(ParameterType.FILTER, "year"),
     TOP_LEVEL(ParameterType.FILTER, "top_level"),
     PUBLISHER(ParameterType.FILTER, "publisher"),
-    PUBLISHER_COUNTRY(ParameterType.FILTER, "publisher_country"),
+    PUBLISHER_COUNTRY(ParameterType.FILTER, "publisher.country"),
 
     // Alias
     ALIASES_VALUE(ParameterType.FILTER, "aliases.value"),
@@ -38,7 +38,7 @@ public enum SherlockParameter {
     CERTIFICATES_CODE(ParameterType.FILTER, "certificates.code"),
 
     // Languages
-    LANGUAGES_CODE(ParameterType.FILTER, "languages"),
+    LANGUAGES_CODE(ParameterType.FILTER, "language"),
 
     // Release dates
     RELEASE_DATES(ParameterType.FILTER, "release_date"),
@@ -46,12 +46,12 @@ public enum SherlockParameter {
     RELEASE_DATES_TYPE(ParameterType.FILTER, "release_dates.type"),
 
     // Broadcast / Schedule
-    SCHEDULE_UPCOMING(ParameterType.FILTER, "schedule.upcoming"),
+    SCHEDULE_UPCOMING(ParameterType.FILTER, "upcoming"),
     SCHEDULE_START_TIME(ParameterType.FILTER, "schedule.start_time"),
     SCHEDULE_END_TIME(ParameterType.FILTER, "schedule.end_time"),
     SCHEDULE_DURATION(ParameterType.FILTER, "schedule.duration"),
     SCHEDULE_CHANNEL(ParameterType.FILTER, "schedule.channel"),
-    SCHEDULE_CHANNEL_GROUP(ParameterType.FILTER, "schedule.channelGroup"),
+    SCHEDULE_CHANNEL_GROUP(ParameterType.FILTER, "schedule.channel_group"),
 
     // People
     PEOPLE_URI(ParameterType.FILTER, "people.uri"),
@@ -63,7 +63,6 @@ public enum SherlockParameter {
     PEOPLE_CHARACTER(ParameterType.FILTER, "people.character"),
 
     // Locations
-    LOCATIONS_DURATION(ParameterType.FILTER, "locations.duration"),
     LOCATIONS_AVAILABLE(ParameterType.FILTER, "locations.available"),
     LOCATIONS_AVAILABILITY_START(ParameterType.FILTER, "locations.availability_start"),
     LOCATIONS_AVAILABILITY_END(ParameterType.FILTER, "locations.availability_end"),
@@ -73,22 +72,27 @@ public enum SherlockParameter {
     LOCATIONS_REVENUE_CONTRACT(ParameterType.FILTER, "locations.revenue_contract"),
     LOCATIONS_SUBSCRIPTION_PACKAGES(ParameterType.FILTER, "locations.subscription_packages"),
     LOCATIONS_BIT_RATE(ParameterType.FILTER, "locations.bit_rate"),
-    LOCATIONS_AUDIO_BIT_RATE(ParameterType.FILTER, "locations.audio_bit_rate"),
-    LOCATIONS_AUDIO_CODING(ParameterType.FILTER, "locations.audio_coding"),
-    LOCATIONS_VIDEO_ASPECT_RATIO(ParameterType.FILTER, "locations.video_aspect_ratio"),
-    LOCATIONS_VIDEO_BIT_RATE(ParameterType.FILTER, "locations.video_bit_rate"),
-    LOCATIONS_VIDEO_CODING(ParameterType.FILTER, "locations.video_coding"),
-    LOCATIONS_VIDEO_FRAME_RATE(ParameterType.FILTER, "locations.video_frame_rate"),
-    LOCATIONS_VIDEO_HORIZONTAL_SIZE(ParameterType.FILTER, "locations.video_horizontal_size"),
-    LOCATIONS_VIDEO_PROGRESSIVE_SCAN(ParameterType.FILTER, "locations.video_progressive_scan"),
-    LOCATIONS_VIDEO_VERTICAL_SIZE(ParameterType.FILTER, "locations.video_vertical_size"),
     LOCATIONS_DATA_SIZE(ParameterType.FILTER, "locations.data_size"),
     LOCATIONS_DATA_CONTAINER_FORMAT(ParameterType.FILTER, "locations.data_container_format"),
     LOCATIONS_SOURCE(ParameterType.FILTER, "locations.source"),
     LOCATIONS_DISTRIBUTOR(ParameterType.FILTER, "locations.distributor"),
     LOCATIONS_HAS_DOG(ParameterType.FILTER, "locations.has_dog"),
-    LOCATIONS_IS_3D(ParameterType.FILTER, "locations.is_3d"),
-    LOCATIONS_QUALITY(ParameterType.FILTER, "locations.quality"),
+
+    // Audio
+    LOCATIONS_AUDIO_BIT_RATE(ParameterType.FILTER, "audio.bit_rate"),
+    LOCATIONS_AUDIO_CODING(ParameterType.FILTER, "audio.coding"),
+
+    // Video
+    LOCATIONS_DURATION(ParameterType.FILTER, "video.duration"),
+    LOCATIONS_VIDEO_ASPECT_RATIO(ParameterType.FILTER, "video.aspect_ratio"),
+    LOCATIONS_VIDEO_BIT_RATE(ParameterType.FILTER, "video.bit_rate"),
+    LOCATIONS_VIDEO_CODING(ParameterType.FILTER, "video.coding"),
+    LOCATIONS_VIDEO_FRAME_RATE(ParameterType.FILTER, "video.frame_rate"),
+    LOCATIONS_VIDEO_HORIZONTAL_SIZE(ParameterType.FILTER, "video.horizontal_size"),
+    LOCATIONS_VIDEO_PROGRESSIVE_SCAN(ParameterType.FILTER, "video.progressive_scan"),
+    LOCATIONS_VIDEO_VERTICAL_SIZE(ParameterType.FILTER, "video.vertical_size"),
+    LOCATIONS_QUALITY(ParameterType.FILTER, "video.quality"),
+    LOCATIONS_IS_3D(ParameterType.FILTER, "video.is_3d"),
 
     // Pricing
     PRICING_START_TIME(ParameterType.FILTER, "pricing.start_time"),
@@ -132,7 +136,7 @@ public enum SherlockParameter {
 
     // Reviews
     REVIEWS_REVIEW(ParameterType.SEARCH, "reviews.review"),
-    REVIEWS_LOCALE(ParameterType.FILTER, "reviews.locale"),
+    REVIEWS_LANGUAGE(ParameterType.FILTER, "reviews.language"),
     REVIEWS_AUTHOR(ParameterType.FILTER, "reviews.author"),
     REVIEWS_AUTHOR_INITIALS(ParameterType.FILTER, "reviews.author_initials"),
     REVIEWS_RATING(ParameterType.FILTER, "reviews.rating"),

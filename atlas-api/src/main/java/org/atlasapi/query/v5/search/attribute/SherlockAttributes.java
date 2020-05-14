@@ -548,8 +548,8 @@ public class SherlockAttributes {
                         content.getReviews().getReview()
                 ),
                 new KeywordAttribute(
-                        SherlockParameter.REVIEWS_LOCALE,
-                        content.getReviews().getLocale()
+                        SherlockParameter.REVIEWS_LANGUAGE,
+                        content.getReviews().getLanguage()
                 ),
                 new KeywordAttribute(
                         SherlockParameter.REVIEWS_AUTHOR,
