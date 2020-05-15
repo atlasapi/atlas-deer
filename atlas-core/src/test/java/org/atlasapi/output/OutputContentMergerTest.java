@@ -10,14 +10,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import org.atlasapi.content.Actor;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
@@ -25,6 +18,8 @@ import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.CrewMember;
+import org.atlasapi.content.Described;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.EpisodeRef;
 import org.atlasapi.content.Image;
@@ -34,15 +29,27 @@ import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.Review;
+import org.atlasapi.entity.Sourced;
+import org.atlasapi.entity.Sourceds;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
@@ -64,6 +71,7 @@ public class OutputContentMergerTest {
             new MostPrecidentWithChildrenContentHierarchyChooser()
     );
 
+    //TODO what is the purpose of this test?
     @Test
     public void testSortOfCommonSourceContentIsStable() {
         Brand one = brand(1L, "one", Publisher.BBC);
@@ -89,6 +97,7 @@ public class OutputContentMergerTest {
         }
     }
 
+    //TODO what is the purpose of this test?
     @Test
     public void testMergedContentHasLowestIdOfContentInEquivalenceSet() {
 
@@ -100,8 +109,7 @@ public class OutputContentMergerTest {
         setEquivalent(two, one, three);
         setEquivalent(three, two, one);
 
-        //two is intentionally missing here
-        ImmutableList<Brand> contents = ImmutableList.of(one, three);
+        ImmutableList<Brand> contents = ImmutableList.of(one, two, three);
 
         Application application = getApplicationWithPrecedence(true, Publisher.BBC, Publisher.TED);
 
@@ -115,10 +123,33 @@ public class OutputContentMergerTest {
         setEquivalent(two, one, three);
         setEquivalent(three, two, one);
 
-        contents = ImmutableList.of(one, three);
+        contents = ImmutableList.of(one, two, three);
 
         application = getApplicationWithPrecedence(true, Publisher.TED, Publisher.BBC);
         mergePermutations(contents, application, three, two.getId());
+    }
+
+    @Test
+    public void mergedContentHasPublisherOfLowestIdContentInEquivalenceSet() {
+        Item highestPrecedence = item(2, "whatever 2", Publisher.PA);
+        Item lowestId = item(1, "whatever 1", Publisher.BBC);
+
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.PA,
+                Publisher.RADIO_TIMES,
+                Publisher.BBC
+        );
+
+        Item merged = merger.merge(
+                highestPrecedence,
+                ImmutableList.of(highestPrecedence, lowestId),
+                application,
+                Collections.emptySet()
+        );
+
+        assertEquals(merged.getCanonicalUri(), highestPrecedence.getCanonicalUri());
+        assertEquals(merged.getSource(), lowestId.getSource());
     }
 
     @Test
@@ -481,7 +512,7 @@ public class OutputContentMergerTest {
     }
 
     @Test
-    public void testImageWithMerging() {
+    public void testImageWithMergingAndFilteringOutGenericImages() {
         Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.BBC,
@@ -575,7 +606,7 @@ public class OutputContentMergerTest {
         item2.setImage(image2.getCanonicalUri());
         item2.setImages(ImmutableSet.of(image2));
 
-        Content merged = merger.merge(item2,  ImmutableList.of(item1), application,
+        Content merged = merger.merge(item2,  ImmutableList.of(item1, item2), application,
                 Collections.emptySet()
         );
         assertNull(merged.getImage());
@@ -583,7 +614,7 @@ public class OutputContentMergerTest {
     }
 
     @Test
-    // If there are multiple items in the equivalent set belonging to the same source 
+    // If there are multiple items in the equivalent set belonging to the same source
     // as the item whose broadcasts are chosen, then broadcasts across all items from
     // that source should be output, since it is assumed that within a data source
     // broadcasts aren't duplicated
@@ -874,11 +905,91 @@ public class OutputContentMergerTest {
                 Publisher.RADIO_TIMES
         );
 
-        Item merged = merger.merge(chosen, ImmutableSet.<Item>builder().add(notChosen).build(), application,
+        Item merged = merger.merge(chosen, ImmutableSet.<Item>builder().add(chosen, notChosen).build(), application,
                 Collections.emptySet()
         );
 
         assertEquals(merged.getDescription(), correctDescription);
+    }
+
+    //TODO check equiv set in .equivalentTo is correct
+
+    @Test
+    public void mergeSimpleField() {
+        Item highestPrecedence = item(2, "not relevant", Publisher.PA);
+        highestPrecedence.setTitle("Desired Title");
+
+        Item lowerPrecedence = item(1, "also not relevant", Publisher.YOUVIEW);
+        lowerPrecedence.setTitle("Wrong Title");
+        Actor actor3 = Actor.actor("13", "Sir Lancelot", "Some Guy", Publisher.YOUVIEW);
+        lowerPrecedence.setPeople(ImmutableList.of(actor3));
+
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.PA,
+                Publisher.YOUVIEW
+        );
+
+        List<Item> orderedContent = sortByPublisher(application, ImmutableList.of(highestPrecedence, lowerPrecedence));
+
+        Item merged = merger.merge(highestPrecedence, orderedContent, application, Collections.emptySet());
+
+        assertEquals(merged.getTitle(), "Desired Title");
+    }
+
+    @Test
+    public void mergeListFieldThatShouldBeMerged() {
+        Item highestPrecedence = item(2, "not relevant", Publisher.PA);
+        Image image1 = new Image("http://image1.org/");
+        image1.setSource(highestPrecedence.getSource());
+        highestPrecedence.setImage(image1.getCanonicalUri());
+        highestPrecedence.setImages(ImmutableSet.of(image1));
+
+        Item anotherHighestPrecedence = item(3, "again not relevant", Publisher.PA);
+        Image image2 = new Image("http://image2.org/");
+        image2.setSource(anotherHighestPrecedence.getSource());
+        anotherHighestPrecedence.setImage(image2.getCanonicalUri());
+        anotherHighestPrecedence.setImages(ImmutableSet.of(image2));
+
+        Item lowerPrecedence = item(1, "also not relevant", Publisher.YOUVIEW);
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.PA,
+                Publisher.YOUVIEW
+        );
+
+        List<Item> orderedContent = sortByPublisher(application, ImmutableList.of(highestPrecedence, anotherHighestPrecedence, lowerPrecedence));
+
+        Item merged = merger.merge(highestPrecedence, orderedContent, application, Collections.emptySet());
+
+        assertThat(merged.getImages(), is(ImmutableList.of(image1, image2)));
+    }
+
+    @Test
+    public void mergeListFieldThatShouldNotBeMerged() {
+        Item highestPrecedence = item(2, "not relevant", Publisher.PA);
+        Actor actor1 = Actor.actor("11", "John Wick", "Keanu Reeves", Publisher.PA);
+        highestPrecedence.setPeople(ImmutableList.of(actor1));
+        Actor actor2 = Actor.actor("12", "Iosef Tarasov", "Alfie Allen", Publisher.PA);
+        highestPrecedence.setPeople(ImmutableList.of(actor2));
+
+        Item anotherHighestPrecedence = item(3, "again not relevant", Publisher.PA);
+
+        Item lowerPrecedence = item(1, "also not relevant", Publisher.YOUVIEW);
+        Actor actor3 = Actor.actor("13", "Sir Lancelot", "Some Guy", Publisher.YOUVIEW);
+        lowerPrecedence.setPeople(ImmutableList.of(actor3));
+
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.PA,
+                Publisher.YOUVIEW
+        );
+
+        List<Item> orderedContent = sortByPublisher(application, ImmutableList.of(highestPrecedence, anotherHighestPrecedence, lowerPrecedence));
+
+        Item merged = merger.merge(highestPrecedence, orderedContent, application, Collections.emptySet());
+
+        assertEquals(ImmutableList.of(actor1, actor2), merged.getPeople());
     }
 
     private List<Rating> addRatings(Item item, Float... ratingValues) {
@@ -980,5 +1091,25 @@ public class OutputContentMergerTest {
         when(application.getConfiguration()).thenReturn(configuration);
 
         return application;
+    }
+
+    private <T extends Described> List<T> findSame(T content, Iterable<T> contents) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        builder.add(content);
+        for (T possiblyEquivalent : contents) {
+            if (!content.equals(possiblyEquivalent) && possiblyEquivalent.isEquivalentTo(content)) {
+                builder.add(possiblyEquivalent);
+            }
+        }
+        return builder.build();
+    }
+
+    private <T extends Described> List<T> sortByPublisher(Application application, List<T> contents) {
+
+        Ordering<Sourced> publisherComparator = application.getConfiguration()
+                .getReadPrecedenceOrdering()
+                .onResultOf(Sourceds.toPublisher());
+
+        return publisherComparator.sortedCopy(findSame(contents.get(0), contents));
     }
 }

@@ -413,6 +413,9 @@ public abstract class Described extends Identified implements Sourced {
 
     public abstract Described copy();
 
+    //Allows to create a new content of the same type without having to know or figure out the type
+    public abstract Described createNew();
+
     public <T extends Described> boolean isEquivalentTo(T content) {
         return getEquivalentTo().contains(EquivalenceRef.valueOf(content))
                 || Iterables.contains(

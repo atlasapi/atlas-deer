@@ -69,6 +69,11 @@ public class Brand extends Container {
         return Brand.copyTo(this, new Brand());
     }
 
+    @Override
+    public Described createNew() {
+        return new Brand();
+    }
+
     public <V> V accept(ContainerVisitor<V> visitor) {
         return visitor.visit(this);
     }

@@ -206,6 +206,10 @@ public class Item extends Content {
         return copyTo(this, new Item());
     }
 
+    public Item createNew() {
+        return new Item();
+    }
+
     public Item withSortKey(String sortKey) {
         this.sortKey = sortKey;
         return this;

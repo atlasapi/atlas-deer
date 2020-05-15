@@ -73,6 +73,11 @@ public class Series extends Container {
         return copyTo(this, new Series());
     }
 
+    @Override
+    public Described createNew() {
+        return new Series();
+    }
+
     public SeriesRef toRef() {
         return new SeriesRef(getId(), getSource(), Strings.nullToEmpty(this.getTitle()),
                 this.seriesNumber, getThisOrChildLastUpdated(), getYear(), getCertificates()

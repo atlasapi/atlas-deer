@@ -3,7 +3,6 @@ package org.atlasapi.output;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +34,7 @@ import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Series;
+import org.atlasapi.content.Song;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Award;
@@ -140,7 +140,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             List<T> orderedContent = publisherComparator.sortedCopy(findSame(content, contents));
             processed.addAll(orderedContent);
 
-            T chosen = createChosen(orderedContent);
+            T chosen = createMerged(orderedContent);
 
             // defend against broken transitive equivalence
             if (merged.contains(chosen)) {
@@ -162,61 +162,58 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         return merged;
     }
 
+    //sortedEquivalents must be ordered according to source precedence
+    private <T extends Described> T createMerged(Iterable<? extends T> sortedEquivalents) {
 
-    private <T extends Described> T createChosen(Iterable<? extends T> orderedContent) {
+        T highestPrecedenceContent = sortedEquivalents.iterator().next();
 
-        T highestPrecedenceContent = orderedContent.iterator().next();
-
-        // First, we need to get the most specific type in the equiv set for chosen
+        // First, we need to get the most specific type in the equiv set for merged
         T mostSpecificTypeContent = highestPrecedenceContent;
-        for (T next : ImmutableList.copyOf(orderedContent)) {
+        for (T next : ImmutableList.copyOf(sortedEquivalents)) {
             if (!mostSpecificTypeContent.getClass().equals(next.getClass())
                     && mostSpecificTypeContent.getClass().isAssignableFrom(next.getClass())) {
                 mostSpecificTypeContent = next;
             }
         }
-        T chosen = mostSpecificTypeContent;
+
+        //Unchecked casting is safe here because we get the most specific type from the hierarchy
+        T merged = (T) mostSpecificTypeContent.createNew();
 
         // Then we need as much data as possible from the highest precedence source possible
-        chosen = highestPrecedenceContent.copyToPreferNonNull(chosen);
-
-        //TODO following is probably unnecessary? since merging happens later on on a field-by-field basis.
-//        List<T> reverseOrderedContent = new ArrayList<>(orderedContent);
-//        Collections.reverse(reverseOrderedContent);
-//        for(T next : reverseOrderedContent) {
-//            chosen = next.copyToPreferNonNull(chosen);
-//        }
+        merged = highestPrecedenceContent.copyToPreferNonNull(merged);
 
         // Finally, we need the lowest id in the equiv set, in an attempt to keep the id stable
-        IdAndPublisher idAndPublisher = findLowestIdContent(orderedContent);
+        IdAndPublisher idAndPublisher = findLowestIdContent(sortedEquivalents);
         Id id = idAndPublisher.getId();
-        chosen.setId(id);
+        merged.setId(id);
         Publisher publisher = idAndPublisher.getPublisher();    // update publisher accordingly
-        chosen.setPublisher(publisher);
+        merged.setPublisher(publisher);
 
-        return chosen;
+        return merged;
     }
 
     // finds the content with the lowest id, returning its id and its publisher
     private <T extends Described> IdAndPublisher findLowestIdContent(Iterable<T> orderedContent) {
-        EquivalenceRef lowestRef = lowestEquivRef(orderedContent.iterator().next());
+        EquivalenceRef lowestRef = lowestEquivRef(orderedContent);
 
         return new IdAndPublisher(lowestRef.getId(), lowestRef.getSource());
     }
 
     private static final Ordering<EquivalenceRef> EQUIV_ID_ORDERING =
             Ordering.from(Comparator.comparing(EquivalenceRef::getId)).nullsLast();
-    private <T extends Described> EquivalenceRef lowestEquivRef(T chosen) {
-        EquivalenceRef lowest = EquivalenceRef.valueOf(chosen);
-        for (EquivalenceRef ref : chosen.getEquivalentTo()) {
+    private <T extends Described> EquivalenceRef lowestEquivRef(Iterable<T> orderedContent) {
+        EquivalenceRef lowest = EquivalenceRef.valueOf(orderedContent.iterator().next());
+
+        for (T content : orderedContent) {
+            EquivalenceRef ref = EquivalenceRef.valueOf(content);
             lowest = EQUIV_ID_ORDERING.min(lowest, ref);
         }
         return lowest;
     }
 
-    private <T extends Described> T mergeIdAndEquivTo(T chosen) {
+/*    private <T extends Described> T mergeIdAndEquivTo(T chosen) {
         EquivalenceRef chosenRef = EquivalenceRef.valueOf(chosen);
-        EquivalenceRef lowestRef = lowestEquivRef(chosen);
+        EquivalenceRef lowestRef = lowestEquivRef(orderedContent);
         if (chosenRef.equals(lowestRef)) {
             return chosen;
         }
@@ -233,24 +230,24 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         chosen.setPublisher(lowestRef.getSource());
         chosen.setEquivalentTo(newEquivs);
         return chosen;
-    }
+    }*/
 
     @Override
-    public <T extends Content> T merge(T chosen, final Iterable<? extends T> equivalents,
+    public <T extends Content> T merge(T chosen, final Iterable<? extends T> sortedEquivalents,
             final Application application,
             Set<Annotation> activeAnnotations) {
-        chosen = createChosen(equivalents);
+        chosen = createMerged(sortedEquivalents);
         return chosen.accept(new ContentVisitorAdapter<T>() {
 
             @Override
             protected T visitContainer(Container container) {
-                mergeIn(application, container, filterEquivs(equivalents, Container.class));
+                mergeIn(application, container, filterEquivs(sortedEquivalents, Container.class));
                 return uncheckedCast(container);
             }
 
             @Override
             protected T visitItem(Item item) {
-                mergeIn(application, item, filterEquivs(equivalents, Item.class), activeAnnotations);
+                mergeIn(application, item, filterEquivs(sortedEquivalents, Item.class), activeAnnotations);
                 return uncheckedCast(item);
             }
 
@@ -449,6 +446,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 orderedContent,
                 Content::getCountriesOfOrigin
         ));
+
+        //TODO add mergePeople()
     }
 
     private <T extends Content> void mergeDuration(T chosen, Iterable<T> orderedContent) {
@@ -536,6 +535,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         ));
     }
 
+    //TODO move language + certificates from mergeFilm to mergeContent?
     private void mergeFilmProperties(Application application, Film chosen,
             Iterable<Film> orderedContent) {
 
@@ -656,6 +656,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             return;
         }
 
+        //TODO remove this ordering, as orderedContent is already sorted by source precedence
         //first = piece of content with highest precedence source with broadcasts
         List<T> first = application.getConfiguration()
                 .getReadPrecedenceOrdering()
