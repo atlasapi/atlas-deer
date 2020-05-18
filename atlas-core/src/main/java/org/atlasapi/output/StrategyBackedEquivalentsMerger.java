@@ -9,8 +9,10 @@ import java.util.stream.Collectors;
 import com.metabroadcast.applications.client.model.internal.Application;
 
 import org.atlasapi.annotation.Annotation;
+import org.atlasapi.content.Described;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
 import org.atlasapi.equivalence.Equivalable;
@@ -39,11 +41,13 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         if (!application.getConfiguration().isPrecedenceEnabled()) {
             return ImmutableList.copyOf(equivalents);
         }
-        Ordering<Sourced> equivsOrdering = application.getConfiguration()
+        Ordering<Sourced> publisherOrdering = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourced::getSource);
+        Ordering<T> idOrdering = Ordering.natural().onResultOf(Equivalable::getId);
+        Ordering<T> equivsOrdering = publisherOrdering.compound(idOrdering);
 
-        ImmutableList<T> sortedEquivalents = equivsOrdering.immutableSortedCopy(equivalents);
+        List<T> sortedEquivalents = equivsOrdering.sortedCopy(equivalents);
 
         if (sortedEquivalents.isEmpty()) {
             return ImmutableList.of();
@@ -51,8 +55,7 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         if (trivialMerge(sortedEquivalents)) {
             return ImmutableList.of(
                     strategy.merge(
-                            Iterables.getFirst(sortedEquivalents, null),
-                            ImmutableList.of(),
+                            sortedEquivalents,
                             application,
                             activeAnnotations
                     )
@@ -61,19 +64,22 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         T chosen = sortedEquivalents.get(0);
 
         if (id.isPresent()) {
+            //TODO: find by index, then get it from the index and remove it, and then move it to the start
             Optional<T> requested = Iterables.tryFind(equivalents, idIs(id.get()));
 
             if (requested.isPresent()
                     && chosen.getSource().equals(requested.get().getSource())) {
+                //TODO: here, mess with sortedEquivalents order so that requested becomes first
                 chosen = requested.get();
+                sortedEquivalents.remove(requested.get());
+                sortedEquivalents.add(0, requested.get());
             }
         }
 
-        return ImmutableList.of(strategy.merge(chosen,
-                new HashSet<>(sortedEquivalents), application, activeAnnotations));
+        return ImmutableList.of(strategy.merge(sortedEquivalents, application, activeAnnotations));
     }
 
-    private boolean trivialMerge(ImmutableList<?> sortedEquivalents) {
+    private boolean trivialMerge(List<?> sortedEquivalents) {
         return sortedEquivalents.size() == 1;
     }
 

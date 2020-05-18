@@ -119,49 +119,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         this.hierarchyChooser = checkNotNull(hierarchyChooser);
     }
 
-    @Deprecated
-    public <T extends Described> List<T> merge(
-            Application application,
-            List<T> contents,
-            Set<Annotation> activeAnnotations
-    ) {
-
-        Ordering<Sourced> publisherComparator = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher());
-
-        List<T> merged = Lists.newArrayListWithCapacity(contents.size());
-        Set<T> processed = Sets.newHashSet();
-
-        for (T content : contents) {
-            if (processed.contains(content)) {
-                continue;
-            }
-            List<T> orderedContent = publisherComparator.sortedCopy(findSame(content, contents));
-            processed.addAll(orderedContent);
-
-            T chosen = createMerged(orderedContent);
-
-            // defend against broken transitive equivalence
-            if (merged.contains(chosen)) {
-                continue;
-            }
-
-            //TODO remove chosen + notChosen concats.
-            if (chosen instanceof Container) {
-                mergeIn(application, (Container) chosen, filterEquivs(orderedContent, Container.class));
-            }
-            if (chosen instanceof Item) {
-                mergeIn(application, (Item) chosen, filterEquivs(orderedContent, Item.class), activeAnnotations);
-            }
-            if (chosen instanceof ContentGroup) {
-                mergeIn(application, (ContentGroup) chosen, filterEquivs(orderedContent, ContentGroup.class));
-            }
-            merged.add(chosen);
-        }
-        return merged;
-    }
-
     //sortedEquivalents must be ordered according to source precedence
     private <T extends Described> T createMerged(Iterable<? extends T> sortedEquivalents) {
 
@@ -233,10 +190,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }*/
 
     @Override
-    public <T extends Content> T merge(T chosen, final Iterable<? extends T> sortedEquivalents,
+    public <T extends Content> T merge(
+            final Iterable<? extends T> sortedEquivalents,
             final Application application,
-            Set<Annotation> activeAnnotations) {
-        chosen = createMerged(sortedEquivalents);
+            Set<Annotation> activeAnnotations)
+    {
+        T chosen = createMerged(sortedEquivalents);
         return chosen.accept(new ContentVisitorAdapter<T>() {
 
             @Override
@@ -447,7 +406,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 Content::getCountriesOfOrigin
         ));
 
-        //TODO add mergePeople()
+        //TODO add mergePeople() (have only people from highest precedence content)
     }
 
     private <T extends Content> void mergeDuration(T chosen, Iterable<T> orderedContent) {
@@ -572,6 +531,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
     }
 
+    //TODO have all images ordered by source precedence, not just higher
     private <T extends Described> void applyImagePrefs(Application application, T chosen,
             Iterable<T> orderedContent) {
         if (application.getConfiguration().isImagePrecedenceEnabled()) {
