@@ -22,9 +22,6 @@ public class SearchAttribute extends SherlockAttribute<String, String, TextMappi
 
     @Override
     protected NamedParameter<String> createParameter(TextMapping mapping, @Nonnull String value) {
-        return SearchParameter.builder()
-                .withMapping(mapping)
-                .withValue(value)
-                .build();
+        return SearchParameter.of(mapping, value);
     }
 }
