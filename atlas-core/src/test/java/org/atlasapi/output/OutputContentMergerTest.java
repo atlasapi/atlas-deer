@@ -33,6 +33,7 @@ import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.Review;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.entity.Sourceds;
+import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
@@ -85,8 +86,7 @@ public class OutputContentMergerTest {
         ImmutableList<Brand> contents = ImmutableList.of(one, two, three);
 
         for (List<Brand> contentList : Collections2.permutations(contents)) {
-            //TODO ordering needs to happen here, or use the merge in StrategyBackedEquivalentsMerger
-            // and let it do the sorting - but then isn't there already a test for that there?
+            contentList = sortByPublisherThenId(application, contentList);
             Brand merged = merger.merge(contentList, application, Collections.emptySet());
 
             assertThat(contentList.toString(), merged.getId(), is(one.getId()));
@@ -898,21 +898,47 @@ public class OutputContentMergerTest {
         assertEquals(merged.getDescription(), correctDescription);
     }
 
-    //TODO check equiv set in .equivalentTo is correct
     @Test
-    public void mergeInnerEquivalentSet() {
+    public void mergeReturnsCorrectEquivalentToSet() {
+        Container one = brand(1L, "one", Publisher.BBC);
+        Container two = brand(2L, "two", Publisher.RADIO_TIMES);
+        Container three = brand(3L, "three", Publisher.PA);
 
+        setEquivalent(one, two, three);
+        setEquivalent(two, one, three);
+        setEquivalent(three, two, one);
+
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.RADIO_TIMES,
+                Publisher.PA,
+                Publisher.BBC
+        );
+
+        List<Container> orderedContent = sortByPublisherThenId(application, ImmutableList.of(one, two, three));
+
+        Container merged = merger.merge(orderedContent, application, Collections.emptySet());
+
+        assertThat(merged.getCanonicalUri(), is(orderedContent.iterator().next().getCanonicalUri()));
+        assertThat(merged.getId(), is(one.getId()));
+        assertThat(merged.getEquivalentTo(), is(ImmutableSet.of(EquivalenceRef.valueOf(two), EquivalenceRef.valueOf(three))));
+
+        orderedContent = sortByPublisherThenId(application, ImmutableList.of(two, three));
+        setEquivalent(two, three);
+        setEquivalent(three, two);
+        merged = merger.merge(orderedContent, application, Collections.emptySet());
+        assertThat(merged.getCanonicalUri(), is(orderedContent.iterator().next().getCanonicalUri()));
+        assertThat(merged.getId(), is(two.getId()));
+        assertThat(merged.getEquivalentTo(), is(ImmutableSet.of(EquivalenceRef.valueOf(three))));
     }
 
     @Test
-    public void mergeSimpleField() {
+    public void mergeSimpleFieldWhenLowestIdIsNotHighestPrecedence() {
         Item highestPrecedence = item(2, "not relevant", Publisher.PA);
         highestPrecedence.setTitle("Desired Title");
 
         Item lowerPrecedence = item(1, "also not relevant", Publisher.YOUVIEW);
         lowerPrecedence.setTitle("Wrong Title");
-        Actor actor3 = Actor.actor("13", "Sir Lancelot", "Some Guy", Publisher.YOUVIEW);
-        lowerPrecedence.setPeople(ImmutableList.of(actor3));
 
         Application application = getApplicationWithPrecedence(
                 true,
@@ -920,7 +946,7 @@ public class OutputContentMergerTest {
                 Publisher.YOUVIEW
         );
 
-        List<Item> orderedContent = sortByPublisher(application, ImmutableList.of(highestPrecedence, lowerPrecedence));
+        List<Item> orderedContent = sortByPublisherThenId(application, ImmutableList.of(highestPrecedence, lowerPrecedence));
 
         Item merged = merger.merge(orderedContent, application, Collections.emptySet());
 
@@ -948,7 +974,7 @@ public class OutputContentMergerTest {
                 Publisher.YOUVIEW
         );
 
-        List<Item> orderedContent = sortByPublisher(application, ImmutableList.of(highestPrecedence, anotherHighestPrecedence, lowerPrecedence));
+        List<Item> orderedContent = sortByPublisherThenId(application, ImmutableList.of(highestPrecedence, anotherHighestPrecedence, lowerPrecedence));
 
         Item merged = merger.merge(orderedContent, application, Collections.emptySet());
 
@@ -974,17 +1000,41 @@ public class OutputContentMergerTest {
                 Publisher.YOUVIEW
         );
 
-        List<Item> orderedContent = sortByPublisher(application, ImmutableList.of(highestPrecedence, anotherHighestPrecedence, lowerPrecedence));
+        List<Item> orderedContent = sortByPublisherThenId(application, ImmutableList.of(highestPrecedence, anotherHighestPrecedence, lowerPrecedence));
 
         Item merged = merger.merge(orderedContent, application, Collections.emptySet());
 
-        assertEquals(ImmutableList.of(actor1, actor2), merged.getPeople());
+        assertThat(merged.getPeople(), is(ImmutableList.of(actor1, actor2)));
     }
 
-    //TODO test mergeLanguages
+    @Test
+    public void mergeLanguages() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.PA,
+                Publisher.YOUVIEW
+        );
+        Item highestPrecedence = item(2, "not relevant", Publisher.PA);
+        highestPrecedence.setLanguages(ImmutableSet.of("en_GB"));
+        Item lowerPrecedence = item(1, "also not relevant", Publisher.YOUVIEW);
+        lowerPrecedence.setLanguages(ImmutableSet.of("fr_FR"));
+
+        List<Item> orderedContent = sortByPublisherThenId(application, ImmutableList.of(highestPrecedence, lowerPrecedence));
+        Item merged = merger.merge(orderedContent, application, Collections.emptySet());
+
+        assertThat(merged.getLanguages(), is(ImmutableSet.of("en_GB")));
+
+/*        TODO add these language merging is fixed (move it out of mergeFilm into mergeContent)
+        Item anotherHighestPrecedence = item(3, "again not relevant", Publisher.PA);    // no language
+        orderedContent = sortByPublisherThenId(application, ImmutableList.of(anotherHighestPrecedence, lowerPrecedence));
+        merged = merger.merge(orderedContent, application, Collections.emptySet());
+
+        assertThat(merged.getLanguages(), is(ImmutableSet.of("fr_FR")));
+*/
+    }
 
     @Test
-    public void testSorting(){
+    public void testSorting() {
         Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.PA,
@@ -1031,8 +1081,7 @@ public class OutputContentMergerTest {
     private void mergePermutations(ImmutableList<Brand> contents, Application application,
             String expectedContentUri, Id expectedId) {
         for (List<Brand> contentList : Collections2.permutations(contents)) {
-            //TODO order it? has to be exact same ordering as the one in StrategyBackedEquivalentsMerger
-            // (maybe even split the sorting into a method that is used here)
+            contentList = sortByPublisherThenId(application, contentList);
             Brand mergedBrand = merger.merge(contentList, application, Collections.emptySet());
             assertThat(mergedBrand.getCanonicalUri(), is(expectedContentUri));
             assertThat(mergedBrand.getId(), is(expectedId));
@@ -1119,12 +1168,13 @@ public class OutputContentMergerTest {
         return builder.build();
     }
 
-    private <T extends Described> List<T> sortByPublisher(Application application, List<T> contents) {
+    private <T extends Equivalable> List<T> sortByPublisherThenId(Application application, List<T> contents) {
 
         Ordering<Sourced> publisherComparator = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher());
+        Ordering<Equivalable> equivsOrdering = publisherComparator.compound(StrategyBackedEquivalentsMerger.ID_ORDERING);
 
-        return publisherComparator.sortedCopy(findSame(contents.get(0), contents));
+        return equivsOrdering.sortedCopy(contents);
     }
 }

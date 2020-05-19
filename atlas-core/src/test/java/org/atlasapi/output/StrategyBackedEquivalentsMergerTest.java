@@ -99,9 +99,6 @@ public class StrategyBackedEquivalentsMergerTest {
         );
     }
 
-    //TODO test by going thru permutations of contents, and results will be the same regardless of order
-    //TODO add and check both URIs and IDs
-
     @Test
     @SuppressWarnings("unchecked")
     public void testMergeSortingIsStable() {
@@ -184,6 +181,7 @@ public class StrategyBackedEquivalentsMergerTest {
                 );
     }
 
+    //
     @Test
     @SuppressWarnings("unchecked")
     public void testMergeVictimIsRequestedContentIdIfVictimMatchesMostPrecedentSource() {
@@ -213,7 +211,7 @@ public class StrategyBackedEquivalentsMergerTest {
 
         verify(strategy)
                 .merge(
-                        argThat(contains(one, two, three)),
+                        argThat(contains(two, one, three)),
                         argThat(is(mergingApplication)),
                         Matchers.anySetOf(Annotation.class)
                 );

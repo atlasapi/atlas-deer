@@ -53,6 +53,7 @@ import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
@@ -146,11 +147,16 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         Publisher publisher = idAndPublisher.getPublisher();    // update publisher accordingly
         merged.setPublisher(publisher);
 
+        // Remove self from same_as set
+        Set<EquivalenceRef> equivs = Sets.newHashSet(merged.getEquivalentTo());
+        equivs.remove(EquivalenceRef.valueOf(merged));
+        merged.setEquivalentTo(equivs);
+
         return merged;
     }
 
     // finds the content with the lowest id, returning its id and its publisher
-    private <T extends Described> IdAndPublisher findLowestIdContent(Iterable<T> orderedContent) {
+    private static <T extends Described> IdAndPublisher findLowestIdContent(Iterable<T> orderedContent) {
         EquivalenceRef lowestRef = lowestEquivRef(orderedContent);
 
         return new IdAndPublisher(lowestRef.getId(), lowestRef.getSource());
@@ -158,7 +164,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private static final Ordering<EquivalenceRef> EQUIV_ID_ORDERING =
             Ordering.from(Comparator.comparing(EquivalenceRef::getId)).nullsLast();
-    private <T extends Described> EquivalenceRef lowestEquivRef(Iterable<T> orderedContent) {
+
+    private static <T extends Described> EquivalenceRef lowestEquivRef(Iterable<T> orderedContent) {
         EquivalenceRef lowest = EquivalenceRef.valueOf(orderedContent.iterator().next());
 
         for (T content : orderedContent) {
@@ -167,27 +174,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         return lowest;
     }
-
-/*    private <T extends Described> T mergeIdAndEquivTo(T chosen) {
-        EquivalenceRef chosenRef = EquivalenceRef.valueOf(chosen);
-        EquivalenceRef lowestRef = lowestEquivRef(orderedContent);
-        if (chosenRef.equals(lowestRef)) {
-            return chosen;
-        }
-        Set<EquivalenceRef> equivs = chosen.getEquivalentTo();
-        Set<EquivalenceRef> newEquivs = new LinkedHashSet<>(equivs.size() + 1);
-        newEquivs.add(chosenRef);
-        newEquivs.addAll(equivs);
-        newEquivs.remove(lowestRef);
-        if (equivs.size() != newEquivs.size()) {
-            log.warn("Problem merging equivs: OLD{id: {}, equivTo: {}} NEW{id: {}, equivTo: {}}",
-                    chosenRef, equivs, lowestRef, newEquivs);
-        }
-        chosen.setId(lowestRef.getId());
-        chosen.setPublisher(lowestRef.getSource());
-        chosen.setEquivalentTo(newEquivs);
-        return chosen;
-    }*/
 
     @Override
     public <T extends Content> T merge(
@@ -405,8 +391,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 orderedContent,
                 Content::getCountriesOfOrigin
         ));
-
-        //TODO add mergePeople() (have only people from highest precedence content)
     }
 
     private <T extends Content> void mergeDuration(T chosen, Iterable<T> orderedContent) {
@@ -494,7 +478,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         ));
     }
 
-    //TODO move language + certificates from mergeFilm to mergeContent?
     private void mergeFilmProperties(Application application, Film chosen,
             Iterable<Film> orderedContent) {
 
@@ -531,7 +514,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
     }
 
-    //TODO have all images ordered by source precedence, not just higher
     private <T extends Described> void applyImagePrefs(Application application, T chosen,
             Iterable<T> orderedContent) {
         if (application.getConfiguration().isImagePrecedenceEnabled()) {
@@ -616,7 +598,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             return;
         }
 
-        //TODO remove this ordering, as orderedContent is already sorted by source precedence
+        //TODO remove this ordering, as orderedContent is already sorted by source precedence at this point
         //first = piece of content with highest precedence source with broadcasts
         List<T> first = application.getConfiguration()
                 .getReadPrecedenceOrdering()
