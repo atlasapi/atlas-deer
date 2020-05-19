@@ -36,7 +36,6 @@ import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
 import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
-import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.client.search.scoring.QueryWeighting;
 
 import com.google.common.base.Splitter;
@@ -68,7 +67,6 @@ public class SearchController {
     private final Selection.SelectionBuilder selectionBuilder;
     private final QueryResultWriter<Content> resultWriter;
     private final List<SherlockAttribute<?, ?, ?>> sherlockAttributes;
-    private final SmartSearchParser smartSearchParser;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.<String>builder()
                 .add(ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER)
@@ -85,7 +83,6 @@ public class SearchController {
             ContentResolvingSearcher searcher,
             ApplicationFetcher applicationFetcher,
             List<SherlockAttribute<?, ?, ?>> sherlockAttributes,
-            SmartSearchParser smartSearchParser,
             AnnotationsExtractor annotationsExtractor,
             Selection.SelectionBuilder selectionBuilder,
             QueryResultWriter<Content> resultWriter
@@ -93,7 +90,6 @@ public class SearchController {
         this.searcher = searcher;
         this.applicationFetcher = applicationFetcher;
         this.sherlockAttributes = sherlockAttributes;
-        this.smartSearchParser = smartSearchParser;
         this.annotationsExtractor = annotationsExtractor;
         this.selectionBuilder = selectionBuilder;
         this.resultWriter = resultWriter;
@@ -117,11 +113,6 @@ public class SearchController {
                 queryBuilder = SearchQuery.builder();
             } else {
                 queryBuilder = SearchQuery.getDefaultQuerySearcher(query);
-
-                List<TermParameter<?>> influencers = smartSearchParser.parseQuery(query);
-                for (TermParameter<?> influencer : influencers) {
-                    queryBuilder.addInfluencer(influencer);
-                }
             }
 
             List<NamedParameter<?>> parameters = parseSherlockParameters(request);

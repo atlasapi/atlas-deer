@@ -163,7 +163,6 @@ import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v4.topic.TopicListWriter;
 import org.atlasapi.query.v4.topic.TopicQueryResultWriter;
 import org.atlasapi.query.v5.search.ContentResolvingSearcher;
-import org.atlasapi.query.v5.search.SmartSearchParser;
 import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.source.Sources;
@@ -952,7 +951,6 @@ public class QueryWebModule {
                 v5SearchResolver,
                 configFetcher,
                 new SherlockAttributes(idCodec).getAttributes(),
-                new SmartSearchParser(),
                 new IndexAnnotationsExtractor(contentAnnotationIndex()),
                 selectionBuilder(),
                 new org.atlasapi.query.v5.search.ContentQueryResultWriter(
