@@ -4,7 +4,7 @@ import javax.annotation.Nonnull;
 
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
@@ -19,7 +19,7 @@ public abstract class TermAttribute<T, M extends ChildTypeMapping<T>> extends Sh
     }
 
     @Override
-    protected NamedParameter<T> createParameter(M mapping, @Nonnull T value) {
+    protected SimpleParameter<T> createParameter(M mapping, @Nonnull T value) {
         return TermParameter.of(mapping, value);
     }
 }
