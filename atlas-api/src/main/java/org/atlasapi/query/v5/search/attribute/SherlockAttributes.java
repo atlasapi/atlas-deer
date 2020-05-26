@@ -16,7 +16,7 @@ import org.atlasapi.source.Sources;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.media.MimeType;
-import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableList;
 public class SherlockAttributes {
 
     private final NumberToShortStringCodec idCodec;
-    private final ContentMapping content = IndexMapping.getContentMapping();
+    private final ContentMapping content = IndexMapping.getContent();
 
     public SherlockAttributes(NumberToShortStringCodec idCodec) {
         this.idCodec = idCodec;
@@ -208,7 +208,7 @@ public class SherlockAttributes {
                         BooleanCoercer.create()
                 ) {
                     @Override
-                    protected NamedParameter<Instant> createParameter(
+                    protected SimpleParameter<Instant> createParameter(
                             InstantMapping mapping, @Nonnull Boolean value
                     ) {
                         if (value) {

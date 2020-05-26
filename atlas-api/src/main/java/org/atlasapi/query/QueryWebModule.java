@@ -951,7 +951,7 @@ public class QueryWebModule {
                 v5SearchResolver,
                 configFetcher,
                 new SherlockAttributes(idCodec).getAttributes(),
-                new IndexAnnotationsExtractor(contentAnnotationIndex()),
+                new IndexAnnotationsExtractor(searchAnnotationIndex()),
                 selectionBuilder(),
                 new org.atlasapi.query.v5.search.ContentQueryResultWriter(
                         contentListWriter(),
@@ -1000,6 +1000,13 @@ public class QueryWebModule {
     @Bean
     ResourceAnnotationIndex organisationAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.ORGANISATION, Annotation.all()).build();
+    }
+
+    @Bean
+    ResourceAnnotationIndex searchAnnotationIndex() {
+        return ResourceAnnotationIndex.builder(Resource.CONTENT, Annotation.all())
+                .attach(Annotation.TAGS, topicAnnotationIndex(), Annotation.ID)
+                .build();
     }
 
     @Bean

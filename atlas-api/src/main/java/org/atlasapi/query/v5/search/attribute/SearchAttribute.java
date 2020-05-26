@@ -5,7 +5,7 @@ import javax.annotation.Nonnull;
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 import org.atlasapi.query.common.coercers.StringCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
@@ -21,10 +21,7 @@ public class SearchAttribute extends SherlockAttribute<String, String, TextMappi
     }
 
     @Override
-    protected NamedParameter<String> createParameter(TextMapping mapping, @Nonnull String value) {
-        return SearchParameter.builder()
-                .withMapping(mapping)
-                .withValue(value)
-                .build();
+    protected SimpleParameter<String> createParameter(TextMapping mapping, @Nonnull String value) {
+        return SearchParameter.of(mapping, value);
     }
 }
