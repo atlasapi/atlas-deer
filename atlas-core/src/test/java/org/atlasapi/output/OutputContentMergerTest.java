@@ -921,14 +921,17 @@ public class OutputContentMergerTest {
 
         assertThat(merged.getCanonicalUri(), is(orderedContent.iterator().next().getCanonicalUri()));
         assertThat(merged.getId(), is(one.getId()));
+        assertThat(merged.getSource(), is(one.getSource()));
         assertThat(merged.getEquivalentTo(), is(ImmutableSet.of(EquivalenceRef.valueOf(two), EquivalenceRef.valueOf(three))));
 
+        // now test without BBC
         orderedContent = sortByPublisherThenId(application, ImmutableList.of(two, three));
         setEquivalent(two, three);
         setEquivalent(three, two);
         merged = merger.merge(orderedContent, application, Collections.emptySet());
         assertThat(merged.getCanonicalUri(), is(orderedContent.iterator().next().getCanonicalUri()));
         assertThat(merged.getId(), is(two.getId()));
+        assertThat(merged.getSource(), is(two.getSource()));
         assertThat(merged.getEquivalentTo(), is(ImmutableSet.of(EquivalenceRef.valueOf(three))));
     }
 
@@ -1090,7 +1093,6 @@ public class OutputContentMergerTest {
 
     private void setEquivalent(Content receiver, Content... equivalents) {
         ImmutableList<Content> allContent = ImmutableList.<Content>builder()
-                .add(receiver)
                 .addAll(ImmutableList.copyOf(equivalents))
                 .build();
         receiver.setEquivalentTo(ImmutableSet.copyOf(
