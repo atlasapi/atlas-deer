@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -16,6 +17,7 @@ import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Content;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
@@ -37,7 +39,10 @@ import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
+import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.client.search.scoring.QueryWeighting;
+import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -58,6 +63,7 @@ public class SearchController {
     private final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
     private static final String EXISTS_KEYWORD = "nonNull";
     private static final String NON_EXISTS_KEYWORD = "null";
+    private static final ContentMapping CONTENT = IndexMapping.getContent();
 
     private static final String ANNOTATIONS_PARAM = "annotations";
     private static final String QUERY_PARAM = "q";
@@ -134,6 +140,11 @@ public class SearchController {
                 }
             }
 
+            List<TermParameter<String>> publisherFilters = getEnabledReadSourcesAsFilters(queryContext);
+            for (TermParameter<String> publisherFilter : publisherFilters) {
+                queryBuilder.addFilter(publisherFilter);
+            }
+
             Selection selection = selectionBuilder.build(request);
 
             SearchQuery searchQuery = queryBuilder
@@ -189,6 +200,20 @@ public class SearchController {
         }
 
         return sherlockParameters;
+    }
+
+    private List<TermParameter<String>> getEnabledReadSourcesAsFilters(QueryContext queryContext) {
+        List<TermParameter<String>> filters = new ArrayList<>();
+        Set<Publisher> publishers = queryContext.getApplication()
+                .getConfiguration()
+                .getEnabledReadSources();
+        for (Publisher publisher : publishers) {
+            TermParameter<String> publisherFilter = TermParameter.of(
+                    CONTENT.getSource().getKey(),
+                    publisher.key());
+            filters.add(publisherFilter);
+        }
+        return filters;
     }
 
     private QueryWeighting parseQueryWeighting(HttpServletRequest request) {
