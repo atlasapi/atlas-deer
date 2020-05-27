@@ -138,38 +138,23 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         merged = highestPrecedenceContent.copyToPreferNonNull(merged);
 
         // Finally, we need the lowest id in the equiv set, in an attempt to keep the id stable
-        IdAndPublisher idAndPublisher = findLowestIdContent(sortedEquivalents);
-        Id id = idAndPublisher.getId();
-        merged.setId(id);
-        Publisher publisher = idAndPublisher.getPublisher();    // update publisher accordingly
-        merged.setPublisher(publisher);
-
-        // Remove self from same_as set
-        Set<EquivalenceRef> equivs = Sets.newHashSet(merged.getEquivalentTo());
-        equivs.remove(EquivalenceRef.valueOf(merged));
-        merged.setEquivalentTo(equivs);
+        // (this also means updating the publisher + same_as accordingly)
+        T lowestIdContent = findLowestIdContent(sortedEquivalents);
+        merged.setId(lowestIdContent.getId());
+        merged.setPublisher(lowestIdContent.getSource());
+        merged.setEquivalentTo(lowestIdContent.getEquivalentTo());
 
         return merged;
     }
 
     // finds the content with the lowest id, returning its id and its publisher
-    private static <T extends Described> IdAndPublisher findLowestIdContent(Iterable<T> orderedContent) {
-        EquivalenceRef lowestRef = lowestEquivRef(orderedContent);
-
-        return new IdAndPublisher(lowestRef.getId(), lowestRef.getSource());
-    }
-
-    private static final Ordering<EquivalenceRef> EQUIV_ID_ORDERING =
-            Ordering.from(Comparator.comparing(EquivalenceRef::getId)).nullsLast();
-
-    private static <T extends Described> EquivalenceRef lowestEquivRef(Iterable<T> orderedContent) {
-        EquivalenceRef lowest = EquivalenceRef.valueOf(orderedContent.iterator().next());
-
+    private static <T extends Described> T findLowestIdContent(Iterable<T> orderedContent) {
+        T lowestContent = orderedContent.iterator().next();
         for (T content : orderedContent) {
-            EquivalenceRef ref = EquivalenceRef.valueOf(content);
-            lowest = EQUIV_ID_ORDERING.min(lowest, ref);
+            if (lowestContent.getId().compareTo(content.getId()) > 0 )
+            lowestContent = content;
         }
-        return lowest;
+        return lowestContent;
     }
 
     @Override
@@ -903,25 +888,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         public Tag apply(Tag input) {
             input.setPublisher(publishedContent.getSource());
             return input;
-        }
-    }
-
-    private static class IdAndPublisher {
-
-        private final Id id;
-        private final Publisher publisher;
-
-        public IdAndPublisher(Id id, Publisher publisher) {
-            this.id = id;
-            this.publisher = publisher;
-        }
-
-        public Id getId() {
-            return id;
-        }
-
-        public Publisher getPublisher() {
-            return publisher;
         }
     }
 }
