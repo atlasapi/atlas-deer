@@ -950,7 +950,7 @@ public class QueryWebModule {
         return new org.atlasapi.query.v5.search.SearchController(
                 v5SearchResolver,
                 configFetcher,
-                new SherlockAttributes(idCodec).getAttributes(),
+                new SherlockAttributes(idCodec, channelGroupResolver).getAttributes(),
                 new IndexAnnotationsExtractor(searchAnnotationIndex()),
                 selectionBuilder(),
                 new org.atlasapi.query.v5.search.ContentQueryResultWriter(

@@ -1,13 +1,10 @@
 package org.atlasapi.query.v5.search.attribute;
 
-import java.time.Instant;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Specialization;
-import org.atlasapi.query.common.coercers.BooleanCoercer;
 import org.atlasapi.query.common.coercers.EnumCoercer;
 import org.atlasapi.query.v5.search.coercer.DateRangeCoercer;
 import org.atlasapi.query.v5.search.coercer.InstantRangeCoercer;
@@ -16,21 +13,20 @@ import org.atlasapi.source.Sources;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.media.MimeType;
-import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
-import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
-import com.metabroadcast.sherlock.common.type.InstantMapping;
 
 import com.google.common.collect.ImmutableList;
 
 public class SherlockAttributes {
 
     private final NumberToShortStringCodec idCodec;
+    private final ChannelGroupResolver channelGroupResolver;
     private final ContentMapping content = IndexMapping.getContent();
 
-    public SherlockAttributes(NumberToShortStringCodec idCodec) {
+    public SherlockAttributes(NumberToShortStringCodec idCodec, ChannelGroupResolver channelGroupResolver) {
         this.idCodec = idCodec;
+        this.channelGroupResolver = channelGroupResolver;
     }
 
     public List<SherlockAttribute<?, ?, ?>> getAttributes() {
@@ -202,22 +198,10 @@ public class SherlockAttributes {
 
     private List<SherlockAttribute<?, ?, ?>> getScheduleAttributes() {
         return ImmutableList.of(
-                new SherlockAttribute<Boolean, Instant, InstantMapping>(
+                new BeforeAfterAttribute(
                         SherlockParameter.SCHEDULE_UPCOMING,
-                        content.getBroadcasts().getTransmissionStartTime(),
-                        BooleanCoercer.create()
-                ) {
-                    @Override
-                    protected SimpleParameter<Instant> createParameter(
-                            InstantMapping mapping, @Nonnull Boolean value
-                    ) {
-                        if (value) {
-                            return RangeParameter.from(mapping, Instant.now());
-                        } else {
-                            return RangeParameter.to(mapping, Instant.now());
-                        }
-                    }
-                },
+                        content.getBroadcasts().getTransmissionStartTime()
+                ),
                 new RangeAttribute<>(
                         SherlockParameter.SCHEDULE_START_TIME,
                         content.getBroadcasts().getTransmissionStartTime(),
@@ -237,6 +221,12 @@ public class SherlockAttributes {
                         SherlockParameter.SCHEDULE_CHANNEL,
                         content.getBroadcasts().getBroadcastOn(),
                         idCodec
+                ),
+                new ChannelGroupAttribute(
+                        SherlockParameter.SCHEDULE_CHANNEL_GROUP,
+                        content.getBroadcasts().getBroadcastOn(),
+                        idCodec,
+                        channelGroupResolver
                 )
         );
     }

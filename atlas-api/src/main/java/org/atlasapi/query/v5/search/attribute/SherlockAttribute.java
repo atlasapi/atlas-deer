@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
@@ -14,9 +12,9 @@ import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 public abstract class SherlockAttribute<FROM, TO, M extends ChildTypeMapping<TO>> {
 
-    private final SherlockParameter parameter;
-    private final M mapping;
-    private final AttributeCoercer<FROM> coercer;
+    protected final SherlockParameter parameter;
+    protected final M mapping;
+    protected final AttributeCoercer<FROM> coercer;
 
     public SherlockAttribute(
             SherlockParameter parameter,
@@ -36,12 +34,6 @@ public abstract class SherlockAttribute<FROM, TO, M extends ChildTypeMapping<TO>
         return mapping;
     }
 
-    public List<SimpleParameter<TO>> coerce(List<String> values) throws InvalidAttributeValueException {
-        return coercer.apply(values).stream()
-                .filter(Objects::nonNull)
-                .map(v -> createParameter(mapping, v))
-                .collect(Collectors.toList());
-    }
-
-    protected abstract SimpleParameter<TO> createParameter(M mapping, @Nonnull FROM value);
+    public abstract List<SimpleParameter<TO>> coerce(List<String> values)
+            throws InvalidAttributeValueException;
 }

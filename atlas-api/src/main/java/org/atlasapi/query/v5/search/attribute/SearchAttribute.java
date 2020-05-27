@@ -11,7 +11,7 @@ import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 import com.metabroadcast.sherlock.common.type.TextMapping;
 
-public class SearchAttribute extends SherlockAttribute<String, String, TextMapping> {
+public class SearchAttribute extends SherlockAttributeSingle<String, String, TextMapping> {
 
     public SearchAttribute(
             SherlockParameter parameter,
