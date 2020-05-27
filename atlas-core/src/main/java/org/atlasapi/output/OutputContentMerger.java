@@ -34,7 +34,6 @@ import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Series;
-import org.atlasapi.content.Song;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Award;
@@ -43,7 +42,6 @@ import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.Review;
-import org.atlasapi.entity.Sourced;
 import org.atlasapi.entity.Sourceds;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
@@ -53,7 +51,6 @@ import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
@@ -654,13 +651,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         if (chosen.getBroadcasts() != null && !chosen.getBroadcasts().isEmpty()) {
             for (Broadcast chosenBroadcast : chosen.getBroadcasts()) {
-                matchAndMerge(chosenBroadcast, Lists.newArrayList(orderedContent));
+                matchAndMerge(chosenBroadcast, orderedContent);
             }
         }
-    }
-
-    private static Predicate<Item> isPublisher(Publisher publisher) {
-        return input -> publisher.equals(input.getSource());
     }
 
     private <T extends Content> void mergeEncodings(T chosen, Iterable<T> orderedContent) {
@@ -677,7 +670,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Item> void matchAndMerge(final Broadcast chosenBroadcast,
-            List<T> orderedContent) {
+            Iterable<T> orderedContent) {
         List<Broadcast> equivBroadcasts = Lists.newArrayList();
         for (T item : orderedContent) {
             Iterable<Broadcast> broadcasts = item.getBroadcasts();
