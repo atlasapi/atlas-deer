@@ -203,52 +203,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         return builder.build();
     }
 
-    private <T extends Described> List<T> findSame(T content, Iterable<T> contents) {
-        ImmutableList.Builder<T> builder = ImmutableList.builder();
-        builder.add(content);
-        for (T possiblyEquivalent : contents) {
-            if (!content.equals(possiblyEquivalent) && possiblyEquivalent.isEquivalentTo(content)) {
-                builder.add(possiblyEquivalent);
-            }
-        }
-        return builder.build();
-    }
-
-    private <T extends ContentGroup> void mergeIn(Application application, T chosen,
-            Iterable<T> orderedContent) {
-        mergeDescribed(application, chosen, orderedContent);
-        for (ContentGroup contentGroup : orderedContent) {
-            for (ContentRef ref : contentGroup.getContents()) {
-                chosen.addContent(ref);
-            }
-        }
-        if (chosen instanceof Person) {
-            Person chosenPerson = (Person) chosen;
-            ImmutableSet.Builder<String> quotes = ImmutableSet.builder();
-            quotes.addAll(chosenPerson.getQuotes());
-            for (Person person : Iterables.filter(orderedContent, Person.class)) {
-                quotes.addAll(person.getQuotes());
-                chosenPerson.withName(chosenPerson.name() != null ? chosenPerson.name() : person.name());
-                chosenPerson.setGivenName(chosenPerson.getGivenName() != null
-                                    ? chosenPerson.getGivenName()
-                                    : person.getGivenName());
-                chosenPerson.setFamilyName(chosenPerson.getFamilyName() != null
-                                     ? chosenPerson.getFamilyName()
-                                     : person.getFamilyName());
-                chosenPerson.setGender(chosenPerson.getGender() != null
-                                 ? chosenPerson.getGender()
-                                 : person.getGender());
-                chosenPerson.setBirthDate(chosenPerson.getBirthDate() != null
-                                    ? chosenPerson.getBirthDate()
-                                    : person.getBirthDate());
-                chosenPerson.setBirthPlace(chosenPerson.getBirthPlace() != null
-                                     ? chosenPerson.getBirthPlace()
-                                     : person.getBirthPlace());
-            }
-            chosenPerson.setQuotes(quotes.build());
-        }
-    }
-
     private <T extends Described> void mergeDescribed(Application application, T chosen,
             Iterable<T> orderedContent) {
         mergeCustomFields(chosen, orderedContent);
@@ -306,7 +260,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<T> orderedContent,
             Function<T, Iterable<P>> projector)
     {
-
         return Iterables.concat(StreamSupport.stream(orderedContent.spliterator(), false)
                         .map(projector::apply)
                         .collect(Collectors.toList())

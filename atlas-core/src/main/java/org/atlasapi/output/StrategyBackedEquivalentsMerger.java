@@ -48,16 +48,6 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         if (sortedEquivalents.isEmpty()) {
             return ImmutableList.of();
         }
-        if (trivialMerge(sortedEquivalents)) {
-            return ImmutableList.of(
-                    strategy.merge(
-                            sortedEquivalents,
-                            application,
-                            activeAnnotations
-                    )
-            );
-        }
-        T chosen = sortedEquivalents.get(0);
 
         // If the query asks for a specific ID and that ID is from the highest precedence, then that
         // ID becomes the highest precedence piece of content. Relevant only if there are multiple
@@ -66,7 +56,8 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         // but nothing built in the last 3 years relies on it. It is the view of the current team
         // this logic is wrong and should be removed as it causes the result of the merge to be
         // different for different IDs of the equiv set.
-        if (id.isPresent()) {
+        T chosen = sortedEquivalents.get(0);
+        if (id.isPresent() && sortedEquivalents.size() > 1) {
             Optional<T> requested = Iterables.tryFind(equivalents, idIs(id.get()));
 
             if (requested.isPresent()
@@ -77,10 +68,6 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         }
 
         return ImmutableList.of(strategy.merge(sortedEquivalents, application, activeAnnotations));
-    }
-
-    private boolean trivialMerge(List<?> sortedEquivalents) {
-        return sortedEquivalents.size() == 1;
     }
 
     private Predicate<Identifiable> idIs(final Id id) {
