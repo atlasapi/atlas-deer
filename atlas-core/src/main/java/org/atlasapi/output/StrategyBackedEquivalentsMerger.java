@@ -3,14 +3,14 @@ package org.atlasapi.output;
 import java.util.List;
 import java.util.Set;
 
-import com.metabroadcast.applications.client.model.internal.Application;
-
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
 import org.atlasapi.equivalence.Equivalable;
+
+import com.metabroadcast.applications.client.model.internal.Application;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
@@ -59,6 +59,13 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         }
         T chosen = sortedEquivalents.get(0);
 
+        // If the query asks for a specific ID and that ID is from the highest precedence, then that
+        // ID becomes the highest precedence piece of content. Relevant only if there are multiple
+        // IDs from the highest precedence source.
+        // Furthermore, at the time of this rework it is unclear if anything relies on this logic,
+        // but nothing built in the last 3 years relies on it. It is the view of the current team
+        // this logic is wrong and should be removed as it causes the result of the merge to be
+        // different for different IDs of the equiv set.
         if (id.isPresent()) {
             Optional<T> requested = Iterables.tryFind(equivalents, idIs(id.get()));
 
