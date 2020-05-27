@@ -28,8 +28,8 @@ public abstract class SherlockAttribute<FROM, TO, M extends ChildTypeMapping<TO>
         this.coercer = coercer;
     }
 
-    public String getParameterName() {
-        return parameter.getParameterName();
+    public SherlockParameter getParameter() {
+        return parameter;
     }
 
     public M getMapping() {

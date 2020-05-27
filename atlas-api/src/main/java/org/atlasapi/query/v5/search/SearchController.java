@@ -131,18 +131,13 @@ public class SearchController {
                 }
             }
 
-            List<SimpleParameter<?>> parameters = parseSherlockParameters(request);
+            List<SimpleParameter<?>> parameters = parseSherlockParameters(request, queryContext);
             for (SimpleParameter<?> parameter : parameters) {
                 if (parameter instanceof SearchParameter) {
                     queryBuilder.addSearcher((SearchParameter)parameter);
                 } else {
                     queryBuilder.addFilter(parameter);
                 }
-            }
-
-            List<TermParameter<String>> publisherFilters = getEnabledReadSourcesAsFilters(queryContext);
-            for (TermParameter<String> publisherFilter : publisherFilters) {
-                queryBuilder.addFilter(publisherFilter);
             }
 
             Selection selection = selectionBuilder.build(request);
@@ -162,18 +157,26 @@ public class SearchController {
         }
     }
 
-    private List<SimpleParameter<?>> parseSherlockParameters(HttpServletRequest request)
-            throws InvalidAttributeValueException {
+    private List<SimpleParameter<?>> parseSherlockParameters(
+            HttpServletRequest request,
+            QueryContext queryContext
+    ) throws InvalidAttributeValueException {
+
+        Set<String> enabledReadSourcesKeys = queryContext.getApplication()
+                .getConfiguration()
+                .getEnabledReadSources()
+                .stream()
+                .map(Publisher::key)
+                .collect(Collectors.toSet());
 
         List<SimpleParameter<?>> sherlockParameters = new ArrayList<>();
-
         Map<String, String[]> parameterMap = (Map<String, String[]>) request.getParameterMap();
         for (SherlockAttribute<?, ?, ?> attribute : sherlockAttributes) {
 
-            String name = attribute.getParameterName();
-            if (parameterMap.containsKey(name)) {
+            SherlockParameter parameter = attribute.getParameter();
+            if (parameterMap.containsKey(parameter.getParameterName())) {
 
-                List<String> values = Arrays.stream(parameterMap.get(name))
+                List<String> values = Arrays.stream(parameterMap.get(parameter.getParameterName()))
                         .map(SPLITTER::splitToList)
                         .flatMap(Collection::stream)
                         .distinct()
@@ -188,32 +191,39 @@ public class SearchController {
                 }
 
                 try {
-                    sherlockParameters.addAll(attribute.coerce(values));
+                    List<? extends SimpleParameter<?>> coercedValues = attribute.coerce(values);
+
+                    if (parameter == SherlockParameter.PUBLISHER) {
+                        List<SimpleParameter<String>> parsedPublishers = (List<SimpleParameter<String>>) coercedValues;
+                        for (SimpleParameter<String> parsedPublisher : parsedPublishers) {
+                            if (!enabledReadSourcesKeys.contains(parsedPublisher.getValue())) {
+                                throw new InvalidAttributeValueException(String.format(
+                                        "The source %s is not within the scope of the provided api key.",
+                                        parsedPublisher.getValue()));
+                            }
+                        }
+                    }
+                    sherlockParameters.addAll(coercedValues);
+
                 } catch (InvalidAttributeValueException e) {
                     throw new InvalidAttributeValueException(String.format(
                             "Invalid value(s) for %s: %s.",
-                            name,
+                            parameter.getParameterName(),
                             e.getMessage()
                     ), e);
+                }
+
+            // if no values provided for publisher, add all keys from the application key set
+            } else if (parameter == SherlockParameter.PUBLISHER) {
+                for (String enabledReadSourceKey : enabledReadSourcesKeys) {
+                    sherlockParameters.add(TermParameter.of(
+                            CONTENT.getSource().getKey(),
+                            enabledReadSourceKey));
                 }
             }
         }
 
         return sherlockParameters;
-    }
-
-    private List<TermParameter<String>> getEnabledReadSourcesAsFilters(QueryContext queryContext) {
-        List<TermParameter<String>> filters = new ArrayList<>();
-        Set<Publisher> publishers = queryContext.getApplication()
-                .getConfiguration()
-                .getEnabledReadSources();
-        for (Publisher publisher : publishers) {
-            TermParameter<String> publisherFilter = TermParameter.of(
-                    CONTENT.getSource().getKey(),
-                    publisher.key());
-            filters.add(publisherFilter);
-        }
-        return filters;
     }
 
     private QueryWeighting parseQueryWeighting(HttpServletRequest request) {
