@@ -76,6 +76,11 @@ public class Clip extends Item {
     }
 
     @Override
+    public Song createNew() {
+        return new Song();
+    }
+
+    @Override
     public <V> V accept(ItemVisitor<V> visitor) {
         return visitor.visit(this);
     }

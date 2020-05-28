@@ -206,6 +206,7 @@ public class Item extends Content {
         return copyTo(this, new Item());
     }
 
+    @Override
     public Item createNew() {
         return new Item();
     }

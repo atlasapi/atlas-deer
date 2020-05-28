@@ -70,7 +70,7 @@ public class Brand extends Container {
     }
 
     @Override
-    public Described createNew() {
+    public Brand createNew() {
         return new Brand();
     }
 

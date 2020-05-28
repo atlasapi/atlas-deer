@@ -147,7 +147,7 @@ public class Topic extends Described implements Sourced, Aliased {
     }
 
     @Override
-    public Described createNew() {
+    public Topic createNew() {
         return new Topic();
     }
 

@@ -143,6 +143,11 @@ public class Episode extends Item {
         );
     }
 
+    @Override
+    public Episode createNew() {
+        return new Episode();
+    }
+
     public <V> V accept(ItemVisitor<V> visitor) {
         return visitor.visit(this);
     }

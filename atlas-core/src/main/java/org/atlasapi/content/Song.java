@@ -64,6 +64,11 @@ public class Song extends Item {
         return copyTo(this, new Song());
     }
 
+    @Override
+    public Song createNew() {
+        return new Song();
+    }
+
     public <V> V accept(ItemVisitor<V> visitor) {
         return visitor.visit(this);
     }

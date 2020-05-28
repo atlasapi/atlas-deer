@@ -74,7 +74,7 @@ public class Series extends Container {
     }
 
     @Override
-    public Described createNew() {
+    public Series createNew() {
         return new Series();
     }
 

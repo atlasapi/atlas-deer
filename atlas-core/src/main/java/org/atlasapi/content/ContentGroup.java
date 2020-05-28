@@ -92,7 +92,7 @@ public class ContentGroup extends Described
     }
 
     @Override
-    public Described createNew() {
+    public ContentGroup createNew() {
         return new ContentGroup();
     }
 

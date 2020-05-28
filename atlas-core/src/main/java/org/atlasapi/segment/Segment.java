@@ -55,7 +55,7 @@ public class Segment extends Described {
     }
 
     @Override
-    public Described createNew() {
+    public Segment createNew() {
         return new Segment();
     }
 

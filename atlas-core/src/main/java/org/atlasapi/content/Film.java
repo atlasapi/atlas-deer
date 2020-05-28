@@ -84,6 +84,11 @@ public class Film extends Item {
         return copyTo(this, new Film());
     }
 
+    @Override
+    public Song createNew() {
+        return new Song();
+    }
+
     public <V> V accept(ItemVisitor<V> visitor) {
         return visitor.visit(this);
     }

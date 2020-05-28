@@ -20,7 +20,7 @@ public class Service extends Described {
     }
 
     @Override
-    public Described createNew() {
+    public Service createNew() {
         return new Service();
     }
 

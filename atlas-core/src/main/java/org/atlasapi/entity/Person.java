@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.Described;
+import org.atlasapi.content.Song;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
@@ -133,6 +134,11 @@ public class Person extends ContentGroup {
             return to;
         }
         return super.copyTo(to);
+    }
+
+    @Override
+    public Person createNew() {
+        return new Person();
     }
 
     @Override public Person copy() {
