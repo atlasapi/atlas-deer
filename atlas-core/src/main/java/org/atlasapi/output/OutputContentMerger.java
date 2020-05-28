@@ -741,11 +741,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 .collect(Collectors.toList());
 
         if (chosen.getUpcomingContent() != null && chosen.getUpcomingContent().isEmpty()) {
-            chosen.setUpcomingContent(null);
-            Container first = contentHierarchySourceOrderedContainers.iterator().next();
-            if (first.getUpcomingContent() != null && !first.getUpcomingContent().isEmpty()) {
-                chosen.setUpcomingContent(first.getUpcomingContent());
-            }
+            java.util.Optional<Container> firstWithUpcomingContent =
+                    StreamSupport.stream(contentHierarchySourceOrderedContainers.spliterator(), false)
+                            .filter(container -> container.getUpcomingContent() != null
+                                    && !container.getUpcomingContent().isEmpty())
+                            .findFirst();
+            firstWithUpcomingContent.ifPresent(container -> chosen.setUpcomingContent(container.getUpcomingContent()));
         }
 
         Optional<Container> first =
