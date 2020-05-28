@@ -85,8 +85,8 @@ public class Film extends Item {
     }
 
     @Override
-    public Song createNew() {
-        return new Song();
+    public Film createNew() {
+        return new Film();
     }
 
     public <V> V accept(ItemVisitor<V> visitor) {

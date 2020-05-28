@@ -76,8 +76,8 @@ public class Clip extends Item {
     }
 
     @Override
-    public Song createNew() {
-        return new Song();
+    public Clip createNew() {
+        return new Clip();
     }
 
     @Override
