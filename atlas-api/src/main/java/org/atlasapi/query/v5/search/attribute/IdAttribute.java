@@ -10,7 +10,7 @@ import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
-public class IdAttribute extends SherlockAttribute<Id, String, KeywordMapping> {
+public class IdAttribute extends SherlockAttributeSingle<Id, String, KeywordMapping> {
 
     private final NumberToShortStringCodec idCodec;
 

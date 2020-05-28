@@ -10,7 +10,7 @@ import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
 
-public class RangeAttribute<T> extends SherlockAttribute<Range<T>, T, RangeTypeMapping<T>> {
+public class RangeAttribute<T> extends SherlockAttributeSingle<Range<T>, T, RangeTypeMapping<T>> {
 
     public RangeAttribute(
             SherlockParameter parameter,
