@@ -291,9 +291,22 @@ public class OutputContentMergerTest {
         Item item1 = item(4L, "item", Publisher.METABROADCAST);
         item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZone.UTC));
 
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC_KIWI,
+                Publisher.METABROADCAST,
+                Publisher.BBC_MUSIC
+        );
+
         setEquivalent(one, two, three);
         setEquivalent(two, one, three);
         setEquivalent(three, two, one);
+
+        Container merged = merger.merge(ImmutableList.of(one, two, three), application,
+                Collections.emptySet()
+        );
+
+        assertNull(merged.getUpcomingContent());
 
         ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingContent = ImmutableMap.<ItemRef, Iterable<BroadcastRef>>builder()
                 .put(
@@ -314,15 +327,7 @@ public class OutputContentMergerTest {
                 upcomingContent
         );
 
-
-        Application application = getApplicationWithPrecedence(
-                true,
-                Publisher.BBC_KIWI,
-                Publisher.METABROADCAST,
-                Publisher.BBC_MUSIC
-        );
-
-        Container merged = merger.merge(ImmutableList.of(one, two, three), application,
+        merged = merger.merge(ImmutableList.of(one, two, three), application,
                 Collections.emptySet()
         );
 

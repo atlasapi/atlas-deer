@@ -1,7 +1,6 @@
 package org.atlasapi.output;
 
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +19,6 @@ import org.atlasapi.content.Container;
 import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentGroup;
-import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Encoding;
@@ -37,13 +34,10 @@ import org.atlasapi.content.Series;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Award;
-import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.Review;
 import org.atlasapi.entity.Sourceds;
-import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 
@@ -57,13 +51,11 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
@@ -131,7 +123,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             }
         }
 
-        //Unchecked casting is safe here because we get the most specific type from the hierarchy
+        // Unchecked casting is safe here because we get the most specific type from the hierarchy
         T merged = (T) mostSpecificTypeContent.createNew();
 
         // Then we need as much data as possible from the highest precedence source possible
@@ -749,15 +741,11 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 .collect(Collectors.toList());
 
         if (chosen.getUpcomingContent() != null && chosen.getUpcomingContent().isEmpty()) {
-            chosen.setUpcomingContent(
-                    first(
-                            contentHierarchySourceOrderedContainers,
-                            input -> input.getUpcomingContent().isEmpty()
-                                     ? null
-                                     : input.getUpcomingContent(),
-                            ImmutableMap.of()
-                    )
-            );
+            chosen.setUpcomingContent(null);
+            Container first = contentHierarchySourceOrderedContainers.iterator().next();
+            if (first.getUpcomingContent() != null && !first.getUpcomingContent().isEmpty()) {
+                chosen.setUpcomingContent(first.getUpcomingContent());
+            }
         }
 
         Optional<Container> first =
