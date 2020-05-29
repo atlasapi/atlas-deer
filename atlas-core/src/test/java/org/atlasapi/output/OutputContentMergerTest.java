@@ -57,6 +57,7 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -306,7 +307,7 @@ public class OutputContentMergerTest {
                 Collections.emptySet()
         );
 
-        assertNull(merged.getUpcomingContent());
+        assertThat(merged.getUpcomingContent(), is(ImmutableMap.of()));
 
         ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingContent = ImmutableMap.<ItemRef, Iterable<BroadcastRef>>builder()
                 .put(
