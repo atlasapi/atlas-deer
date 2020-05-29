@@ -294,19 +294,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         ));
         mergeDuration(chosen, orderedContent);
 
-        if (chosen instanceof Episode && ((Episode) chosen).getEpisodeNumber() == null) {
-            Episode chosenEpisode = (Episode) chosen;
-            MoreStreams.stream(orderedContent)
-                    .filter(Episode.class::isInstance)
-                    .map(Episode.class::cast)
-                    .filter(e -> e.getEpisodeNumber() != null)
-                    .findFirst()
-                    .ifPresent(e -> {
-                        chosenEpisode.setEpisodeNumber(e.getEpisodeNumber());
-                        if(e.getSeriesNumber() != null) {
-                            chosenEpisode.setSeriesNumber(e.getSeriesNumber());
-                        }
-                    });
+        if (chosen instanceof Episode) {
+            mergeEpisodeFields((Episode) chosen, Iterables.filter(orderedContent, Episode.class));
         }
 
         mergeEncodings(chosen, orderedContent);
@@ -318,6 +307,27 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 orderedContent,
                 Content::getCountriesOfOrigin
         ));
+    }
+
+    private <T extends Content> void mergeEpisodeFields(Episode chosen,
+            Iterable<Episode> orderedContent) {
+        for (Episode ep : orderedContent) {
+            if (chosen.getEpisodeNumber() == null && ep.getEpisodeNumber() != null) {
+                chosen.setEpisodeNumber(ep.getEpisodeNumber());
+            }
+            if (chosen.getSeriesNumber() == null && ep.getSeriesNumber() != null) {
+                chosen.setSeriesNumber(ep.getSeriesNumber());
+            }
+            if (chosen.getSeriesRef() == null && ep.getSeriesRef() != null) {
+                chosen.setSeriesRef(ep.getSeriesRef());
+            }
+            if (chosen.getPartNumber() == null && ep.getPartNumber() != null) {
+                chosen.setPartNumber(ep.getPartNumber());
+            }
+            if (chosen.getSpecial() == null && ep.getSpecial() != null) {
+                chosen.setSpecial(ep.getSpecial());
+            }
+        }
     }
 
     private <T extends Content> void mergeDuration(T chosen, Iterable<T> orderedContent) {
