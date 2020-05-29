@@ -25,18 +25,19 @@ public class BetweenRangeAttribute<T> extends SherlockBoolAttribute<Boolean, T, 
 
     @Override
     protected BoolParameter createParameter(RangeTypeMapping<T>[] mappings, Boolean value) {
+
+        RangeParameter<T> from = RangeParameter.to(mappings[0], valueToBeWithinRange);
+        RangeParameter<T> to = RangeParameter.from(mappings[1], valueToBeWithinRange);
+
+
+        BoolParameter boolParameter = new BoolParameter(
+                ImmutableList.of(from, to),
+                OccurenceClause.MUST);
+
         if (value) {
-            RangeParameter<T> from = RangeParameter.from(mappings[0], valueToBeWithinRange);
-            RangeParameter<T> to = RangeParameter.to(mappings[1], valueToBeWithinRange);
-            return new BoolParameter(
-                    ImmutableList.of(from, to),
-                    OccurenceClause.MUST);
+            return boolParameter;
         } else {
-            RangeParameter<T> to = RangeParameter.to(mappings[0], valueToBeWithinRange);
-            RangeParameter<T> from = RangeParameter.from(mappings[1], valueToBeWithinRange);
-            return new BoolParameter(
-                    ImmutableList.of(from, to),
-                    OccurenceClause.MUST);
+            return (BoolParameter) boolParameter.negate();
         }
     }
 }
