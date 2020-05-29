@@ -1,17 +1,20 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import com.metabroadcast.common.stream.MoreCollectors;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.StreamSupport;
+import com.metabroadcast.common.stream.MoreCollectors;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 public abstract class Container extends Content {
 
@@ -73,10 +76,18 @@ public abstract class Container extends Content {
 
     public static Container copyToPreferNonNull(Container from, Container to) {
         Content.copyToPreferNonNull(from, to);
-        to.itemRefs = from.itemRefs.isEmpty() ? to.itemRefs : from.itemRefs;
-        to.upcomingContent = from.upcomingContent.isEmpty() ? to.upcomingContent : from.upcomingContent;
-        to.availableContent = from.availableContent.isEmpty() ? to.availableContent : from.availableContent;
-        to.itemSummaries = from.itemSummaries.isEmpty() ? to.itemSummaries : from.itemSummaries;
+        to.itemRefs = from.itemRefs == null || from.itemRefs.isEmpty()
+                      ? to.itemRefs
+                      : from.itemRefs;
+        to.upcomingContent = from.upcomingContent == null || from.upcomingContent.isEmpty()
+                             ? to.upcomingContent
+                             : from.upcomingContent;
+        to.availableContent = from.availableContent == null || from.availableContent.isEmpty()
+                              ? to.availableContent
+                              : from.availableContent;
+        to.itemSummaries = from.itemSummaries == null || from.itemSummaries.isEmpty()
+                           ? to.itemSummaries
+                           : from.itemSummaries;
         return to;
     }
 

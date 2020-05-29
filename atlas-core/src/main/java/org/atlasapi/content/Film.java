@@ -92,8 +92,8 @@ public class Film extends Item {
     public static Film copyToPreferNonNull(Film from, Film to) {
         Item.copyToPreferNonNull(from, to);
         to.websiteUrl = ofNullable(from.websiteUrl).orElse(to.websiteUrl);
-        to.subtitles = from.subtitles.isEmpty() ? to.subtitles : from.subtitles;
-        to.releaseDates = from.releaseDates.isEmpty() ? to.releaseDates : from.releaseDates;
+        to.subtitles = from.subtitles == null || from.subtitles.isEmpty() ? to.subtitles : from.subtitles;
+        to.releaseDates = from.releaseDates == null || from.releaseDates.isEmpty() ? to.releaseDates : from.releaseDates;
         return to;
     }
 
