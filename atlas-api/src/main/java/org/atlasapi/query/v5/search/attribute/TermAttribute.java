@@ -8,14 +8,15 @@ import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
-public abstract class TermAttribute<T, M extends ChildTypeMapping<T>> extends SherlockAttributeSingle<T, T, M> {
+public abstract class TermAttribute<T, M extends ChildTypeMapping<T>> extends
+        SherlockSingleMappingAttribute<T, T, M> {
 
     public TermAttribute(
             SherlockParameter parameter,
             M mapping,
             AttributeCoercer<T> coercer
     ) {
-        super(parameter, mapping, coercer);
+        super(parameter, coercer, mapping);
     }
 
     @Override

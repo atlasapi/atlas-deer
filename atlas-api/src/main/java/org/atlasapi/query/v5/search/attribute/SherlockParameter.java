@@ -97,8 +97,6 @@ public enum SherlockParameter {
     PRICING_AMOUNT(Type.FILTER, Group.PRICING, "amount"),
     PRICING_START_TIME(Type.FILTER, Group.PRICING, "start_time"),
     PRICING_END_TIME(Type.FILTER, Group.PRICING, "end_time"),
-    PRICING_TIMED_AMOUNT(Type.FILTER, Group.PRICING, "timed_amount"),
-    PRICING_TIMED_CURRENCY(Type.FILTER, Group.PRICING, "timed_currency"),
 
     // Container
     CONTAINER_ID(Type.FILTER, Group.CONTAINER, "id"),

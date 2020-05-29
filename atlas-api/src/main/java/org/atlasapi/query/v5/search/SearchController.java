@@ -32,11 +32,12 @@ import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
+import org.atlasapi.query.v5.search.attribute.SherlockSingleMappingAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockParameter;
 
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
-import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
+import com.metabroadcast.sherlock.client.search.parameter.Parameter;
 import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
@@ -74,7 +75,7 @@ public class SearchController {
     private final AnnotationsExtractor annotationsExtractor;
     private final Selection.SelectionBuilder selectionBuilder;
     private final QueryResultWriter<Content> resultWriter;
-    private final List<SherlockAttribute<?, ?, ?>> sherlockAttributes;
+    private final List<SherlockAttribute<?, ?, ?, ?>> sherlockAttributes;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.<String>builder()
                 .add(API_KEY_PARAM)
@@ -90,7 +91,7 @@ public class SearchController {
     public SearchController(
             ContentResolvingSearcher searcher,
             ApplicationFetcher applicationFetcher,
-            List<SherlockAttribute<?, ?, ?>> sherlockAttributes,
+            List<SherlockAttribute<?, ?, ?, ?>> sherlockAttributes,
             AnnotationsExtractor annotationsExtractor,
             Selection.SelectionBuilder selectionBuilder,
             QueryResultWriter<Content> resultWriter
@@ -133,8 +134,8 @@ public class SearchController {
                 }
             }
 
-            List<SimpleParameter<?>> parameters = parseSherlockParameters(request, queryContext);
-            for (SimpleParameter<?> parameter : parameters) {
+            List<? extends Parameter> parameters = parseSherlockParameters(request, queryContext);
+            for (Parameter parameter : parameters) {
                 if (parameter instanceof SearchParameter) {
                     queryBuilder.addSearcher((SearchParameter)parameter);
                 } else {
@@ -159,7 +160,7 @@ public class SearchController {
         }
     }
 
-    private List<SimpleParameter<?>> parseSherlockParameters(
+    private List<? extends Parameter> parseSherlockParameters(
             HttpServletRequest request,
             QueryContext queryContext
     ) throws InvalidAttributeValueException {
@@ -171,9 +172,9 @@ public class SearchController {
                 .map(Publisher::key)
                 .collect(Collectors.toSet());
 
-        List<SimpleParameter<?>> sherlockParameters = new ArrayList<>();
+        List<Parameter> sherlockParameters = new ArrayList<>();
         Map<String, String[]> parameterMap = (Map<String, String[]>) request.getParameterMap();
-        for (SherlockAttribute<?, ?, ?> attribute : sherlockAttributes) {
+        for (SherlockAttribute<?, ?, ?, ?> attribute : sherlockAttributes) {
 
             SherlockParameter parameter = attribute.getParameter();
             if (parameterMap.containsKey(parameter.getParameterName())) {
@@ -184,16 +185,20 @@ public class SearchController {
                         .distinct()
                         .collect(Collectors.toList());
 
-                if (values.contains(EXISTS_KEYWORD)) {
-                    sherlockParameters.add(ExistParameter.exists(attribute.getMapping()));
-                    values.remove(EXISTS_KEYWORD);
-                } else if (values.contains(NON_EXISTS_KEYWORD)) {
-                    sherlockParameters.add(ExistParameter.notExists(attribute.getMapping()));
-                    values.remove(NON_EXISTS_KEYWORD);
+                if (attribute instanceof SherlockSingleMappingAttribute) {
+                    SherlockSingleMappingAttribute<?, ?, ?> singleMappingAttribute =
+                            (SherlockSingleMappingAttribute<?, ?, ?>) attribute;
+                    if (values.contains(EXISTS_KEYWORD)) {
+                        sherlockParameters.add(singleMappingAttribute.getExistsParameter(true));
+                        values.remove(EXISTS_KEYWORD);
+                    } else if (values.contains(NON_EXISTS_KEYWORD)) {
+                        sherlockParameters.add(singleMappingAttribute.getExistsParameter(false));
+                        values.remove(NON_EXISTS_KEYWORD);
+                    }
                 }
 
                 try {
-                    List<? extends SimpleParameter<?>> coercedValues = attribute.coerce(values);
+                    List<? extends Parameter> coercedValues = attribute.coerce(values);
 
                     if (parameter == SherlockParameter.PUBLISHER) {
                         List<SimpleParameter<String>> parsedPublishers =
