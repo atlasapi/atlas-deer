@@ -4,6 +4,7 @@ import org.atlasapi.query.common.coercers.BooleanCoercer;
 
 import com.metabroadcast.sherlock.client.search.helpers.OccurenceClause;
 import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
+import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
 import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
 
@@ -26,13 +27,30 @@ public class BetweenRangeAttribute<T> extends SherlockBoolAttribute<Boolean, T, 
     @Override
     protected BoolParameter createParameter(RangeTypeMapping<T>[] mappings, Boolean value) {
 
-        RangeParameter<T> from = RangeParameter.to(mappings[0], valueToBeWithinRange);
-        RangeParameter<T> to = RangeParameter.from(mappings[1], valueToBeWithinRange);
+        RangeTypeMapping<T> fromMapping = mappings[0];
+        RangeTypeMapping<T> toMapping = mappings[1];
 
+        RangeParameter<T> from = RangeParameter.to(fromMapping, valueToBeWithinRange);
+        RangeParameter<T> to = RangeParameter.from(toMapping, valueToBeWithinRange);
 
-        BoolParameter boolParameter = new BoolParameter(
+        BoolParameter both = new BoolParameter(
                 ImmutableList.of(from, to),
                 OccurenceClause.MUST);
+
+        ExistParameter<T> nullFrom = ExistParameter.notExists(fromMapping);
+        BoolParameter toAndNullFrom = new BoolParameter(
+                ImmutableList.of(nullFrom, to),
+                OccurenceClause.MUST);
+
+        ExistParameter<T> nullTo = ExistParameter.notExists(toMapping);
+        BoolParameter fromAndNullTo = new BoolParameter(
+                ImmutableList.of(nullTo, to),
+                OccurenceClause.MUST);
+
+        BoolParameter boolParameter = new BoolParameter(
+                ImmutableList.of(both, toAndNullFrom, fromAndNullTo),
+                OccurenceClause.SHOULD
+        );
 
         if (value) {
             return boolParameter;
