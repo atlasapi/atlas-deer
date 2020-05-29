@@ -23,9 +23,9 @@ public abstract class SherlockSingleMappingAttribute<FROM, TO, M extends ChildTy
 
     public ExistParameter<TO> getExistsParameter(boolean exists) {
         if (exists) {
-            return ExistParameter.exists(mappings[0]);
+            return ExistParameter.exists(getMapping());
         } else {
-            return ExistParameter.notExists(mappings[0]);
+            return ExistParameter.notExists(getMapping());
         }
     }
 
