@@ -8,9 +8,9 @@ import java.util.stream.Collectors;
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
+import com.metabroadcast.sherlock.client.search.helpers.OccurenceClause;
 import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
-import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 public class MultiFieldAttribute<T, M extends ChildTypeMapping<T>> extends
@@ -39,7 +39,7 @@ public class MultiFieldAttribute<T, M extends ChildTypeMapping<T>> extends
                 Arrays.stream(mappings)
                         .map(m -> TermParameter.of(m, value))
                         .collect(Collectors.toList()),
-                BoolParameter.OccurenceClause.SHOULD
+                OccurenceClause.SHOULD
         );
     }
 }
