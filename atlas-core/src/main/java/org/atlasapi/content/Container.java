@@ -63,6 +63,23 @@ public abstract class Container extends Content {
         return super.copyTo(to);
     }
 
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Container) {
+            copyToPreferNonNull(this, (Container) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
+    }
+
+    public static Container copyToPreferNonNull(Container from, Container to) {
+        Content.copyToPreferNonNull(from, to);
+        to.itemRefs = from.itemRefs.isEmpty() ? to.itemRefs : from.itemRefs;
+        to.upcomingContent = from.upcomingContent.isEmpty() ? to.upcomingContent : from.upcomingContent;
+        to.availableContent = from.availableContent.isEmpty() ? to.availableContent : from.availableContent;
+        to.itemSummaries = from.itemSummaries.isEmpty() ? to.itemSummaries : from.itemSummaries;
+        return to;
+    }
+
     public abstract <V> V accept(ContainerVisitor<V> visitor);
 
     public abstract ContainerRef toRef();

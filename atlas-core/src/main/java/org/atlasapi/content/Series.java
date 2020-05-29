@@ -7,6 +7,8 @@ import org.atlasapi.meta.annotations.FieldName;
 
 import javax.annotation.Nullable;
 
+import static java.util.Optional.ofNullable;
+
 public class Series extends Container {
 
     private Integer seriesNumber;
@@ -71,6 +73,22 @@ public class Series extends Container {
 
     @Override public Series copy() {
         return copyTo(this, new Series());
+    }
+
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Series) {
+            copyToPreferNonNull(this, (Series) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
+    }
+
+    public static Series copyToPreferNonNull(Series from, Series to) {
+        Container.copyToPreferNonNull(from, to);
+        to.seriesNumber = ofNullable(from.seriesNumber).orElse(to.seriesNumber);
+        to.totalEpisodes = ofNullable(from.totalEpisodes).orElse(to.totalEpisodes);
+        to.brandRef = ofNullable(from.brandRef).orElse(to.brandRef);
+        return to;
     }
 
     @Override

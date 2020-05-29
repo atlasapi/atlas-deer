@@ -69,6 +69,20 @@ public class Brand extends Container {
         return Brand.copyTo(this, new Brand());
     }
 
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Brand) {
+            copyToPreferNonNull(this, (Brand) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
+    }
+
+    public static Brand copyToPreferNonNull(Brand from, Brand to) {
+        Container.copyToPreferNonNull(from, to);
+        to.seriesRefs = from.seriesRefs.isEmpty() ? to.seriesRefs : from.seriesRefs;
+        return to;
+    }
+
     @Override
     public Brand createNew() {
         return new Brand();
