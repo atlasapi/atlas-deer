@@ -21,9 +21,6 @@ import javax.annotation.Nullable;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-import org.atlasapi.segment.SegmentEvent;
-
-import com.google.common.collect.Sets;
 
 import static java.util.Optional.ofNullable;
 
