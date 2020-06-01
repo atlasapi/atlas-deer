@@ -142,7 +142,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         return merged;
     }
 
-    // finds the content with the lowest id, returning its id and its publisher
+    // return the content in the equiv set with the lowest id (to try and keep ID stable)
     private static <T extends Described> T findLowestIdContent(Iterable<T> orderedContent) {
         T lowestContent = orderedContent.iterator().next();
         for (T content : orderedContent) {
