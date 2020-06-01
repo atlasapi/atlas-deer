@@ -8,17 +8,16 @@ import org.atlasapi.query.common.coercers.BooleanCoercer;
 
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
 import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
-import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
-import com.metabroadcast.sherlock.common.type.BooleanMapping;
 import com.metabroadcast.sherlock.common.type.InstantMapping;
 
-public class BeforeAfterAttribute extends SherlockAttributeSingle<Boolean, Instant, InstantMapping> {
+public class BeforeAfterAttribute extends
+        SherlockSingleMappingAttribute<Boolean, Instant, InstantMapping> {
 
     public BeforeAfterAttribute(
             SherlockParameter parameter,
             InstantMapping mapping
     ) {
-        super(parameter, mapping, BooleanCoercer.create());
+        super(parameter, BooleanCoercer.create(), mapping);
     }
 
     @Override

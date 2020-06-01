@@ -8,10 +8,11 @@ import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
-public class EnumAttribute<T extends Enum<T>> extends SherlockAttributeSingle<T, String, KeywordMapping> {
+public class EnumAttribute<T extends Enum<T>> extends
+        SherlockSingleMappingAttribute<T, String, KeywordMapping> {
 
     public EnumAttribute(SherlockParameter parameter, KeywordMapping mapping, EnumCoercer<T> coercer) {
-        super(parameter, mapping, coercer);
+        super(parameter, coercer, mapping);
     }
 
     @Override
