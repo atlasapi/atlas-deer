@@ -125,6 +125,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         // Unchecked casting is safe here because we get the most specific type from the hierarchy
         T merged = (T) mostSpecificTypeContent.createNew();
+        merged = mostSpecificTypeContent.copyToPreferNonNull(merged);
 
         // Then we need as much data as possible from the highest precedence source possible
         merged = highestPrecedenceContent.copyToPreferNonNull(merged);
