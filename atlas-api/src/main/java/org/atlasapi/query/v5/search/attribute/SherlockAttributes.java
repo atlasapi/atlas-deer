@@ -274,8 +274,7 @@ public class SherlockAttributes {
                         SherlockParameter.LOCATIONS_AVAILABLE,
                         content.getLocations().getAvailabilityStart(),
                         content.getLocations().getAvailabilityEnd(),
-                        Instant.now(),
-                        content.getLocationsMapping()
+                        Instant.now()
                 ),
                 new RangeAttribute<>(
                         SherlockParameter.LOCATIONS_AVAILABILITY_START,

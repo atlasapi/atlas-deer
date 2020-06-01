@@ -1,18 +1,11 @@
 package org.atlasapi.query.v5.search.attribute;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.atlasapi.query.common.coercers.BooleanCoercer;
 
 import com.metabroadcast.sherlock.client.search.helpers.OccurenceClause;
 import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
-import com.metabroadcast.sherlock.client.search.parameter.Parameter;
-import com.metabroadcast.sherlock.client.search.parameter.ParentExistParameter;
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
-import com.metabroadcast.sherlock.common.type.ParentTypeMapping;
 import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
 
 import com.google.common.collect.ImmutableList;
@@ -20,18 +13,15 @@ import com.google.common.collect.ImmutableList;
 public class BetweenRangeAttribute<T> extends SherlockBoolAttribute<Boolean, T, RangeTypeMapping<T>> {
 
     private final T valueToBeWithinRange;
-    private final ParentTypeMapping[] parentTypeMappings;
 
     public BetweenRangeAttribute(
             SherlockParameter parameter,
             RangeTypeMapping<T> mappingFrom,
             RangeTypeMapping<T> mappingTo,
-            T valueToBeWithinRange,
-            ParentTypeMapping... parentTypeMappings
+            T valueToBeWithinRange
     ) {
         super(parameter, BooleanCoercer.create(), mappingFrom, mappingTo);
         this.valueToBeWithinRange = valueToBeWithinRange;
-        this.parentTypeMappings = parentTypeMappings;
     }
 
     @Override
@@ -65,21 +55,7 @@ public class BetweenRangeAttribute<T> extends SherlockBoolAttribute<Boolean, T, 
         if (value) {
             return inRange;
         } else {
-
-            BoolParameter notInRange = (BoolParameter) inRange.negate();
-
-            if (parentTypeMappings.length > 0) {
-                List<Parameter> notInRangeOrParentsNull = Arrays.stream(parentTypeMappings)
-                        .map(ParentExistParameter::notExists)
-                        .collect(Collectors.toList());
-                notInRangeOrParentsNull.add(notInRange);
-                return new BoolParameter(
-                        notInRangeOrParentsNull,
-                        OccurenceClause.SHOULD
-                );
-            } else {
-                return notInRange;
-            }
+            return  (BoolParameter) inRange.negate();
         }
     }
 }
