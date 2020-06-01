@@ -103,6 +103,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private static final Function<Item, ContainerSummary> TO_CONTAINER_SUMMARY =
             input -> input == null ? null : input.getContainerSummary();
 
+    private static final Function<Described, String> TO_PRESENTATION_CHANNEL =
+            input -> input == null ? null : input.getPresentationChannel();
+
     private EquivalentSetContentHierarchyChooser hierarchyChooser;
 
     public OutputContentMerger(EquivalentSetContentHierarchyChooser hierarchyChooser) {
@@ -234,6 +237,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         if (chosen.getShortDescription() == null) {
             chosen.setShortDescription(first(orderedContent, TO_SHORT_DESCRIPTION));
+        }
+        if (chosen.getPresentationChannel() == null) {
+            chosen.setPresentationChannel(first(orderedContent, TO_PRESENTATION_CHANNEL));
         }
 
         mergeAwards(chosen, orderedContent);
