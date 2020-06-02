@@ -612,7 +612,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         chosen.setCertificates(combinedCertificates);
     }
 
-    // find first non-null, non-empty set of languages
     private <T extends Content> void mergeLanguages(T chosen, Iterable<T> orderedContent) {
         Set<String> combinedLanguages = MoreStreams.stream(orderedContent)
                 .map(Content::getLanguages)
