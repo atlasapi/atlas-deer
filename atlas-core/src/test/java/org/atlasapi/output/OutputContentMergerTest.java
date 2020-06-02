@@ -1031,7 +1031,7 @@ public class OutputContentMergerTest {
         List<Brand> orderedContent = sortByPublisherThenId(application, ImmutableList.of(highestPrecedence, lowerPrecedence));
         Brand merged = merger.merge(orderedContent, application, Collections.emptySet());
 
-        assertThat(merged.getLanguages(), is(ImmutableSet.of("en_GB")));
+        assertThat(merged.getLanguages(), is(ImmutableSet.of("en_GB", "fr_FR")));
 
         Brand anotherHighestPrecedence = brand(3, "again not relevant", Publisher.PA);    // no language
         orderedContent = sortByPublisherThenId(application, ImmutableList.of(anotherHighestPrecedence, lowerPrecedence));

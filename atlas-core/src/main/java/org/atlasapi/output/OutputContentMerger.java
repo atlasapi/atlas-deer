@@ -614,10 +614,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     // find first non-null, non-empty set of languages
     private <T extends Content> void mergeLanguages(T chosen, Iterable<T> orderedContent) {
-        MoreStreams.stream(orderedContent)
-                .filter(input -> input.getLanguages() != null && !input.getLanguages().isEmpty())
-                .findFirst()
-                .ifPresent(input -> chosen.setLanguages(input.getLanguages()));
+        Set<String> combinedLanguages = MoreStreams.stream(orderedContent)
+                .map(Content::getLanguages)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        chosen.setLanguages(combinedLanguages);
     }
 
     private <T extends Item> void matchAndMerge(final Broadcast chosenBroadcast,
