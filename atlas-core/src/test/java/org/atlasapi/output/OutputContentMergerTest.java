@@ -1023,23 +1023,21 @@ public class OutputContentMergerTest {
                 Publisher.PA,
                 Publisher.YOUVIEW
         );
-        Item highestPrecedence = item(2, "not relevant", Publisher.PA);
+        Brand highestPrecedence = brand(2, "not relevant", Publisher.PA);
         highestPrecedence.setLanguages(ImmutableSet.of("en_GB"));
-        Item lowerPrecedence = item(1, "also not relevant", Publisher.YOUVIEW);
+        Brand lowerPrecedence = brand(1, "also not relevant", Publisher.YOUVIEW);
         lowerPrecedence.setLanguages(ImmutableSet.of("fr_FR"));
 
-        List<Item> orderedContent = sortByPublisherThenId(application, ImmutableList.of(highestPrecedence, lowerPrecedence));
-        Item merged = merger.merge(orderedContent, application, Collections.emptySet());
+        List<Brand> orderedContent = sortByPublisherThenId(application, ImmutableList.of(highestPrecedence, lowerPrecedence));
+        Brand merged = merger.merge(orderedContent, application, Collections.emptySet());
 
         assertThat(merged.getLanguages(), is(ImmutableSet.of("en_GB")));
 
-/*        TODO add these language merging is fixed (move it out of mergeFilm into mergeContent)
-        Item anotherHighestPrecedence = item(3, "again not relevant", Publisher.PA);    // no language
+        Brand anotherHighestPrecedence = brand(3, "again not relevant", Publisher.PA);    // no language
         orderedContent = sortByPublisherThenId(application, ImmutableList.of(anotherHighestPrecedence, lowerPrecedence));
         merged = merger.merge(orderedContent, application, Collections.emptySet());
 
         assertThat(merged.getLanguages(), is(ImmutableSet.of("fr_FR")));
-*/
     }
 
     @Test
