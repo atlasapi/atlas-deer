@@ -325,6 +325,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 orderedContent,
                 Content::getCountriesOfOrigin
         ));
+
+        mergeLanguages(chosen, orderedContent);
+        mergeCertificates(chosen, orderedContent);
     }
 
     private <T extends Content> void mergeDuration(T chosen, Iterable<T> orderedContent) {
@@ -416,20 +419,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<Film> orderedContent) {
 
         Builder<Subtitles> subtitles = ImmutableSet.<Subtitles>builder().addAll(chosen.getSubtitles());
-        Builder<String> languages = ImmutableSet.<String>builder().addAll(chosen.getLanguages());
-        Builder<Certificate> certs = ImmutableSet.<Certificate>builder().addAll(chosen.getCertificates());
         Builder<ReleaseDate> releases = ImmutableSet.<ReleaseDate>builder().addAll(chosen.getReleaseDates());
 
         for (Film film : orderedContent) {
             subtitles.addAll(film.getSubtitles());
-            languages.addAll(film.getLanguages());
-            certs.addAll(film.getCertificates());
             releases.addAll(film.getReleaseDates());
         }
 
         chosen.setSubtitles(subtitles.build());
-        chosen.setLanguages(languages.build());
-        chosen.setCertificates(certs.build());
         chosen.setReleaseDates(releases.build());
 
         if (application.getConfiguration().isPeoplePrecedenceEnabled()) {
@@ -604,6 +601,25 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             }
         }
         chosen.setManifestedAs(encodings);
+    }
+
+    private <T extends Content> void mergeCertificates(T chosen, Iterable<T> orderedContent) {
+        Set<Certificate> combinedCertificates = MoreStreams.stream(orderedContent)
+                .map(Content::getCertificates)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        chosen.setCertificates(combinedCertificates);
+    }
+
+
+    private <T extends Content> void mergeLanguages(T chosen, Iterable<T> orderedContent) {
+        Set<String> combinedLanguages = MoreStreams.stream(orderedContent)
+                .map(Content::getLanguages)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        chosen.setLanguages(combinedLanguages);
     }
 
     private <T extends Item> void matchAndMerge(final Broadcast chosenBroadcast,
