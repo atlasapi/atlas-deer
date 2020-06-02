@@ -1,17 +1,20 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import com.metabroadcast.common.stream.MoreCollectors;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.StreamSupport;
+import com.metabroadcast.common.stream.MoreCollectors;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 public abstract class Container extends Content {
 
@@ -61,6 +64,31 @@ public abstract class Container extends Content {
             return to;
         }
         return super.copyTo(to);
+    }
+
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Container) {
+            copyToPreferNonNull(this, (Container) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
+    }
+
+    public static Container copyToPreferNonNull(Container from, Container to) {
+        Content.copyToPreferNonNull(from, to);
+        to.itemRefs = from.itemRefs == null || from.itemRefs.isEmpty()
+                      ? to.itemRefs
+                      : from.itemRefs;
+        to.upcomingContent = from.upcomingContent == null || from.upcomingContent.isEmpty()
+                             ? to.upcomingContent
+                             : from.upcomingContent;
+        to.availableContent = from.availableContent == null || from.availableContent.isEmpty()
+                              ? to.availableContent
+                              : from.availableContent;
+        to.itemSummaries = from.itemSummaries == null || from.itemSummaries.isEmpty()
+                           ? to.itemSummaries
+                           : from.itemSummaries;
+        return to;
     }
 
     public abstract <V> V accept(ContainerVisitor<V> visitor);

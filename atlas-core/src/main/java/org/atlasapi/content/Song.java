@@ -6,6 +6,8 @@ import org.atlasapi.meta.annotations.FieldName;
 
 import org.joda.time.Duration;
 
+import static java.util.Optional.ofNullable;
+
 public class Song extends Item {
 
     private String isrc;
@@ -60,8 +62,27 @@ public class Song extends Item {
         return super.copyTo(to);
     }
 
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Song) {
+            copyToPreferNonNull(this, (Song) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
+    }
+
+    public static Song copyToPreferNonNull(Song from, Song to) {
+        Item.copyToPreferNonNull(from, to);
+        to.isrc = ofNullable(from.isrc).orElse(to.isrc);
+        return to;
+    }
+
     @Override public Song copy() {
         return copyTo(this, new Song());
+    }
+
+    @Override
+    public Song createNew() {
+        return new Song();
     }
 
     public <V> V accept(ItemVisitor<V> visitor) {
