@@ -15,10 +15,11 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
-import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * @author Robert Chatley (robert@metabroadcast.com)
@@ -67,6 +68,27 @@ public class Brand extends Container {
 
     @Override public Brand copy() {
         return Brand.copyTo(this, new Brand());
+    }
+
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Brand) {
+            copyToPreferNonNull(this, (Brand) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
+    }
+
+    public static Brand copyToPreferNonNull(Brand from, Brand to) {
+        Container.copyToPreferNonNull(from, to);
+        to.seriesRefs = from.seriesRefs == null || from.seriesRefs.isEmpty()
+                        ? to.seriesRefs
+                        : from.seriesRefs;
+        return to;
+    }
+
+    @Override
+    public Brand createNew() {
+        return new Brand();
     }
 
     public <V> V accept(ContainerVisitor<V> visitor) {

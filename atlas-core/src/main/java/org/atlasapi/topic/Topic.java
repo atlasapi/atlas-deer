@@ -146,6 +146,11 @@ public class Topic extends Described implements Sourced, Aliased {
         return copyTo(this, new Topic());
     }
 
+    @Override
+    public Topic createNew() {
+        return new Topic();
+    }
+
     @FieldName("type")
     public Type getType() {
         return this.type;

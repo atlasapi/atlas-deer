@@ -22,6 +22,8 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
+import static java.util.Optional.ofNullable;
+
 /**
  * @author Robert Chatley (robert@metabroadcast.com)
  * @author Lee Denison (lee@metabroadcast.com)
@@ -91,10 +93,9 @@ public class Episode extends Item {
         setSeriesRef(series.toRef());
     }
 
-    @FieldName("series_ref")
-    public
     @Nullable
-    SeriesRef getSeriesRef() {
+    @FieldName("series_ref")
+    public SeriesRef getSeriesRef() {
         return seriesRef;
     }
 
@@ -126,6 +127,24 @@ public class Episode extends Item {
         return super.copyTo(to);
     }
 
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Episode) {
+            copyToPreferNonNull(this, (Episode) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
+    }
+
+    public static Episode copyToPreferNonNull(Episode from, Episode to) {
+        Item.copyToPreferNonNull(from, to);
+        to.seriesNumber = ofNullable(from.seriesNumber).orElse(to.seriesNumber);
+        to.episodeNumber = ofNullable(from.episodeNumber).orElse(to.episodeNumber);
+        to.partNumber = ofNullable(from.partNumber).orElse(to.partNumber);
+        to.special = ofNullable(from.special).orElse(to.special);
+        to.seriesRef = ofNullable(from.seriesRef).orElse(to.seriesRef);
+        return to;
+    }
+
     @Override public Episode copy() {
         return copyTo(this, new Episode());
     }
@@ -141,6 +160,11 @@ public class Episode extends Item {
                 getYear(),
                 getCertificates()
         );
+    }
+
+    @Override
+    public Episode createNew() {
+        return new Episode();
     }
 
     public <V> V accept(ItemVisitor<V> visitor) {

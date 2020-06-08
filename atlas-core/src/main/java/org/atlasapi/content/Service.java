@@ -19,4 +19,9 @@ public class Service extends Described {
         return copyTo(this, new Service());
     }
 
+    @Override
+    public Service createNew() {
+        return new Service();
+    }
+
 }

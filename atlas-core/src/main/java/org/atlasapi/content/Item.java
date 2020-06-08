@@ -14,22 +14,22 @@
  permissions and limitations under the License. */
 package org.atlasapi.content;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import org.joda.time.Duration;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import com.metabroadcast.common.intl.Country;
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.hashing.ExcludeFromHash;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.segment.SegmentEvent;
 
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import org.joda.time.Duration;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Optional.ofNullable;
@@ -178,9 +178,15 @@ public class Item extends Content {
         to.containerRef = ofNullable(from.containerRef).orElse(to.containerRef);
         to.containerSummary = ofNullable(from.containerSummary).orElse(to.containerSummary);
         to.isLongForm = from.isLongForm;
-        to.broadcasts = from.broadcasts == null || from.broadcasts.isEmpty() ? to.broadcasts : Sets.newLinkedHashSet(from.broadcasts);
-        to.segmentEvents = from.segmentEvents.isEmpty() ? to.segmentEvents : SegmentEvent.ORDERING.immutableSortedCopy(from.segmentEvents);
-        to.restrictions = from.restrictions.isEmpty() ? to.restrictions : Sets.newHashSet(from.restrictions);
+        to.broadcasts = from.broadcasts == null || from.broadcasts.isEmpty()
+                        ? to.broadcasts
+                        : Sets.newLinkedHashSet(from.broadcasts);
+        to.segmentEvents = from.segmentEvents == null || from.segmentEvents.isEmpty()
+                           ? to.segmentEvents
+                           : SegmentEvent.ORDERING.immutableSortedCopy(from.segmentEvents);
+        to.restrictions = from.restrictions.isEmpty()
+                          ? to.restrictions
+                          : Sets.newHashSet(from.restrictions);
         to.blackAndWhite = ofNullable(from.blackAndWhite).orElse(to.blackAndWhite);
         to.duration = ofNullable(from.duration).orElse(to.duration);
         return to;
@@ -204,6 +210,11 @@ public class Item extends Content {
 
     @Override public Item copy() {
         return copyTo(this, new Item());
+    }
+
+    @Override
+    public Item createNew() {
+        return new Item();
     }
 
     public Item withSortKey(String sortKey) {

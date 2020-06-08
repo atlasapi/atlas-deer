@@ -88,6 +88,7 @@ public enum Annotation {
     FUTURE_CHANNELS,
     CUSTOM_FIELDS,
     LOCATION_PROVIDERS,
+    NO_SMART_SEARCH,
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());

@@ -4,18 +4,19 @@ import javax.annotation.Nonnull;
 
 import org.atlasapi.query.common.coercers.EnumCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
-public class EnumAttribute<T extends Enum<T>> extends SherlockAttribute<T, String, KeywordMapping> {
+public class EnumAttribute<T extends Enum<T>> extends
+        SherlockSingleMappingAttribute<T, String, KeywordMapping> {
 
     public EnumAttribute(SherlockParameter parameter, KeywordMapping mapping, EnumCoercer<T> coercer) {
-        super(parameter, mapping, coercer);
+        super(parameter, coercer, mapping);
     }
 
     @Override
-    protected NamedParameter<String> createParameter(KeywordMapping mapping, @Nonnull T value) {
+    protected SimpleParameter<String> createParameter(KeywordMapping mapping, @Nonnull T value) {
         return TermParameter.of(mapping, value.toString());
     }
 }

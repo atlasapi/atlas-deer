@@ -5,7 +5,7 @@ import javax.annotation.Nonnull;
 import org.atlasapi.query.common.coercers.BooleanCoercer;
 import org.atlasapi.query.common.coercers.StringCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.BooleanMapping;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
@@ -20,7 +20,7 @@ public class KeywordAttribute extends TermAttribute<String, KeywordMapping> {
     }
 
     @Override
-    protected NamedParameter<String> createParameter(KeywordMapping mapping, @Nonnull String value) {
+    protected SimpleParameter<String> createParameter(KeywordMapping mapping, @Nonnull String value) {
         return TermParameter.of(mapping, value);
     }
 }

@@ -1,19 +1,23 @@
 package org.atlasapi.query.v5.search;
 
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.sherlock.client.search.SearchQuery;
-import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
-import com.metabroadcast.sherlock.client.search.parameter.FilterParameter;
-import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
-import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
-import com.metabroadcast.sherlock.client.search.scoring.QueryWeighting;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Content;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
@@ -28,22 +32,27 @@ import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
+import org.atlasapi.query.v5.search.attribute.SherlockSingleMappingAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockParameter;
+
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
+import com.metabroadcast.sherlock.client.search.parameter.Parameter;
+import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
+import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
+import com.metabroadcast.sherlock.client.search.scoring.QueryWeighting;
+import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.mapping.IndexMapping;
+
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @ProducesType(type = Content.class)
 @Controller
@@ -55,19 +64,21 @@ public class SearchController {
     private final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
     private static final String EXISTS_KEYWORD = "nonNull";
     private static final String NON_EXISTS_KEYWORD = "null";
+    private static final ContentMapping CONTENT = IndexMapping.getContent();
 
     private static final String ANNOTATIONS_PARAM = "annotations";
     private static final String QUERY_PARAM = "q";
+    private static final String API_KEY_PARAM = ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER;
 
     private final ContentResolvingSearcher searcher;
     private final ApplicationFetcher applicationFetcher;
     private final AnnotationsExtractor annotationsExtractor;
     private final Selection.SelectionBuilder selectionBuilder;
     private final QueryResultWriter<Content> resultWriter;
-    private final List<SherlockAttribute<?, ?, ?>> sherlockAttributes;
+    private final List<SherlockAttribute<?, ?, ?, ?>> sherlockAttributes;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.<String>builder()
-                .add(ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER)
+                .add(API_KEY_PARAM)
                 .add(Selection.LIMIT_REQUEST_PARAM)
                 .add(Selection.START_INDEX_REQUEST_PARAM)
                 .add(JsonResponseWriter.CALLBACK)
@@ -80,7 +91,7 @@ public class SearchController {
     public SearchController(
             ContentResolvingSearcher searcher,
             ApplicationFetcher applicationFetcher,
-            List<SherlockAttribute<?, ?, ?>> sherlockAttributes,
+            List<SherlockAttribute<?, ?, ?, ?>> sherlockAttributes,
             AnnotationsExtractor annotationsExtractor,
             Selection.SelectionBuilder selectionBuilder,
             QueryResultWriter<Content> resultWriter
@@ -96,6 +107,7 @@ public class SearchController {
     @RequestMapping({ "\\.[a-z]+", "" })
     public void search(
             @RequestParam(value = QUERY_PARAM, required = false) String query,
+            @RequestParam(value = API_KEY_PARAM) String apiKey,
             HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
@@ -105,20 +117,29 @@ public class SearchController {
             writer = writerResolver.writerFor(request, response);
             paramChecker.checkParameters(request);
 
-            List<NamedParameter<?>> parameters = parseSherlockParameters(request);
+            QueryContext queryContext = QueryContext.create(
+                    applicationFetcher.applicationFor(request).orElse(DefaultApplication.create()),
+                    annotationsExtractor.extractFromSingleRequest(request),
+                    request
+            );
 
             SearchQuery.Builder queryBuilder;
             if (Strings.isNullOrEmpty(query)) {
                 queryBuilder = SearchQuery.builder();
             } else {
-                queryBuilder = SearchQuery.getDefaultQuerySearcher(query);
+                if (queryContext.getAnnotations().values().contains(Annotation.NO_SMART_SEARCH)) {
+                    queryBuilder = SearchQuery.getDefaultQuerySearcher(query, false);
+                } else {
+                    queryBuilder = SearchQuery.getDefaultQuerySearcher(query, true);
+                }
             }
 
-            for (NamedParameter<?> parameter : parameters) {
+            List<? extends Parameter> parameters = parseSherlockParameters(request, queryContext);
+            for (Parameter parameter : parameters) {
                 if (parameter instanceof SearchParameter) {
                     queryBuilder.addSearcher((SearchParameter)parameter);
-                } else if (parameter instanceof FilterParameter) {
-                    queryBuilder.addFilter((FilterParameter<?>)parameter);
+                } else {
+                    queryBuilder.addFilter(parameter);
                 }
             }
 
@@ -130,12 +151,6 @@ public class SearchController {
                     .withOffset(selection.getOffset())
                     .build();
 
-            QueryContext queryContext = QueryContext.create(
-                    applicationFetcher.applicationFor(request).orElse(DefaultApplication.create()),
-                    annotationsExtractor.extractFromSingleRequest(request),
-                    request
-            );
-
             QueryResult<Content> contentResult = searcher.search(searchQuery, queryContext);
             resultWriter.write(contentResult, writer);
         } catch (Exception e) {
@@ -145,39 +160,74 @@ public class SearchController {
         }
     }
 
-    private List<NamedParameter<?>> parseSherlockParameters(HttpServletRequest request)
-            throws InvalidAttributeValueException {
+    private List<? extends Parameter> parseSherlockParameters(
+            HttpServletRequest request,
+            QueryContext queryContext
+    ) throws InvalidAttributeValueException {
 
-        List<NamedParameter<?>> sherlockParameters = new ArrayList<>();
+        Set<String> enabledReadSourcesKeys = queryContext.getApplication()
+                .getConfiguration()
+                .getEnabledReadSources()
+                .stream()
+                .map(Publisher::key)
+                .collect(Collectors.toSet());
 
+        List<Parameter> sherlockParameters = new ArrayList<>();
         Map<String, String[]> parameterMap = (Map<String, String[]>) request.getParameterMap();
-        for (SherlockAttribute<?, ?, ?> attribute : sherlockAttributes) {
+        for (SherlockAttribute<?, ?, ?, ?> attribute : sherlockAttributes) {
 
-            String name = attribute.getParameterName();
-            if (parameterMap.containsKey(name)) {
+            SherlockParameter parameter = attribute.getParameter();
+            if (parameterMap.containsKey(parameter.getParameterName())) {
 
-                List<String> values = Arrays.stream(parameterMap.get(name))
+                List<String> values = Arrays.stream(parameterMap.get(parameter.getParameterName()))
                         .map(SPLITTER::splitToList)
                         .flatMap(Collection::stream)
                         .distinct()
                         .collect(Collectors.toList());
 
-                if (values.contains(EXISTS_KEYWORD)) {
-                    sherlockParameters.add(ExistParameter.exists(attribute.getMapping()));
-                    values.remove(EXISTS_KEYWORD);
-                } else if (values.contains(NON_EXISTS_KEYWORD)) {
-                    sherlockParameters.add(ExistParameter.notExists(attribute.getMapping()));
-                    values.remove(NON_EXISTS_KEYWORD);
+                if (attribute instanceof SherlockSingleMappingAttribute) {
+                    SherlockSingleMappingAttribute<?, ?, ?> singleMappingAttribute =
+                            (SherlockSingleMappingAttribute<?, ?, ?>) attribute;
+                    if (values.contains(EXISTS_KEYWORD)) {
+                        sherlockParameters.add(singleMappingAttribute.getExistsParameter(true));
+                        values.remove(EXISTS_KEYWORD);
+                    } else if (values.contains(NON_EXISTS_KEYWORD)) {
+                        sherlockParameters.add(singleMappingAttribute.getExistsParameter(false));
+                        values.remove(NON_EXISTS_KEYWORD);
+                    }
                 }
 
                 try {
-                    sherlockParameters.addAll(attribute.coerce(values));
+                    List<? extends Parameter> coercedValues = attribute.coerce(values);
+
+                    if (parameter == SherlockParameter.PUBLISHER) {
+                        List<SimpleParameter<String>> parsedPublishers =
+                                (List<SimpleParameter<String>>) coercedValues;
+                        for (SimpleParameter<String> parsedPublisher : parsedPublishers) {
+                            if (!enabledReadSourcesKeys.contains(parsedPublisher.getValue())) {
+                                throw new InvalidAttributeValueException(String.format(
+                                        "The source %s is not within the scope of the provided api key",
+                                        parsedPublisher.getValue()));
+                            }
+                        }
+                    }
+
+                    sherlockParameters.addAll(coercedValues);
+
                 } catch (InvalidAttributeValueException e) {
                     throw new InvalidAttributeValueException(String.format(
                             "Invalid value(s) for %s: %s.",
-                            name,
+                            parameter.getParameterName(),
                             e.getMessage()
                     ), e);
+                }
+
+            // if no values provided for publisher, add all keys from the application key set
+            } else if (parameter == SherlockParameter.PUBLISHER) {
+                for (String enabledReadSourceKey : enabledReadSourcesKeys) {
+                    sherlockParameters.add(TermParameter.of(
+                            CONTENT.getSource().getKey(),
+                            enabledReadSourceKey));
                 }
             }
         }

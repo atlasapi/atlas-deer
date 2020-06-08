@@ -4,22 +4,23 @@ import javax.annotation.Nonnull;
 
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.NamedParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
-public abstract class TermAttribute<T, M extends ChildTypeMapping<T>> extends SherlockAttribute<T, T, M> {
+public abstract class TermAttribute<T, M extends ChildTypeMapping<T>> extends
+        SherlockSingleMappingAttribute<T, T, M> {
 
     public TermAttribute(
             SherlockParameter parameter,
             M mapping,
             AttributeCoercer<T> coercer
     ) {
-        super(parameter, mapping, coercer);
+        super(parameter, coercer, mapping);
     }
 
     @Override
-    protected NamedParameter<T> createParameter(M mapping, @Nonnull T value) {
+    protected SimpleParameter<T> createParameter(M mapping, @Nonnull T value) {
         return TermParameter.of(mapping, value);
     }
 }
