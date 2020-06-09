@@ -1,5 +1,10 @@
 package org.atlasapi.messaging;
 
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
@@ -15,13 +20,6 @@ import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.persistence.content.ContentCategory;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
-
-import com.metabroadcast.common.time.Timestamp;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,8 +84,7 @@ public class Neo4jContentStoreGraphUpdateWorkerTest {
                 "uriB", 1L, Publisher.METABROADCAST, ContentCategory.TOP_LEVEL_ITEM
         );
 
-        when(lookupEntry.explicitEquivalents()).thenReturn(ImmutableSet.of(explicitEquivalent));
-        when(lookupEntry.directEquivalents()).thenReturn(ImmutableSet.of(directEquivalent));
+        when(lookupEntry.getOutgoing()).thenReturn(ImmutableSet.of(explicitEquivalent, directEquivalent));
 
         explicitEquivalentItem = new Item(
                 Id.valueOf(explicitEquivalent.id()), Publisher.BBC

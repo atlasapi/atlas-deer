@@ -6,6 +6,8 @@ import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 
+import static java.util.Optional.ofNullable;
+
 public class Clip extends Item {
 
     private String clipOf;
@@ -71,8 +73,27 @@ public class Clip extends Item {
         return super.copyTo(to);
     }
 
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Clip) {
+            copyToPreferNonNull(this, (Clip) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
+    }
+
+    public static Clip copyToPreferNonNull(Clip from, Clip to) {
+        Item.copyToPreferNonNull(from, to);
+        to.clipOf = ofNullable(from.clipOf).orElse(to.clipOf);
+        return to;
+    }
+
     @Override public Clip copy() {
         return copyTo(this, new Clip());
+    }
+
+    @Override
+    public Clip createNew() {
+        return new Clip();
     }
 
     @Override

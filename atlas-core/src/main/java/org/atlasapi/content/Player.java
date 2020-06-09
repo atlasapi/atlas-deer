@@ -19,4 +19,9 @@ public class Player extends Described {
         return copyTo(this, new Player());
     }
 
+    @Override
+    public Described createNew() {
+        return new Player();
+    }
+
 }

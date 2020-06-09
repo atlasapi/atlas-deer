@@ -1,22 +1,20 @@
 package org.atlasapi.messaging;
 
-import java.util.concurrent.TimeUnit;
-
-import org.atlasapi.content.EquivalentContentStore;
-import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.equivalence.EquivalenceGraph;
-import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
-
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Timestamp;
-
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
+import org.atlasapi.content.EquivalentContentStore;
+import org.atlasapi.entity.util.WriteException;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -60,6 +58,7 @@ public class EquivalentContentStoreGraphUpdateWorker
 
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
+        long start = System.currentTimeMillis();
         messageReceivedMeter.mark();
 
         if (LOG.isDebugEnabled()) {
@@ -81,9 +80,15 @@ public class EquivalentContentStoreGraphUpdateWorker
         try {
             equivalentContentStore.updateEquivalences(message.getGraphUpdate());
 
-            latencyTimer.update(
-                    getTimeToProcessInMillis(message.getTimestamp()),
-                    TimeUnit.MILLISECONDS
+            long timeToProcessInMillis = getTimeToProcessInMillis(message.getTimestamp());
+
+            latencyTimer.update(timeToProcessInMillis, TimeUnit.MILLISECONDS);
+
+            long end = System.currentTimeMillis();
+            LOG.info(
+                    "Timings - Execution Time (ms): {}, Latency (ms): {}",
+                    end - start,
+                    timeToProcessInMillis
             );
         } catch (WriteException e) {
             LOG.warn(

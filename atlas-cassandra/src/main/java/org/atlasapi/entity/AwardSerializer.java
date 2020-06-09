@@ -6,10 +6,21 @@ public class AwardSerializer {
 
     public CommonProtos.Award serialize(Award award) {
         CommonProtos.Award.Builder awardProtos = CommonProtos.Award.newBuilder();
-        awardProtos.setOutcome(award.getOutcome());
+
+        //TODO: this might need some better handling, i.e. if there is not enough information
+        //to construct the award, probably discard the whole Award by returning null and log the
+        //the error (as opposed to not letting the content being created).
         awardProtos.setTitle(award.getTitle());
-        awardProtos.setDescription(award.getDescription());
-        awardProtos.setYear(award.getYear());
+
+        if (award.getOutcome() != null) {
+            awardProtos.setOutcome(award.getOutcome());
+        }
+        if (award.getDescription() != null) {
+            awardProtos.setDescription(award.getDescription());
+        }
+        if (award.getYear() != null) {
+            awardProtos.setYear(award.getYear());
+        }
         return awardProtos.build();
     }
 

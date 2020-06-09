@@ -28,6 +28,7 @@ public class Location implements Identified {
     private String embedCode;
     private String embedId;
     private Policy policy;
+    private Provider provider;
     private Map<String, String> customFields;
 
     public Long getId() {
@@ -142,6 +143,14 @@ public class Location implements Identified {
         this.policy = policy;
     }
 
+    public Provider getProvider() {
+        return provider;
+    }
+
+    public void setProvider(Provider provider) {
+        this.provider = provider;
+    }
+
     public Instant getLastUpdated() {
         return lastUpdated;
     }
@@ -185,11 +194,12 @@ public class Location implements Identified {
                 Objects.equals(embedCode, location.embedCode) &&
                 Objects.equals(embedId, location.embedId) &&
                 Objects.equals(policy, location.policy) &&
+                Objects.equals(provider, location.provider) &&
                 NullOrEmptyEquality.equals(customFields, location.customFields);
     }
 
     @Override
     public int hashCode() {
-        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, available, transportIsLive, transportSubType, transportType, uri, embedCode, embedId, policy, customFields);
+        return NullOrEmptyEquality.hash(id, canonicalUri, curie, aliasUrls, aliases, equivalentTo, available, transportIsLive, transportSubType, transportType, uri, embedCode, embedId, policy, provider, customFields);
     }
 }

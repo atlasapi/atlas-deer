@@ -90,12 +90,17 @@ import com.metabroadcast.common.ids.IdGeneratorBuilder;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongoClient;
 import com.metabroadcast.common.persistence.mongo.health.MongoConnectionPoolProbe;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.properties.Parameter;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
 import com.metabroadcast.common.time.SystemClock;
+import com.metabroadcast.sherlock.client.search.ContentSearcher;
+import com.metabroadcast.sherlock.common.SherlockIndex;
+import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
+import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
 
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.joda.InstantCodec;
@@ -107,7 +112,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.Ints;
-import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.ReadPreference;
@@ -164,6 +168,10 @@ public class AtlasPersistenceModule {
     private final String esIndex = Configurer.get("elasticsearch.index").get();
     private final String esRequestTimeout = Configurer.get("elasticsearch.requestTimeout").get();
     private final Parameter processingConfig = Configurer.get("processing.config");
+
+    private final String sherlockScheme = Configurer.get("sherlock.scheme").get();
+    private final String sherlockHostname = Configurer.get("sherlock.hostname").get();
+    private final Integer sherlockPort = Configurer.get("sherlock.port").toInt();
 
     private final String neo4jHost = Configurer.get("neo4j.host").get();
     private final Integer neo4jPort = Configurer.get("neo4j.port").toInt();
@@ -375,11 +383,17 @@ public class AtlasPersistenceModule {
     }
 
     @Bean
+    @Primary
+    public DatabasedMongoClient databasedReadMongoClient() {
+        return new DatabasedMongoClient(mongo(mongoReadHost, mongoReadPort), mongoReadDbName);
+    }
+
+    @Bean
     public DatabasedMongo databasedWriteMongo() {
         return new DatabasedMongo(mongo(mongoWriteHost, mongoWritePort), mongoWriteDbName);
     }
 
-    public Mongo mongo(String mongoHost, Integer mongoPort) {
+    public MongoClient mongo(String mongoHost, Integer mongoPort) {
 
         MongoClientOptions.Builder mongoOptions = MongoClientOptions.builder()
                 .connectionsPerHost(1000)
@@ -430,6 +444,19 @@ public class AtlasPersistenceModule {
     @Primary
     public EsContentTitleSearcher contentSearcher() {
         return esContentIndexModule().contentTitleSearcher();
+    }
+
+    @Bean
+    @Primary
+    public ContentSearcher contentSearcherV5() {
+        return ContentSearcher.builder()
+                .withElasticSearchProcessor(
+                        new ElasticSearchProcessor(
+                                sherlockElasticSearchConfig().getElasticSearchClient()
+                        )
+                )
+                .withIndex(SherlockIndex.CONTENT)
+                .build();
     }
 
     @Bean
@@ -502,7 +529,8 @@ public class AtlasPersistenceModule {
 
     public MongoLookupEntryStore legacyEquivalenceStore() {
         return new MongoLookupEntryStore(
-                databasedReadMongo().collection(MONGO_COLLECTION_LOOKUP),
+                databasedReadMongoClient(),
+                MONGO_COLLECTION_LOOKUP,
                 persistenceAuditLog,
                 ReadPreference.primaryPreferred()
         );
@@ -531,9 +559,11 @@ public class AtlasPersistenceModule {
     @Qualifier("legacy")
     public ContentListerResourceListerAdapter legacyContentLister() {
         DatabasedMongo mongoDb = databasedReadMongo();
+        DatabasedMongoClient mongoDbClient = databasedReadMongoClient();
         LegacyContentLister contentLister = new LegacyLookupResolvingContentLister(
                 new MongoLookupEntryStore(
-                        mongoDb.collection(MONGO_COLLECTION_LOOKUP),
+                        mongoDbClient,
+                        MONGO_COLLECTION_LOOKUP,
                         persistenceAuditLog,
                         ReadPreference.secondary()
                 ),
@@ -634,5 +664,14 @@ public class AtlasPersistenceModule {
     @Bean
     public Neo4jContentStore neo4jContentStore() {
         return neo4jModule().neo4jContentStore(metricsModule.metrics());
+    }
+
+    @Bean
+    public ElasticSearchConfig sherlockElasticSearchConfig() {
+        return ElasticSearchConfig.builder()
+                .withScheme(sherlockScheme)
+                .withHostname(sherlockHostname)
+                .withPort(sherlockPort)
+                .build();
     }
 }

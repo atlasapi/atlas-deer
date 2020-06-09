@@ -67,14 +67,12 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
                     writeField("episode_number", episode.getEpisodeNumber());
                 }
                 writeField("series_number", episode.getSeriesNumber());
-                writeField("year", episode.getYear());
                 return null;
             }
 
             @Override
             public Void visit(Film film) {
                 visit((Item) film);
-                writeField("year", film.getYear());
                 return null;
             }
 
@@ -90,6 +88,7 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
 
             @Override
             public Void visit(Item item) {
+                writeField("year", item.getYear());
                 writeObject(displayTitleWriter, item, ctxt);
                 return null;
             }

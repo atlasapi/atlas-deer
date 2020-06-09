@@ -6,8 +6,10 @@ import java.util.UUID;
 
 import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.common.exceptions.InvalidIdentifierException;
 import org.atlasapi.query.common.exceptions.InvalidParameterException;
+import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 
 import com.metabroadcast.common.http.HttpStatusCode;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -124,6 +126,13 @@ public class ErrorSummary {
                                 HttpStatusCode.BAD_REQUEST
                         )
                 )
+                .put(
+                        MissingAnnotationException.class,
+                        new DefaultErrorSummaryFactory(
+                                "BAD_ANNOTATION_VALUE",
+                                HttpStatusCode.BAD_REQUEST
+                        )
+                )
                 // Sent when oauth tokens are not present. Request is invalid as missing params. Compatible with IE.
                 .put(
                         NotAuthenticatedException.class,
@@ -166,6 +175,13 @@ public class ErrorSummary {
                         InvalidTransitionException.class,
                         new DefaultErrorSummaryFactory(
                                 "INVALID_TRANSITION",
+                                HttpStatusCode.BAD_REQUEST
+                        )
+                )
+                .put(
+                        InvalidAttributeValueException.class,
+                        new DefaultErrorSummaryFactory(
+                                "BAD_QUERY_ATTRIBUTE",
                                 HttpStatusCode.BAD_REQUEST
                         )
                 )

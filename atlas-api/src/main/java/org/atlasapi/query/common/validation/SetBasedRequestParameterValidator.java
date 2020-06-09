@@ -1,11 +1,11 @@
 package org.atlasapi.query.common.validation;
 
-import java.util.Collection;
-import java.util.Set;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+
+import java.util.Collection;
+import java.util.Set;
 
 public class SetBasedRequestParameterValidator extends AbstractRequestParameterValidator {
 
@@ -23,7 +23,7 @@ public class SetBasedRequestParameterValidator extends AbstractRequestParameterV
             Set<String> requiredAlternativeParams
     ) {
         this.requiredParams = ImmutableSet.copyOf(requiredParams);
-        this.optionalParams = ImmutableSet.copyOf(optionalParams);
+        this.optionalParams = Sets.union(optionalParams, ALWAYS_OPTIONAL_PARAMS).immutableCopy();
         this.requiredAlternativeParams = ImmutableSet.copyOf(requiredAlternativeParams);
         this.allParams = ImmutableSet.copyOf(
                 Sets.union(

@@ -1,5 +1,6 @@
 package org.atlasapi.content.v2.serialization;
 
+import org.atlasapi.content.Provider;
 import org.atlasapi.content.TransportSubType;
 import org.atlasapi.content.TransportType;
 import org.atlasapi.content.v2.model.pojo.Location;
@@ -9,6 +10,7 @@ public class LocationSerialization {
 
     private final IdentifiedSetter identifiedSetter = new IdentifiedSetter();
     private final PolicySerialization policy = new PolicySerialization();
+    private final ProviderSerialization providerSerialization = new ProviderSerialization();
 
     public Location serialize(org.atlasapi.content.Location location) {
         if (location == null) {
@@ -32,6 +34,7 @@ public class LocationSerialization {
         internal.setUri(location.getUri());
         internal.setEmbedCode(location.getEmbedCode());
         internal.setEmbedId(location.getEmbedId());
+        internal.setProvider(providerSerialization.serialize(location.getProvider()));
         internal.setPolicy(policy.serialize(location.getPolicy()));
 
         return internal;
@@ -58,6 +61,7 @@ public class LocationSerialization {
         location.setUri(internal.getUri());
         location.setEmbedCode(internal.getEmbedCode());
         location.setEmbedId(internal.getEmbedId());
+        location.setProvider(providerSerialization.deserialize(internal.getProvider()));
         location.setPolicy(policy.deserialize(internal.getPolicy()));
 
         return location;

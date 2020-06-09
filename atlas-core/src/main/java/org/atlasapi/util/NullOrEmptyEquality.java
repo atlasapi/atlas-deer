@@ -5,6 +5,12 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * This class contains utility methods to treat empty map and collection types the same as if they were null.
+ * This is used within the equality and hash methods in the content_v2 serialized model classes so that they can be
+ * accurately used to determine if content has changed when migrating; it seems that empty maps and collections
+ * are left as null when writing to Cassandra thus requiring custom logic to treat them as the same.
+ */
 public class NullOrEmptyEquality {
 
     public static boolean equals(@Nullable Collection collection1, @Nullable Collection collection2) {

@@ -3,6 +3,7 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 
 import org.atlasapi.content.Described;
+import org.atlasapi.content.Item;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
@@ -26,6 +27,10 @@ public class DescriptionAnnotation<T extends Described> extends
         writer.writeField("description", entity.getDescription());
         writer.writeField("image", entity.getImage());
         writer.writeField("thumbnail", entity.getThumbnail());
+        if(entity instanceof Item) {
+            Item item = (Item) entity;
+            writer.writeField("duration", item.getDuration());
+        }
     }
 
 }

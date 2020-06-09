@@ -191,6 +191,11 @@ CREATE TYPE IF NOT EXISTS Description (
   thumbnail text
 );
 
+CREATE TYPE IF NOT EXISTS LocalizedTitle (
+  title text,
+  locale text
+);
+
 CREATE TYPE IF NOT EXISTS SegmentEvent (
   id bigint,
   canonical_uri text,
@@ -239,7 +244,8 @@ CREATE TYPE IF NOT EXISTS Review (
 CREATE TYPE IF NOT EXISTS Rating (
   value float,
   type text,
-  publisher text
+  publisher text,
+  number_of_votes bigint
 );
 
 CREATE TYPE IF NOT EXISTS ContainerSummary (
@@ -350,6 +356,8 @@ CREATE TABLE IF NOT EXISTS content_v2 (
 
   clips text,
   encodings text,
+
+  localized_titles set<frozen<LocalizedTitle>>,
 
   custom_fields map<text, text>
 );

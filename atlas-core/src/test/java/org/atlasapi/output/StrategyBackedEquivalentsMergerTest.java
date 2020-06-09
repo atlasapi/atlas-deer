@@ -17,6 +17,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,6 +68,7 @@ public class StrategyBackedEquivalentsMergerTest {
         veryifyNoMerge(nonMergingApplication);
     }
 
+
     @Test
     public void testDoesntMergeForEmptyEquivalenceSet() {
         Id id = Id.valueOf(1234);
@@ -81,7 +83,7 @@ public class StrategyBackedEquivalentsMergerTest {
     @Test
     public void testDoesntMergeForSingletonEquivalenceSet() {
         Content brand = new Brand(Id.valueOf(1), Publisher.BBC);
-        when(strategy.merge(brand, ImmutableList.of(), mergingApplication, Collections.emptySet())).thenReturn(brand);
+        when(strategy.merge(ImmutableList.of(brand), mergingApplication, Collections.emptySet())).thenReturn(brand);
         List<Content> merged = merger.merge(Optional.of(brand.getId()), ImmutableSet.of(brand),
                 mergingApplication, Collections.emptySet()
         );
@@ -91,7 +93,6 @@ public class StrategyBackedEquivalentsMergerTest {
 
     private void veryifyNoMerge(Application application) {
         verify(strategy, never()).merge(
-                argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
                 argThat(is(application)),
                 Matchers.anySetOf(Annotation.class)
@@ -103,44 +104,47 @@ public class StrategyBackedEquivalentsMergerTest {
     public void testMergeSortingIsStable() {
 
         Content one = new Brand(Id.valueOf(1), Publisher.BBC);
+        one.setCanonicalUri("one");
         Content two = new Brand(Id.valueOf(2), Publisher.BBC);
+        two.setCanonicalUri("two");
         Content three = new Brand(Id.valueOf(3), Publisher.TED);
+        three.setCanonicalUri("three");
 
         ImmutableList<Content> contents = ImmutableList.of(one, two, three);
 
         for (List<Content> contentList : Collections2.permutations(contents)) {
 
             when(strategy.merge(
-                    argThat(any(Content.class)),
                     anyCollectionOf(Content.class),
                     argThat(is(mergingApplication)),
                     Matchers.anySetOf(Annotation.class)
             )).thenReturn(one);
 
-            merger.merge(Optional.of(one.getId()), contentList, mergingApplication,
+            List<Content> merged = merger.merge(Optional.of(one.getId()), contentList, mergingApplication,
                     Collections.emptySet());
+
+            Content mergedBrand = Iterables.getOnlyElement(merged);
+            assertThat(mergedBrand.getCanonicalUri(), is(one.getCanonicalUri()));
+            assertThat(mergedBrand.getId(), is(one.getId()));
 
             if (contentList.get(0).equals(one)) {
                 verify(strategy)
                         .merge(
-                                argThat(is(one)),
-                                argThat(contains(two, three)),
+                                argThat(contains(one, two, three)),
                                 argThat(is(mergingApplication)),
                                 Matchers.anySetOf(Annotation.class)
                         );
             } else if (contentList.get(0).equals(two)) {
                 verify(strategy)
                         .merge(
-                                argThat(is(one)),
-                                argThat(contains(two, three)),
+                                argThat(contains(one, two, three)),
                                 argThat(is(mergingApplication)),
                                 Matchers.anySetOf(Annotation.class)
                         );
             } else {
                 verify(strategy)
                         .merge(
-                                argThat(is(one)),
-                                argThat(contains(two, three)),
+                                argThat(contains(one, two, three)),
                                 argThat(is(mergingApplication)),
                                 Matchers.anySetOf(Annotation.class)
                         );
@@ -157,7 +161,6 @@ public class StrategyBackedEquivalentsMergerTest {
         Content retrieved2 = new Brand(Id.valueOf(2), Publisher.BBC_KIWI);
 
         when(strategy.merge(
-                argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
                 argThat(is(mergingApplication)),
                 Matchers.anySetOf(Annotation.class)
@@ -172,13 +175,13 @@ public class StrategyBackedEquivalentsMergerTest {
 
         verify(strategy)
                 .merge(
-                        argThat(is(retrieved1)),
-                        argThat(contains(retrieved2)),
+                        argThat(contains(retrieved1, retrieved2)),
                         argThat(is(mergingApplication)),
                         Matchers.anySetOf(Annotation.class)
                 );
     }
 
+    //
     @Test
     @SuppressWarnings("unchecked")
     public void testMergeVictimIsRequestedContentIdIfVictimMatchesMostPrecedentSource() {
@@ -196,8 +199,7 @@ public class StrategyBackedEquivalentsMergerTest {
 
         verify(strategy)
                 .merge(
-                        argThat(is(one)),
-                        argThat(contains(two, three)),
+                        argThat(contains(one, two, three)),
                         argThat(is(mergingApplication)),
                         Matchers.anySetOf(Annotation.class)
                 );
@@ -209,8 +211,7 @@ public class StrategyBackedEquivalentsMergerTest {
 
         verify(strategy)
                 .merge(
-                        argThat(is(two)),
-                        argThat(contains(one, three)),
+                        argThat(contains(two, one, three)),
                         argThat(is(mergingApplication)),
                         Matchers.anySetOf(Annotation.class)
                 );
@@ -222,8 +223,7 @@ public class StrategyBackedEquivalentsMergerTest {
 
         verify(strategy)
                 .merge(
-                        argThat(is(one)),
-                        argThat(contains(two, three)),
+                        argThat(contains(one, two, three)),
                         argThat(is(mergingApplication)),
                         Matchers.anySetOf(Annotation.class)
                 );
@@ -232,7 +232,6 @@ public class StrategyBackedEquivalentsMergerTest {
 
     private void setUpMockStrategyToReturn(Content content) {
         when(strategy.merge(
-                argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
                 argThat(is(mergingApplication)),
                 Matchers.anySetOf(Annotation.class)

@@ -1,25 +1,23 @@
 package org.atlasapi.messaging;
 
-import java.util.UUID;
-
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
-
-import com.metabroadcast.common.time.Timestamp;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.UUID;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,6 +47,7 @@ public class EquivalentScheduleStoreContentUpdateWorkerTest {
     public void testProcess() throws Exception {
         Long equivalentSetId = 1L;
         Item item1 = new Item(Id.valueOf(1L), Publisher.METABROADCAST);
+        item1.setThisOrChildLastUpdated(DateTime.now());
         Item item2 = new Item(Id.valueOf(2L), Publisher.METABROADCAST);
 
         when(contentStore.resolveEquivalentSet(equivalentSetId))
@@ -62,7 +61,7 @@ public class EquivalentScheduleStoreContentUpdateWorkerTest {
                         UUID.randomUUID().toString(),
                         Timestamp.of(DateTime.now()),
                         equivalentSetId,
-                        null
+                        item1.toRef()
                 )
         );
 
@@ -74,6 +73,7 @@ public class EquivalentScheduleStoreContentUpdateWorkerTest {
     public void testFiltersOutNonItems() throws Exception {
         Long equivalentSetId = 1L;
         Item item1 = new Item(Id.valueOf(1L), Publisher.METABROADCAST);
+        item1.setThisOrChildLastUpdated(DateTime.now());
         Item item2 = new Item(Id.valueOf(2L), Publisher.METABROADCAST);
         Brand brand = new Brand(Id.valueOf(3L), Publisher.METABROADCAST);
 
@@ -88,7 +88,7 @@ public class EquivalentScheduleStoreContentUpdateWorkerTest {
                         UUID.randomUUID().toString(),
                         Timestamp.of(DateTime.now()),
                         equivalentSetId,
-                        null
+                        item1.toRef()
                 )
         );
 

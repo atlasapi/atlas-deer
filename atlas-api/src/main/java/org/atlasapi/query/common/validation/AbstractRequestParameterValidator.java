@@ -1,15 +1,19 @@
 package org.atlasapi.query.common.validation;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
+import org.atlasapi.query.common.exceptions.InvalidParameterException;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.atlasapi.query.common.exceptions.InvalidParameterException;
-
-import com.google.common.base.Joiner;
-
 public abstract class AbstractRequestParameterValidator {
+
+    // This attribute is used only to prevent browsers from using a cached result for the same request
+    public static final String T_PARAM = "t";
+
+    public static final Set<String> ALWAYS_OPTIONAL_PARAMS = ImmutableSet.of(T_PARAM);
 
     protected static final Joiner commaJoiner = Joiner.on(", ");
 
