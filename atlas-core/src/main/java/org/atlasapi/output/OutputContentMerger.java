@@ -1,22 +1,15 @@
 package org.atlasapi.output;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.stream.MoreStreams;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nullable;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
@@ -26,8 +19,6 @@ import org.atlasapi.content.Container;
 import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentGroup;
-import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Encoding;
@@ -36,6 +27,7 @@ import org.atlasapi.content.Film;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Series;
@@ -43,30 +35,31 @@ import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.Review;
-import org.atlasapi.entity.Sourced;
 import org.atlasapi.entity.Sourceds;
-import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
+
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.stream.MoreStreams;
+
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -110,130 +103,74 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private static final Function<Item, ContainerSummary> TO_CONTAINER_SUMMARY =
             input -> input == null ? null : input.getContainerSummary();
 
+    private static final Function<Described, String> TO_PRESENTATION_CHANNEL =
+            input -> input == null ? null : input.getPresentationChannel();
+
     private EquivalentSetContentHierarchyChooser hierarchyChooser;
 
     public OutputContentMerger(EquivalentSetContentHierarchyChooser hierarchyChooser) {
         this.hierarchyChooser = checkNotNull(hierarchyChooser);
     }
 
-    @Deprecated
-    public <T extends Described> List<T> merge(Application application, List<T> contents,
-            Set<Annotation> activeAnnotations) {
-        Ordering<Sourced> publisherComparator = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher());
+    //sortedEquivalents must be ordered according to source precedence
+    private <T extends Described> T createMerged(Iterable<? extends T> sortedEquivalents) {
 
-        List<T> merged = Lists.newArrayListWithCapacity(contents.size());
-        Set<T> processed = Sets.newHashSet();
+        T highestPrecedenceContent = sortedEquivalents.iterator().next();
 
-        for (T content : contents) {
-            if (processed.contains(content)) {
-                continue;
+        // First, we need to get the most specific type in the equiv set for merged
+        T mostSpecificTypeContent = highestPrecedenceContent;
+        for (T next : ImmutableList.copyOf(sortedEquivalents)) {
+            if (!mostSpecificTypeContent.getClass().equals(next.getClass())
+                    && mostSpecificTypeContent.getClass().isAssignableFrom(next.getClass())) {
+                mostSpecificTypeContent = next;
             }
-            List<T> same = publisherComparator.sortedCopy(findSame(content, contents));
-            processed.addAll(same);
-
-            Map.Entry<T, List<T>> chosenAndRest = getChosenAndRest(same);
-            T chosen = chosenAndRest.getKey();
-            List<T> notChosen = chosenAndRest.getValue();
-
-            chosen = mergeIdAndEquivTo(chosen);
-
-            // defend against broken transitive equivalence
-            if (merged.contains(chosen)) {
-                continue;
-            }
-
-            if (chosen instanceof Container) {
-                mergeIn(application, (Container) chosen, filterEquivs(notChosen, Container.class));
-            }
-            if (chosen instanceof Item) {
-                mergeIn(application, (Item) chosen, filterEquivs(notChosen, Item.class), activeAnnotations);
-            }
-            if (chosen instanceof ContentGroup) {
-                mergeIn(application, (ContentGroup) chosen, filterEquivs(notChosen, ContentGroup.class));
-            }
-            merged.add(chosen);
         }
+
+        // Unchecked casting is safe here because we get the most specific type from the hierarchy
+        T merged = (T) mostSpecificTypeContent.createNew();
+        merged = mostSpecificTypeContent.copyToPreferNonNull(merged);
+
+        // Then we need as much data as possible from the highest precedence source possible
+        merged = highestPrecedenceContent.copyToPreferNonNull(merged);
+
+        // Finally, we need the lowest id in the equiv set, in an attempt to keep the id stable
+        // (this also means updating the publisher + same_as accordingly)
+        T lowestIdContent = findLowestIdContent(sortedEquivalents);
+        merged.setId(lowestIdContent.getId());
+        merged.setPublisher(lowestIdContent.getSource());
+        merged.setEquivalentTo(lowestIdContent.getEquivalentTo());
+
         return merged;
     }
 
-    private <T extends Described> Map.Entry<T, List<T>> getChosenAndRest(
-            List<? extends T> orderedSame
-    ) {
-        List<T> rest = ImmutableList.copyOf(orderedSame.subList(1, orderedSame.size()));
-        return new SimpleImmutableEntry<>(
-                createChosen(orderedSame.get(0), rest),
-                rest
-        );
-    }
-
-    private <T extends Described> T createChosen(
-            T chosen,
-            Iterable<? extends T> rest
-    ) {
-        // We need to get the most specific type in the equiv set
-        T best = chosen;
-        for (T next : ImmutableSet.copyOf(rest)) {
-            if (!best.getClass().equals(next.getClass())
-                    && best.getClass().isAssignableFrom(next.getClass())) {
-                best = next;
-            }
+    // return the content in the equiv set with the lowest id (to try and keep ID stable)
+    private static <T extends Described> T findLowestIdContent(Iterable<T> orderedContent) {
+        T lowestContent = orderedContent.iterator().next();
+        for (T content : orderedContent) {
+            if (lowestContent.getId().compareTo(content.getId()) > 0 )
+            lowestContent = content;
         }
-        // But then we need as many settings as possible from the most precedent source.
-        // But without overwriting with nulls
-        chosen.copyToPreferNonNull(best);
-        return best;
-    }
-
-    private static final Ordering<EquivalenceRef> EQUIV_ID_ORDERING =
-            Ordering.from(Comparator.comparing(EquivalenceRef::getId)).nullsLast();
-    private <T extends Described> EquivalenceRef lowestEquivRef(T chosen) {
-        EquivalenceRef lowest = EquivalenceRef.valueOf(chosen);
-        for (EquivalenceRef ref : chosen.getEquivalentTo()) {
-            lowest = EQUIV_ID_ORDERING.min(lowest, ref);
-        }
-        return lowest;
-    }
-
-    private <T extends Described> T mergeIdAndEquivTo(T chosen) {
-        EquivalenceRef chosenRef = EquivalenceRef.valueOf(chosen);
-        EquivalenceRef lowestRef = lowestEquivRef(chosen);
-        if (chosenRef.equals(lowestRef)) {
-            return chosen;
-        }
-        Set<EquivalenceRef> equivs = chosen.getEquivalentTo();
-        Set<EquivalenceRef> newEquivs = new LinkedHashSet<>(equivs.size() + 1);
-        newEquivs.add(chosenRef);
-        newEquivs.addAll(equivs);
-        newEquivs.remove(lowestRef);
-        if (equivs.size() != newEquivs.size()) {
-            log.warn("Problem merging equivs: OLD{id: {}, equivTo: {}} NEW{id: {}, equivTo: {}}",
-                    chosenRef, equivs, lowestRef, newEquivs);
-        }
-        chosen.setId(lowestRef.getId());
-        chosen.setPublisher(lowestRef.getSource());
-        chosen.setEquivalentTo(newEquivs);
-        return chosen;
+        return lowestContent;
     }
 
     @Override
-    public <T extends Content> T merge(T chosen, final Iterable<? extends T> equivalents,
+    public <T extends Content> T merge(
+            final Iterable<? extends T> sortedEquivalents,
             final Application application,
-            Set<Annotation> activeAnnotations) {
-        chosen = createChosen(chosen, equivalents);
-        chosen = mergeIdAndEquivTo(chosen);
+            Set<Annotation> activeAnnotations)
+    {
+        T chosen = createMerged(sortedEquivalents);
         return chosen.accept(new ContentVisitorAdapter<T>() {
 
             @Override
             protected T visitContainer(Container container) {
-                mergeIn(application, container, filterEquivs(equivalents, Container.class));
+                mergeIn(application, container, filterEquivs(sortedEquivalents, Container.class));
                 return uncheckedCast(container);
             }
 
             @Override
             protected T visitItem(Item item) {
-                mergeIn(application, item, filterEquivs(equivalents, Item.class), activeAnnotations);
+                mergeIn(application, item, filterEquivs(sortedEquivalents, Item.class), activeAnnotations);
                 return uncheckedCast(item);
             }
 
@@ -262,99 +199,54 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         return builder.build();
     }
 
-    private <T extends Described> List<T> findSame(T content, Iterable<T> contents) {
-        ImmutableList.Builder<T> builder = ImmutableList.builder();
-        builder.add(content);
-        for (T possiblyEquivalent : contents) {
-            if (!content.equals(possiblyEquivalent) && possiblyEquivalent.isEquivalentTo(content)) {
-                builder.add(possiblyEquivalent);
-            }
-        }
-        return builder.build();
-    }
-
-    private <T extends ContentGroup> void mergeIn(Application application, T chosen,
-            Iterable<T> notChosen) {
-        mergeDescribed(application, chosen, notChosen);
-        for (ContentGroup contentGroup : notChosen) {
-            for (ContentRef ref : contentGroup.getContents()) {
-                chosen.addContent(ref);
-            }
-        }
-        if (chosen instanceof Person) {
-            Person person = (Person) chosen;
-            ImmutableSet.Builder<String> quotes = ImmutableSet.builder();
-            quotes.addAll(person.getQuotes());
-            for (Person unchosen : Iterables.filter(notChosen, Person.class)) {
-                quotes.addAll(unchosen.getQuotes());
-                person.withName(person.name() != null ? person.name() : unchosen.name());
-                person.setGivenName(person.getGivenName() != null
-                                    ? person.getGivenName()
-                                    : unchosen.getGivenName());
-                person.setFamilyName(person.getFamilyName() != null
-                                     ? person.getFamilyName()
-                                     : unchosen.getFamilyName());
-                person.setGender(person.getGender() != null
-                                 ? person.getGender()
-                                 : unchosen.getGender());
-                person.setBirthDate(person.getBirthDate() != null
-                                    ? person.getBirthDate()
-                                    : unchosen.getBirthDate());
-                person.setBirthPlace(person.getBirthPlace() != null
-                                     ? person.getBirthPlace()
-                                     : unchosen.getBirthPlace());
-            }
-            person.setQuotes(quotes.build());
-        }
-    }
-
     private <T extends Described> void mergeDescribed(Application application, T chosen,
-            Iterable<T> notChosen) {
-        mergeCustomFields(chosen, notChosen);
-        applyImagePrefs(application, chosen, notChosen);
+            Iterable<T> orderedContent) {
+        mergeCustomFields(chosen, orderedContent);
+        applyImagePrefs(application, chosen, orderedContent);
         chosen.setRelatedLinks(projectFieldFromEquivalents(
-                chosen,
-                notChosen,
+                orderedContent,
                 Described::getRelatedLinks
         ));
         if (chosen.getTitle() == null) {
-            chosen.setTitle(first(notChosen, TO_TITLE));
+            chosen.setTitle(first(orderedContent, TO_TITLE));
         }
+        mergeLocalizedTitles(chosen, orderedContent);
+
         if (chosen.getDescription() == null) {
-            chosen.setDescription(first(notChosen, TO_DESCRIPTION));
+            chosen.setDescription(first(orderedContent, TO_DESCRIPTION));
         }
         if (chosen.getDescription() != null
                 && chosen.getDescription().equals("Concluded.")) {
-            for (Described notChosenDescribed : notChosen) {
+            for (Described described : orderedContent) {
                 //we want a better description than "Concluded."; there was an NPE happening when
                 //we equiv'd to things without a description, so we add this check to avoid it
-                if(Strings.isNullOrEmpty(notChosenDescribed.getDescription())){
+                if(Strings.isNullOrEmpty(described.getDescription())){
                     continue;
                 }
-                if (notChosenDescribed.getSource().compareTo(Publisher.PA) == 0
-                        && !notChosenDescribed.getDescription().equals("Concluded.")) {
-                    chosen.setDescription(notChosenDescribed.getDescription());
+                if (described.getSource().compareTo(Publisher.PA) == 0
+                        && !described.getDescription().equals("Concluded.")) {
+                    chosen.setDescription(described.getDescription());
                 }
             }
         }
         if (chosen.getLongDescription() == null) {
-            chosen.setLongDescription(first(notChosen, TO_LONG_DESCRIPTION));
+            chosen.setLongDescription(first(orderedContent, TO_LONG_DESCRIPTION));
         }
         if (chosen.getMediumDescription() == null) {
-            chosen.setMediumDescription(first(notChosen, TO_MEDIUM_DESCRIPTION));
+            chosen.setMediumDescription(first(orderedContent, TO_MEDIUM_DESCRIPTION));
         }
         if (chosen.getShortDescription() == null) {
-            chosen.setShortDescription(first(notChosen, TO_SHORT_DESCRIPTION));
+            chosen.setShortDescription(first(orderedContent, TO_SHORT_DESCRIPTION));
+        }
+        if (chosen.getPresentationChannel() == null) {
+            chosen.setPresentationChannel(first(orderedContent, TO_PRESENTATION_CHANNEL));
         }
 
-        mergeAwards(chosen, notChosen);
+        mergeAwards(chosen, orderedContent);
     }
 
-    private <T extends Identified> void mergeCustomFields(
-            T chosen,
-            Iterable<T> notChosen
-    ) {
-        for(T identified : notChosen) {
+    private <T extends Identified> void mergeCustomFields(T chosen, Iterable<T> orderedContent) {
+        for(T identified : orderedContent) {
             for(Map.Entry<String, String> customField : identified.getCustomFields().entrySet()) {
                 if (!chosen.containsCustomFieldKey(customField.getKey())) {
                     chosen.addCustomField(customField.getKey(), customField.getValue());
@@ -363,15 +255,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
     }
 
-    private <T extends Described, P> Iterable<P> projectFieldFromEquivalents(T chosen,
-            Iterable<T> notChosen, Function<T, Iterable<P>> projector) {
-        return Iterables.concat(
-                projector.apply(chosen),
-                Iterables.concat(StreamSupport.stream(notChosen.spliterator(), false)
+    private <T extends Described, P> Iterable<P> projectFieldFromEquivalents(
+            Iterable<T> orderedContent,
+            Function<T, Iterable<P>> projector)
+    {
+        return Iterables.concat(StreamSupport.stream(orderedContent.spliterator(), false)
                         .map(projector::apply)
                         .collect(Collectors.toList())
-                )
-        );
+                );
     }
 
     private <I extends Described, O> O first(Iterable<I> is,
@@ -388,32 +279,31 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Content> void mergeContent(Application application, T chosen,
-            Iterable<T> notChosen) {
-        mergeDescribed(application, chosen, notChosen);
-        for (T notChosenItem : notChosen) {
-            for (Clip clip : notChosenItem.getClips()) {
+            Iterable<T> orderedContent) {
+        mergeDescribed(application, chosen, orderedContent);
+        for (T content : orderedContent) {
+            for (Clip clip : content.getClips()) {
                 chosen.addClip(clip);
             }
         }
-        mergeTags(chosen, notChosen);
-        mergeKeyPhrases(chosen, notChosen);
+        mergeTags(chosen, orderedContent);
+        mergeKeyPhrases(chosen, orderedContent);
         if (chosen.getYear() == null) {
-            chosen.setYear(first(notChosen, Content::getYear));
+            chosen.setYear(first(orderedContent, Content::getYear));
         }
         chosen.setGenres(projectFieldFromEquivalents(
-                chosen,
-                notChosen,
+                orderedContent,
                 Described::getGenres
         ));
         chosen.setAliases(projectFieldFromEquivalents(
-                chosen,
-                notChosen,
+                orderedContent,
                 Identified::getAliases
         ));
+        mergeDuration(chosen, orderedContent);
 
         if (chosen instanceof Episode && ((Episode) chosen).getEpisodeNumber() == null) {
             Episode chosenEpisode = (Episode) chosen;
-            StreamSupport.stream(notChosen.spliterator(), false)
+            MoreStreams.stream(orderedContent)
                     .filter(Episode.class::isInstance)
                     .map(Episode.class::cast)
                     .filter(e -> e.getEpisodeNumber() != null)
@@ -426,26 +316,47 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                     });
         }
 
-        mergeEncodings(application, chosen, notChosen);
+        mergeEncodings(chosen, orderedContent);
 
-        mergeReviews(chosen, notChosen);
-        mergeRatings(chosen, notChosen);
+        mergeReviews(chosen, orderedContent);
+        mergeRatings(chosen, orderedContent);
 
         chosen.setCountriesOfOrigin(projectFieldFromEquivalents(
-                chosen,
-                notChosen,
+                orderedContent,
                 Content::getCountriesOfOrigin
         ));
+
+        mergeLanguages(chosen, orderedContent);
+        mergeCertificates(chosen, orderedContent);
     }
 
-    private <T extends Content> void mergeReviews(T chosen, Iterable<T> notChosen) {
+    private <T extends Content> void mergeDuration(T chosen, Iterable<T> orderedContent) {
+        if(chosen instanceof Item && ((Item) chosen).getDuration() == null) {
+            Item chosenItem = (Item) chosen;
+            StreamSupport.stream(orderedContent.spliterator(), false)
+                    .filter(Item.class::isInstance)
+                    .map(Item.class::cast)
+                    .filter(item -> item.getDuration() != null)
+                    .findFirst()
+                    .ifPresent(item -> {
+                        chosenItem.setDuration(item.getDuration());
+                    });
+        }
+    }
 
-        List<T> allContent = new ImmutableList.Builder<T>()
-                .add(chosen)
-                .addAll(notChosen)
-                .build();
+    private <T extends Described> void mergeLocalizedTitles(T chosen, Iterable<T> orderedContent) {
 
-        Set<Review> combinedReviews = allContent.stream()
+        Set<LocalizedTitle> combinedLocalizedTitles = MoreStreams.stream(orderedContent)
+                .map(Described::getLocalizedTitles)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        chosen.setLocalizedTitles(combinedLocalizedTitles);
+    }
+
+    private <T extends Content> void mergeReviews(T chosen, Iterable<T> orderedContent) {
+
+        Set<Review> combinedReviews = MoreStreams.stream(orderedContent)
                 .map(Content::getReviews)
                 .flatMap(review -> review.stream())
                 .collect(Collectors.toSet());
@@ -453,14 +364,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         chosen.setReviews(combinedReviews);
     }
 
-    private <T extends Content> void mergeRatings(T chosen, Iterable<T> notChosen) {
+    private <T extends Content> void mergeRatings(T chosen, Iterable<T> orderedContent) {
 
-        List<T> allContent = new ImmutableList.Builder<T>()
-                .add(chosen)
-                .addAll(notChosen)
-                .build();
-
-        Set<Rating> combinedRatings = allContent.stream()
+        Set<Rating> combinedRatings = MoreStreams.stream(orderedContent)
                 .map(Content::getRatings)
                 .flatMap(rating -> rating.stream())
                 .collect(Collectors.toSet());
@@ -468,11 +374,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         chosen.setRatings(combinedRatings);
     }
 
-    private <T extends Described> void mergeAwards(T chosen, Iterable<T> notChosen) {
+    private <T extends Described> void mergeAwards(T chosen, Iterable<T> orderedContent) {
 
-        Stream<T> allContent = Stream.concat(Stream.of(chosen), MoreStreams.stream(notChosen));
-
-        Set<Award> combinedAwards = allContent
+        Set<Award> combinedAwards = MoreStreams.stream(orderedContent)
                 .map(Described::getAwards)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
@@ -481,63 +385,58 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Item> void mergeIn(Application application, T chosen,
-            Iterable<T> notChosen,
+            Iterable<T> orderedContent,
             Set<Annotation> activeAnnotations) {
-        mergeContent(application, chosen, notChosen);
-        mergeVersions(application, chosen, notChosen, activeAnnotations);
+        mergeContent(application, chosen, orderedContent);
+        mergeVersions(application, chosen, orderedContent, activeAnnotations);
 
         if (chosen instanceof Film) {
-            mergeFilmProperties(application, (Film) chosen, Iterables.filter(notChosen, Film.class));
+            mergeFilmProperties(application, (Film) chosen, Iterables.filter(orderedContent, Film.class));
         }
         if (chosen.getContainerRef() == null) {
-            chosen.setContainerRef(first(notChosen, TO_CONTAINER_REF));
+            chosen.setContainerRef(first(orderedContent, TO_CONTAINER_REF));
         }
         if (chosen.getContainerSummary() == null) {
-            chosen.setContainerSummary(first(notChosen, TO_CONTAINER_SUMMARY));
+            chosen.setContainerSummary(first(orderedContent, TO_CONTAINER_SUMMARY));
         }
     }
 
-    private <T extends Content> void mergeKeyPhrases(T chosen, Iterable<T> notChosen) {
+    private <T extends Content> void mergeKeyPhrases(T chosen, Iterable<T> orderedContent) {
         chosen.setKeyPhrases(projectFieldFromEquivalents(
-                chosen,
-                notChosen,
+                orderedContent,
                 Content::getKeyPhrases
         ));
     }
 
-    private <T extends Content> void mergeTags(T chosen, Iterable<T> notChosen) {
+    private <T extends Content> void mergeTags(T chosen, Iterable<T> orderedContent) {
         chosen.setTags(projectFieldFromEquivalents(
-                chosen,
-                notChosen,
+                orderedContent,
                 input -> Iterables.transform(input.getTags(), new TagPublisherSetter(input))
         ));
     }
 
     private void mergeFilmProperties(Application application, Film chosen,
-            Iterable<Film> notChosen) {
+            Iterable<Film> orderedContent) {
+
         Builder<Subtitles> subtitles = ImmutableSet.<Subtitles>builder().addAll(chosen.getSubtitles());
-        Builder<String> languages = ImmutableSet.<String>builder().addAll(chosen.getLanguages());
-        Builder<Certificate> certs = ImmutableSet.<Certificate>builder().addAll(chosen.getCertificates());
         Builder<ReleaseDate> releases = ImmutableSet.<ReleaseDate>builder().addAll(chosen.getReleaseDates());
 
-        for (Film film : notChosen) {
+        for (Film film : orderedContent) {
             subtitles.addAll(film.getSubtitles());
-            languages.addAll(film.getLanguages());
-            certs.addAll(film.getCertificates());
             releases.addAll(film.getReleaseDates());
         }
 
         chosen.setSubtitles(subtitles.build());
-        chosen.setLanguages(languages.build());
-        chosen.setCertificates(certs.build());
         chosen.setReleaseDates(releases.build());
 
         if (application.getConfiguration().isPeoplePrecedenceEnabled()) {
-            Iterable<Film> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
+
             List<Film> topFilmMatches = application.getConfiguration()
                     .getPeopleReadPrecedenceOrdering()
                     .onResultOf(Sourceds.toPublisher())
-                    .leastOf(Iterables.filter(all, HAS_PEOPLE), 1);
+                    .leastOf(StreamSupport.stream(orderedContent.spliterator(), false)
+                            .filter(HAS_PEOPLE::apply)
+                            .collect(Collectors.toList()), 1);
 
             if (!topFilmMatches.isEmpty()) {
                 Film top = topFilmMatches.get(0);
@@ -547,8 +446,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Described> void applyImagePrefs(Application application, T chosen,
-            Iterable<T> notChosen) {
-        Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
+            Iterable<T> orderedContent) {
         if (application.getConfiguration().isImagePrecedenceEnabled()) {
 
             List<T> topImageMatches = application.getConfiguration()
@@ -556,7 +454,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                     .onResultOf(Sourceds.toPublisher())
                     .leastOf(
                             Iterables.filter(
-                                    all,
+                                    orderedContent,
                                     HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET
                             ),
                             1
@@ -579,8 +477,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             }
         } else {
             chosen.setImages(projectFieldFromEquivalents(
-                    chosen,
-                    notChosen,
+                    orderedContent,
                     input -> {
                         input.getImages().forEach(img -> img.setSource(input.getSource()));
                         return input.getImages();
@@ -590,12 +487,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Item> void mergeVersions(Application application, T chosen,
-            Iterable<T> notChosen, Set<Annotation> activeAnnotations) {
-        mergeBroadcasts(application, chosen, notChosen, activeAnnotations);
-        List<T> notChosenOrdered = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher())
-                .sortedCopy(notChosen);
+            Iterable<T> orderedContent, Set<Annotation> activeAnnotations) {
+
+        mergeBroadcasts(application, chosen, orderedContent, activeAnnotations);
 
         ImmutableList.Builder<SegmentEvent> segmentEvents = ImmutableList.builder();
         Publisher chosenPublisher = chosen.getSource();
@@ -603,9 +497,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             segmentEvents.add(segmentEvent);
         }
 
-        for (T notChosenItem : notChosenOrdered) {
-            if (!chosenPublisher.equals(notChosenItem.getSource())) {
-                for (SegmentEvent segmentEvent : notChosenItem.getSegmentEvents()) {
+        for (T item : orderedContent) {
+            if (!chosenPublisher.equals(item.getSource())) {
+                for (SegmentEvent segmentEvent : item.getSegmentEvents()) {
                     segmentEvents.add(segmentEvent);
                 }
             }
@@ -616,7 +510,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private <T extends Item> void mergeBroadcasts(
             Application application,
             T chosen,
-            Iterable<T> notChosen,
+            Iterable<T> orderedContent,
             Set<Annotation> activeAnnotations
     ) {
 
@@ -624,12 +518,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         // broadcasts, and merge them with broadcasts from less precedent sources
         // NB: source <=> publisher
 
-        List<T> all = ImmutableList.<T>builder().add(chosen).addAll(notChosen).build();
-
         if (activeAnnotations.contains(Annotation.ALL_BROADCASTS)) {
             //return all broadcasts in the equiv set, from all sources and with no merging
             chosen.setBroadcasts(
-                    all.stream()
+                    MoreStreams.stream(orderedContent)
                             .map(T::getBroadcasts)
                             .flatMap(Collection::stream)
                             .collect(MoreCollectors.toImmutableSet())
@@ -637,17 +529,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             return;
         }
 
-        List<T> notChosenOrdered = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher())
-                .sortedCopy(notChosen);
-
+        //TODO remove this ordering, as orderedContent is already sorted by source precedence at this point
         //first = piece of content with highest precedence source with broadcasts
         List<T> first = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher())
                 .leastOf(
-                        all.stream()
+                        MoreStreams.stream(orderedContent)
                                 .filter(HAS_BROADCASTS::apply)
                                 .collect(Collectors.toList()),
                         1
@@ -660,7 +548,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 if(firstBroadcasts != null){
                     finalAllMergedBroadcasts.addAll(firstBroadcasts);
                 }
-                for (T content : notChosenOrdered) {
+                for (T content : orderedContent) {
                     if (content.getBroadcasts() == null) {
                         continue;
                     }
@@ -686,7 +574,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             }
             Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
             chosen.setBroadcasts(
-                    all.stream()
+                    MoreStreams.stream(orderedContent)
                             //filter out the broadcasts from other sources
                             .filter(item -> item.getSource().equals(sourceForBroadcasts))
                             .map(T::getBroadcasts)
@@ -697,45 +585,53 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         if (chosen.getBroadcasts() != null && !chosen.getBroadcasts().isEmpty()) {
             for (Broadcast chosenBroadcast : chosen.getBroadcasts()) {
-                matchAndMerge(chosenBroadcast, notChosenOrdered);
+                matchAndMerge(chosenBroadcast, orderedContent);
             }
         }
     }
 
-    private static Predicate<Item> isPublisher(Publisher publisher) {
-        return input -> publisher.equals(input.getSource());
-    }
-
-    private <T extends Content> void mergeEncodings(Application application, T chosen,
-            Iterable<T> notChosen) {
-        List<T> notChosenOrdered = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher())
-                .sortedCopy(notChosen);
-
+    private <T extends Content> void mergeEncodings(T chosen, Iterable<T> orderedContent) {
         HashSet<Encoding> encodings = Sets.newHashSet();
         if (chosen.getManifestedAs() != null) {
             encodings.addAll(chosen.getManifestedAs());
         }
-        for (T notChosenItem : notChosenOrdered) {
-            if (notChosenItem.getManifestedAs() != null) {
-                encodings.addAll(notChosenItem.getManifestedAs());
+        for (T item : orderedContent) {
+            if (item.getManifestedAs() != null) {
+                encodings.addAll(item.getManifestedAs());
             }
         }
         chosen.setManifestedAs(encodings);
     }
 
+    private <T extends Content> void mergeCertificates(T chosen, Iterable<T> orderedContent) {
+        Set<Certificate> combinedCertificates = MoreStreams.stream(orderedContent)
+                .map(Content::getCertificates)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        chosen.setCertificates(combinedCertificates);
+    }
+
+    private <T extends Content> void mergeLanguages(T chosen, Iterable<T> orderedContent) {
+        Set<String> combinedLanguages = MoreStreams.stream(orderedContent)
+                .map(Content::getLanguages)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        chosen.setLanguages(combinedLanguages);
+    }
+
     private <T extends Item> void matchAndMerge(final Broadcast chosenBroadcast,
-            List<T> notChosen) {
+            Iterable<T> orderedContent) {
         List<Broadcast> equivBroadcasts = Lists.newArrayList();
-        for (T notChosenItem : notChosen) {
-            Iterable<Broadcast> notChosenBroadcasts = notChosenItem.getBroadcasts();
-            if (notChosenBroadcasts != null) {
+        for (T item : orderedContent) {
+            Iterable<Broadcast> broadcasts = item.getBroadcasts();
+            if (broadcasts != null) {
                 Optional<Broadcast> matched = Iterables.tryFind(
-                        notChosenBroadcasts,
+                        broadcasts,
                         input -> broadcastsMatch(chosenBroadcast, input)
                 );
-                if (matched.isPresent()) {
+                if (matched.isPresent() && matched.get() != chosenBroadcast) {
                     equivBroadcasts.add(matched.get());
                 }
             }
@@ -850,36 +746,29 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private void mergeIn(
             Application application,
             Container chosen,
-            Iterable<Container> notChosen
+            Iterable<Container> orderedContent
     ) {
-        mergeContent(application, chosen, notChosen);
-        mergeContainer(chosen, notChosen);
+        mergeContent(application, chosen, orderedContent);
+        mergeContainer(chosen, orderedContent);
     }
 
     private void mergeContainer(
             Container chosen,
-            Iterable<Container> notChosen
+            Iterable<Container> orderedContent
     ) {
 
-        Iterable<Container> orderedEquivalents;
-
-        orderedEquivalents = Iterables.concat(ImmutableSet.of(chosen), notChosen);
-
-        Iterable<Container> contentHierarchySourceOrderedContainers = StreamSupport.stream(
-                orderedEquivalents.spliterator(), false)
+        Iterable<Container> contentHierarchySourceOrderedContainers =
+                StreamSupport.stream(orderedContent.spliterator(), false)
                 .filter((Container.class)::isInstance)
                 .collect(Collectors.toList());
 
         if (chosen.getUpcomingContent() != null && chosen.getUpcomingContent().isEmpty()) {
-            chosen.setUpcomingContent(
-                    first(
-                            contentHierarchySourceOrderedContainers,
-                            input -> input.getUpcomingContent().isEmpty()
-                                     ? null
-                                     : input.getUpcomingContent(),
-                            ImmutableMap.of()
-                    )
-            );
+            java.util.Optional<Container> firstWithUpcomingContent =
+                    StreamSupport.stream(contentHierarchySourceOrderedContainers.spliterator(), false)
+                            .filter(container -> container.getUpcomingContent() != null
+                                    && !container.getUpcomingContent().isEmpty())
+                            .findFirst();
+            firstWithUpcomingContent.ifPresent(container -> chosen.setUpcomingContent(container.getUpcomingContent()));
         }
 
         Optional<Container> first =
@@ -917,7 +806,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         if (chosen instanceof Series && ((Series) chosen).getSeriesNumber() == null) {
             Series chosenSeries = (Series) chosen;
-            StreamSupport.stream(notChosen.spliterator(), false)
+            StreamSupport.stream(orderedContent.spliterator(), false)
                     .filter(Series.class::isInstance)
                     .map(Series.class::cast)
                     .filter(s -> s.getSeriesNumber() != null)

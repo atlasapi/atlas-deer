@@ -6,6 +6,8 @@ import com.datastax.driver.mapping.annotations.FrozenKey;
 import com.datastax.driver.mapping.annotations.FrozenValue;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
+
+import org.atlasapi.content.v2.model.udt.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
@@ -40,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import javax.annotation.Nullable;
 
 @Table(name = "content_v2")
 public class Content implements ContentIface {
@@ -76,6 +80,10 @@ public class Content implements ContentIface {
 
     @Column(name = "title")
     private String title;
+
+    @FrozenValue
+    @Column(name = "localized_titles")
+    private Set<LocalizedTitle> localizedTitles;
 
     @Column(name = "short_descr")
     private String shortDescription;
@@ -386,6 +394,16 @@ public class Content implements ContentIface {
     @Override
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    @Override
+    public Set<LocalizedTitle> getLocalizedTitles() {
+        return localizedTitles;
+    }
+
+    @Override
+    public void setLocalizedTitles(Set<LocalizedTitle> localizedTitles) {
+        this.localizedTitles = localizedTitles;
     }
 
     @Override
@@ -746,6 +764,7 @@ public class Content implements ContentIface {
         this.isrc = isrc;
     }
 
+    @Nullable
     public Long getDuration() {
         return duration;
     }
@@ -953,6 +972,7 @@ public class Content implements ContentIface {
                 NullOrEmptyEquality.equals(aliases, content.aliases) &&
                 NullOrEmptyEquality.equals(equivalentTo, content.equivalentTo) &&
                 Objects.equals(title, content.title) &&
+                NullOrEmptyEquality.equals(localizedTitles, content.localizedTitles) &&
                 Objects.equals(shortDescription, content.shortDescription) &&
                 Objects.equals(mediumDescription, content.mediumDescription) &&
                 Objects.equals(longDescription, content.longDescription) &&
@@ -1015,6 +1035,7 @@ public class Content implements ContentIface {
 
     @Override
     public int hashCode() {
-        return NullOrEmptyEquality.hash(id, type, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, genericDescription, eventRefs, isrc, duration, seriesNumber, totalEpisodes, brandRef, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, containerSummary, broadcasts, segmentEvents, restrictions, websiteUrl, subtitles, releaseDates, episodeNumber, partNumber, special, seriesRefs, itemRefs, upcomingContent, availableContent, itemSummaries, reviews, ratings, clips, encodings, customFields);
+        return NullOrEmptyEquality.hash(id, type, canonicalUri, curie, aliasUrls, aliases, equivalentTo, title,
+                localizedTitles, shortDescription, mediumDescription, longDescription, synopses, description, mediaType, specialization, genres, publisher, image, images, thumbnail, scheduleOnly, activelyPublished, presentationChannel, priority, relatedLinks, awards, keyPhrases, tags, contentGroupRefs, people, languages, certificates, year, genericDescription, eventRefs, isrc, duration, seriesNumber, totalEpisodes, brandRef, containerRef, isLongForm, blackAndWhite, countriesOfOrigin, sortKey, containerSummary, broadcasts, segmentEvents, restrictions, websiteUrl, subtitles, releaseDates, episodeNumber, partNumber, special, seriesRefs, itemRefs, upcomingContent, availableContent, itemSummaries, reviews, ratings, clips, encodings, customFields);
     }
 }

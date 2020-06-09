@@ -18,6 +18,7 @@ public enum Annotation {
     EXTENDED_ID,
     DESCRIPTION,
     EXTENDED_DESCRIPTION,
+    LOCALIZED_TITLES,
     BRAND_REFERENCE,
     BRAND_SUMMARY,
     SERIES_REFERENCE,
@@ -80,10 +81,14 @@ public enum Annotation {
     AWARDS,
     PRIORITY_REASONS,
     MODIFIED_DATES,
+    NO_CHANNEL_INFO,
+    BROADCAST_CHANNEL,
     CHANNEL_GROUP_INFO,
     CHANNEL_IDS,
     FUTURE_CHANNELS,
     CUSTOM_FIELDS,
+    LOCATION_PROVIDERS,
+    NO_SMART_SEARCH,
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());

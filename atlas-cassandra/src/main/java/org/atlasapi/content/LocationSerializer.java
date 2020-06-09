@@ -6,6 +6,7 @@ import org.atlasapi.content.Policy.RevenueContract;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ProviderSerializer;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Location.Builder;
@@ -20,6 +21,7 @@ public class LocationSerializer {
 
     private final PricingSerializer pricingSerializer = new PricingSerializer();
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+    private final ProviderSerializer providerSerializer = new ProviderSerializer();
 
     public ContentProtos.Location.Builder serialize(Location location) {
         Builder builder = ContentProtos.Location.newBuilder();
@@ -40,6 +42,9 @@ public class LocationSerializer {
         }
         if (location.getUri() != null) {
             builder.setUri(location.getUri());
+        }
+        if (location.getProvider() != null) {
+            builder.setProvider(providerSerializer.serialize(location.getProvider()));
         }
         for (Alias alias : location.getAliases()) {
             builder.addAliases(CommonProtos.Alias.newBuilder()
@@ -108,6 +113,9 @@ public class LocationSerializer {
         location.setEmbedId(msg.hasEmbedId() ? msg.getEmbedId() : null);
         location.setTransportIsLive(msg.hasTransportIsLive() ? msg.getTransportIsLive() : null);
         location.setUri(msg.hasUri() ? msg.getUri() : null);
+        if(msg.hasProvider()) {
+            location.setProvider(providerSerializer.deserialize(msg.getProvider()));
+        }
         if (msg.hasTransportType()) {
             location.setTransportType(TransportType.fromString(msg.getTransportType()));
         }

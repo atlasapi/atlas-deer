@@ -4,12 +4,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Currency;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
@@ -35,6 +32,7 @@ import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.KeyPhrase;
+import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.MediaType;
@@ -401,6 +399,12 @@ public class HashValueExtractorTest {
 
     private void setDescribedFields(Described described) {
         described.setTitle("title");
+
+        LocalizedTitle localizedTitle = new LocalizedTitle();
+        localizedTitle.setTitle("titlu");
+        localizedTitle.setLocale(Locale.forLanguageTag("ro-RO"));
+        described.setLocalizedTitles(ImmutableSet.of(localizedTitle));
+
         described.setShortDescription("short");
         described.setMediumDescription("medium");
         described.setLongDescription("long");
@@ -466,7 +470,7 @@ public class HashValueExtractorTest {
                         .build()
         ));
         described.setRatings(ImmutableSet.of(
-                new Rating("type", 5F, Publisher.METABROADCAST)
+                new Rating("type", 5F, Publisher.METABROADCAST, 1234L)
         ));
 
         Award award = new Award();
@@ -581,6 +585,7 @@ public class HashValueExtractorTest {
         item.setContainerRef(new BrandRef(Id.valueOf(10L), Publisher.METABROADCAST));
         item.setIsLongForm(true);
         item.setBlackAndWhite(false);
+        item.setDuration(Duration.standardMinutes(1));
         item.setContainerSummary(ContainerSummary.create(
                 "type", "title", "description", 5, 5
         ));
@@ -641,7 +646,6 @@ public class HashValueExtractorTest {
 
     private void setSongFields(Song song) {
         song.setIsrc("isrc");
-        song.setDuration(Duration.standardMinutes(1));
     }
 
     private void setClipFields(Clip clip) {

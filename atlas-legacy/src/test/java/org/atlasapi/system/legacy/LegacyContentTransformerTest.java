@@ -304,16 +304,16 @@ public class LegacyContentTransformerTest {
         legacyItem = new Item();
         legacyItem.setId(2L);
         legacyItem.setRatings(Arrays.asList(
-                new Rating("5STAR", 3.0f, Publisher.RADIO_TIMES),
-                new Rating("MOOSE", 1.0f, Publisher.BBC)
+                new Rating("5STAR", 3.0f, Publisher.RADIO_TIMES, 1234L),
+                new Rating("MOOSE", 1.0f, Publisher.BBC, 1234L)
         ));
 
         transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
         assertThat(transformedItem.getRatings().size(), is(2));
 
         assertThat(transformedItem.getRatings().containsAll(Arrays.asList(
-                new org.atlasapi.entity.Rating("MOOSE", 1.0f, Publisher.BBC),
-                new org.atlasapi.entity.Rating("5STAR", 3.0f, Publisher.RADIO_TIMES)
+                new org.atlasapi.entity.Rating("MOOSE", 1.0f, Publisher.BBC, 1234L),
+                new org.atlasapi.entity.Rating("5STAR", 3.0f, Publisher.RADIO_TIMES, 1234L)
         )), is(true));
     }
 

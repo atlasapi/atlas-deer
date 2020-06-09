@@ -49,6 +49,8 @@ public class ContentSerializationImplTest {
                 "equivalentTo", // explicitly initialised to an empty set
                 "restrictions", // explicitly initialised to an empty set
                 "awards", // explicitly initialised to an empty set
+                "reviews",  // explicitly initialised to an empty set
+                "ratings",  // explicitly initialised to an empty set
                 "broadcasts", // explicitly initialised to an empty set
                 "people", // explicitly initialised to an empty set
                 "mediaType", // explicitly initialised to VIDEO,
@@ -58,7 +60,8 @@ public class ContentSerializationImplTest {
                 "availableContent", // takes an iterable, can't be set to null
                 "Song#specialization", // explicitly initialised to MUSIC
                 "Film#specialization", // explicitly initialised to FILM,
-                "customFields" //explicitly initialised to an empty map
+                "customFields", //explicitly initialised to an empty map
+                "localizedTitles"   // explicitly initialised to an empty set
         );
 
         for (Content original : contents) {
