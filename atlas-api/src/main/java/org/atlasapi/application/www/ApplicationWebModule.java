@@ -2,12 +2,13 @@ package org.atlasapi.application.www;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.common.properties.Configurer;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
+import org.atlasapi.application.ApplicationPersistenceModule;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
-import org.atlasapi.application.ApplicationPersistenceModule;
 import org.atlasapi.application.model.deserialize.IdDeserializer;
 import org.atlasapi.application.model.deserialize.OptionalDeserializer;
 import org.atlasapi.application.model.deserialize.PublisherDeserializer;
@@ -24,7 +25,6 @@ import com.metabroadcast.common.http.HttpClients;
 import com.metabroadcast.common.http.SimpleHttpClient;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
 import com.metabroadcast.common.social.user.FixedAppIdUserRefBuilder;
@@ -35,13 +35,14 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.reflect.TypeToken;
+import org.elasticsearch.river.RiverIndexName;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
@@ -100,8 +101,8 @@ public class ApplicationWebModule {
     }
 
     @Bean
-    public BeanNameUrlHandlerMapping controllerMappings() {
-        return new BeanNameUrlHandlerMapping();
+    public RequestMappingHandlerMapping controllerMappings() {
+        return new RequestMappingHandlerMapping();
     }
 
     @Bean
