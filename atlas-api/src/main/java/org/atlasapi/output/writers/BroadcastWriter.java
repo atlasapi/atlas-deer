@@ -2,6 +2,7 @@ package org.atlasapi.output.writers;
 
 import java.io.IOException;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ResolvedBroadcast;
@@ -21,6 +22,7 @@ import com.google.common.primitives.Ints;
 import org.atlasapi.query.v4.channel.MergingChannelWriter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.atlasapi.util.QueryUtils.contextHasAnnotation;
 
 public final class BroadcastWriter implements EntityListWriter<ResolvedBroadcast> {
 
@@ -82,7 +84,10 @@ public final class BroadcastWriter implements EntityListWriter<ResolvedBroadcast
         );
         writer.writeField("broadcast_on", codec.encode(resolvedChannel.getChannel().getId().toBigInteger()));
 
-        writer.writeObject(channelWriter, resolvedChannel, ctxt);
+        //this includes the whole channel object in each broadcast.
+        if (contextHasAnnotation(ctxt, Annotation.BROADCAST_CHANNEL)) {
+            writer.writeObject(channelWriter, resolvedChannel, ctxt);
+        }
 
         writer.writeField("schedule_date", broadcast.getScheduleDate());
         writer.writeField("repeat", broadcast.getRepeat());

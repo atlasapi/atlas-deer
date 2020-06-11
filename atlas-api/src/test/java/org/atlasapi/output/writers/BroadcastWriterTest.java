@@ -1,5 +1,8 @@
 package org.atlasapi.output.writers;
 
+import javax.servlet.http.HttpServletRequest;
+
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
@@ -19,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BroadcastWriterTest {
@@ -27,8 +31,10 @@ public class BroadcastWriterTest {
 
     @Mock private FieldWriter writer;
     @Mock private OutputContext context;
+    @Mock HttpServletRequest request;
 
     private BroadcastWriter broadcastWriter;
+    private String annotations = "annotations";
 
     private ResolvedBroadcast resolvedBroadcast;
 
@@ -51,6 +57,9 @@ public class BroadcastWriterTest {
         ResolvedChannel resolvedChannel = ResolvedChannel.builder(channel).build();
 
         resolvedBroadcast = ResolvedBroadcast.create(broadcast, resolvedChannel);
+
+        when(context.getRequest()).thenReturn(request);
+        when(request.getParameter(annotations)).thenReturn("");
     }
 
     @Test

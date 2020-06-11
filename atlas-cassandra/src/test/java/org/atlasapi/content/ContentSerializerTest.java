@@ -3,7 +3,6 @@ package org.atlasapi.content;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -26,7 +25,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.junit.Test;
@@ -185,8 +183,6 @@ public class ContentSerializerTest {
 
         song.setIsrc("isrc");
         serializeAndCheck(song);
-        song.setDuration(Duration.standardSeconds(1));
-        serializeAndCheck(song);
     }
 
     @Test
@@ -199,6 +195,10 @@ public class ContentSerializerTest {
 
         Series expected = new Series();
         setContainerProperties(expected);
+
+        // the legacy piece of content is missing localizedTitles, but since we don't want to add
+        // it because we risk corrupting it, we instead remove them from the expected content
+        expected.setLocalizedTitles(ImmutableSet.of());
 
         assertThat(actual, is(instanceOf(Series.class)));
         checkContainerProperties((Series) actual, expected);
@@ -357,6 +357,7 @@ public class ContentSerializerTest {
         assertThat(actual.getBroadcasts().isEmpty(), is(false));
         assertThat(actual.getSegmentEvents().isEmpty(), is(false));
         assertThat(actual.getRestrictions().isEmpty(), is(false));
+        assertThat(actual.getDuration(), is(expected.getDuration()));
     }
 
     private void checkContentProperties(Content actual, Content expected) {
@@ -392,8 +393,11 @@ public class ContentSerializerTest {
         assertThat(actual.getThisOrChildLastUpdated(), is(expected.getThisOrChildLastUpdated()));
         assertThat(actual.getThumbnail(), is(expected.getThumbnail()));
         assertThat(actual.getTitle(), is(expected.getTitle()));
+        assertThat(actual.getLocalizedTitles(), is(expected.getLocalizedTitles()));
         assertThat(actual.isActivelyPublished(), is(expected.isActivelyPublished()));
 
+        assertThat("Same number of localizedTitles", actual.getLocalizedTitles().size(), is(expected.getLocalizedTitles().size()));
+        assertThat("All localizedTitles present", actual.getLocalizedTitles().containsAll(expected.getLocalizedTitles()), is(true));
         assertThat("Same number of reviews", actual.getReviews().size(), is(expected.getReviews().size()));
         assertThat("All reviews present", actual.getReviews().containsAll(expected.getReviews()), is(true));
         assertThat("Same number of ratings", actual.getRatings().size(), is(expected.getRatings().size()));
@@ -594,6 +598,14 @@ public class ContentSerializerTest {
         described.setPresentationChannel("bbcone");
         described.setScheduleOnly(true);
         described.setShortDescription("shortDesc");
+
+        LocalizedTitle localizedTitle = new LocalizedTitle();
+        localizedTitle.setTitle("titlu");
+        localizedTitle.setLocale("ro","RO");
+        LocalizedTitle localizedTitle1 = new LocalizedTitle();
+        localizedTitle1.setTitle("titolo");
+        described.setLocalizedTitles(ImmutableSet.of(localizedTitle,localizedTitle1));
+
         described.setSpecialization(Specialization.RADIO);
         described.setThisOrChildLastUpdated(DateTime.parse("2015-09-09T10:08:18.543Z"));
         described.setThumbnail("thumbnail");
@@ -608,8 +620,8 @@ public class ContentSerializerTest {
         ));
 
         described.setRatings(Arrays.asList(
-                new Rating("5STAR", 3.0f, Publisher.RADIO_TIMES),
-                new Rating("MOOSE", 1.0f, Publisher.BBC)
+                new Rating("5STAR", 3.0f, Publisher.RADIO_TIMES, 4321L),
+                new Rating("MOOSE", 1.0f, Publisher.BBC, 1234L)
         ));
     }
 

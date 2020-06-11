@@ -6,10 +6,11 @@ import org.atlasapi.meta.annotations.FieldName;
 
 import org.joda.time.Duration;
 
+import static java.util.Optional.ofNullable;
+
 public class Song extends Item {
 
     private String isrc;
-    private Long duration;
 
     public Song() {
         setMediaType(MediaType.AUDIO);
@@ -37,15 +38,6 @@ public class Song extends Item {
         return isrc;
     }
 
-    public void setDuration(Duration duration) {
-        this.duration = duration != null ? duration.getStandardSeconds() : null;
-    }
-
-    @FieldName("duration")
-    public Duration getDuration() {
-        return duration != null ? Duration.standardSeconds(duration) : null;
-    }
-
     @Override
     public SongRef toRef() {
         return new SongRef(
@@ -59,7 +51,6 @@ public class Song extends Item {
     public static Song copyTo(Song from, Song to) {
         Item.copyTo(from, to);
         to.isrc = from.isrc;
-        to.duration = from.duration;
         return to;
     }
 
@@ -71,8 +62,27 @@ public class Song extends Item {
         return super.copyTo(to);
     }
 
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Song) {
+            copyToPreferNonNull(this, (Song) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
+    }
+
+    public static Song copyToPreferNonNull(Song from, Song to) {
+        Item.copyToPreferNonNull(from, to);
+        to.isrc = ofNullable(from.isrc).orElse(to.isrc);
+        return to;
+    }
+
     @Override public Song copy() {
         return copyTo(this, new Song());
+    }
+
+    @Override
+    public Song createNew() {
+        return new Song();
     }
 
     public <V> V accept(ItemVisitor<V> visitor) {

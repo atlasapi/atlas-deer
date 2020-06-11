@@ -38,6 +38,7 @@ import static java.util.Optional.ofNullable;
 public abstract class Described extends Identified implements Sourced {
 
     private String title;
+    private Set<LocalizedTitle> localizedTitles = ImmutableSet.of();
 
     private String shortDescription;
     private String mediumDescription;
@@ -130,8 +131,22 @@ public abstract class Described extends Identified implements Sourced {
         this.priority = priority;
     }
 
+    @FieldName("title")
+    public String getTitle() {
+        return this.title;
+    }
+
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    @FieldName("localized_titles")
+    public Set<LocalizedTitle> getLocalizedTitles() {
+        return localizedTitles;
+    }
+
+    public void setLocalizedTitles(Set<LocalizedTitle> localizedTitles) {
+        this.localizedTitles = ImmutableSet.copyOf(localizedTitles);
     }
 
     @FieldName("synopses")
@@ -205,11 +220,6 @@ public abstract class Described extends Identified implements Sourced {
 
     public void setThumbnail(String thumbnail) {
         this.thumbnail = thumbnail;
-    }
-
-    @FieldName("title")
-    public String getTitle() {
-        return this.title;
     }
 
     @FieldName("this_or_child_last_updated")
@@ -320,7 +330,7 @@ public abstract class Described extends Identified implements Sourced {
     }
 
     public void setAwards(Set<Award> awards) {
-        this.awards = awards;
+        this.awards = ImmutableSet.copyOf(awards);
     }
 
     public static Described copyTo(Described from, Described to) {
@@ -336,6 +346,7 @@ public abstract class Described extends Identified implements Sourced {
         to.thisOrChildLastUpdated = from.thisOrChildLastUpdated;
         to.thumbnail = from.thumbnail;
         to.title = from.title;
+        to.localizedTitles = from.localizedTitles;
         to.scheduleOnly = from.scheduleOnly;
         to.presentationChannel = from.presentationChannel;
         to.images = from.images;
@@ -346,6 +357,9 @@ public abstract class Described extends Identified implements Sourced {
         to.reviews = from.reviews;
         to.ratings = from.ratings;
         to.awards = from.awards;
+        to.synopses = from.synopses;
+        to.priority = from.priority;
+        to.relatedLinks = from.relatedLinks;
         return to;
     }
 
@@ -368,6 +382,8 @@ public abstract class Described extends Identified implements Sourced {
         to.thisOrChildLastUpdated = ofNullable(from.thisOrChildLastUpdated).orElse(to.thisOrChildLastUpdated);
         to.thumbnail = isNullOrEmpty(from.thumbnail) ? to.thumbnail : from.thumbnail;
         to.title = isNullOrEmpty(from.title) ? to.title : from.title;
+        to.localizedTitles = from.localizedTitles.isEmpty() ? to.localizedTitles
+                                                            : from.localizedTitles;
         to.scheduleOnly = from.scheduleOnly;
         to.presentationChannel = isNullOrEmpty(from.presentationChannel) ? to.presentationChannel : from.presentationChannel;
         to.images = from.images.isEmpty() ? to.images : from.images;
@@ -378,6 +394,10 @@ public abstract class Described extends Identified implements Sourced {
         to.reviews = from.reviews.isEmpty() ? to.reviews : from.reviews;
         to.ratings = from.ratings.isEmpty() ? to.ratings : from.ratings;
         to.awards = from.awards.isEmpty() ? to.awards : from.awards;
+        //the following were added here later (they seemed to be missing)
+        to.synopses = ofNullable(from.synopses).orElse(to.synopses);
+        to.priority = ofNullable(from.priority).orElse(to.priority);
+        to.relatedLinks = from.relatedLinks.isEmpty() ? to.relatedLinks : from.relatedLinks;
         return to;
     }
 
@@ -392,6 +412,9 @@ public abstract class Described extends Identified implements Sourced {
     }
 
     public abstract Described copy();
+
+    //Allows to create a new content of the same type without having to know or figure out the type
+    public abstract Described createNew();
 
     public <T extends Described> boolean isEquivalentTo(T content) {
         return getEquivalentTo().contains(EquivalenceRef.valueOf(content))

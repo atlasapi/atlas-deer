@@ -621,6 +621,16 @@ public class ItemInfo implements ModelClassInfo {
                             .withJsonType(JsonType.OBJECT)
                             .build()
             )
+            .add(
+                    FieldInfo.builder()
+                            .withName("duration")
+                            .withDescription("")
+                            .withType("Integer")
+                            .withIsMultiple(false)
+                            .withIsModelType(false)
+                            .withJsonType(JsonType.NUMBER)
+                            .build()
+            )
             .build();
 
     @Override

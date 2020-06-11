@@ -41,6 +41,11 @@ CMD java \
     -Delasticsearch.index="$ELASTICSEARCH_INDEX" \
     -Delasticsearch.requestTimeout="$ELASTICSEARCH_REQUESTTIMEOUT" \
     -Delasticsearch.seeds="$ELASTICSEARCH_SEEDS" \
+    -Dsherlock.scheme="$SHERLOCK_SCHEME" \
+    -Dsherlock.hostname="$SHERLOCK_HOSTNAME" \
+    -Dsherlock.port="$SHERLOCK_PORT" \
+    -Drepresentative-id-service.host="$REPRESENTATIVE_ID_SERVICE_HOST" \
+    -Drepresentative-id-service.port="$REPRESENTATIVE_ID_SERVICE_PORT" \
     -Dgithub.auth.consumerKey="$GITHUB_AUTH_CONSUMERKEY" \
     -Dgithub.auth.consumerSecret="$GITHUB_AUTH_CONSUMERSECRET" \
     -Dgoogle.auth.consumerKey="$GOOGLE_AUTH_CONSUMERKEY" \

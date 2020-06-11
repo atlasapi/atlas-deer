@@ -37,30 +37,6 @@ public class BroadcastMergingTest {
     private final List<Publisher> defaultTestPublishers = ImmutableList.of(Publisher.BBC, Publisher.FACEBOOK);
 
     @Test
-    public void testBroadcastMergingNoBroadcasts() {
-        when(application.getConfiguration()).thenReturn(getConfigWithReads(defaultTestPublishers));
-
-        Item chosenItem = new Item();
-        chosenItem.setId(1L);
-        chosenItem.setPublisher(Publisher.BBC);
-        chosenItem.setCanonicalUri("chosenItem");
-
-        Item notChosenItem = new Item();
-        notChosenItem.setId(2L);
-        notChosenItem.setPublisher(Publisher.FACEBOOK);
-        notChosenItem.setCanonicalUri("notChosenItem");
-
-        chosenItem.addEquivalentTo(notChosenItem);
-        notChosenItem.addEquivalentTo(chosenItem);
-
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application,
-                Collections.emptySet()
-        );
-
-        assertTrue(notChosenItem.getBroadcasts().isEmpty());
-    }
-
-    @Test
     public void testBroadcastMergingNonMatchingBroadcasts() {
         when(application.getConfiguration()).thenReturn(getConfigWithReads(defaultTestPublishers));
 
@@ -94,11 +70,11 @@ public class BroadcastMergingTest {
         chosenItem.addEquivalentTo(notChosenItem);
         notChosenItem.addEquivalentTo(chosenItem);
 
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application,
+        Item merged = executor.merge(ImmutableList.of(chosenItem, notChosenItem), application,
                 Collections.emptySet()
         );
 
-        assertTrue(chosenItem.getBroadcasts().size() == 1);
+        assertTrue(merged.getBroadcasts().size() == 1);
     }
 
     @Test
@@ -140,14 +116,14 @@ public class BroadcastMergingTest {
         chosenItem.addEquivalentTo(notChosenItem);
         notChosenItem.addEquivalentTo(chosenItem);
 
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application,
+        Item merged = executor.merge(ImmutableList.of(chosenItem, notChosenItem), application,
                 Collections.emptySet()
         );
 
         // ensure that the broadcast matched, 
         // and the fields on the non-chosen broadcast 
         // are merged only when the original broadcast's fields are null
-        Broadcast mergedBroadcast = Iterables.getOnlyElement(chosenItem.getBroadcasts());
+        Broadcast mergedBroadcast = Iterables.getOnlyElement(merged.getBroadcasts());
         assertTrue(mergedBroadcast.getAudioDescribed());
         assertFalse(mergedBroadcast.getHighDefinition());
         assertFalse(mergedBroadcast.getSurround());
@@ -227,9 +203,8 @@ public class BroadcastMergingTest {
         notChosenFbItem.addEquivalentTo(notChosenFirstBbcItem);
         notChosenFbItem.addEquivalentTo(notChosenBbcItem);
 
-        executor.merge(
-                chosenItemWithoutBroadcasts,
-                ImmutableList.of(notChosenFirstBbcItem, notChosenBbcItem, notChosenFbItem),
+        Item merged = executor.merge(
+                ImmutableList.of(chosenItemWithoutBroadcasts, notChosenFirstBbcItem, notChosenBbcItem, notChosenFbItem),
                 application,
                 Collections.emptySet()
         );
@@ -238,7 +213,7 @@ public class BroadcastMergingTest {
         // and the fields on the non-chosen broadcast 
         // are merged only when the original broadcast's fields are null
         // and that the most precedent broadcast's values are used
-        Broadcast mergedBroadcast = Iterables.getOnlyElement(chosenItemWithoutBroadcasts.getBroadcasts());
+        Broadcast mergedBroadcast = Iterables.getOnlyElement(merged.getBroadcasts());
         assertTrue(mergedBroadcast.getAudioDescribed());
         assertTrue(mergedBroadcast.getHighDefinition());
         assertFalse(mergedBroadcast.getSurround());
@@ -291,8 +266,8 @@ public class BroadcastMergingTest {
 
         //merge all broadcasts from all sources, even if different channel and start time
         activeAnnotations.add(Annotation.ALL_BROADCASTS);
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application, activeAnnotations);
-        assertEquals(4, chosenItem.getBroadcasts().size());
+        Item merged = executor.merge(ImmutableList.of(chosenItem, notChosenItem), application, activeAnnotations);
+        assertEquals(4, merged.getBroadcasts().size());
 
     }
 
@@ -340,9 +315,9 @@ public class BroadcastMergingTest {
         Set<Annotation> activeAnnotations = new HashSet<>();
         //get broadcasts from all sources, merging on matching channel+start time
         activeAnnotations.add(Annotation.ALL_MERGED_BROADCASTS);
-        executor.merge(chosenItem, ImmutableList.of(notChosenItem), application, activeAnnotations);
+        Item merged = executor.merge(ImmutableList.of(chosenItem, notChosenItem), application, activeAnnotations);
 
-        assertEquals(3, chosenItem.getBroadcasts().size());
+        assertEquals(3, merged.getBroadcasts().size());
     }
 
     private ApplicationConfiguration getConfigWithReads(List<Publisher> publishers) {

@@ -91,6 +91,11 @@ public class ContentGroup extends Described
         return copyTo(this, new ContentGroup());
     }
 
+    @Override
+    public ContentGroup createNew() {
+        return new ContentGroup();
+    }
+
     public ContentGroupRef contentGroupRef() {
         return new ContentGroupRef(getId(), getCanonicalUri());
     }

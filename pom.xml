@@ -260,7 +260,7 @@
       <dependency>
         <groupId>org.atlasapi</groupId>
         <artifactId>atlas-model</artifactId>
-        <version>${atlas.legacy.version}</version>
+        <version>5.0-SNAPSHOT</version>
         <exclusions>
           <exclusion>
             <groupId>com.google.guava</groupId>
@@ -536,7 +536,7 @@
     <telescope-client.version>1.0-SNAPSHOT</telescope-client.version>
     <guava.version>19.0</guava.version>
     <protonpack.version>1.7</protonpack.version>
-    <jetty.version>9.0.6.v20130930</jetty.version>
+    <jetty.version>9.4.29.v20200521</jetty.version>
     <slf4j.version>1.7.5</slf4j.version>
     <astyanax.version>2.0.2</astyanax.version>
     <common.version>2.2-SNAPSHOT</common.version>
@@ -550,6 +550,8 @@
     <jackson.version>2.8.0</jackson.version>
     <metrics-dw.version>3.1.2</metrics-dw.version>
     <prometheus.version>0.0.19</prometheus.version>
+    <representative-id-service.version>1.1-SNAPSHOT</representative-id-service.version>
+    <sherlock.version>1.0-SNAPSHOT</sherlock.version>
 
     <sonar.jacoco.itReportPath>${project.basedir}/target/jacoco-it.exec</sonar.jacoco.itReportPath>
     <sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>

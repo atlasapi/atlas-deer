@@ -6,6 +6,7 @@ import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.AnnotationIndex;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -33,7 +34,7 @@ public class IndexAnnotationsExtractor implements AnnotationsExtractor {
 
     @Override
     public ActiveAnnotations extractFromSingleRequest(HttpServletRequest request)
-            throws InvalidAnnotationException {
+            throws InvalidAnnotationException, MissingAnnotationException {
 
         String serialisedAnnotations = request.getParameter(parameterName);
 
@@ -46,7 +47,7 @@ public class IndexAnnotationsExtractor implements AnnotationsExtractor {
 
     @Override
     public ActiveAnnotations extractFromListRequest(HttpServletRequest request)
-            throws InvalidAnnotationException {
+            throws InvalidAnnotationException, MissingAnnotationException {
 
         String serialisedAnnotations = request.getParameter(parameterName);
 

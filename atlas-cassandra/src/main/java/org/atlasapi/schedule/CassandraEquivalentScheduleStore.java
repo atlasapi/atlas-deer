@@ -790,12 +790,13 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                                     .withGraph(Optional.of(graph))
                                     .withSelectedSources(selectedSources)
                                     .withSelectedGraphSources(selectedSources)
-                                    .withActivelyPublishedIds(
+                                    .withIds(
                                             items.stream()
                                                     .filter(Item::isActivelyPublished)
                                                     .map(Item::getId)
                                                     .collect(MoreCollectors.toImmutableSet())
                                     )
+                                    .withAllowUnpublishedIds(ImmutableSet.of())
                                     .build()
                     )
                     .collect(MoreCollectors.toImmutableSet());

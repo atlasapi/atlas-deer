@@ -51,6 +51,9 @@ CMD java \
     -Delasticsearch.index="$ELASTICSEARCH_INDEX" \
     -Delasticsearch.requestTimeout="$ELASTICSEARCH_REQUESTTIMEOUT" \
     -Delasticsearch.seeds="$ELASTICSEARCH_SEEDS" \
+    -Dsherlock.scheme="$SHERLOCK_SCHEME" \
+    -Dsherlock.hostname="$SHERLOCK_HOSTNAME" \
+    -Dsherlock.port="$SHERLOCK_PORT" \
     -Dequiv.update.producer.system="$EQUIV_UPDATE_PRODUCER_SYSTEM" \
     -Dhttp.nonProxyHosts="$HTTP_NONPROXYHOSTS" \
     -Dhttp.proxyHost="$HTTP_PROXYHOST" \
@@ -118,6 +121,8 @@ CMD java \
     -Dreporting.columbus-telescope.thread.capacity="$REPORTING_COLUMBUS_TELESCOPE_THREAD_CAPACITY" \
     -Dreporting.columbus-telescope.thread.pool.size="$REPORTING_COLUMBUS_TELESCOPE_THREAD_POOL_SIZE" \
     -Dreporting.columbus-telescope.thread.pool.size.max="$REPORTING_COLUMBUS_TELESCOPE_THREAD_POOL_SIZE_MAX" \
+    -Drepresentative-id-service.host="$REPRESENTATIVE_ID_SERVICE_HOST" \
+    -Drepresentative-id-service.port="$REPRESENTATIVE_ID_SERVICE_PORT" \
     -Drp.password.unique="$RP_PASSWORD_UNIQUE" \
     -Ds3.access="$S3_ACCESS" \
     -Ds3.secret="$S3_SECRET" \

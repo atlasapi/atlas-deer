@@ -23,16 +23,18 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
 
     private final ImmutableSet<Publisher> selectedSources;
     private final ImmutableSet<Id> selectedIds;
+    private final ImmutableSet<Id> allowUnpublishedIds;
 
     private EquivalenceGraphFilter(Builder builder) {
         this.selectedSources = ImmutableSet.copyOf(builder.selectedSources);
+        this.allowUnpublishedIds = ImmutableSet.copyOf(builder.allowUnpublishedIds);
 
         if (!builder.graph.isPresent() || !builder.graphEntryId.isPresent()) {
-            this.selectedIds = ImmutableSet.copyOf(builder.activelyPublishedIds);
+            this.selectedIds = ImmutableSet.copyOf(builder.ids);
             return;
         }
 
-        if (!builder.activelyPublishedIds.contains(builder.graphEntryId.get())) {
+        if (!builder.ids.contains(builder.graphEntryId.get())) {
             this.selectedIds = ImmutableSet.of();
             return;
         }
@@ -46,7 +48,7 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
                     builder.graphEntryId.get(),
                     builder.graph.get().getId()
             );
-            this.selectedIds = ImmutableSet.copyOf(builder.activelyPublishedIds);
+            this.selectedIds = ImmutableSet.copyOf(builder.ids);
             return;
         }
 
@@ -54,7 +56,7 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
                 builder.graphEntryId.get(),
                 builder.graph.get(),
                 builder.selectedGraphSources,
-                builder.activelyPublishedIds,
+                builder.ids,
                 Sets.newHashSet()
         );
     }
@@ -65,7 +67,7 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
 
     @Override
     public boolean test(Content content) {
-        return content.isActivelyPublished()
+        return (content.isActivelyPublished() || allowUnpublishedIds.contains(content.getId()))
                 && selectedSources.contains(content.getSource())
                 && selectedIds.contains(content.getId());
     }
@@ -74,7 +76,7 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
             Id graphEntryId,
             EquivalenceGraph graph,
             Set<Publisher> selectedSources,
-            Set<Id> activelyPublishedIds,
+            Set<Id> ids,
             Set<Id> seenNodeIds
     ) {
         EquivalenceGraph.Adjacents adjacents = graph.getAdjacents(graphEntryId);
@@ -94,13 +96,13 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
         );
 
         childrenToVisit.stream()
-                .filter(ref -> activelyPublishedIds.contains(ref.getId()))
+                .filter(ref -> ids.contains(ref.getId()))
                 .filter(ref -> selectedSources.contains(ref.getSource()))
                 .forEach(ref -> visitId(
                         ref.getId(),
                         graph,
                         selectedSources,
-                        activelyPublishedIds,
+                        ids,
                         seenNodeIds
                 ));
 
@@ -124,12 +126,17 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
 
     public interface SelectedGraphSourcesStep {
 
-        ActivelyPublishedIdsStep withSelectedGraphSources(Set<Publisher> selectedGraphSources);
+        IdsStep withSelectedGraphSources(Set<Publisher> selectedGraphSources);
     }
 
-    public interface ActivelyPublishedIdsStep {
+    public interface IdsStep {
 
-        BuildStep withActivelyPublishedIds(Set<Id> activelyPublishedIds);
+        AllowUnpublishedIdsStep withIds(Set<Id> ids);
+    }
+
+    public interface AllowUnpublishedIdsStep {
+
+        BuildStep withAllowUnpublishedIds(Set<Id> allowUnpublishedIds);
     }
 
     public interface BuildStep {
@@ -139,13 +146,14 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
 
     public static class Builder
             implements GraphEntryIdStep, GraphStep, SelectedSourcesStep, SelectedGraphSourcesStep,
-            ActivelyPublishedIdsStep, BuildStep {
+            IdsStep, AllowUnpublishedIdsStep, BuildStep {
 
         private Optional<Id> graphEntryId;
         private Optional<EquivalenceGraph> graph;
         private Set<Publisher> selectedSources;
         private Set<Publisher> selectedGraphSources;
-        private Set<Id> activelyPublishedIds;
+        private Set<Id> ids;
+        private Set<Id> allowUnpublishedIds;
 
         private Builder() {
         }
@@ -181,7 +189,7 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
          * to those children via another selected content then these children will be filtered out
          */
         @Override
-        public ActivelyPublishedIdsStep withSelectedGraphSources(
+        public IdsStep withSelectedGraphSources(
                 Set<Publisher> selectedGraphSources
         ) {
             this.selectedGraphSources = selectedGraphSources;
@@ -193,8 +201,14 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
          * will neither be returned by the filter nor will its children get traversed
          */
         @Override
-        public BuildStep withActivelyPublishedIds(Set<Id> activelyPublishedIds) {
-            this.activelyPublishedIds = activelyPublishedIds;
+        public AllowUnpublishedIdsStep withIds(Set<Id> ids) {
+            this.ids = ids;
+            return this;
+        }
+
+        @Override
+        public BuildStep withAllowUnpublishedIds(Set<Id> allowUnpublishedIds) {
+            this.allowUnpublishedIds = allowUnpublishedIds;
             return this;
         }
 
