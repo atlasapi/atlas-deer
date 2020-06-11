@@ -8,6 +8,8 @@ import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.collect.ImmutableSet;
 
+import static java.util.Optional.ofNullable;
+
 public class Film extends Item {
 
     private String websiteUrl = null;
@@ -79,9 +81,29 @@ public class Film extends Item {
         }
         return super.copyTo(to);
     }
+    @Override public <T extends Described> T copyToPreferNonNull(T to) {
+        if (to instanceof Film) {
+            copyToPreferNonNull(this, (Film) to);
+            return to;
+        }
+        return super.copyToPreferNonNull(to);
+    }
+
+    public static Film copyToPreferNonNull(Film from, Film to) {
+        Item.copyToPreferNonNull(from, to);
+        to.websiteUrl = ofNullable(from.websiteUrl).orElse(to.websiteUrl);
+        to.subtitles = from.subtitles == null || from.subtitles.isEmpty() ? to.subtitles : from.subtitles;
+        to.releaseDates = from.releaseDates == null || from.releaseDates.isEmpty() ? to.releaseDates : from.releaseDates;
+        return to;
+    }
 
     @Override public Film copy() {
         return copyTo(this, new Film());
+    }
+
+    @Override
+    public Film createNew() {
+        return new Film();
     }
 
     public <V> V accept(ItemVisitor<V> visitor) {

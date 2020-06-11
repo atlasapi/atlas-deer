@@ -54,6 +54,11 @@ public class Segment extends Described {
         return copyTo(this, new Segment());
     }
 
+    @Override
+    public Segment createNew() {
+        return new Segment();
+    }
+
     public static final Function<Segment, SegmentRef> TO_REF = Segment::toRef;
 
 }

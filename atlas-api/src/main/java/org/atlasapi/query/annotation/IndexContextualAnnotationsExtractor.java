@@ -3,6 +3,7 @@ package org.atlasapi.query.annotation;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
@@ -32,7 +33,7 @@ public class IndexContextualAnnotationsExtractor implements ContextualAnnotation
 
     @Override
     public ActiveAnnotations extractFromRequest(HttpServletRequest request)
-            throws InvalidAnnotationException {
+            throws InvalidAnnotationException, MissingAnnotationException {
 
         String serialisedAnnotations = request.getParameter(parameterName);
 

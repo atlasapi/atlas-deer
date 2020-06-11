@@ -16,6 +16,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.joda.time.Duration;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.content.v2.serialization.DateTimeUtils.toInstant;
 
@@ -57,6 +59,11 @@ public class ClipSerialization {
                         .collect(Collectors.toSet())
         );
         internal.setSortKey(clip.sortKey());
+
+        Duration duration = clip.getDuration();
+        if(duration != null) {
+            internal.setDuration(duration.getMillis());
+        }
 
         internal.setContainerSummary(containerSummary.serialize(clip.getContainerSummary()));
 
@@ -120,6 +127,10 @@ public class ClipSerialization {
         }
 
         content = (org.atlasapi.content.Clip) content.withSortKey(internal.getSortKey());
+
+        if(internal.getDuration() != null) {
+            content.setDuration(Duration.millis(internal.getDuration()));
+        }
 
         content.setContainerSummary(containerSummary.deserialize(internal.getContainerSummary()));
 

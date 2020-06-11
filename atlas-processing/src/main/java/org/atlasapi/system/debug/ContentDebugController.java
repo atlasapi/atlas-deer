@@ -422,7 +422,7 @@ public class ContentDebugController {
             @PathVariable("id") String id,
             @RequestParam(name = "equivalents", defaultValue = "false") boolean migrateEquivalents,
             @RequestParam(name = "hierarchy", defaultValue = "true") boolean migrateHierarchy,
-            @RequestParam(name = "sendKafkaMessages", defaultValue = "false") boolean sendKafkaMessages,
+            @RequestParam(name = "sendKafkaMessages", defaultValue = "true") boolean sendKafkaMessages,
             final HttpServletResponse response
     ) throws IOException {
         Content content = getContentById(id);
@@ -435,7 +435,7 @@ public class ContentDebugController {
             @RequestParam(name = "uris", defaultValue = "") String uris,
             @RequestParam(name = "equivalents", defaultValue = "false") boolean migrateEquivalents,
             @RequestParam(name = "hierarchy", defaultValue = "true") boolean migrateHierarchy,
-            @RequestParam(name = "sendKafkaMessages", defaultValue = "false") boolean sendKafkaMessages,
+            @RequestParam(name = "sendKafkaMessages", defaultValue = "true") boolean sendKafkaMessages,
             final HttpServletResponse response
     ) throws IOException {
         if (Strings.isNullOrEmpty(ids) && Strings.isNullOrEmpty(uris)) {

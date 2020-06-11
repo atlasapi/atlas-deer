@@ -19,6 +19,6 @@ public class LocaleExtractor extends Extractor {
     @Override
     protected String extractValueInternal(Object object) {
         Locale locale = (Locale) object;
-        return locale.getLanguage();
+        return locale.toLanguageTag();
     }
 }

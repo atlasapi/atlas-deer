@@ -1,8 +1,14 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
@@ -11,21 +17,14 @@ import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.system.bootstrap.ColumbusTelescopeReporter;
-
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.time.Timestamp;
-
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -43,6 +42,8 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     private final Meter failureMeter;
     private final Timer latencyTimer;
     private final String publisherMeterName;
+    private final String publisherExecutionTimerName;
+    private final String publisherLatencyTimerName;
 
     private final MetricRegistry metricRegistry;
 
@@ -62,6 +63,8 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
+        this.publisherExecutionTimerName = metricPrefix + "source.%s.timer.execution";
+        this.publisherLatencyTimerName = metricPrefix + "source.%s.timer.latency";
 
         this.metricRegistry = metricRegistry;
 
@@ -86,23 +89,24 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
+        long start = System.currentTimeMillis();
         messageReceivedMeter.mark();
 
         Id contentId = message.getUpdatedResource().getId();
         log.debug("Processing message on id {}, took: PT{}S, message: {}",
                 contentId, getTimeToProcessInMillis(message.getTimestamp()) / 1000L, message);
 
-        Timer.Context time = executionTimer.time();
+        String metricSourceName = message.getUpdatedResource().getSource().key().replace('.', '_');
 
-        metricRegistry.meter(
-                String.format(
-                        publisherMeterName,
-                        message.getUpdatedResource().getSource().key().replace('.', '_')
-                )
-        ).mark();
+        metricRegistry.meter(String.format(publisherMeterName, metricSourceName)).mark();
+
+        Timer publisherExecutionTimer = metricRegistry.timer(String.format(publisherExecutionTimerName, metricSourceName));
+
+        Timer.Context time = executionTimer.time();
+        Timer.Context publisherTime = publisherExecutionTimer.time();
 
         try {
-            process(contentId, message.getTimestamp());
+            process(contentId, message.getTimestamp(), message.getUpdatedResource().getSource(), start);
         } catch (Exception e) {
             log.error("Failed to bootstrap content {}", message.getUpdatedResource(), e);
             failureMeter.mark();
@@ -110,10 +114,13 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             throw Throwables.propagate(e);
         } finally {
             time.stop();
+            publisherTime.stop();
         }
     }
 
-    private void process(Id contentId, Timestamp timestamp) throws WriteException {
+    private void process(Id contentId, Timestamp timestamp, Publisher publisher, long processingStartTime) throws WriteException {
+        String metricSourceName = publisher.key().replace('.', '_');
+
         Resolved<Content> content = resolveContent(contentId);
 
         if (content.getResources().isEmpty()) {
@@ -150,10 +157,21 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         if (result.written()) {
             log.debug("Bootstrapped content {}", result.toString());
 
-            latencyTimer.update(
-                    getTimeToProcessInMillis(timestamp),
-                    TimeUnit.MILLISECONDS
+            long timeToProcessInMillis = getTimeToProcessInMillis(timestamp);
+
+            Timer publisherLatencyTimer = metricRegistry.timer(String.format(publisherLatencyTimerName, metricSourceName));
+
+            latencyTimer.update(timeToProcessInMillis, TimeUnit.MILLISECONDS);
+            publisherLatencyTimer.update(timeToProcessInMillis, TimeUnit.MILLISECONDS);
+
+            long processingEndTime = System.currentTimeMillis();
+            log.info(
+                    "Timings: Source: {}, Execution Time (ms): {}, Latency (ms): {}",
+                    publisher.key(),
+                    processingEndTime - processingStartTime,
+                    timeToProcessInMillis
             );
+
             columbusTelescopeReporter.reportSuccessfulMigration(
                     contentToWrite
             );

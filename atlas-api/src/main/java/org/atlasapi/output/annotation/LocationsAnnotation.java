@@ -3,11 +3,13 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 import java.util.Set;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.Player;
 import org.atlasapi.content.Policy;
+import org.atlasapi.content.Provider;
 import org.atlasapi.content.Service;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -15,11 +17,13 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.AliasWriter;
 import org.atlasapi.output.writers.PlayerWriter;
+import org.atlasapi.output.writers.ProviderWriter;
 import org.atlasapi.output.writers.ServiceWriter;
 import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
 import org.atlasapi.system.legacy.LegacyPlayerTransformer;
 import org.atlasapi.system.legacy.LegacyServiceTransformer;
+import org.atlasapi.util.QueryUtils;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 
@@ -31,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.atlasapi.util.QueryUtils.contextHasAnnotation;
 
 public class LocationsAnnotation extends OutputAnnotation<Content> {
 
@@ -70,6 +75,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         private final PlayerResolver playerResolver;
         private final EntityWriter<Player> playerWriter = new PlayerWriter();
         private final EntityWriter<Service> serviceWriter = new ServiceWriter();
+        private final EntityWriter<Provider> providerWriter = new ProviderWriter();
         private final LegacyPlayerTransformer playerTransformer = new LegacyPlayerTransformer();
         private final LegacyServiceTransformer serviceTransformer = new LegacyServiceTransformer();
         private final ServiceResolver serviceResolver;
@@ -117,6 +123,10 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("transport_sub_type", location.getTransportSubType());
             writer.writeField("embed_id", location.getEmbedId());
             writer.writeField("embed_code", location.getEmbedCode());
+
+            if (contextHasAnnotation(ctxt, Annotation.LOCATION_PROVIDERS) && location.getProvider() != null) {
+                writer.writeObject(providerWriter, location.getProvider(), ctxt);
+            }
 
             writer.writeField(
                     "availability_start",policy.getAvailabilityStart()

@@ -1,6 +1,7 @@
 package org.atlasapi.query.annotation;
 
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.MissingAnnotationException;
 
 import com.google.common.collect.ImmutableSetMultimap;
 
@@ -15,7 +16,7 @@ final class CombinedResourceAnnotationIndex implements
 
     @Override
     public ActiveAnnotations resolve(Iterable<String> keys)
-            throws InvalidAnnotationException {
+            throws InvalidAnnotationException, MissingAnnotationException {
         return index.resolve(keys);
     }
 }
