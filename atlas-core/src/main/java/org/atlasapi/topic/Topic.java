@@ -33,6 +33,7 @@ public class Topic extends Described implements Sourced, Aliased {
         PRODUCT("product"),
         WORK("work"),
         GENRE("genre"),
+        LABEL("label"),
         UNKNOWN("unknown");
 
         private final String key;
