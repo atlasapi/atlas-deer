@@ -89,6 +89,7 @@ public final class JsonResponseWriter implements ResponseWriter {
     public void startResponse() throws IOException {
         printMemberSeparator = false;
         response.setContentType(MimeType.APPLICATION_JSON.toString());
+        response.setCharacterEncoding("UTF-8");
         writer = writer();
         callback = callback(request);
         if (callback != null) {
