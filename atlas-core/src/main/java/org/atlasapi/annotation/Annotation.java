@@ -81,8 +81,8 @@ public enum Annotation {
     AWARDS,
     PRIORITY_REASONS,
     MODIFIED_DATES,
-    NO_CHANNEL_INFO,
-    BROADCAST_CHANNEL,
+    @Deprecated NO_CHANNEL_INFO, //this is now the default behaviour
+    BROADCAST_CHANNEL, //includes the channel object in each broadcast. Used to happen by default.
     CHANNEL_GROUP_INFO,
     CHANNEL_IDS,
     FUTURE_CHANNELS,
