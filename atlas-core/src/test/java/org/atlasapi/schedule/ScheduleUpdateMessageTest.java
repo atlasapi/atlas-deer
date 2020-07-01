@@ -13,7 +13,6 @@ import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -22,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 
 public class ScheduleUpdateMessageTest {
 
-    @Ignore
     @Test
     public void testDeSerializeMessage() throws MessagingException {
 
@@ -67,7 +65,6 @@ public class ScheduleUpdateMessageTest {
 
     }
 
-    @Ignore
     @Test
     public void testDeSerializeMessageWithoutStaleBroadcasts() throws MessagingException {
 
