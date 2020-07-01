@@ -21,7 +21,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-@Ignore
 public class EquivalenceGraphUpdateMessageTest {
 
     private JacksonMessageSerializer<EquivalenceGraphUpdateMessage> serializer
