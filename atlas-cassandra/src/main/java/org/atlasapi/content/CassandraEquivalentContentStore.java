@@ -844,11 +844,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             return resultsFuture.isDone();
         }
 
-        private GraphAndDataResults toGraphAndDataResults(List<ResultSet> resultSets) {
-            assert(resultSets.size() == 2);
-            return new GraphAndDataResults(getGraphResults(resultSets), getDataResults(resultSets));
-        }
-
         @Override
         public GraphAndDataResults get() throws InterruptedException, ExecutionException {
             return resultsFuture.get();
