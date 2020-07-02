@@ -777,7 +777,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         private final ListenableFuture<List<ResultSet>> combinedFuture;
         private final Statement dataStatement;
         private final Statement graphStatement;
-        private final AtomicInteger retries = new AtomicInteger(0);
+        private final AtomicInteger attempt = new AtomicInteger(0);
 
         SetSelectFuture(Statement dataStatement, Statement graphStatement) {
             this.dataStatement = dataStatement;
@@ -794,13 +794,15 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
             return Futures.transformAsync(future, combinedResults -> {
                 boolean resultsMatch = resultsMatch(combinedResults);
-                if (resultsMatch || retries.incrementAndGet() > NUMBER_OF_CASSANDRA_SELECT_RETRIES) {
+                if (resultsMatch || attempt.incrementAndGet() > NUMBER_OF_CASSANDRA_SELECT_RETRIES) {
                     if (!resultsMatch) {
                         log.warn(
                                 "Exceeded retry count for dataStatement: {}, graphStatement: {}",
                                 dataStatement,
                                 graphStatement
                         );
+                    } else {
+                        log.info("Succeeded after {} attempt(s)", attempt.get());
                     }
                     return Futures.immediateFuture(combinedResults);
                 } else {
@@ -810,6 +812,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
 
         private boolean resultsMatch(List<ResultSet> combinedResults) {
+            //For testing
+            if (Math.random() < 0.3) {
+                return false;
+            }
             ResultSet graphResults = getGraphResults(combinedResults);
             ResultSet dataResults = getDataResults(combinedResults);
 
