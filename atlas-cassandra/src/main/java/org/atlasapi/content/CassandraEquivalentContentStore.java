@@ -337,14 +337,14 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             Map<Long, Long> index
     ) {
         ImmutableListMultimap<Long, Row> setRows = results.stream()
-                .flatMap(graphAndDataResults -> graphAndDataResults.dataResult.all().stream())
+                .flatMap(graphAndDataResults -> graphAndDataResults.dataResult.stream())
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         row -> row.getLong(SET_ID_KEY),
                         row -> row
                 ));
 
         ImmutableListMultimap<Long, Row> graphRows = results.stream()
-                .flatMap(graphAndDataResults -> graphAndDataResults.graphResult.all().stream())
+                .flatMap(graphAndDataResults -> graphAndDataResults.graphResult.stream())
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         row -> row.getLong(SET_ID_KEY),
                         row -> row
@@ -764,90 +764,84 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private class GraphAndDataResults {
-        final ResultSet graphResult;
-        final ResultSet dataResult;
+        final List<Row> graphResult;
+        final List<Row> dataResult;
 
-        GraphAndDataResults(ResultSet graphResult, ResultSet dataResult) {
+        GraphAndDataResults(List<Row> graphResult, List<Row> dataResult) {
             this.graphResult = graphResult;
             this.dataResult = dataResult;
         }
     }
 
     private class SetSelectFuture implements ListenableFuture<GraphAndDataResults> {
-        private final ListenableFuture<List<ResultSet>> combinedFuture;
-        private final Statement dataStatement;
-        private final Statement graphStatement;
+        private final ListenableFuture<GraphAndDataResults> resultsFuture;
         private final AtomicInteger attempt = new AtomicInteger(0);
 
         SetSelectFuture(Statement dataStatement, Statement graphStatement) {
-            this.dataStatement = dataStatement;
-            this.graphStatement = graphStatement;
-            this.combinedFuture = combineFuture(this.dataStatement, this.graphStatement);
+            this.resultsFuture = combineFuture(dataStatement, graphStatement);
+        }
+
+        private List<Row> getGraphResults(List<ResultSet> combinedResults) {
+            return combinedResults.get(0).all();
+        }
+
+        private List<Row> getDataResults(List<ResultSet> combinedResults) {
+            return combinedResults.get(1).all();
         }
 
         // ENG-726: we know this causes race conditions since we cannot perform the two queries at the same time.
         // As a result we retry the query if we end up with results where the set of setIds do not match.
-        private ListenableFuture<List<ResultSet>> combineFuture(Statement dataStatement, Statement graphStatement) {
+        private ListenableFuture<GraphAndDataResults> combineFuture(Statement dataStatement, Statement graphStatement) {
             ListenableFuture<ResultSet> dataResult = session.executeAsync(dataStatement);
             ListenableFuture<ResultSet> graphResult = session.executeAsync(graphStatement);
             ListenableFuture<List<ResultSet>> future = Futures.allAsList(graphResult, dataResult); //order must match the corresponding get methods
 
             return Futures.transformAsync(future, combinedResults -> {
-                boolean resultsMatch = resultsMatch(combinedResults);
+                List<Row> graphResults = getGraphResults(combinedResults);
+                List<Row> dataResults = getDataResults(combinedResults);
+                boolean resultsMatch = resultsMatch(graphResults, dataResults);
                 if (resultsMatch || attempt.incrementAndGet() > NUMBER_OF_CASSANDRA_SELECT_RETRIES) {
                     if (!resultsMatch) {
                         log.warn("Exceeded retry count for combined data and graph future");
                     } else {
                         log.info("Succeeded after {} attempt(s)", attempt.get());
                     }
-                    return Futures.immediateFuture(combinedResults);
+                    return Futures.immediateFuture(new GraphAndDataResults(graphResults, dataResults));
                 } else {
                     return combineFuture(dataStatement, graphStatement);
                 }
             });
         }
 
-        private boolean resultsMatch(List<ResultSet> combinedResults) {
+        private boolean resultsMatch(List<Row> graphResults, List<Row> dataResults) {
             //For testing
             if (Math.random() < 0.3) {
                 return false;
             }
-            ResultSet graphResults = getGraphResults(combinedResults);
-            ResultSet dataResults = getDataResults(combinedResults);
-
-            Set<Long> graphSetIds = graphResults.all().stream()
+            Set<Long> graphSetIds = graphResults.stream()
                     .map(row -> row.getLong(SET_ID_KEY))
                     .collect(MoreCollectors.toImmutableSet());
 
-            Set<Long> dataSetIds = dataResults.all().stream()
+            Set<Long> dataSetIds = dataResults.stream()
                     .map(row -> row.getLong(SET_ID_KEY))
                     .collect(MoreCollectors.toImmutableSet());
 
             return graphSetIds.equals(dataSetIds);
         }
 
-
-        private ResultSet getGraphResults(List<ResultSet> combinedResults) {
-            return combinedResults.get(0);
-        }
-
-        private ResultSet getDataResults(List<ResultSet> combinedResults) {
-            return combinedResults.get(1);
-        }
-
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            return combinedFuture.cancel(mayInterruptIfRunning);
+            return resultsFuture.cancel(mayInterruptIfRunning);
         }
 
         @Override
         public boolean isCancelled() {
-            return combinedFuture.isCancelled();
+            return resultsFuture.isCancelled();
         }
 
         @Override
         public boolean isDone() {
-            return combinedFuture.isDone();
+            return resultsFuture.isDone();
         }
 
         private GraphAndDataResults toGraphAndDataResults(List<ResultSet> resultSets) {
@@ -857,17 +851,17 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         @Override
         public GraphAndDataResults get() throws InterruptedException, ExecutionException {
-            return toGraphAndDataResults(combinedFuture.get());
+            return resultsFuture.get();
         }
 
         @Override
         public GraphAndDataResults get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return toGraphAndDataResults(combinedFuture.get(timeout, unit));
+            return resultsFuture.get(timeout, unit);
         }
 
         @Override
         public void addListener(Runnable listener, Executor executor) {
-            combinedFuture.addListener(listener, executor);
+            resultsFuture.addListener(listener, executor);
         }
     }
 }
