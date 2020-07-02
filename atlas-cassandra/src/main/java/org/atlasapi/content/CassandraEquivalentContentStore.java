@@ -803,8 +803,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 if (resultsMatch || attempt.incrementAndGet() > NUMBER_OF_CASSANDRA_SELECT_RETRIES) {
                     if (!resultsMatch) {
                         log.warn("Exceeded retry count for combined data and graph future");
-                    } else {
-                        log.info("Succeeded after {} attempt(s)", attempt.get());
                     }
                     return Futures.immediateFuture(new GraphAndDataResults(graphResults, dataResults));
                 } else {
@@ -814,10 +812,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
 
         private boolean resultsMatch(List<Row> graphResults, List<Row> dataResults) {
-            //For testing
-            if (Math.random() < 0.3) {
-                return false;
-            }
             Set<Long> graphSetIds = graphResults.stream()
                     .map(row -> row.getLong(SET_ID_KEY))
                     .collect(MoreCollectors.toImmutableSet());
