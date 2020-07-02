@@ -796,11 +796,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 boolean resultsMatch = resultsMatch(combinedResults);
                 if (resultsMatch || attempt.incrementAndGet() > NUMBER_OF_CASSANDRA_SELECT_RETRIES) {
                     if (!resultsMatch) {
-                        log.warn(
-                                "Exceeded retry count for dataStatement: {}, graphStatement: {}",
-                                dataStatement,
-                                graphStatement
-                        );
+                        log.warn("Exceeded retry count for combined data and graph future");
                     } else {
                         log.info("Succeeded after {} attempt(s)", attempt.get());
                     }
