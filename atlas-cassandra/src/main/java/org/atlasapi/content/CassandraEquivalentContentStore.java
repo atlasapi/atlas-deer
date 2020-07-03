@@ -800,9 +800,14 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 List<Row> graphResults = getGraphResults(combinedResults);
                 List<Row> dataResults = getDataResults(combinedResults);
                 boolean resultsMatch = resultsMatch(graphResults, dataResults);
-                if (resultsMatch || attempt.incrementAndGet() > NUMBER_OF_CASSANDRA_SELECT_RETRIES) {
+                int attemptNumber = attempt.incrementAndGet();
+                if (resultsMatch || attemptNumber > NUMBER_OF_CASSANDRA_SELECT_RETRIES) {
                     if (!resultsMatch) {
                         log.warn("Exceeded retry count for combined data and graph future");
+                    } else {
+                        if (attemptNumber > 1) {
+                            log.info("Succeeded to fetch combined data and graph future after {} attempts", attemptNumber);
+                        }
                     }
                     return Futures.immediateFuture(new GraphAndDataResults(graphResults, dataResults));
                 } else {
