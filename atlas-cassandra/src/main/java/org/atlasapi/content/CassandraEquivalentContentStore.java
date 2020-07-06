@@ -1,46 +1,5 @@
 package org.atlasapi.content;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import javax.annotation.Nullable;
-
-import org.atlasapi.annotation.Annotation;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.equivalence.EquivalenceGraph;
-import org.atlasapi.equivalence.EquivalenceGraphFilter;
-import org.atlasapi.equivalence.EquivalenceGraphSerializer;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.equivalence.EquivalenceGraphUpdate;
-import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
-import org.atlasapi.equivalence.ResolvedEquivalents;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
-import org.atlasapi.segment.SegmentEvent;
-import org.atlasapi.serialization.protobuf.ContentProtos;
-import org.atlasapi.system.legacy.LegacyContentResolver;
-import org.atlasapi.util.CassandraSecondaryIndex;
-import org.atlasapi.util.SecondaryIndex;
-
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.stream.MoreStreams;
-
 import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
@@ -66,10 +25,47 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import com.google.inject.Key;
 import com.google.protobuf.ByteString;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.stream.MoreStreams;
+import org.atlasapi.annotation.Annotation;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphFilter;
+import org.atlasapi.equivalence.EquivalenceGraphSerializer;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceGraphUpdate;
+import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
+import org.atlasapi.equivalence.ResolvedEquivalents;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
+import org.atlasapi.segment.SegmentEvent;
+import org.atlasapi.serialization.protobuf.ContentProtos;
+import org.atlasapi.system.legacy.LegacyContentResolver;
+import org.atlasapi.util.CassandraSecondaryIndex;
+import org.atlasapi.util.SecondaryIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.asc;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
@@ -93,6 +89,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private static final String CONTENT_ID_BIND = "content_id";
     private static final String DATA_BIND = "data";
     private static final String GRAPH_BIND = "graph";
+
+    private static final int NUMBER_OF_CASSANDRA_SELECT_RETRIES = 3;
 
     private static final int GRAPH_SIZE_ALERTING_THRESHOLD = 150;
 
@@ -339,14 +337,14 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             Map<Long, Long> index
     ) {
         ImmutableListMultimap<Long, Row> setRows = results.stream()
-                .flatMap(graphAndDataResults -> graphAndDataResults.dataResult.all().stream())
+                .flatMap(graphAndDataResults -> graphAndDataResults.dataResult.stream())
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         row -> row.getLong(SET_ID_KEY),
                         row -> row
                 ));
 
         ImmutableListMultimap<Long, Row> graphRows = results.stream()
-                .flatMap(graphAndDataResults -> graphAndDataResults.graphResult.all().stream())
+                .flatMap(graphAndDataResults -> graphAndDataResults.graphResult.stream())
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         row -> row.getLong(SET_ID_KEY),
                         row -> row
@@ -544,10 +542,9 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private ListenableFuture<List<GraphAndDataResults>> resultOf(Iterable<GraphAndDataSelect> queries) {
         return Futures.allAsList(MoreStreams.stream(queries)
-                //we know this causes race conditions. ENG-726.
                 .map(query -> new SetSelectFuture(
-                        session.executeAsync(query.dataStatement),
-                        session.executeAsync(query.graphStatement)))
+                        query.dataStatement,
+                        query.graphStatement))
                 .collect(MoreCollectors.toImmutableList()));
     }
 
@@ -767,55 +764,98 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private class GraphAndDataResults {
-        final ResultSet graphResult;
-        final ResultSet dataResult;
+        final List<Row> graphResult;
+        final List<Row> dataResult;
 
-        GraphAndDataResults(ResultSet graphResult, ResultSet dataResult) {
+        GraphAndDataResults(List<Row> graphResult, List<Row> dataResult) {
             this.graphResult = graphResult;
             this.dataResult = dataResult;
         }
     }
 
     private class SetSelectFuture implements ListenableFuture<GraphAndDataResults> {
-        final ListenableFuture<List<ResultSet>> combinedFuture;
+        private final ListenableFuture<GraphAndDataResults> resultsFuture;
+        private final AtomicInteger attempt = new AtomicInteger(0);
 
-        SetSelectFuture(ListenableFuture<ResultSet> setResult, ListenableFuture<ResultSet> graphResult) {
-            combinedFuture = Futures.allAsList(graphResult, setResult); //order after get is same order as given on input
+        SetSelectFuture(Statement dataStatement, Statement graphStatement) {
+            this.resultsFuture = combineFuture(dataStatement, graphStatement);
+        }
+
+        private List<Row> getGraphResults(List<ResultSet> combinedResults) {
+            return combinedResults.get(0).all();
+        }
+
+        private List<Row> getDataResults(List<ResultSet> combinedResults) {
+            return combinedResults.get(1).all();
+        }
+
+        // ENG-726: we know this causes race conditions since we cannot perform the two queries at the same time.
+        // As a result we retry the query if we end up with results where the set of setIds do not match.
+        private ListenableFuture<GraphAndDataResults> combineFuture(Statement dataStatement, Statement graphStatement) {
+            ListenableFuture<ResultSet> dataResult = session.executeAsync(dataStatement);
+            ListenableFuture<ResultSet> graphResult = session.executeAsync(graphStatement);
+            ListenableFuture<List<ResultSet>> future = Futures.allAsList(graphResult, dataResult); //order must match the corresponding get methods
+
+            return Futures.transformAsync(future, combinedResults -> {
+                List<Row> graphResults = getGraphResults(combinedResults);
+                List<Row> dataResults = getDataResults(combinedResults);
+                boolean resultsMatch = resultsMatch(graphResults, dataResults);
+                int attemptNumber = attempt.incrementAndGet();
+                if (resultsMatch || attemptNumber > NUMBER_OF_CASSANDRA_SELECT_RETRIES) {
+                    if (!resultsMatch) {
+                        log.warn("Exceeded retry count for combined data and graph future");
+                    } else {
+                        if (attemptNumber > 1) {
+                            log.info("Succeeded to fetch combined data and graph future after {} attempts", attemptNumber);
+                        }
+                    }
+                    return Futures.immediateFuture(new GraphAndDataResults(graphResults, dataResults));
+                } else {
+                    return combineFuture(dataStatement, graphStatement);
+                }
+            });
+        }
+
+        private boolean resultsMatch(List<Row> graphResults, List<Row> dataResults) {
+            Set<Long> graphSetIds = graphResults.stream()
+                    .map(row -> row.getLong(SET_ID_KEY))
+                    .collect(MoreCollectors.toImmutableSet());
+
+            Set<Long> dataSetIds = dataResults.stream()
+                    .map(row -> row.getLong(SET_ID_KEY))
+                    .collect(MoreCollectors.toImmutableSet());
+
+            return graphSetIds.equals(dataSetIds);
         }
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            return combinedFuture.cancel(mayInterruptIfRunning);
+            return resultsFuture.cancel(mayInterruptIfRunning);
         }
 
         @Override
         public boolean isCancelled() {
-            return combinedFuture.isCancelled();
+            return resultsFuture.isCancelled();
         }
 
         @Override
         public boolean isDone() {
-            return combinedFuture.isDone();
-        }
-
-        private GraphAndDataResults toGraphAndDataResults(List<ResultSet> resultSets) {
-            assert(resultSets.size() == 2);
-            return new GraphAndDataResults(resultSets.get(0), resultSets.get(1));
+            return resultsFuture.isDone();
         }
 
         @Override
         public GraphAndDataResults get() throws InterruptedException, ExecutionException {
-            return toGraphAndDataResults(combinedFuture.get());
+            return resultsFuture.get();
         }
 
         @Override
         public GraphAndDataResults get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return toGraphAndDataResults(combinedFuture.get(timeout, unit));
+            return resultsFuture.get(timeout, unit);
         }
 
         @Override
         public void addListener(Runnable listener, Executor executor) {
-            combinedFuture.addListener(listener, executor);
+            resultsFuture.addListener(listener, executor);
         }
     }
 }
