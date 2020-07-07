@@ -42,7 +42,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
@@ -101,9 +101,8 @@ public class ApplicationWebModule {
     }
 
     @Bean
-    public DefaultAnnotationHandlerMapping controllerMappings() {
-        DefaultAnnotationHandlerMapping controllerClassNameHandlerMapping = new DefaultAnnotationHandlerMapping();
-        return controllerClassNameHandlerMapping;
+    public RequestMappingHandlerMapping controllerMappings() {
+        return new RequestMappingHandlerMapping();
     }
 
     @Bean
