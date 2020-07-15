@@ -7,9 +7,7 @@ import java.util.stream.Collectors;
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
-import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.search.parameter.Parameter;
-import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 public abstract class SherlockAttribute<FROM, P extends Parameter, TO, M extends ChildTypeMapping<TO>> {
@@ -24,6 +22,11 @@ public abstract class SherlockAttribute<FROM, P extends Parameter, TO, M extends
             AttributeCoercer<FROM> coercer,
             M... mappings
     ) {
+        if (parameter.getType() == SherlockParameter.Type.SEARCH) {
+            assert this.getClass().isAssignableFrom(SearchAttribute.class);
+        } else {
+            assert !this.getClass().isAssignableFrom(SearchAttribute.class);
+        }
         this.parameter = parameter;
         this.coercer = coercer;
         this.mappings = mappings;
