@@ -34,5 +34,5 @@ public abstract class SherlockSingleMappingAttribute<FROM, TO, M extends ChildTy
         return createParameter(mappings[0], value);
     }
 
-    protected abstract SimpleParameter<TO> createParameter(M mappings, FROM value);
+    protected abstract SimpleParameter<TO> createParameter(M mapping, FROM value);
 }

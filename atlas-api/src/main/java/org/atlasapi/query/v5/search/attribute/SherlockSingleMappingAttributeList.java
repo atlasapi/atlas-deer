@@ -34,7 +34,7 @@ public abstract class SherlockSingleMappingAttributeList<FROM, TO, M extends Chi
     }
 
     @Override
-    protected SimpleParameter<TO> createParameter(M mappings, FROM value) {
+    protected SimpleParameter<TO> createParameter(M mapping, FROM value) {
         return null;
     }
 }

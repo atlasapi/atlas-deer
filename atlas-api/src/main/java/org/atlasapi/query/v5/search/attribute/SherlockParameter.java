@@ -12,7 +12,8 @@ public enum SherlockParameter {
     DESCRIPTION(Type.SEARCH, "description"),
     MEDIA_TYPE(Type.FILTER, "media_type"),
     SPECIALIZATION(Type.FILTER, "specialization"),
-    GENRES(Type.FILTER, "genre"),
+    GENRES(Type.SEARCH, "genre"),
+    GENRES_EXACT(Type.FILTER, "genre"),
     TYPE(Type.FILTER, "type"),
     EPISODE_NUMBER(Type.FILTER, "episode_number"),
     SERIES_NUMBER(Type.FILTER, "series_number"),
@@ -33,6 +34,7 @@ public enum SherlockParameter {
     RESTRICTIONS_RATING(Type.FILTER, Group.RESTRICTIONS, "rating"),
     RESTRICTIONS_MINIMUM_AGE(Type.FILTER, Group.RESTRICTIONS, "minimum_age"),
     RESTRICTIONS_MESSAGE(Type.SEARCH, Group.RESTRICTIONS, "message"),
+    RESTRICTIONS_MESSAGE_EXACT(Type.FILTER, Group.RESTRICTIONS, "message"),
 
     // Certificates
     CERTIFICATES_CLASSIFICATION(Type.FILTER, Group.CERTIFICATES, "classification"),
@@ -58,7 +60,8 @@ public enum SherlockParameter {
     PEOPLE_NAME(Type.SEARCH, Group.PEOPLE, "name"),
     PEOPLE_NAME_EXACT(Type.FILTER, Group.PEOPLE, "name"),
     PEOPLE_ROLE(Type.FILTER, Group.PEOPLE, "role"),
-    PEOPLE_CHARACTER(Type.FILTER, Group.PEOPLE, "character"),
+    PEOPLE_CHARACTER(Type.SEARCH, Group.PEOPLE, "character"),
+    PEOPLE_CHARACTER_EXACT(Type.FILTER, Group.PEOPLE, "character"),
 
     // Locations
     LOCATIONS_AVAILABLE(Type.FILTER, Group.LOCATIONS, "available"),
@@ -68,6 +71,7 @@ public enum SherlockParameter {
     LOCATIONS_REVENUE_CONTRACT(Type.FILTER, Group.LOCATIONS, "revenue_contract"),
     LOCATIONS_SUBSCRIPTION_PACKAGES(Type.FILTER, Group.LOCATIONS, "subscription_packages"),
     LOCATIONS_SOURCE(Type.FILTER, Group.LOCATIONS, "source"),
+    LOCATIONS_SOURCE_COUNTRY(Type.FILTER, Group.LOCATIONS, "source.country"),
     LOCATIONS_DISTRIBUTOR(Type.FILTER, Group.LOCATIONS, "distributor"),
 
     // Data
@@ -124,6 +128,7 @@ public enum SherlockParameter {
     AWARDS_TITLE(Type.SEARCH, Group.AWARDS, "title"),
     AWARDS_TITLE_EXACT(Type.FILTER, Group.AWARDS, "title"),
     AWARDS_DESCRIPTION(Type.SEARCH, Group.AWARDS, "description"),
+    AWARDS_DESCRIPTION_EXACT(Type.FILTER, Group.AWARDS, "description"),
     AWARDS_YEAR(Type.FILTER, Group.AWARDS, "year"),
 
     // Ratings
@@ -135,7 +140,8 @@ public enum SherlockParameter {
     // Reviews
     REVIEWS_REVIEW(Type.SEARCH, Group.REVIEWS, "review"),
     REVIEWS_LANGUAGE(Type.FILTER, Group.REVIEWS, "language"),
-    REVIEWS_AUTHOR(Type.FILTER, Group.REVIEWS, "author"),
+    REVIEWS_AUTHOR(Type.SEARCH, Group.REVIEWS, "author"),
+    REVIEWS_AUTHOR_EXACT(Type.FILTER, Group.REVIEWS, "author"),
     REVIEWS_AUTHOR_INITIALS(Type.FILTER, Group.REVIEWS, "author_initials"),
     REVIEWS_RATING(Type.FILTER, Group.REVIEWS, "rating"),
     REVIEWS_DATE(Type.FILTER, Group.REVIEWS, "date"),
@@ -158,6 +164,10 @@ public enum SherlockParameter {
         this.type = type;
         this.group = group;
         this.name = name;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     public String getParameterName() {
