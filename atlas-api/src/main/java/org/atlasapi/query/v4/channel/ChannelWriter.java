@@ -29,9 +29,9 @@ import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import com.google.common.base.Splitter;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.output.writers.SourceWriter.sourceListWriter;
 import static org.atlasapi.output.writers.SourceWriter.sourceWriter;
-import static org.elasticsearch.common.base.Preconditions.checkNotNull;
 
 public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
 

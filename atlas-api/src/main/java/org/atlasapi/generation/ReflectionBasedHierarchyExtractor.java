@@ -12,7 +12,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
-import static org.elasticsearch.common.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ReflectionBasedHierarchyExtractor implements HierarchyExtractor {
 
