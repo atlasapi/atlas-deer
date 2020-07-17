@@ -1,5 +1,21 @@
 package org.atlasapi.equivalence;
 
+import com.datastax.driver.core.ConsistencyLevel;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.applications.client.model.internal.AccessRoles;
+import com.metabroadcast.applications.client.model.internal.Application;
+import org.atlasapi.annotation.Annotation;
+import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.entity.Id;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -10,32 +26,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.Nullable;
-
-import org.atlasapi.annotation.Annotation;
-import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
-import org.atlasapi.criteria.attribute.Attributes;
-import org.atlasapi.entity.Id;
-
-import com.metabroadcast.applications.client.model.internal.AccessRoles;
-import com.metabroadcast.applications.client.model.internal.Application;
-
-import com.datastax.driver.core.ConsistencyLevel;
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
         implements MergingEquivalentsResolver<E> {
 
     private static final Logger log = LoggerFactory.getLogger(AnnotationBasedMergingEquivalentsResolver.class);
-    private static final String CASSANDRA_CONSISTENCY_LEVEL_ROLE_REGEX = "cassandra\\.consistency\\.level=*";
+    private static final Pattern CASSANDRA_CONSISTENCY_LEVEL_ROLE_PATTERN =
+            Pattern.compile("^cassandra\\.consistency\\.level=.*$");
 
     private final EquivalentsResolver<E> resolver;
     private final ApplicationEquivalentsMerger<E> merger;
@@ -95,7 +93,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
             return ConsistencyLevel.QUORUM;
         }
 
-        List<String> roles = accessRoles.getRoles(Pattern.compile(CASSANDRA_CONSISTENCY_LEVEL_ROLE_REGEX));
+        List<String> roles = accessRoles.getRoles(CASSANDRA_CONSISTENCY_LEVEL_ROLE_PATTERN);
         if (!roles.isEmpty()) {
             String role = roles.get(0);
             String consistencyLevel = role.substring(role.lastIndexOf("=") + 1);
