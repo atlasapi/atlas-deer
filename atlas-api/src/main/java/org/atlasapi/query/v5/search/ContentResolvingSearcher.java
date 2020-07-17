@@ -19,6 +19,7 @@ import com.metabroadcast.sherlock.client.search.SearchQuery;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -28,18 +29,15 @@ public class ContentResolvingSearcher {
 
     private final ContentSearcher searcher;
     private final MergingEquivalentsResolver<Content> contentResolver;
-    private final NumberToShortStringCodec idCodec;
     private final long timeout;
 
     public ContentResolvingSearcher(
             ContentSearcher searcher,
             MergingEquivalentsResolver<Content> contentResolver,
-            NumberToShortStringCodec idCodec,
             long timeout
     ) {
         this.searcher = checkNotNull(searcher);
         this.contentResolver = checkNotNull(contentResolver);
-        this.idCodec = idCodec;
         this.timeout = timeout;
     }
 
@@ -70,7 +68,10 @@ public class ContentResolvingSearcher {
             Iterable<String> encodedIds,
             QueryContext queryContext
     ) {
-        List<Id> ids = decodeIds(encodedIds);
+        List<Id> ids = StreamSupport.stream(encodedIds.spliterator(), false)
+                .map(Id::valueOf)
+                .collect(Collectors.toList());
+
         if (ids.isEmpty()) {
             return Futures.immediateFuture(ResolvedEquivalents.empty());
         } else {
@@ -80,17 +81,6 @@ public class ContentResolvingSearcher {
                     queryContext.getAnnotations().all(),
                     queryContext.getOperands()
             );
-        }
-    }
-
-    private List<Id> decodeIds(Iterable<String> input) {
-        if (input == null) {
-            return ImmutableList.of();
-        } else {
-            return StreamSupport.stream(input.spliterator(), false)
-                    .map(idCodec::decode)
-                    .map(Id::valueOf)
-                    .collect(Collectors.toList());
         }
     }
 }

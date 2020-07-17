@@ -59,11 +59,6 @@ public class QueryModule {
     private @Autowired AtlasPersistenceModule persistenceModule;
 
     @Bean
-    NumberToShortStringCodec idCodec() {
-        return SubstitutionTableNumberCodec.lowerCaseOnly();
-    }
-
-    @Bean
     QueryExecutor<Topic> topicQueryExecutor() {
         return new IndexBackedTopicQueryExecutor(
                 persistenceModule.topicIndex(),
@@ -154,7 +149,6 @@ public class QueryModule {
         return new org.atlasapi.query.v5.search.ContentResolvingSearcher(
                 persistenceModule.contentSearcherV5(),
                 mergingContentResolver(),
-                idCodec(),
                 60000
         );
     }
