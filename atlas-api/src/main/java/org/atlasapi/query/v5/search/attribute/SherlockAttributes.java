@@ -7,6 +7,8 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.query.common.coercers.EnumCoercer;
+import org.atlasapi.query.common.coercers.IdCoercer;
+import org.atlasapi.query.common.coercers.StringCoercer;
 import org.atlasapi.query.v5.search.coercer.DateRangeCoercer;
 import org.atlasapi.query.v5.search.coercer.InstantRangeCoercer;
 import org.atlasapi.query.v5.search.coercer.NumberRangeCoercer;
@@ -60,17 +62,19 @@ public class SherlockAttributes {
                         SherlockParameter.TITLE,
                         content.getTitle()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.TITLE_EXACT,
-                        content.getTitleExact()
+                        content.getTitleExact(),
+                        StringCoercer.create()
                 ),
                 new SearchAttribute(
                         SherlockParameter.DESCRIPTION,
                         content.getDescription()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.MEDIA_TYPE,
-                        content.getMediaType()
+                        content.getMediaType(),
+                        StringCoercer.create()
                 ),
                 new EnumAttribute<>(
                         SherlockParameter.SPECIALIZATION,
@@ -81,9 +85,10 @@ public class SherlockAttributes {
                         SherlockParameter.GENRES,
                         content.getGenres()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.GENRES_EXACT,
-                        content.getGenresExact()
+                        content.getGenresExact(),
+                        StringCoercer.create()
                 ),
                 new EnumAttribute<>(
                         SherlockParameter.TYPE,
@@ -107,9 +112,10 @@ public class SherlockAttributes {
                         content.getTotalEpisodes(),
                         NumberRangeCoercer.createIntegerCoercer()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.COUNTRIES_OF_ORIGIN,
-                        content.getCountriesOfOrigin()
+                        content.getCountriesOfOrigin(),
+                        StringCoercer.create()
                 ),
                 new RangeAttribute<>(
                         SherlockParameter.YEAR,
@@ -125,35 +131,40 @@ public class SherlockAttributes {
                         content.getSource().getKey(),
                         EnumCoercer.create(Sources.fromKey())
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.PUBLISHER_COUNTRY,
-                        content.getSource().getCountry()
+                        content.getSource().getCountry(),
+                        StringCoercer.create()
                 )
         );
     }
 
     private List<SherlockAttribute<?, ?, ?, ?>> getAliasAttributes() {
         return ImmutableList.of(
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.ALIASES_VALUE,
-                        content.getAliases().getValue()
+                        content.getAliases().getValue(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.ALIASES_NAMESPACE,
-                        content.getAliases().getNamespace()
+                        content.getAliases().getNamespace(),
+                        StringCoercer.create()
                 )
         );
     }
 
     private List<SherlockAttribute<?, ?, ?, ?>> getRestrictionsAttributes() {
         return ImmutableList.of(
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.RESTRICTIONS_AUTHORITY,
-                        content.getRestrictions().getAuthority()
+                        content.getRestrictions().getAuthority(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.RESTRICTIONS_RATING,
-                        content.getRestrictions().getRating()
+                        content.getRestrictions().getRating(),
+                        StringCoercer.create()
                 ),
                 new RangeAttribute<>(
                         SherlockParameter.RESTRICTIONS_MINIMUM_AGE,
@@ -164,31 +175,35 @@ public class SherlockAttributes {
                         SherlockParameter.RESTRICTIONS_MESSAGE,
                         content.getRestrictions().getMessage()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.RESTRICTIONS_MESSAGE_EXACT,
-                        content.getRestrictions().getMessageExact()
+                        content.getRestrictions().getMessageExact(),
+                        StringCoercer.create()
                 )
         );
     }
 
     private List<SherlockAttribute<?, ?, ?, ?>> getCertificatesAttributes() {
         return ImmutableList.of(
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.CERTIFICATES_CLASSIFICATION,
-                        content.getCertificates().getClassification()
+                        content.getCertificates().getClassification(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.CERTIFICATES_CODE,
-                        content.getCertificates().getCode()
+                        content.getCertificates().getCode(),
+                        StringCoercer.create()
                 )
         );
     }
 
     private List<SherlockAttribute<?, ?, ?, ?>> getLanguagesAttributes() {
         return ImmutableList.of(
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.LANGUAGES_CODE,
-                        content.getLanguages().getCode()
+                        content.getLanguages().getCode(),
+                        StringCoercer.create()
                 )
         );
     }
@@ -200,13 +215,15 @@ public class SherlockAttributes {
                         content.getReleaseDates().getReleaseDate(),
                         DateRangeCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.RELEASE_DATES_COUNTRY,
-                        content.getReleaseDates().getCountry()
+                        content.getReleaseDates().getCountry(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.RELEASE_DATES_TYPE,
-                        content.getReleaseDates().getType()
+                        content.getReleaseDates().getType(),
+                        StringCoercer.create()
                 )
         );
     }
@@ -235,12 +252,12 @@ public class SherlockAttributes {
                 new IdAttribute(
                         SherlockParameter.SCHEDULE_CHANNEL,
                         content.getBroadcasts().getBroadcastOn(),
-                        idCodec
+                        IdCoercer.create(idCodec)
                 ),
                 new ChannelGroupAttribute(
                         SherlockParameter.SCHEDULE_CHANNEL_GROUP,
                         content.getBroadcasts().getBroadcastOn(),
-                        idCodec,
+                        IdCoercer.create(idCodec),
                         channelGroupResolver
                 )
         );
@@ -248,37 +265,43 @@ public class SherlockAttributes {
 
     private List<SherlockAttribute<?, ?, ?, ?>> getPeopleAttributes() {
         return ImmutableList.of(
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.PEOPLE_URI,
-                        content.getPeople().getUri()
+                        content.getPeople().getUri(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.PEOPLE_CURIE,
-                        content.getPeople().getCurie()
+                        content.getPeople().getCurie(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.PEOPLE_TYPE,
-                        content.getPeople().getType()
+                        content.getPeople().getType(),
+                        StringCoercer.create()
                 ),
                 new SearchAttribute(
                         SherlockParameter.PEOPLE_NAME,
                         content.getPeople().getName()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.PEOPLE_NAME_EXACT,
-                        content.getPeople().getNameExact()
+                        content.getPeople().getNameExact(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.PEOPLE_ROLE,
-                        content.getPeople().getRole()
+                        content.getPeople().getRole(),
+                        StringCoercer.create()
                 ),
                 new SearchAttribute(
                         SherlockParameter.PEOPLE_CHARACTER,
                         content.getPeople().getCharacter()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.PEOPLE_CHARACTER_EXACT,
-                        content.getPeople().getCharacterExact()
+                        content.getPeople().getCharacterExact(),
+                        StringCoercer.create()
                 )
         );
     }
@@ -301,30 +324,35 @@ public class SherlockAttributes {
                         content.getLocations().getAvailabilityEnd(),
                         InstantRangeCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.LOCATIONS_AVAILABILITY_COUNTRIES,
-                        content.getLocations().getAvailabilityCountries()
+                        content.getLocations().getAvailabilityCountries(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.LOCATIONS_REVENUE_CONTRACT,
-                        content.getLocations().getRevenueContract()
+                        content.getLocations().getRevenueContract(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.LOCATIONS_SUBSCRIPTION_PACKAGES,
-                        content.getLocations().getSubscriptionPackages()
+                        content.getLocations().getSubscriptionPackages(),
+                        StringCoercer.create()
                 ),
                 new EnumAttribute<>(
                         SherlockParameter.LOCATIONS_SOURCE,
                         content.getLocations().getSource().getKey(),
                         EnumCoercer.create(Sources.fromKey())
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.LOCATIONS_SOURCE_COUNTRY,
-                        content.getLocations().getSource().getCountry()
+                        content.getLocations().getSource().getCountry(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.LOCATIONS_DISTRIBUTOR,
-                        content.getLocations().getDistributor()
+                        content.getLocations().getDistributor(),
+                        StringCoercer.create()
                 )
         );
     }
@@ -336,9 +364,10 @@ public class SherlockAttributes {
                         content.getLocations().getDuration(),
                         NumberRangeCoercer.createIntegerCoercer()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.VIDEO_ASPECT_RATIO,
-                        content.getLocations().getVideoAspectRatio()
+                        content.getLocations().getVideoAspectRatio(),
+                        StringCoercer.create()
                 ),
                 new RangeAttribute<>(
                         SherlockParameter.VIDEO_BIT_RATE,
@@ -377,9 +406,10 @@ public class SherlockAttributes {
                         SherlockParameter.VIDEO_IS_3D,
                         content.getLocations().getIs3d()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.VIDEO_QUALITY,
-                        content.getLocations().getQuality()
+                        content.getLocations().getQuality(),
+                        StringCoercer.create()
                 )
         );
     }
@@ -421,9 +451,10 @@ public class SherlockAttributes {
 
     private List<SherlockAttribute<?, ?, ?, ?>> getPricingAttributes() {
         return ImmutableList.of(
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.PRICING_CURRENCY,
-                        content.getLocations().getPricing().getCurrency()
+                        content.getLocations().getPricing().getCurrency(),
+                        StringCoercer.create()
                 ),
                 new RangeAttribute<>(
                         SherlockParameter.PRICING_AMOUNT,
@@ -445,42 +476,47 @@ public class SherlockAttributes {
 
     private List<SherlockAttribute<?, ?, ?, ?>> getContainerAttributes() {
         return ImmutableList.of(
-                new KeywordAttribute(
+                new IdAttribute(
                         SherlockParameter.CONTAINER_ID,
-                        content.getContainer().getId()
+                        content.getContainer().getId(),
+                        IdCoercer.create(idCodec)
                 ),
                 new SearchAttribute(
                         SherlockParameter.CONTAINER_TITLE,
                         content.getContainer().getTitle()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.CONTAINER_TITLE_EXACT,
-                        content.getContainer().getTitleExact()
+                        content.getContainer().getTitleExact(),
+                        StringCoercer.create()
                 ),
                 new SearchAttribute(
                         SherlockParameter.CONTAINER_DESCRIPTION,
                         content.getContainer().getDescription()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.CONTAINER_TYPE,
-                        content.getContainer().getType()
+                        content.getContainer().getType(),
+                        StringCoercer.create()
                 )
         );
     }
 
     private List<SherlockAttribute<?, ?, ?, ?>> getSeriesAttributes() {
         return ImmutableList.of(
-                new KeywordAttribute(
+                new IdAttribute(
                         SherlockParameter.SERIES_ID,
-                        content.getSeries().getId()
+                        content.getSeries().getId(),
+                        IdCoercer.create(idCodec)
                 ),
                 new SearchAttribute(
                         SherlockParameter.SERIES_TITLE,
                         content.getSeries().getTitle()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.SERIES_TITLE_EXACT,
-                        content.getSeries().getTitleExact()
+                        content.getSeries().getTitleExact(),
+                        StringCoercer.create()
                 ),
                 new SearchAttribute(
                         SherlockParameter.SERIES_DESCRIPTION,
@@ -496,17 +532,19 @@ public class SherlockAttributes {
 
     private List<SherlockAttribute<?, ?, ?, ?>> getChildrenAttributes() {
         return ImmutableList.of(
-                new KeywordAttribute(
+                new IdAttribute(
                         SherlockParameter.CHILDREN_ID,
-                        content.getChildren().getId()
+                        content.getChildren().getId(),
+                        IdCoercer.create(idCodec)
                 ),
                 new SearchAttribute(
                         SherlockParameter.CHILDREN_TITLE,
                         content.getChildren().getTitle()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.CHILDREN_TITLE_EXACT,
-                        content.getChildren().getTitleExact()
+                        content.getChildren().getTitleExact(),
+                        StringCoercer.create()
                 ),
                 new SearchAttribute(
                         SherlockParameter.CHILDREN_DESCRIPTION,
@@ -522,25 +560,28 @@ public class SherlockAttributes {
 
     private List<SherlockAttribute<?, ?, ?, ?>> getAwardsAttributes() {
         return ImmutableList.of(
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.AWARDS_OUTCOME,
-                        content.getAwards().getOutcome()
+                        content.getAwards().getOutcome(),
+                        StringCoercer.create()
                 ),
                 new SearchAttribute(
                         SherlockParameter.AWARDS_TITLE,
                         content.getAwards().getTitle()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.AWARDS_TITLE_EXACT,
-                        content.getAwards().getTitleExact()
+                        content.getAwards().getTitleExact(),
+                        StringCoercer.create()
                 ),
                 new SearchAttribute(
                         SherlockParameter.AWARDS_DESCRIPTION,
                         content.getAwards().getDescription()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.AWARDS_DESCRIPTION_EXACT,
-                        content.getAwards().getDescriptionExact()
+                        content.getAwards().getDescriptionExact(),
+                        StringCoercer.create()
                 ),
                 new RangeAttribute<>(
                         SherlockParameter.AWARDS_YEAR,
@@ -557,17 +598,20 @@ public class SherlockAttributes {
                         content.getRatings().getValue(),
                         NumberRangeCoercer.createFloatCoercer()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.RATINGS_TYPE,
-                        content.getRatings().getType()
+                        content.getRatings().getType(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.RATINGS_SOURCE_KEY,
-                        content.getRatings().getSource().getKey()
+                        content.getRatings().getSource().getKey(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.RATINGS_SOURCE_COUNTRY,
-                        content.getRatings().getSource().getCountry()
+                        content.getRatings().getSource().getCountry(),
+                        StringCoercer.create()
                 )
         );
     }
@@ -578,42 +622,49 @@ public class SherlockAttributes {
                         SherlockParameter.REVIEWS_REVIEW,
                         content.getReviews().getReview()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.REVIEWS_LANGUAGE,
-                        content.getReviews().getLanguage()
+                        content.getReviews().getLanguage(),
+                        StringCoercer.create()
                 ),
                 new SearchAttribute(
                         SherlockParameter.REVIEWS_AUTHOR,
                         content.getReviews().getAuthor()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.REVIEWS_AUTHOR_EXACT,
-                        content.getReviews().getAuthorExact()
+                        content.getReviews().getAuthorExact(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.REVIEWS_AUTHOR_INITIALS,
-                        content.getReviews().getAuthorInitials()
+                        content.getReviews().getAuthorInitials(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.REVIEWS_RATING,
-                        content.getReviews().getRating()
+                        content.getReviews().getRating(),
+                        StringCoercer.create()
                 ),
                 new RangeAttribute<>(
                         SherlockParameter.REVIEWS_DATE,
                         content.getReviews().getDate(),
                         InstantRangeCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.REVIEWS_REVIEW_TYPE,
-                        content.getReviews().getReviewType()
+                        content.getReviews().getReviewType(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.REVIEWS_SOURCE_KEY,
-                        content.getReviews().getSource().getKey()
+                        content.getReviews().getSource().getKey(),
+                        StringCoercer.create()
                 ),
-                new KeywordAttribute(
+                new KeywordAttribute<>(
                         SherlockParameter.REVIEWS_SOURCE_COUNTRY,
-                        content.getReviews().getSource().getCountry()
+                        content.getReviews().getSource().getCountry(),
+                        StringCoercer.create()
                 )
         );
     }

@@ -3,11 +3,11 @@ package org.atlasapi.query.v5.search.attribute;
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 
 import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
-import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
+import com.metabroadcast.sherlock.client.search.parameter. SingleValueParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 public abstract class SherlockSingleMappingAttribute<FROM, TO, M extends ChildTypeMapping<TO>>
-        extends SherlockAttribute<FROM, SimpleParameter<TO>, TO, M> {
+        extends SherlockAttribute<FROM,  SingleValueParameter<TO>, TO, M> {
 
     public SherlockSingleMappingAttribute(
             SherlockParameter parameter,
@@ -30,9 +30,9 @@ public abstract class SherlockSingleMappingAttribute<FROM, TO, M extends ChildTy
     }
 
     @Override
-    protected SimpleParameter<TO> createParameter(M[] mappings, FROM value) {
+    protected  SingleValueParameter<TO> createParameter(M[] mappings, FROM value) {
         return createParameter(mappings[0], value);
     }
 
-    protected abstract SimpleParameter<TO> createParameter(M mapping, FROM value);
+    protected abstract  SingleValueParameter<TO> createParameter(M mapping, FROM value);
 }
