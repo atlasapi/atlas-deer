@@ -9,14 +9,14 @@ import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
 public class EnumAttribute<T extends Enum<T>> extends
-        SherlockSingleMappingAttribute<T, String, KeywordMapping> {
+        SherlockSingleMappingAttribute<T, String, KeywordMapping<String>> {
 
-    public EnumAttribute(SherlockParameter parameter, KeywordMapping mapping, EnumCoercer<T> coercer) {
+    public EnumAttribute(SherlockParameter parameter, KeywordMapping<String> mapping, EnumCoercer<T> coercer) {
         super(parameter, coercer, mapping);
     }
 
     @Override
-    protected  SingleValueParameter<String> createParameter(KeywordMapping mapping, @Nonnull T value) {
+    protected  SingleValueParameter<String> createParameter(KeywordMapping<String> mapping, @Nonnull T value) {
         return TermParameter.of(mapping, value.toString());
     }
 }

@@ -200,9 +200,9 @@ public class SearchController {
                     List<? extends Parameter> coercedValues = attribute.coerce(values);
 
                     if (parameter == SherlockParameter.PUBLISHER) {
-                        List< SingleValueParameter<String>> parsedPublishers =
-                                (List< SingleValueParameter<String>>) coercedValues;
-                        for ( SingleValueParameter<String> parsedPublisher : parsedPublishers) {
+                        List<SingleValueParameter<String>> parsedPublishers =
+                                (List<SingleValueParameter<String>>) coercedValues;
+                        for (SingleValueParameter<String> parsedPublisher : parsedPublishers) {
                             if (!enabledReadSourcesKeys.contains(parsedPublisher.getValue())) {
                                 throw new InvalidAttributeValueException(String.format(
                                         "The source %s is not within the scope of the provided api key",

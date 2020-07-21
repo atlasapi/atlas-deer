@@ -3,6 +3,7 @@ package org.atlasapi.query.v5.search.attribute;
 import org.atlasapi.query.common.coercers.BooleanCoercer;
 
 import com.metabroadcast.sherlock.client.search.helpers.OccurrenceClause;
+import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
 import com.metabroadcast.sherlock.client.search.parameter.SingleClauseBoolParameter;
@@ -25,7 +26,7 @@ public class BetweenRangeAttribute<T> extends SherlockBoolAttribute<Boolean, T, 
     }
 
     @Override
-    protected SingleClauseBoolParameter createParameter(RangeTypeMapping<T>[] mappings, Boolean value) {
+    protected BoolParameter createParameter(RangeTypeMapping<T>[] mappings, Boolean value) {
 
         RangeTypeMapping<T> fromMapping = mappings[0];
         RangeTypeMapping<T> toMapping = mappings[1];
