@@ -98,7 +98,7 @@ public class EquivalentScheduleStoreContentUpdateWorker
         Timer.Context time = executionTimer.time();
         Timer.Context publisherTime = publisherExecutionTimer.time();
 
-        Set<Content> content = Futures.getChecked(
+        Set<Content> content = Futures.get(
                 contentStore.resolveEquivalentSet(message.getEquivalentSetId()),
                 RecoverableException.class
         );

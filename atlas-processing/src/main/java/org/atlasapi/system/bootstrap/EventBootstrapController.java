@@ -65,7 +65,7 @@ public class EventBootstrapController {
     private void executeBootstrap(HttpServletResponse resp, Id id) throws IOException {
         ListenableFuture<Resolved<Event>> future = eventResolver.resolveIds(ImmutableList.of(id));
 
-        Resolved<Event> resolved = Futures.getChecked(future, IOException.class);
+        Resolved<Event> resolved = Futures.get(future, IOException.class);
         if (resolved.getResources().isEmpty()) {
             resp.sendError(HttpStatus.NOT_FOUND.value());
             return;

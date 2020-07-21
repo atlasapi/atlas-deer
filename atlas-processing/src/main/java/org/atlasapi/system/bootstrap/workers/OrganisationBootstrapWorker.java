@@ -74,7 +74,7 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
 
         try {
             Id contentId = message.getUpdatedResource().getId();
-            Resolved<Organisation> content = Futures.getChecked(
+            Resolved<Organisation> content = Futures.get(
                     resolver.resolveIds(ImmutableList.of(contentId)),
                     ExecutionException.class
             );

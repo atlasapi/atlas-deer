@@ -1,6 +1,6 @@
 package org.atlasapi.generation.model;
 
-import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -53,7 +53,7 @@ public class ModelMethodInfo implements MethodInfo {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(getClass())
+        return Objects.toStringHelper(getClass())
                 .add("name", name)
                 .add("description", description)
                 .add("type", type)

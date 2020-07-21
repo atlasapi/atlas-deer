@@ -61,20 +61,20 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
         }
         IndexQueryResult result;
         if(!queryOnlyIds) {
-            result = Futures.getChecked(
+            result = Futures.get(
                     getResults(query),
-                    QueryExecutionException.class,
                     1,
-                    TimeUnit.MINUTES
+                    TimeUnit.MINUTES,
+                    QueryExecutionException.class
             );
         } else {
             result = IndexQueryResult.withIds(topicIds, topicIds.size());
         }
-        Resolved<Topic> resolved = Futures.getChecked(
+        Resolved<Topic> resolved = Futures.get(
                 resolve(result.getIds()),
-                QueryExecutionException.class,
                 1,
-                TimeUnit.MINUTES
+                TimeUnit.MINUTES,
+                QueryExecutionException.class
         );
         /* We do to ensure the content resolved from the store is in the order
             specified by the index */

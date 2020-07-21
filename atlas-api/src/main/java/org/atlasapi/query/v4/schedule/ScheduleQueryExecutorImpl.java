@@ -97,11 +97,11 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
         } else {
             channelIds = ImmutableSet.of(query.getChannelId());
         }
-        Resolved<Channel> resolvedChannels = Futures.getChecked(
+        Resolved<Channel> resolvedChannels = Futures.get(
                 channelResolver.resolveIds(channelIds),
-                QueryExecutionException.class,
                 1,
-                TimeUnit.MINUTES
+                TimeUnit.MINUTES,
+                QueryExecutionException.class
         );
         if (resolvedChannels.getResources().isEmpty()) {
             throw new NotFoundException(Iterables.getFirst(channelIds, null));
@@ -114,11 +114,11 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
             throws ScheduleQueryExecutionException {
 
         if (query.getContext().getApplication().getConfiguration().isPrecedenceEnabled()) {
-            schedule = Futures.transformAsync(schedule, toEquivalentEntries(query));
+            schedule = Futures.transform(schedule, toEquivalentEntries(query));
         }
 
-        return Futures.getChecked(schedule,
-                ScheduleQueryExecutionException.class, QUERY_TIMEOUT, MILLISECONDS
+        return Futures.get(schedule,
+                QUERY_TIMEOUT, MILLISECONDS, ScheduleQueryExecutionException.class
         ).channelSchedules();
     }
 

@@ -52,8 +52,8 @@ public class TopicsAnnotation extends OutputAnnotation<Content> {
             return ImmutableList.of();
         }
         //TODO: more specific exception, probably, please?
-        return Futures.getChecked(topicResolver.resolveIds(topicIds),
-                IOException.class, 1, TimeUnit.MINUTES
+        return Futures.get(topicResolver.resolveIds(topicIds),
+                1, TimeUnit.MINUTES, IOException.class
         ).getResources();
     }
 

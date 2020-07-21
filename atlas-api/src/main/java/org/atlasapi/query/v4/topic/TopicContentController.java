@@ -18,7 +18,7 @@ import org.atlasapi.query.common.ContextualQueryResult;
 import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.topic.Topic;
 
-import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -60,7 +60,7 @@ public class TopicContentController {
         } catch (Exception e) {
             log.error(
                     "Request exception " + request.getRequestURI(),
-                    MoreObjects.firstNonNull(e.getCause(), e)
+                    Objects.firstNonNull(e.getCause(), e)
             );
             handleException(request, response, writer, e);
         }

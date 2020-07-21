@@ -93,8 +93,8 @@ public class EquivalentContentIndexingContentWorker
 
     private void indexContent(Id contentId, Timestamp timestamp)
             throws TimeoutException, IndexException {
-        Resolved<Content> results = Futures.getChecked(
-                resolveContent(contentId), TimeoutException.class, 30, TimeUnit.SECONDS
+        Resolved<Content> results = Futures.get(
+                resolveContent(contentId), 30, TimeUnit.SECONDS, TimeoutException.class
         );
         @SuppressWarnings("Guava")
         Optional<Content> contentOptional = results.getResources().first();

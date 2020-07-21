@@ -93,8 +93,8 @@ public class Neo4jContentStoreContentUpdateWorker
     }
 
     private Content getContent(Id contentId) throws TimeoutException {
-        Resolved<Content> results = Futures.getChecked(
-                resolveContent(contentId), TimeoutException.class, 30, TimeUnit.SECONDS
+        Resolved<Content> results = Futures.get(
+                resolveContent(contentId), 30, TimeUnit.SECONDS, TimeoutException.class
         );
 
         @SuppressWarnings("Guava")

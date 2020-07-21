@@ -1,6 +1,5 @@
 package org.atlasapi.generation.model;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -59,7 +58,7 @@ public class FieldInfo {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(FieldInfo.class)
+        return Objects.toStringHelper(FieldInfo.class)
                 .add("name", name)
                 .add("description", description)
                 .add("type", type)

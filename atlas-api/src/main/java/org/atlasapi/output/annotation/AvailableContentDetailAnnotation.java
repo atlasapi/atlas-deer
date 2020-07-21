@@ -52,7 +52,7 @@ public class AvailableContentDetailAnnotation extends OutputAnnotation<Content> 
                 .map(ResourceRef::getId)
                 .collect(Collectors.toSet());
 
-        final ResolvedEquivalents<Content> resolvedEquivalents = Futures.getChecked(
+        final ResolvedEquivalents<Content> resolvedEquivalents = Futures.get(
                 contentResolver.resolveIds(
                         contentIds,
                         ctxt.getApplication(),

@@ -65,11 +65,11 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
     @Override
     public QueryResult<Content> execute(Query<Content> query) throws QueryExecutionException {
         try {
-            return Futures.getChecked(
+            return Futures.get(
                     executeQuery(query),
-                    QueryExecutionException.class,
                     1,
-                    TimeUnit.MINUTES
+                    TimeUnit.MINUTES,
+                    QueryExecutionException.class
             );
         } catch (UncheckedExecutionException | UncheckedQueryExecutionException ee) {
             for (Throwable throwable : Throwables.getCausalChain(ee)) {

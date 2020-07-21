@@ -137,11 +137,11 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
                     ImmutableList.of(cid)
             );
 
-            Resolved<Channel> resolvedChannel = Futures.getChecked(
+            Resolved<Channel> resolvedChannel = Futures.get(
                     channelFuture,
-                    Exception.class,
                     1,
-                    TimeUnit.MINUTES
+                    TimeUnit.MINUTES,
+                    Exception.class
             );
 
             if (resolvedChannel.getResources().isEmpty()) {

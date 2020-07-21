@@ -1,6 +1,6 @@
 package org.atlasapi.generation.model;
 
-import com.google.common.base.MoreObjects;
+import org.elasticsearch.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -55,7 +55,7 @@ public class EndpointTypeInfo implements TypeInfo {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(getClass())
+        return Objects.toStringHelper(getClass())
                 .add("key", key)
                 .add("className", className)
                 .add("package", ENDPOINT_PACKAGE)
