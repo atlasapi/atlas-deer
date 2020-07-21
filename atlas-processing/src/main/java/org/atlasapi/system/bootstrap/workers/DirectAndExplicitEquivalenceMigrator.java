@@ -94,7 +94,7 @@ public class DirectAndExplicitEquivalenceMigrator {
                 .transform(LookupRef.TO_ID)
                 .transform(Id.fromLongValue())
                 .toSet();
-        Resolved<Content> contentResolved = Futures.get(
+        Resolved<Content> contentResolved = Futures.getChecked(
                 legacyResolver.resolveIds(ids),
                 ExecutionException.class
         );

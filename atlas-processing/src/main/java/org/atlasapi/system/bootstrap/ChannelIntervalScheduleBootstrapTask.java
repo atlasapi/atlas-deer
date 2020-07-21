@@ -111,7 +111,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
     public UpdateProgress call() throws Exception {
         ListenableFuture<Schedule> resolved =
                 scheduleResolver.resolve(ImmutableSet.of(channel), interval, source);
-        Schedule schedule = Futures.get(resolved, 1, TimeUnit.MINUTES, ResolveException.class);
+        Schedule schedule = Futures.getChecked(resolved, ResolveException.class, 1, TimeUnit.MINUTES);
         /* it's reasonable for there not to be a channel for a given source/channel combination
          * but there should be precisely one if any. 
          */
@@ -257,7 +257,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
             throws StoreException {
         ImmutableSet<Id> ids = containerIds(items);
         ListenableFuture<Resolved<Content>> resolved = contentStore.resolveIds(ids);
-        return Futures.get(resolved, 1, TimeUnit.MINUTES, ResolveException.class).toMap();
+        return Futures.getChecked(resolved, ResolveException.class, 1, TimeUnit.MINUTES).toMap();
     }
 
     private ImmutableSet<Id> containerIds(Iterable<Content> items) {
@@ -281,7 +281,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
             entryIds.add(itemAndBroadcast.getItem().getId());
         }
         ListenableFuture<Resolved<Content>> resolved = contentStore.resolveIds(entryIds);
-        return Futures.get(resolved, 1, TimeUnit.MINUTES, ResolveException.class).toMap();
+        return Futures.getChecked(resolved, ResolveException.class, 1, TimeUnit.MINUTES).toMap();
     }
 
     @Override

@@ -159,11 +159,11 @@ public class EquivalentScheduleQueryExecutor
                                   ? query.getChannelIds()
                                   : ImmutableSet.of(query.getChannelId());
 
-        Resolved<Channel> resolvedChannels = Futures.get(
+        Resolved<Channel> resolvedChannels = Futures.getChecked(
                 channelResolver.resolveIds(channelIds),
+                QueryExecutionException.class,
                 1,
-                TimeUnit.MINUTES,
-                QueryExecutionException.class
+                TimeUnit.MINUTES
         );
         if (resolvedChannels.getResources().isEmpty()) {
             throw new NotFoundException(Iterables.getFirst(channelIds, null));
@@ -175,8 +175,8 @@ public class EquivalentScheduleQueryExecutor
             ScheduleQuery query)
             throws ScheduleQueryExecutionException {
 
-        return Futures.get(Futures.transform(schedule, toSchedule(query.getContext())),
-                QUERY_TIMEOUT, MILLISECONDS, ScheduleQueryExecutionException.class
+        return Futures.getChecked(Futures.transform(schedule, toSchedule(query.getContext())),
+                ScheduleQueryExecutionException.class, QUERY_TIMEOUT, MILLISECONDS
         ).channelSchedules();
     }
 

@@ -61,7 +61,7 @@ public class OrganisationBoostrapController {
     private void executeBootstrap(HttpServletResponse resp, Id id) throws IOException {
         ListenableFuture<Resolved<Organisation>> future = resolver.resolveIds(ImmutableList.of(id));
 
-        Resolved<Organisation> resolved = Futures.get(future, IOException.class);
+        Resolved<Organisation> resolved = Futures.getChecked(future, IOException.class);
         if (resolved.getResources().isEmpty()) {
             resp.sendError(HttpStatus.NOT_FOUND.value());
             return;

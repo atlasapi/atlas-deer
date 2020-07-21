@@ -31,11 +31,11 @@ public class OrganisationQueryExecutor implements QueryExecutor<Organisation> {
     public QueryResult<Organisation> execute(Query<Organisation> query)
             throws QueryExecutionException {
         try {
-            return Futures.get(
+            return Futures.getChecked(
                     executeQuery(query),
+                    QueryExecutionException.class,
                     1,
-                    TimeUnit.MINUTES,
-                    QueryExecutionException.class
+                    TimeUnit.MINUTES
             );
         } catch (UncheckedQueryExecutionException ex) {
             throw Throwables.propagate(ex);

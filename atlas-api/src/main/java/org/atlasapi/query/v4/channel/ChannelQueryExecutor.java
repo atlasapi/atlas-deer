@@ -81,7 +81,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
     private QueryResult<ResolvedChannel> executeSingleQuery(Query<ResolvedChannel> query)
             throws QueryExecutionException {
-        return Futures.get(
+        return Futures.getChecked(
                 Futures.transform(
                         channelResolver.resolveIds(
                                 ImmutableSet.of(query.getOnlyId()),
@@ -106,9 +106,9 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                             );
                         }
                 ),
+                QueryExecutionException.class,
                 1,
-                TimeUnit.MINUTES,
-                QueryExecutionException.class
+                TimeUnit.MINUTES
         );
     }
 

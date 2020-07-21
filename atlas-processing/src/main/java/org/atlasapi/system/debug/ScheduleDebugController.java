@@ -110,7 +110,7 @@ public class ScheduleDebugController {
                 response.getWriter().write("Unknown channel " + channelId);
             }
 
-            EquivalentSchedule equivalentSchedule = Futures.get(equivalentScheduleStore.resolveSchedules(
+            EquivalentSchedule equivalentSchedule = Futures.getChecked(equivalentScheduleStore.resolveSchedules(
                     ImmutableSet.of(channel.get()),
                     new Interval(
                             date.toDateTimeAtStartOfDay(),
@@ -154,7 +154,7 @@ public class ScheduleDebugController {
                 response.getWriter().write("Unknown channel " + channelId);
             }
 
-            Schedule schedule = Futures.get(scheduleStore.resolve(
+            Schedule schedule = Futures.getChecked(scheduleStore.resolve(
                     ImmutableSet.of(channel.get()),
                     new Interval(
                             date.toDateTimeAtStartOfDay(),
@@ -175,11 +175,11 @@ public class ScheduleDebugController {
         Id cid = Id.valueOf(lowercase.decode(channelId));
         ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList
                 .of(cid));
-        Resolved<Channel> resolvedChannel = Futures.get(
+        Resolved<Channel> resolvedChannel = Futures.getChecked(
                 channelFuture,
+                Exception.class,
                 1,
-                TimeUnit.MINUTES,
-                Exception.class
+                TimeUnit.MINUTES
         );
 
         if (resolvedChannel.getResources().isEmpty()) {

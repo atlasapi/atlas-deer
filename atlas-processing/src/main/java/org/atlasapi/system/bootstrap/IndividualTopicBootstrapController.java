@@ -43,7 +43,7 @@ public class IndividualTopicBootstrapController {
         Id id = Id.valueOf(idCodec.decode(encodedId).longValue());
         ListenableFuture<Resolved<Topic>> possibleTopic = resolver.resolveIds(ImmutableList.of(id));
 
-        Resolved<Topic> resolved = Futures.get(possibleTopic, IOException.class);
+        Resolved<Topic> resolved = Futures.getChecked(possibleTopic, IOException.class);
         if (resolved.getResources().isEmpty()) {
             resp.sendError(HttpStatusCode.NOT_FOUND.code());
             return;

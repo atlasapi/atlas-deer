@@ -72,11 +72,11 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
         Timer.Context time = executionTimer.time();
 
         try {
-            Event event = Futures.get(
+            Event event = Futures.getChecked(
                     resolver.resolveIds(ImmutableList.of(message.getUpdatedResource().getId())),
+                    Exception.class,
                     1,
-                    TimeUnit.MINUTES,
-                    Exception.class
+                    TimeUnit.MINUTES
             )
                     .getResources()
                     .first()

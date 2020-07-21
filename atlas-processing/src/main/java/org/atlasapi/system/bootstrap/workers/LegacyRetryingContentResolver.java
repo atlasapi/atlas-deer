@@ -38,7 +38,7 @@ public class LegacyRetryingContentResolver implements ContentResolver {
     @Override
     public ListenableFuture<Resolved<Content>> resolveIds(Iterable<Id> ids) {
         try {
-            Resolved<Content> currentResolved = Futures.get(
+            Resolved<Content> currentResolved = Futures.getChecked(
                     currentResolver.resolveIds(ids),
                     IOException.class
             );
@@ -48,7 +48,7 @@ public class LegacyRetryingContentResolver implements ContentResolver {
             }
             Iterable<Id> missingIds = missingIds(currentResolved, ids);
 
-            Resolved<Content> legacyResolved = Futures.get(
+            Resolved<Content> legacyResolved = Futures.getChecked(
                     legacyResolver.resolveIds(missingIds),
                     IOException.class
             );

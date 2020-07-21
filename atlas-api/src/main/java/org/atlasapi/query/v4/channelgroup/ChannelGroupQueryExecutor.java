@@ -78,7 +78,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     private QueryResult<ResolvedChannelGroup> executeSingleQuery(Query<ResolvedChannelGroup> query)
             throws QueryExecutionException {
-        return Futures.get(
+        return Futures.getChecked(
                 Futures.transform(
                         channelGroupResolver.resolveIds(
                                 ImmutableSet.of(query.getOnlyId()),
@@ -126,7 +126,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     query.getContext()
                             );
                         }
-                ), 1, TimeUnit.MINUTES, QueryExecutionException.class
+                ), QueryExecutionException.class, 1, TimeUnit.MINUTES
         );
     }
 
@@ -165,16 +165,16 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         }
 
         if (lids.isEmpty()) {
-            resolvedChannelGroups = Futures.get(
+            resolvedChannelGroups = Futures.getChecked(
                     Futures.transform(
                             channelGroupResolver.allChannels(),
                             (Resolved<ChannelGroup<?>> input) -> input.getResources()
                     ),
-                    1, TimeUnit.MINUTES,
-                    QueryExecutionException.class
+                    QueryExecutionException.class,
+                    1, TimeUnit.MINUTES
             );
         } else {
-            resolvedChannelGroups = Futures.get(
+            resolvedChannelGroups = Futures.getChecked(
                     Futures.transform(
                             channelGroupResolver.resolveIds(
                                     lids,
@@ -185,8 +185,8 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                             ),
                             (Resolved<ChannelGroup<?>> input) -> input.getResources()
                     ),
-                    1, TimeUnit.MINUTES,
-                    QueryExecutionException.class
+                    QueryExecutionException.class,
+                    1, TimeUnit.MINUTES
             );
         }
 

@@ -73,7 +73,7 @@ public class LegacyRetryingContentResolverTest {
                         Futures.immediateFuture(currentResolved)
                 );
 
-        Resolved<Content> resolved = Futures.get(
+        Resolved<Content> resolved = Futures.getChecked(
                 objectUnderTest.resolveIds(ImmutableList.of(id1, id2, id3)),
                 Exception.class
 
@@ -113,7 +113,7 @@ public class LegacyRetryingContentResolverTest {
                         Futures.immediateFuture(legacyResolved)
                 );
 
-        Resolved<Content> resolved = Futures.get(
+        Resolved<Content> resolved = Futures.getChecked(
                 objectUnderTest.resolveIds(ImmutableList.of(id1, id2, id3)),
                 Exception.class
 

@@ -183,7 +183,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
     private Resolved<Content> resolveContent(Id contentId) {
         try {
-            return Futures.get(
+            return Futures.getChecked(
                     contentResolver.resolveIds(ImmutableList.of(contentId)),
                     ExecutionException.class
             );

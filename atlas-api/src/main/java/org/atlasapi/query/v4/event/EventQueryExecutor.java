@@ -32,11 +32,11 @@ public class EventQueryExecutor implements QueryExecutor<Event> {
     @Override
     public QueryResult<Event> execute(Query<Event> query) throws QueryExecutionException {
         try {
-            return Futures.get(
+            return Futures.getChecked(
                     executeQuery(query),
+                    QueryExecutionException.class,
                     1,
-                    TimeUnit.MINUTES,
-                    QueryExecutionException.class
+                    TimeUnit.MINUTES
             );
         } catch (UncheckedQueryExecutionException ex) {
             throw Throwables.propagate(ex);

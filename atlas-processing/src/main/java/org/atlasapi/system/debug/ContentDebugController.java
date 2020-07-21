@@ -297,7 +297,7 @@ public class ContentDebugController {
     ) throws Exception {
         ListenableFuture<Resolved<Content>> resolving = legacyContentResolver
                 .resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id))));
-        Resolved<Content> resolved = Futures.get(resolving, Exception.class);
+        Resolved<Content> resolved = Futures.getChecked(resolving, Exception.class);
         Content content = Iterables.getOnlyElement(resolved.getResources());
 
         jackson.writeValue(response.getWriter(), content);
@@ -312,8 +312,8 @@ public class ContentDebugController {
     ) throws Exception {
         Id decodedId = decodeId(id);
         ImmutableList<Id> ids = ImmutableList.of(decodedId);
-        Resolved<Content> result = Futures.get(
-                contentStore.resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class
+        Resolved<Content> result = Futures.getChecked(
+                contentStore.resolveIds(ids), Exception.class, 1, TimeUnit.MINUTES
         );
         Content content = result.getResources().first().orNull();
 
@@ -329,13 +329,13 @@ public class ContentDebugController {
     ) throws Exception {
         Id id = decodeId(idString);
         ImmutableList<Id> ids = ImmutableList.of(id);
-        ResolvedEquivalents<Content> result = Futures.get(
+        ResolvedEquivalents<Content> result = Futures.getChecked(
                 equivalentContentStore.resolveIds(
                         ids, Publisher.all(), ImmutableSet.of(), null
                 ),
+                Exception.class,
                 1,
-                TimeUnit.MINUTES,
-                Exception.class
+                TimeUnit.MINUTES
         );
         Content content = result.get(id).iterator().next();
         gson.toJson(content, response.getWriter());
@@ -349,13 +349,13 @@ public class ContentDebugController {
     ) throws Exception {
         Id id = decodeId(idString);
         ImmutableList<Id> ids = ImmutableList.of(id);
-        ResolvedEquivalents<Content> result = Futures.get(
+        ResolvedEquivalents<Content> result = Futures.getChecked(
                 equivalentContentStore.resolveIds(
                         ids, Publisher.all(), ImmutableSet.of(), null
                 ),
+                Exception.class,
                 1,
-                TimeUnit.MINUTES,
-                Exception.class
+                TimeUnit.MINUTES
         );
         ImmutableSet<Content> content = result.get(id);
         gson.toJson(content, response.getWriter());
@@ -369,11 +369,11 @@ public class ContentDebugController {
     ) throws Exception {
         Id decodedId = decodeId(id);
         ImmutableList<Id> ids = ImmutableList.of(decodedId);
-        OptionalMap<Id, EquivalenceGraph> equivalenceGraph = Futures.get(
+        OptionalMap<Id, EquivalenceGraph> equivalenceGraph = Futures.getChecked(
                 equivalenceGraphStore.resolveIds(ids),
+                Exception.class,
                 1,
-                TimeUnit.MINUTES,
-                Exception.class
+                TimeUnit.MINUTES
         );
         if (equivalenceGraph.get(decodedId).isPresent()) {
             gson.toJson(equivalenceGraph.get(decodedId).get(), response.getWriter());
@@ -396,7 +396,7 @@ public class ContentDebugController {
         try {
             Id decodedId = decodeId(id);
             Resolved<Content> resolved =
-                    Futures.get(
+                    Futures.getChecked(
                             contentStore.resolveIds(ImmutableList.of(decodedId)),
                             IOException.class
                     );

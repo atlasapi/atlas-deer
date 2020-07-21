@@ -70,11 +70,11 @@ public class TopicReadWriteWorker implements Worker<ResourceUpdatedMessage> {
         Timer.Context time = executionTimer.time();
 
         try {
-            Topic topic = Futures.get(
+            Topic topic = Futures.getChecked(
                     resolver.resolveIds(ImmutableList.of(message.getUpdatedResource().getId())),
+                    Exception.class,
                     1,
-                    TimeUnit.MINUTES,
-                    Exception.class
+                    TimeUnit.MINUTES
             )
                     .getResources()
                     .first()

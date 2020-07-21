@@ -56,7 +56,7 @@ public class EventDebugController {
         ListenableFuture<Resolved<Event>> future = legacyEventResolver.resolveIds(
                 ImmutableList.of(decodedId));
 
-        Resolved<Event> resolved = Futures.get(future, Exception.class);
+        Resolved<Event> resolved = Futures.getChecked(future, Exception.class);
         Event event = Iterables.getOnlyElement(resolved.getResources());
         gson.toJson(event, response.getWriter());
     }
@@ -70,7 +70,7 @@ public class EventDebugController {
         ListenableFuture<Resolved<Event>> future = eventResolver.resolveIds(
                 ImmutableList.of(decodedId));
 
-        Resolved<Event> resolved = Futures.get(future, Exception.class);
+        Resolved<Event> resolved = Futures.getChecked(future, Exception.class);
         Event event = Iterables.getOnlyElement(resolved.getResources());
         gson.toJson(event, response.getWriter());
     }

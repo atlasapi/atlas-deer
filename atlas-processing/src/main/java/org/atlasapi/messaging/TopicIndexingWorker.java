@@ -72,11 +72,11 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
 
         try {
             @SuppressWarnings("Guava")
-            Optional<Topic> topic = Futures.get(
+            Optional<Topic> topic = Futures.getChecked(
                     resolveContent(message),
+                    TimeoutException.class,
                     1,
-                    TimeUnit.MINUTES,
-                    TimeoutException.class
+                    TimeUnit.MINUTES
             )
                     .getResources()
                     .first();
