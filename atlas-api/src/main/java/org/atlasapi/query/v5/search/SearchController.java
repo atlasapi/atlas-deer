@@ -39,7 +39,7 @@ import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.parameter.Parameter;
 import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
-import com.metabroadcast.sherlock.client.search.parameter. SingleValueParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.client.search.scoring.QueryWeighting;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;

@@ -7,7 +7,7 @@ import javax.annotation.Nonnull;
 import org.atlasapi.query.common.coercers.BooleanCoercer;
 
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
-import com.metabroadcast.sherlock.client.search.parameter. SingleValueParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.common.type.InstantMapping;
 
 public class BeforeAfterAttribute extends
@@ -21,7 +21,7 @@ public class BeforeAfterAttribute extends
     }
 
     @Override
-    protected  SingleValueParameter<Instant> createParameter(
+    protected SingleValueParameter<Instant> createParameter(
             InstantMapping mapping,
             @Nonnull Boolean value
     ) {

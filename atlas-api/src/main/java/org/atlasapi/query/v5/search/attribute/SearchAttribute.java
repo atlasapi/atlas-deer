@@ -5,7 +5,7 @@ import javax.annotation.Nonnull;
 import org.atlasapi.query.common.coercers.StringCoercer;
 
 import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
-import com.metabroadcast.sherlock.client.search.parameter. SingleValueParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.common.type.TextMapping;
 
 public class SearchAttribute extends
@@ -19,7 +19,7 @@ public class SearchAttribute extends
     }
 
     @Override
-    protected  SingleValueParameter<String> createParameter(TextMapping mapping, @Nonnull String value) {
+    protected SingleValueParameter<String> createParameter(TextMapping mapping, @Nonnull String value) {
         return SearchParameter.of(mapping, value);
     }
 }

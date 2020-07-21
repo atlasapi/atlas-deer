@@ -17,7 +17,7 @@ import org.atlasapi.query.common.coercers.IdCoercer;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.promise.Promise;
-import com.metabroadcast.sherlock.client.search.parameter. SingleValueParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
@@ -37,8 +37,8 @@ public class ChannelGroupAttribute extends
     }
 
     @Override
-    protected List< SingleValueParameter<Long>> createParameters(KeywordMapping<Long> mapping, @Nonnull List<Id> values) {
-        List< SingleValueParameter<Long>> channelFilters = new ArrayList<>();
+    protected List<SingleValueParameter<Long>> createParameters(KeywordMapping<Long> mapping, @Nonnull List<Id> values) {
+        List<SingleValueParameter<Long>> channelFilters = new ArrayList<>();
         for (ChannelGroup<?> channelGroup : resolveChannelGroups(values)) {
             if (channelGroup instanceof Region || channelGroup instanceof Platform) {
                 Iterable<ChannelNumbering> channels;

@@ -4,7 +4,7 @@ import javax.annotation.Nonnull;
 
 import org.atlasapi.query.common.coercers.EnumCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter. SingleValueParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
@@ -16,7 +16,7 @@ public class EnumAttribute<T extends Enum<T>> extends
     }
 
     @Override
-    protected  SingleValueParameter<String> createParameter(KeywordMapping<String> mapping, @Nonnull T value) {
+    protected SingleValueParameter<String> createParameter(KeywordMapping<String> mapping, @Nonnull T value) {
         return TermParameter.of(mapping, value.toString());
     }
 }

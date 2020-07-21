@@ -6,7 +6,7 @@ import org.atlasapi.query.v5.search.coercer.Range;
 import org.atlasapi.query.v5.search.coercer.RangeCoercer;
 
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
-import com.metabroadcast.sherlock.client.search.parameter. SingleValueParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
 
@@ -22,11 +22,11 @@ public class RangeAttribute<T> extends
     }
 
     @Override
-    protected  SingleValueParameter<T> createParameter(RangeTypeMapping<T> mapping, @Nonnull Range<T> value) {
+    protected SingleValueParameter<T> createParameter(RangeTypeMapping<T> mapping, @Nonnull Range<T> value) {
         return getRangeOrTerm(mapping, value);
     }
 
-    public static <T>  SingleValueParameter<T> getRangeOrTerm(RangeTypeMapping<T> mapping, @Nonnull Range<T> value) {
+    public static <T> SingleValueParameter<T> getRangeOrTerm(RangeTypeMapping<T> mapping, @Nonnull Range<T> value) {
         if (value.getFrom() == value.getTo()) {
             return TermParameter.of(mapping, value.getFrom());
         } else {
