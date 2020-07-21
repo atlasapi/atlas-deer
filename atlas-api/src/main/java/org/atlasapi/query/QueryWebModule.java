@@ -1,7 +1,14 @@
 package org.atlasapi.query;
 
-import javax.servlet.http.HttpServletRequest;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.time.SystemClock;
+import com.metabroadcast.representative.client.RepIdClient;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -79,6 +86,7 @@ import org.atlasapi.output.annotation.RatingsAnnotation;
 import org.atlasapi.output.annotation.RegionsAnnotation;
 import org.atlasapi.output.annotation.RelatedLinksAnnotation;
 import org.atlasapi.output.annotation.RepIdAnnotation;
+import org.atlasapi.output.annotation.ResourceRefWriter;
 import org.atlasapi.output.annotation.ReviewsAnnotation;
 import org.atlasapi.output.annotation.SegmentEventsAnnotation;
 import org.atlasapi.output.annotation.SeriesAnnotation;
@@ -169,23 +177,14 @@ import org.atlasapi.source.Sources;
 import org.atlasapi.topic.PopularTopicIndex;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
-
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.query.Selection.SelectionBuilder;
-import com.metabroadcast.common.time.SystemClock;
-import com.metabroadcast.representative.client.RepIdClient;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+
+import javax.servlet.http.HttpServletRequest;
 
 import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
@@ -1052,7 +1051,8 @@ public class QueryWebModule {
                                         CONTAINER_FIELD,
                                         containerSummaryResolver,
                                         CommonContainerSummaryWriter.create()
-                                )
+                                ),
+                                new ResourceRefWriter(CONTAINER_FIELD, idCodec())
                         ),
                         commonImplied,
                         ImmutableSet.of(BRAND_REFERENCE)
