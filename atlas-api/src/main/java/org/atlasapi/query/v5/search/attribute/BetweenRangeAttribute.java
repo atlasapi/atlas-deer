@@ -2,10 +2,11 @@ package org.atlasapi.query.v5.search.attribute;
 
 import org.atlasapi.query.common.coercers.BooleanCoercer;
 
-import com.metabroadcast.sherlock.client.search.helpers.OccurenceClause;
+import com.metabroadcast.sherlock.client.search.helpers.OccurrenceClause;
 import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleClauseBoolParameter;
 import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
 
 import com.google.common.collect.ImmutableList;
@@ -33,29 +34,29 @@ public class BetweenRangeAttribute<T> extends SherlockBoolAttribute<Boolean, T, 
         RangeParameter<T> from = RangeParameter.to(fromMapping, valueToBeWithinRange);
         RangeParameter<T> to = RangeParameter.from(toMapping, valueToBeWithinRange);
 
-        BoolParameter both = new BoolParameter(
+        SingleClauseBoolParameter both = new SingleClauseBoolParameter(
                 ImmutableList.of(from, to),
-                OccurenceClause.MUST);
+                OccurrenceClause.MUST);
 
         ExistParameter<T> nullFrom = ExistParameter.notExists(fromMapping);
-        BoolParameter toAndNullFrom = new BoolParameter(
+        SingleClauseBoolParameter toAndNullFrom = new SingleClauseBoolParameter(
                 ImmutableList.of(nullFrom, to),
-                OccurenceClause.MUST);
+                OccurrenceClause.MUST);
 
         ExistParameter<T> nullTo = ExistParameter.notExists(toMapping);
-        BoolParameter fromAndNullTo = new BoolParameter(
+        SingleClauseBoolParameter fromAndNullTo = new SingleClauseBoolParameter(
                 ImmutableList.of(nullTo, to),
-                OccurenceClause.MUST);
+                OccurrenceClause.MUST);
 
-        BoolParameter inRange = new BoolParameter(
+        SingleClauseBoolParameter inRange = new SingleClauseBoolParameter(
                 ImmutableList.of(both, toAndNullFrom, fromAndNullTo),
-                OccurenceClause.SHOULD
+                OccurrenceClause.SHOULD
         );
 
         if (value) {
             return inRange;
         } else {
-            return  (BoolParameter) inRange.negate();
+            return inRange.negate();
         }
     }
 }
