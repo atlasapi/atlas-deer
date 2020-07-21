@@ -39,7 +39,7 @@ import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.parameter.Parameter;
 import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
-import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
 import com.metabroadcast.sherlock.client.search.scoring.QueryWeighting;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
@@ -68,7 +68,6 @@ public class SearchController {
 
     private static final String ANNOTATIONS_PARAM = "annotations";
     private static final String QUERY_PARAM = "q";
-    private static final String API_KEY_PARAM = ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER;
 
     private final ContentResolvingSearcher searcher;
     private final ApplicationFetcher applicationFetcher;
@@ -78,7 +77,7 @@ public class SearchController {
     private final List<SherlockAttribute<?, ?, ?, ?>> sherlockAttributes;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.<String>builder()
-                .add(API_KEY_PARAM)
+                .add(ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER)
                 .add(Selection.LIMIT_REQUEST_PARAM)
                 .add(Selection.START_INDEX_REQUEST_PARAM)
                 .add(JsonResponseWriter.CALLBACK)
@@ -107,7 +106,7 @@ public class SearchController {
     @RequestMapping({ "\\.[a-z]+", "" })
     public void search(
             @RequestParam(value = QUERY_PARAM, required = false) String query,
-            @RequestParam(value = API_KEY_PARAM) String apiKey,
+            @RequestParam(value = ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER) String apiKey,
             HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
@@ -201,9 +200,9 @@ public class SearchController {
                     List<? extends Parameter> coercedValues = attribute.coerce(values);
 
                     if (parameter == SherlockParameter.PUBLISHER) {
-                        List<SimpleParameter<String>> parsedPublishers =
-                                (List<SimpleParameter<String>>) coercedValues;
-                        for (SimpleParameter<String> parsedPublisher : parsedPublishers) {
+                        List<SingleValueParameter<String>> parsedPublishers =
+                                (List<SingleValueParameter<String>>) coercedValues;
+                        for (SingleValueParameter<String> parsedPublisher : parsedPublishers) {
                             if (!enabledReadSourcesKeys.contains(parsedPublisher.getValue())) {
                                 throw new InvalidAttributeValueException(String.format(
                                         "The source %s is not within the scope of the provided api key",

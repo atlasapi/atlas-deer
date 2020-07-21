@@ -7,7 +7,7 @@ import javax.annotation.Nonnull;
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
-import com.metabroadcast.sherlock.client.search.parameter.SimpleParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 public abstract class SherlockSingleMappingAttributeList<FROM, TO, M extends ChildTypeMapping<TO>>
@@ -22,19 +22,19 @@ public abstract class SherlockSingleMappingAttributeList<FROM, TO, M extends Chi
     }
 
     @Override
-    public List<SimpleParameter<TO>> coerce(List<String> values) throws InvalidAttributeValueException {
+    public List<SingleValueParameter<TO>> coerce(List<String> values) throws InvalidAttributeValueException {
         return createParameters(getMapping(), coercer.apply(values));
     }
 
-    protected abstract List<SimpleParameter<TO>> createParameters(M mapping, @Nonnull List<FROM> value);
+    protected abstract List<SingleValueParameter<TO>> createParameters(M mapping, @Nonnull List<FROM> value);
 
     @Override
-    protected SimpleParameter<TO> createParameter(M[] mappings, FROM value) {
+    protected SingleValueParameter<TO> createParameter(M[] mappings, FROM value) {
         return null;
     }
 
     @Override
-    protected SimpleParameter<TO> createParameter(M mapping, FROM value) {
+    protected SingleValueParameter<TO> createParameter(M mapping, FROM value) {
         return null;
     }
 }
