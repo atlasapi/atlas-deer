@@ -1,47 +1,42 @@
 package org.atlasapi.util;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelNumbering;
-import org.atlasapi.content.EsBroadcast;
-import org.atlasapi.content.EsContent;
-import org.atlasapi.content.EsLocation;
 import org.atlasapi.content.InclusionExclusionId;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.topic.EsTopic;
 
 import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.sherlock.client.search.helpers.OccurrenceClause;
+import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
+import com.metabroadcast.sherlock.client.search.parameter.Parameter;
+import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleClauseBoolParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleMappingBoolParameter;
+import com.metabroadcast.sherlock.client.search.parameter.TermsParameter;
+import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.mapping.IndexMapping;
+import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
-import org.apache.commons.collections.ListUtils;
-import org.elasticsearch.index.query.AndFilterBuilder;
-import org.elasticsearch.index.query.BoolFilterBuilder;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.HasChildFilterBuilder;
-import org.elasticsearch.index.query.NestedFilterBuilder;
-import org.elasticsearch.index.query.OrFilterBuilder;
-import org.elasticsearch.index.query.RangeFilterBuilder;
-import org.elasticsearch.index.query.TermsFilterBuilder;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
@@ -49,78 +44,72 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class FiltersBuilder {
 
+    private static final ContentMapping CONTENT_MAPPING = IndexMapping.getContent();
+
     private FiltersBuilder() {
     }
 
-    public static TermsFilterBuilder buildForPublishers(
-            String field,
+    public static TermsParameter<String> buildForPublishers(
+            KeywordMapping<String> publisherMapping,
             Iterable<Publisher> publishers
     ) {
-        return FilterBuilders.termsFilter(field, Iterables.transform(publishers, Publisher.TO_KEY));
+        return TermsParameter.of(
+                publisherMapping,
+                Iterables.transform(publishers, Publisher.TO_KEY)
+        );
     }
 
-    public static TermsFilterBuilder buildForSpecializations(
+    public static TermsParameter<String> buildForSpecializations(
             Iterable<Specialization> specializations
     ) {
-        return FilterBuilders.termsFilter(
-                EsContent.SPECIALIZATION,
-                Iterables.transform(specializations, Enum::name)
+        return TermsParameter.of(
+                CONTENT_MAPPING.getSpecialization(),
+                Iterables.transform(specializations, Specialization::toString)
         );
     }
 
-    public static FilterBuilder buildTopicIdFilter(
+    public static BoolParameter buildTopicIdFilter(
             ImmutableList<ImmutableList<InclusionExclusionId>> topicIdSets
     ) {
-        ImmutableList.Builder<FilterBuilder> topicIdFilters = ImmutableList.builder();
+        List<BoolParameter> topicIdParameters = new ArrayList<>();
+
         for (List<InclusionExclusionId> idSet : topicIdSets) {
-            BoolFilterBuilder filterForThisSet = FilterBuilders.boolFilter();
+
+            SingleMappingBoolParameter.Builder<Long> boolParameterBuilder =
+                    SingleMappingBoolParameter.builder(CONTENT_MAPPING.getTags().getId());
+
             for (InclusionExclusionId id : idSet) {
-                addFilterForTopicId(filterForThisSet, id);
+                if (id.isIncluded()) {
+                    boolParameterBuilder.addValue(id.getId().longValue(), OccurrenceClause.MUST);
+                } else {
+                    boolParameterBuilder.addValue(id.getId().longValue(), OccurrenceClause.MUST_NOT);
+                }
             }
-            topicIdFilters.add(filterForThisSet);
+            topicIdParameters.add(boolParameterBuilder.build());
         }
-        OrFilterBuilder orFilter = FilterBuilders.orFilter();
-        topicIdFilters.build().forEach(orFilter::add);
-        return orFilter;
+
+        return new SingleClauseBoolParameter(topicIdParameters, OccurrenceClause.SHOULD);
     }
 
-    private static void addFilterForTopicId(
-            BoolFilterBuilder filterBuilder,
-            InclusionExclusionId id
-    ) {
-        NestedFilterBuilder filterForId = FilterBuilders.nestedFilter(
-                EsContent.TOPICS + "." + EsTopic.TYPE_NAME,
-                FilterBuilders.termFilter(
-                        EsContent.TOPICS + "." + EsTopic.TYPE_NAME + "." + EsContent.ID,
-                        id.getId()
-                )
+    private static BoolParameter buildAvailabilityFilter() {
+
+        return SingleClauseBoolParameter.must(
+                RangeParameter.to(
+                        CONTENT_MAPPING.getLocations().getAvailabilityStart(),
+                        Instant.now().truncatedTo(ChronoUnit.MINUTES)),
+                RangeParameter.from(
+                        CONTENT_MAPPING.getLocations().getAvailabilityEnd(),
+                        Instant.now().truncatedTo(ChronoUnit.MINUTES))
         );
-        if (id.isExcluded()) {
-            filterBuilder.mustNot(filterForId);
-        } else {
-            filterBuilder.must(filterForId);
-        }
+
+        // TODO look for children with availability too
+//        return FilterBuilders.orFilter(
+//                rangeFilter,
+//                FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, rangeFilter)
+//        );
     }
 
-    private static FilterBuilder buildAvailabilityFilter() {
-        NestedFilterBuilder rangeFilter = FilterBuilders.nestedFilter(
-                EsContent.LOCATIONS,
-                FilterBuilders.andFilter(
-                        FilterBuilders.rangeFilter(EsLocation.AVAILABILITY_TIME)
-                                .lte(ElasticsearchUtils.clampDateToFloorMinute(DateTime.now())
-                                        .toString()),
-                        FilterBuilders.rangeFilter(EsLocation.AVAILABILITY_END_TIME)
-                                .gte(ElasticsearchUtils.clampDateToFloorMinute(DateTime.now())
-                                        .toString())
-                )
-        );
-        return FilterBuilders.orFilter(
-                rangeFilter,
-                FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, rangeFilter)
-        );
-    }
-
-    public static FilterBuilder buildActionableFilter(
+    public static BoolParameter buildActionableFilter(
             Map<String, String> actionableParams,
             Optional<List<Id>> maybeRegionIds,
             Optional<List<Id>> maybePlatformIds,
@@ -128,18 +117,23 @@ public class FiltersBuilder {
             Optional<List<Id>> maybeIpIds,
             ChannelGroupResolver channelGroupResolver
     ) {
-        OrFilterBuilder orFilterBuilder = FilterBuilders.orFilter();
+        List<Parameter> parameters = new ArrayList<>();
+
         if (actionableParams.get("location.available") != null) {
-            orFilterBuilder.add(buildAvailabilityFilter());
+            parameters.add(buildAvailabilityFilter());
         }
-        DateTime broadcastTimeGreaterThan =
-                actionableParams.get("broadcast.time.gt") == null ?
-                null : DateTime.parse(actionableParams.get("broadcast.time.gt"));
-        DateTime broadcastTimeLessThan =
-                actionableParams.get("broadcast.time.lt") == null ?
-                null : DateTime.parse(actionableParams.get("broadcast.time.lt"));
+        Instant broadcastTimeGreaterThan = actionableParams.get("broadcast.time.gt") == null
+                ? null
+                : Instant.ofEpochMilli(
+                        DateTime.parse(actionableParams.get("broadcast.time.gt")).getMillis()
+                );
+        Instant broadcastTimeLessThan = actionableParams.get("broadcast.time.lt") == null
+                ? null
+                : Instant.ofEpochMilli(
+                        DateTime.parse(actionableParams.get("broadcast.time.lt")).getMillis()
+                );
         if (broadcastTimeGreaterThan != null || broadcastTimeLessThan != null) {
-            orFilterBuilder.add(
+            parameters.add(
                     buildBroadcastRangeFilter(
                             broadcastTimeGreaterThan,
                             broadcastTimeLessThan,
@@ -151,12 +145,13 @@ public class FiltersBuilder {
                     )
             );
         }
-        return orFilterBuilder;
+
+        return SingleClauseBoolParameter.should(parameters);
     }
 
-    private static FilterBuilder buildBroadcastRangeFilter(
-            DateTime broadcastTimeGreaterThan,
-            DateTime broadcastTimeLessThan,
+    private static BoolParameter buildBroadcastRangeFilter(
+            Instant broadcastTimeGreaterThan,
+            Instant broadcastTimeLessThan,
             Optional<List<Id>> maybeRegionIds,
             Optional<List<Id>> maybePlatformIds,
             Optional<List<Id>> maybeDttIds,
@@ -171,72 +166,72 @@ public class FiltersBuilder {
             );
         }
 
-        RangeFilterBuilder startTimeFilter = FilterBuilders.rangeFilter(
-                EsContent.BROADCASTS + "." + EsBroadcast.TRANSMISSION_TIME
-        );
-        RangeFilterBuilder endTimeFilter = FilterBuilders.rangeFilter(
-                EsContent.BROADCASTS + "." + EsBroadcast.TRANSMISSION_END_TIME
-        );
+        List<Parameter> parentParameters = new ArrayList<>();
 
         // Query for broadcast times that are at least partially contained between
         // broadcastTimeGreaterThan and broadcastTimeLessThan
         if (broadcastTimeGreaterThan != null) {
-            endTimeFilter.gte(ElasticsearchUtils.clampDateToFloorMinute(broadcastTimeGreaterThan)
-                    .toString());
+            parentParameters.add(RangeParameter.from(
+                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                    broadcastTimeGreaterThan.truncatedTo(ChronoUnit.MINUTES)
+            ));
         }
         if (broadcastTimeLessThan != null) {
-            startTimeFilter.lte(ElasticsearchUtils.clampDateToFloorMinute(broadcastTimeLessThan)
-                    .toString());
+            parentParameters.add(RangeParameter.to(
+                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                    broadcastTimeLessThan.truncatedTo(ChronoUnit.MINUTES)
+            ));
         }
-
-        AndFilterBuilder rangeFilter = FilterBuilders.andFilter(startTimeFilter, endTimeFilter);
 
         List<Id> channelGroupsIds = Lists.newArrayList();
         maybeRegionIds.ifPresent(channelGroupsIds::addAll);
         maybePlatformIds.ifPresent(channelGroupsIds::addAll);
 
         if (!channelGroupsIds.isEmpty()) {
-            FilterBuilder channelGroupFilter = buildChannelGroupFilter(
+            TermsParameter<Long> channelGroupFilter = buildChannelGroupFilter(
                     channelGroupsIds,
                     maybeDttIds,
                     maybeIpIds,
                     cgResolver
             );
-            rangeFilter = rangeFilter.add(channelGroupFilter);
+            parentParameters.add(channelGroupFilter);
         }
 
-        NestedFilterBuilder parentFilter = FilterBuilders.nestedFilter(
-                EsContent.BROADCASTS,
-                rangeFilter
-        );
-        HasChildFilterBuilder childFilter = FilterBuilders.hasChildFilter(
-                EsContent.CHILD_ITEM,
-                parentFilter
+        // TODO add has child query
+//        HasChildFilterBuilder childFilter = FilterBuilders.hasChildFilter(
+//                EsContent.CHILD_ITEM,
+//                parentFilter
+//        );
+//        FilterBuilders.orFilter(parentFilter, childFilter).cache(true);
+        return SingleClauseBoolParameter.should(
+                SingleClauseBoolParameter.must(parentParameters)
+                // TODO add child parameters
         );
 
-        return FilterBuilders.orFilter(parentFilter, childFilter).cache(true);
     }
 
-    public static FilterBuilder getSeriesIdFilter(Id id, SecondaryIndex equivIdIndex) {
+    public static TermsParameter<Long> getSeriesIdFilter(Id id, SecondaryIndex equivIdIndex) {
         try {
             ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
-            return FilterBuilders.termsFilter(EsContent.SERIES, ids).cache(true);
+            return TermsParameter.of(CONTENT_MAPPING.getSeries().getId(), ids);
+            //return FilterBuilders.termsFilter(EsContent.SERIES, ids).cache(true);
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
     }
 
-    public static FilterBuilder getBrandIdFilter(Id id, SecondaryIndex equivIdIndex) {
+    public static TermsParameter<Long> getBrandIdFilter(Id id, SecondaryIndex equivIdIndex) {
         try {
             ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
-            return FilterBuilders.termsFilter(EsContent.BRAND, ids).cache(true);
+            return TermsParameter.of(CONTENT_MAPPING.getBrand().getId(), ids);
+            //return FilterBuilders.termsFilter(EsContent.BRAND, ids).cache(true);
         } catch (IOException ioe) {
             throw Throwables.propagate(ioe);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static FilterBuilder buildChannelGroupFilter(
+    private static TermsParameter<Long> buildChannelGroupFilter(
             List<Id> channelGroupIds,
             Optional<List<Id>> dttIds,
             Optional<List<Id>> ipIds,
@@ -253,10 +248,10 @@ public class FiltersBuilder {
                 .map(Id::longValue)
                 .collect(MoreCollectors.toImmutableList());
 
-        return FilterBuilders.termsFilter(
-                EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL,
+        return TermsParameter.of(
+                CONTENT_MAPPING.getBroadcasts().getBroadcastOn(),
                 channelsIdsForChannelGroup
-        ).cache(true);
+        );
     }
 
     private static List<ChannelGroup> resolveChannelGroups(
