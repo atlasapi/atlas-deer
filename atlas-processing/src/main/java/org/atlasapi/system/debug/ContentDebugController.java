@@ -1,5 +1,36 @@
 package org.atlasapi.system.debug;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.math.BigInteger;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.atlasapi.AtlasPersistenceModule;
+import org.atlasapi.content.Content;
+import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.EquivalentContentStore;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.ResolvedEquivalents;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.neo4j.service.Neo4jContentStore;
+import org.atlasapi.system.bootstrap.ContentBootstrapListener;
+import org.atlasapi.system.bootstrap.ContentNeo4jMigrator;
+import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.legacy.LegacyContentResolver;
+import org.atlasapi.system.legacy.LegacySegmentMigrator;
+
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -17,33 +48,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.stream.MoreCollectors;
-import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.content.Container;
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentIndex;
-import org.atlasapi.content.ContentStore;
-import org.atlasapi.content.EquivalentContentStore;
-import org.atlasapi.content.EsContent;
-import org.atlasapi.content.EsContentTranslator;
-import org.atlasapi.content.Item;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.equivalence.EquivalenceGraph;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.equivalence.ResolvedEquivalents;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.neo4j.service.Neo4jContentStore;
-import org.atlasapi.system.bootstrap.ContentBootstrapListener;
-import org.atlasapi.system.bootstrap.ContentNeo4jMigrator;
-import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-import org.atlasapi.system.legacy.LegacyContentResolver;
-import org.atlasapi.system.legacy.LegacySegmentMigrator;
-import org.atlasapi.util.EsObject;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.springframework.http.HttpStatus;
@@ -52,14 +56,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.math.BigInteger;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
@@ -77,8 +73,6 @@ public class ContentDebugController {
     private final ObjectMapper jackson;
 
     private final LegacyContentResolver legacyContentResolver;
-    private final ContentIndex index;
-    private final EsContentTranslator esContentTranslator;
     private final ContentStore contentStore;
     private final EquivalenceGraphStore equivalenceGraphStore;
     private final EquivalentContentStore equivalentContentStore;
@@ -119,8 +113,6 @@ public class ContentDebugController {
                 .findAndRegisterModules();
 
         legacyContentResolver = checkNotNull(builder.legacyContentResolver);
-        index = checkNotNull(builder.index);
-        esContentTranslator = checkNotNull(builder.esContentTranslator);
         contentStore = checkNotNull(builder.contentStore);
         nullMessageSendingContentStore = builder.persistence.nullMessageSendingContentStore();
         equivalenceGraphStore = checkNotNull(builder.contentEquivalenceGraphStore);
@@ -132,21 +124,18 @@ public class ContentDebugController {
                 .withContentWriter(contentStore)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
-                .withContentIndex(index)
                 .build();
 
         nullMessageSendingContentBootstrapListener = ContentBootstrapListener.builder()
                 .withContentWriter(nullMessageSendingContentStore)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(nullMessageSendingEquivalentContentStore)
-                .withContentIndex(index)
                 .build();
 
         contentAndHierarchyBootstrapListener = ContentBootstrapListener.builder()
                 .withContentWriter(contentStore)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
-                .withContentIndex(index)
                 .withMigrateHierarchies(builder.legacySegmentMigrator, legacyContentResolver)
                 .build();
 
@@ -154,7 +143,6 @@ public class ContentDebugController {
                 .withContentWriter(nullMessageSendingContentStore)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(nullMessageSendingEquivalentContentStore)
-                .withContentIndex(index)
                 .withMigrateHierarchies(builder.legacySegmentMigrator, legacyContentResolver)
                 .build();
 
@@ -162,7 +150,6 @@ public class ContentDebugController {
                 .withContentWriter(contentStore)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
-                .withContentIndex(index)
                 .withMigrateEquivalents(builder.persistence.nullMessageSendingEquivalenceGraphStore())
                 .build();
 
@@ -170,7 +157,6 @@ public class ContentDebugController {
                 .withContentWriter(nullMessageSendingContentStore)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(nullMessageSendingEquivalentContentStore)
-                .withContentIndex(index)
                 .withMigrateEquivalents(builder.persistence.nullMessageSendingEquivalenceGraphStore())
                 .build();
 
@@ -178,7 +164,6 @@ public class ContentDebugController {
                 .withContentWriter(contentStore)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
-                .withContentIndex(index)
                 .withMigrateHierarchies(builder.legacySegmentMigrator, legacyContentResolver)
                 .withMigrateEquivalents(builder.persistence.nullMessageSendingEquivalenceGraphStore())
                 .build();
@@ -187,7 +172,6 @@ public class ContentDebugController {
                 .withContentWriter(nullMessageSendingContentStore)
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(nullMessageSendingEquivalentContentStore)
-                .withContentIndex(index)
                 .withMigrateHierarchies(builder.legacySegmentMigrator, legacyContentResolver)
                 .withMigrateEquivalents(builder.persistence.nullMessageSendingEquivalenceGraphStore())
                 .build();
@@ -388,35 +372,6 @@ public class ContentDebugController {
         }
     }
 
-    @RequestMapping("/system/debug/content/{id}/index")
-    public void indexContent(
-            @PathVariable("id") String id,
-            final HttpServletResponse response
-    ) throws IOException {
-        try {
-            Id decodedId = decodeId(id);
-            Resolved<Content> resolved =
-                    Futures.get(
-                            contentStore.resolveIds(ImmutableList.of(decodedId)),
-                            IOException.class
-                    );
-            index.index(resolved.getResources().first().get());
-            Content content = resolved.getResources().first().get();
-            if (content instanceof Container) {
-                EsContent esContainer = esContentTranslator.toEsContainer((Container) content);
-                Map<String, Object> map = EsObject.TO_MAP.apply(esContainer);
-                jackson.writeValue(response.getWriter(), map);
-            } else {
-                EsContent esContent = esContentTranslator.toEsContent((Item) content);
-                Map<String, Object> map = EsObject.TO_MAP.apply(esContent);
-                jackson.writeValue(response.getWriter(), map);
-            }
-        } catch (Exception e) {
-            throw Throwables.propagate(e);
-        }
-    }
-
-
     @RequestMapping("/system/debug/content/{id}/migrate")
     public void forceEquivUpdate(
             @PathVariable("id") String id,
@@ -600,8 +555,6 @@ public class ContentDebugController {
     public static final class Builder {
 
         private LegacyContentResolver legacyContentResolver;
-        private ContentIndex index;
-        private EsContentTranslator esContentTranslator;
         private ContentStore contentStore;
         private EquivalentContentStore equivalentContentStore;
         private Neo4jContentStore neo4jContentStore;
@@ -634,16 +587,6 @@ public class ContentDebugController {
 
         public Builder withLegacyContentResolver(LegacyContentResolver val) {
             legacyContentResolver = val;
-            return this;
-        }
-
-        public Builder withIndex(ContentIndex val) {
-            index = val;
-            return this;
-        }
-
-        public Builder withEsContentTranslator(EsContentTranslator val) {
-            esContentTranslator = val;
             return this;
         }
 

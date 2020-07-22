@@ -1,13 +1,10 @@
 package org.atlasapi.system.bootstrap;
 
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.queue.kafka.StartPoint;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.messaging.MessagingModule;
 import org.atlasapi.system.MetricsModule;
 import org.atlasapi.system.ProcessingHealthModule;
@@ -17,14 +14,18 @@ import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrato
 import org.atlasapi.system.bootstrap.workers.EntityUpdatedLegacyMessageSerializer;
 import org.atlasapi.system.legacy.MongoProgressStore;
 import org.atlasapi.system.legacy.ProgressStore;
+
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.queue.kafka.StartPoint;
+
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("PublicConstructor")
 @Configuration
@@ -48,7 +49,6 @@ public class BootstrapModule {
 
     @Autowired private AtlasPersistenceModule persistence;
     @Autowired private BootstrapWorkersModule workers;
-    @Autowired private ElasticSearchContentIndexModule search;
     @Autowired private MetricRegistry metrics;
 
     @Autowired private MessagingModule messaging;
@@ -84,7 +84,6 @@ public class BootstrapModule {
                 .withContentLister(persistence.legacyContentLister())
                 .withWrite(persistence.contentStore())
                 .withNullMessageSenderWrite(persistence.nullMessageSendingContentStore())
-                .withContentIndex(search.equivContentIndex())
                 .withEquivalenceMigrator(
                         DirectAndExplicitEquivalenceMigrator.create(
                                 persistence.legacyContentResolver(),

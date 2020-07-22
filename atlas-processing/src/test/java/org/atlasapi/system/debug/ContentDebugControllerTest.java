@@ -6,10 +6,8 @@ import java.io.StringWriter;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
-import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.neo4j.service.Neo4jContentStore;
@@ -35,8 +33,6 @@ public class ContentDebugControllerTest {
     @Mock private LegacySegmentMigrator legacySegmentMigrator;
     @Mock private AtlasPersistenceModule atlasPersistenceModule;
     @Mock private DirectAndExplicitEquivalenceMigrator directAndExplicitEquivalenceMigrator;
-    @Mock private ContentIndex contentIndex;
-    @Mock private EsContentTranslator esContentTranslator;
     @Mock private Neo4jContentStore neo4jContentStore;
     @Mock private ContentStore contentStore;
     @Mock private EquivalenceGraphStore equivalenceGraphStore;
@@ -60,8 +56,6 @@ public class ContentDebugControllerTest {
                 .withLegacySegmentMigrator(legacySegmentMigrator)
                 .withPersistence(atlasPersistenceModule)
                 .withEquivalenceMigrator(directAndExplicitEquivalenceMigrator)
-                .withIndex(contentIndex)
-                .withEsContentTranslator(esContentTranslator)
                 .withNeo4jContentStore(neo4jContentStore)
                 .withContentStore(contentStore)
                 .withContentEquivalenceGraphStore(equivalenceGraphStore)

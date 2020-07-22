@@ -30,7 +30,7 @@ public class ScheduleBootstrapWithContentMigrationTaskFactory
     private ContentBootstrapListener contentAndEquivalentsBoostrapListener;
 
     public ScheduleBootstrapWithContentMigrationTaskFactory(ScheduleResolver scheduleResolver,
-            ScheduleWriter scheduleWriter, ContentStore contentStore, ContentIndex contentIndex,
+            ScheduleWriter scheduleWriter, ContentStore contentStore,
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
             AtlasPersistenceModule persistence,
             LegacySegmentMigrator legacySegmentMigrator,
@@ -42,7 +42,6 @@ public class ScheduleBootstrapWithContentMigrationTaskFactory
                 .withContentWriter(contentStore)
                 .withEquivalenceMigrator(equivalenceMigrator)
                 .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
-                .withContentIndex(contentIndex)
                 .withMigrateEquivalents(persistence.nullMessageSendingEquivalenceGraphStore())
                 .withSegmentMigratorAndContentResolver(
                         legacySegmentMigrator,

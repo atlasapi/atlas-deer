@@ -1,18 +1,15 @@
 package org.atlasapi.system.bootstrap;
 
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.collect.OptionalMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+
+import javax.annotation.Nullable;
+
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.ContentWriter;
@@ -31,14 +28,19 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.system.legacy.UnresolvedLegacySegmentException;
+
+import com.metabroadcast.common.collect.OptionalMap;
+
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -51,7 +53,6 @@ public class ContentBootstrapListener
     private final ContentWriter contentWriter;
     private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     private final EquivalentContentStore equivalentContentStore;
-    private final ContentIndex contentIndex;
 
     private final boolean migrateHierarchy;
     private final LegacySegmentMigrator legacySegmentMigrator;
@@ -64,7 +65,6 @@ public class ContentBootstrapListener
             ContentWriter contentWriter,
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
             EquivalentContentStore equivalentContentStore,
-            ContentIndex contentIndex,
             boolean migrateHierarchy,
             LegacySegmentMigrator legacySegmentMigrator,
             ContentResolver legacyContentResolver,
@@ -74,7 +74,6 @@ public class ContentBootstrapListener
         this.contentWriter = checkNotNull(contentWriter);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
-        this.contentIndex = checkNotNull(contentIndex);
 
         this.migrateHierarchy = migrateHierarchy;
         if (this.migrateHierarchy) {
@@ -245,9 +244,6 @@ public class ContentBootstrapListener
             }
             stringBuilder.append("Equivalent content store: DONE, ");
 
-            contentIndex.index(content);
-            stringBuilder.append("Index: DONE");
-
             result.success(stringBuilder.toString());
         } catch (Exception e) {
             log.error(String.format("Bootstrapping failure: %s %s", content.getId(), content), e);
@@ -380,7 +376,6 @@ public class ContentBootstrapListener
         private ContentWriter contentWriter;
         private DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
         private EquivalentContentStore equivalentContentStore;
-        private ContentIndex contentIndex;
 
         private boolean migrateHierarchy = false;
         private LegacySegmentMigrator legacySegmentMigrator;
@@ -405,11 +400,6 @@ public class ContentBootstrapListener
 
         public Builder withEquivalentContentStore(EquivalentContentStore equivalentContentStore) {
             this.equivalentContentStore = equivalentContentStore;
-            return this;
-        }
-
-        public Builder withContentIndex(ContentIndex contentIndex) {
-            this.contentIndex = contentIndex;
             return this;
         }
 
@@ -442,7 +432,6 @@ public class ContentBootstrapListener
                     contentWriter,
                     equivalenceMigrator,
                     equivalentContentStore,
-                    contentIndex,
                     migrateHierarchy,
                     legacySegmentMigrator,
                     legacyContentResolver,

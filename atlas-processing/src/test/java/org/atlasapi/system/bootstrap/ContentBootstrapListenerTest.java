@@ -80,7 +80,6 @@ public class ContentBootstrapListenerTest {
                 .withContentWriter(contentWriter)
                 .withEquivalenceMigrator(equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
-                .withContentIndex(contentIndex)
                 .withMigrateHierarchies(legacySegmentMigrator, legacyContentResolver)
                 .build();
     }
@@ -134,7 +133,6 @@ public class ContentBootstrapListenerTest {
                 .withContentWriter(contentWriter)
                 .withEquivalenceMigrator(equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
-                .withContentIndex(contentIndex)
                 .withMigrateHierarchies(legacySegmentMigrator, legacyContentResolver)
                 .withMigrateEquivalents(equivalenceGraphStore)
                 .build();

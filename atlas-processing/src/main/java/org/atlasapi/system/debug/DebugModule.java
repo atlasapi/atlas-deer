@@ -29,8 +29,6 @@ public class DebugModule {
                 .withLegacySegmentMigrator(persistenceModule.legacySegmentMigrator())
                 .withPersistence(persistenceModule)
                 .withEquivalenceMigrator(explicitEquivalenceMigrator())
-                .withIndex(persistenceModule.contentIndex())
-                .withEsContentTranslator(persistenceModule.esContentTranslator())
                 .withNeo4jContentStore(persistenceModule.neo4jContentStore())
                 .withContentStore(persistenceModule.contentStore())
                 .withContentEquivalenceGraphStore(persistenceModule.getContentEquivalenceGraphStore())
