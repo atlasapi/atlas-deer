@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.entity.Id;
@@ -13,13 +12,10 @@ import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.sherlock.client.search.ContentSearcher;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 
 import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -46,7 +42,7 @@ public class ContentResolvingSearcher {
             AtomicLong totalResults = new AtomicLong();
             return Futures.transform(
                     Futures.transformAsync(
-                            searcher.searchForIds(searchQuery),
+                            searcher.searchForContent(searchQuery),
                             input -> {
                                 totalResults.set(input.getTotalResults());
                                 return resolve(input.getIds(), queryContext);
@@ -65,10 +61,10 @@ public class ContentResolvingSearcher {
     }
 
     private ListenableFuture<ResolvedEquivalents<Content>> resolve(
-            Iterable<String> encodedIds,
+            List<Long> decodedIds,
             QueryContext queryContext
     ) {
-        List<Id> ids = StreamSupport.stream(encodedIds.spliterator(), false)
+        List<Id> ids = decodedIds.stream()
                 .map(Id::valueOf)
                 .collect(Collectors.toList());
 
