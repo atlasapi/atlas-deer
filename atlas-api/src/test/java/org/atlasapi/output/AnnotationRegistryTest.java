@@ -11,6 +11,7 @@ import org.atlasapi.output.annotation.ExtendedIdentificationAnnotation;
 import org.atlasapi.output.annotation.IdentificationAnnotation;
 import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
 import org.atlasapi.output.annotation.OutputAnnotation;
+import org.atlasapi.output.annotation.ResourceRefWriter;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.atlasapi.output.writers.IdSummaryWriter;
@@ -49,7 +50,8 @@ public class AnnotationRegistryTest {
     private final SeriesReferenceAnnotation seriesRef = new SeriesReferenceAnnotation(idCodec);
     private final ContainerSummaryAnnotation seriesSum = new ContainerSummaryAnnotation(
             "series",
-            mock(ContainerSummaryWriter.class)
+            mock(ContainerSummaryWriter.class),
+            new ResourceRefWriter("series", idCodec)
     );
 
     private final AnnotationRegistry<Content> registry = AnnotationRegistry.<Content>builder()
