@@ -36,14 +36,17 @@ public class ContainerSummaryAnnotation extends OutputAnnotation<Content> {
             } else {
                 writer.writeObject(summaryWriter, item, ctxt);
             }
-        } else if (entity instanceof Series) {
-            Series series = (Series) entity;
-            if (series.getBrandRef() == null) {
-                writer.writeField(containerField, null);
-            } else {
-                writer.writeObject(brandRefWriter, series.getBrandRef(), ctxt);
-            }
         }
+        //code disabled because because the made the ChangesContent	queue skyrocket. Maybe some
+        //sort of loop?
+//        else if (entity instanceof Series) {
+//            Series series = (Series) entity;
+//            if (series.getBrandRef() == null) {
+//                writer.writeField(containerField, null);
+//            } else {
+//                writer.writeObject(brandRefWriter, series.getBrandRef(), ctxt);
+//            }
+//        }
     }
 
 }
