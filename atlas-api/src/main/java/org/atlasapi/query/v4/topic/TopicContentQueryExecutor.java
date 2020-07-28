@@ -6,7 +6,7 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.IndexQueryResult;
-import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
@@ -119,7 +119,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
     private ListenableFuture<ResolvedEquivalents<Content>> resolveContent(
             ListenableFuture<IndexQueryResult> queryIndex,
             QueryContext context,
-            AttributeQuerySet operands
+            Set<AttributeQuery<?>> operands
     ) {
         return resolveContent(
                 queryIndex,
@@ -133,7 +133,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
             ListenableFuture<IndexQueryResult> queryHits,
             final Application application,
             final Set<Annotation> annotations,
-            AttributeQuerySet operands
+            Set<AttributeQuery<?>> operands
     ) {
         return Futures.transform(
                 queryHits,

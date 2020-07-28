@@ -1,6 +1,8 @@
 package org.atlasapi.content;
 
-import org.atlasapi.criteria.AttributeQuerySet;
+import java.util.Set;
+
+import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
@@ -9,14 +11,9 @@ import com.metabroadcast.common.query.Selection;
 import com.google.common.util.concurrent.ListenableFuture;
 
 public interface ContentIndex {
-
     ListenableFuture<IndexQueryResult> query(
-            AttributeQuerySet query,
+            Set<AttributeQuery<?>> query,
             Iterable<Publisher> publishers,
             Selection selection
     );
-
-    void index(Content content) throws IndexException;
-
-    void updateCanonicalIds(Id canonicalId, Iterable<Id> setIds) throws IndexException;
 }

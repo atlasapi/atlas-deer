@@ -3,50 +3,31 @@ package org.atlasapi.criteria.attribute;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.operator.ComparableOperator;
+import org.atlasapi.criteria.operator.EqualsOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.criteria.operator.StringOperator;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 
+import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
+import com.metabroadcast.sherlock.common.type.KeywordMapping;
+
 public class IdAttribute extends Attribute<Id> {
 
     private IdAttribute(
             String name,
-            Class<? extends Identified> target,
-            boolean isCollection
-    ) {
-        super(name, target, isCollection);
-    }
-
-    private IdAttribute(
-            String name,
-            String javaAttributeName,
-            Class<? extends Identified> target,
-            boolean isCollectionOfValues
-    ) {
-        super(name, javaAttributeName, target, isCollectionOfValues);
-    }
-
-    public static IdAttribute single(
-            String name,
+            ChildTypeMapping<Long> mapping,
             Class<? extends Identified> target
     ) {
-        return new IdAttribute(name, target, false);
+        super(name, mapping, target);
     }
 
-    public static IdAttribute list(
+    public static IdAttribute create(
             String name,
+            ChildTypeMapping<Long> mapping,
             Class<? extends Identified> target
     ) {
-        return new IdAttribute(name, target, true);
-    }
-
-    public static IdAttribute list(
-            String name,
-            String javaAttributeName,
-            Class<? extends Identified> target
-    ) {
-        return new IdAttribute(name, javaAttributeName, target, true);
+        return new IdAttribute(name, mapping, target);
     }
 
     @Override
@@ -64,6 +45,6 @@ public class IdAttribute extends Attribute<Id> {
         if (!(op instanceof StringOperator)) {
             throw new IllegalArgumentException();
         }
-        return new IdAttributeQuery(this, (ComparableOperator) op, values);
+        return new IdAttributeQuery(this, (EqualsOperator) op, values);
     }
 }

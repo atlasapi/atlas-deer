@@ -1,72 +1,44 @@
 package org.atlasapi.content;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.channel.ChannelGroupResolver;
-import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.EsQueryParser;
 import org.atlasapi.query.IndexQueryParams;
 import org.atlasapi.query.QueryOrdering;
-import org.atlasapi.util.ElasticsearchIndexCreator;
 import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
-import org.atlasapi.util.FutureSettingActionListener;
 import org.atlasapi.util.SecondaryIndex;
 
-import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
-import com.metabroadcast.sherlock.client.search.ContentResult;
 import com.metabroadcast.sherlock.client.search.ContentSearcher;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.SearchQueryResponse;
-import com.metabroadcast.sherlock.client.search.parameter.Parameter;
-import com.metabroadcast.sherlock.client.search.parameter.SingleClauseBoolParameter;
-import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
+import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
+import com.metabroadcast.sherlock.client.search.scoring.Weighting;
+import com.metabroadcast.sherlock.client.search.scoring.Weightings;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-//import org.elasticsearch.action.search.SearchRequestBuilder;
-//import org.elasticsearch.action.search.SearchResponse;
-//import org.elasticsearch.client.Client;
-//import org.elasticsearch.index.query.BoolFilterBuilder;
-//import org.elasticsearch.index.query.FilterBuilder;
-//import org.elasticsearch.index.query.FilterBuilders;
-//import org.elasticsearch.index.query.FilteredQueryBuilder;
-//import org.elasticsearch.index.query.QueryBuilder;
-//import org.elasticsearch.index.query.QueryBuilders;
-//import org.elasticsearch.search.SearchHit;
-//import org.elasticsearch.search.sort.SortBuilders;
-//import org.elasticsearch.search.sort.SortOrder;
-import joptsimple.internal.Strings;
-import org.elasticsearch.index.query.BoolFilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sherlock_client_shaded.org.elasticsearch.action.search.SearchRequestBuilder;
-import sherlock_client_shaded.org.elasticsearch.action.search.SearchResponse;
-import sherlock_client_shaded.org.elasticsearch.index.query.QueryBuilders;
-import sherlock_client_shaded.org.elasticsearch.search.SearchHit;
-import sherlock_client_shaded.org.elasticsearch.search.sort.SortBuilders;
 import sherlock_client_shaded.org.elasticsearch.search.sort.SortOrder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class EsUnequivalentContentIndex extends AbstractIdleService
-        implements ContentIndex, DelegateContentIndex {
+public class EsUnequivalentContentIndex implements ContentIndex, DelegateContentIndex {
 
     private static final int DEFAULT_LIMIT = 50;
 
@@ -90,7 +62,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         this.contentMapping = checkNotNull(contentMapping);
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
         this.equivIdIndex = checkNotNull(equivIdIndex);
-        this.esQueryParser = EsQueryParser.create();
+        this.esQueryParser = EsQueryParser.create(contentMapping);
         this.queryBuilderFactory = EsQueryBuilder.create();
     }
 
@@ -110,7 +82,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
 
     @Override
     public ListenableFuture<IndexQueryResult> query(
-            AttributeQuerySet query,
+            Set<AttributeQuery<?>> query,
             Iterable<Publisher> publishers,
             Selection selection
     ) {
@@ -132,7 +104,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
 
     @Override
     public ListenableFuture<DelegateIndexQueryResult> delegateQuery(
-            AttributeQuerySet query,
+            Set<AttributeQuery<?>> query,
             Iterable<Publisher> publishers,
             Selection selection
     ) {
@@ -158,20 +130,11 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
     }
 
     private ListenableFuture<SearchQueryResponse> queryInternal(
-            AttributeQuerySet query,
+            Set<AttributeQuery<?>> query,
             Iterable<Publisher> publishers,
             Selection selection
     ) {
         SearchQuery.Builder searchQueryBuilder = SearchQuery.builder()
-
-                // TODO This lists all types that were indexed, so may not be necessary anymore
-//                .setTypes(
-//                        EsContent.CHILD_ITEM,
-//                        EsContent.TOP_LEVEL_CONTAINER,
-//                        EsContent.TOP_LEVEL_ITEM
-//                )
-
-
                 .addFilter(
                         FiltersBuilder.buildForPublishers(
                                 contentMapping.getSource().getKey(),
@@ -181,11 +144,11 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
                 .withLimit(selection.getLimit() == null ? DEFAULT_LIMIT : selection.getLimit());
 
         EsQueryParser.EsQuery esQuery = esQueryParser.parse(query);
-        addOrdering(esQuery.getIndexQueryParams(), reqBuilder);
+        addOrdering(esQuery.getIndexQueryParams(), searchQueryBuilder);
 
-        // TODO add fuzzy query
-        QueryBuilder queryBuilder = queryBuilderFactory.buildQuery(esQuery.getAttributeQuerySet());
-        queryBuilder = addFuzzyQuery(esQuery.getIndexQueryParams(), queryBuilder, reqBuilder);
+        List<Weighting> weightings = new ArrayList<>();
+        BoolParameter queryBuilder = queryBuilderFactory.buildQuery(esQuery.getAttributeQuerySet());
+        weightings.addAll(addFuzzyQueryAndGetBroadcastWeighting(searchQueryBuilder, esQuery.getIndexQueryParams()));
         searchQueryBuilder.addSearcher(queryBuilder);
 
         addBrandId(esQuery.getIndexQueryParams(), searchQueryBuilder);
@@ -193,39 +156,39 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         addTopicFilter(esQuery.getIndexQueryParams(), searchQueryBuilder);
         addActionableFilter(esQuery.getIndexQueryParams(), searchQueryBuilder);
 
-        // TODO add sorting
-        reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
+        searchQueryBuilder.addSort(contentMapping.getCanonicalId(), SortOrder.ASC);
 
         return contentSearcher.searchForContent(searchQueryBuilder.build());
     }
 
     private void addOrdering(
             IndexQueryParams queryParams,
-            SearchRequestBuilder reqBuilder
+            SearchQuery.Builder searchQueryBuilder
     ) {
         if (queryParams.getOrdering().isPresent()) {
-            addSortOrder(queryParams.getOrdering(), reqBuilder);
+            addSortOrder(queryParams.getOrdering(), searchQueryBuilder);
         }
     }
 
-    private QueryBuilder addFuzzyQuery(
-            IndexQueryParams queryParams,
-            QueryBuilder queryBuilder,
-            SearchRequestBuilder reqBuilder
+    private List<Weighting> addFuzzyQueryAndGetBroadcastWeighting(
+            SearchQuery.Builder searchQueryBuilder,
+            IndexQueryParams queryParams
     ) {
+        List<Weighting> weightings = new ArrayList<>();
         if (queryParams.getFuzzyQueryParams().isPresent()) {
-            queryBuilder = addTitleQuery(queryParams, queryBuilder);
+            addTitleQuery(searchQueryBuilder, queryParams);
             if (queryParams.getBroadcastWeighting().isPresent()) {
-                queryBuilder = BroadcastQueryBuilder.build(
-                        queryBuilder,
-                        queryParams.getBroadcastWeighting().get()
+                weightings.add(
+                        Weightings.broadcastWithin30Days(
+                                queryParams.getBroadcastWeighting().get()
+                        )
                 );
             } else {
-                queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
+                weightings.add(Weightings.broadcastWithin30Days(5f));
             }
-            reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
+            searchQueryBuilder.addScoreSort(SortOrder.DESC);
         }
-        return queryBuilder;
+        return weightings;
     }
 
     private void addBrandId(
@@ -284,41 +247,30 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         }
     }
 
-    private void addSortOrder(Optional<QueryOrdering> ordering, SearchRequestBuilder reqBuilder) {
+    private void addSortOrder(Optional<QueryOrdering> ordering, SearchQuery.Builder searchQueryBuilder) {
         QueryOrdering order = ordering.get();
         for (QueryOrdering.Clause clause : order.getSortOrder()) {
             if ("relevance".equalsIgnoreCase(clause.getPath())) {
-                reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
+                searchQueryBuilder.addScoreSort(SortOrder.DESC);
             } else {
-                reqBuilder.addSort(
-                        SortBuilders
-                                .fieldSort(translateOrderField(clause.getPath()))
-                                .missing("_last")
-                                .order(clause.isAscending() ? SortOrder.ASC : SortOrder.DESC)
+                searchQueryBuilder.addSort(
+                        IndexMapping.getContentChildMappingByName(clause.getPath()).get(),
+                        clause.isAscending() ? SortOrder.ASC : SortOrder.DESC
                 );
             }
         }
     }
 
-    private String translateOrderField(String orderField) {
-        if ("title".equalsIgnoreCase(orderField)) {
-            return "flattenedTitle";
-        }
-        return orderField;
-    }
-
-    private QueryBuilder addTitleQuery(
-            IndexQueryParams queryParams,
-            QueryBuilder queryBuilder
+    private void addTitleQuery(
+            SearchQuery.Builder searchQueryBuilder,
+            IndexQueryParams queryParams
     ) {
         FuzzyQueryParams searchParams = queryParams.getFuzzyQueryParams().get();
-        queryBuilder = QueryBuilders.boolQuery()
-                .must(queryBuilder)
-                .must(TitleQueryBuilder.build(
-                        searchParams.getSearchTerm(),
-                        searchParams.getBoost().orElse(5F)
-                ));
-        return queryBuilder;
+        TitleQueryBuilder.addTitleQueryToBuilder(
+                searchQueryBuilder,
+                searchParams.getSearchTerm(),
+                searchParams.getBoost().orElse(5F)
+        );
     }
 
 }

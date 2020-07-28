@@ -12,7 +12,6 @@ import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.BooleanAttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
@@ -126,7 +125,7 @@ public class ChannelQueryExecutorTest {
         when(channelQuery.isListQuery()).thenReturn(true);
         when(channelQuery.getContext()).thenReturn(context);
         when(channelQuery.getOperands()).thenReturn(
-                AttributeQuerySet.create(Sets.<AttributeQuery<Object>>newHashSet())
+                Set<AttributeQuery<?>>.create(Sets.<AttributeQuery<Object>>newHashSet())
         );
         when(channelResolver.resolveChannels(any(ChannelQuery.class)))
                 .thenReturn(
@@ -242,7 +241,7 @@ public class ChannelQueryExecutorTest {
         when(channelQuery.isListQuery()).thenReturn(true);
         when(channelQuery.getContext()).thenReturn(context);
         when(channelQuery.getOperands()).thenReturn(
-                AttributeQuerySet.create(Sets.<AttributeQuery<Object>>newHashSet())
+                Set<AttributeQuery<?>>.create(Sets.<AttributeQuery<Object>>newHashSet())
         );
 
         when(channelResolver.resolveChannels(any(ChannelQuery.class)))
@@ -326,7 +325,7 @@ public class ChannelQueryExecutorTest {
         when(query.isListQuery()).thenReturn(true);
         when(query.getContext()).thenReturn(context);
         when(query.getOperands()).thenReturn(
-                AttributeQuerySet.create(ImmutableList.<AttributeQuery<Object>>of(
+                Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<Object>>of(
                         namespaceAttribute,
                         valueAttribute
                 ))
@@ -400,7 +399,7 @@ public class ChannelQueryExecutorTest {
         when(query.isListQuery()).thenReturn(true);
         when(query.getContext()).thenReturn(context);
         when(query.getOperands()).thenReturn(
-                AttributeQuerySet.create(ImmutableList.<AttributeQuery<Object>>of(
+                Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<Object>>of(
                         namespaceAttribute,
                         valueAttribute,
                         advertisedOnAttribute

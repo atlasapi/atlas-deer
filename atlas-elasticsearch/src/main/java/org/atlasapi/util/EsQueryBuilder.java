@@ -1,11 +1,12 @@
 package org.atlasapi.util;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Stack;
+import java.util.Set;
 
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.BooleanAttributeQuery;
 import org.atlasapi.criteria.DateTimeAttributeQuery;
 import org.atlasapi.criteria.EnumAttributeQuery;
@@ -13,10 +14,6 @@ import org.atlasapi.criteria.FloatAttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.IntegerAttributeQuery;
 import org.atlasapi.criteria.MatchesNothing;
-import org.atlasapi.criteria.QueryNode;
-import org.atlasapi.criteria.QueryNode.IntermediateNode;
-import org.atlasapi.criteria.QueryNode.TerminalNode;
-import org.atlasapi.criteria.QueryNodeVisitor;
 import org.atlasapi.criteria.QueryVisitor;
 import org.atlasapi.criteria.SortAttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
@@ -34,17 +31,29 @@ import org.atlasapi.criteria.operator.Operators.LessThan;
 import org.atlasapi.criteria.operator.StringOperatorVisitor;
 import org.atlasapi.entity.Id;
 
-import com.google.common.base.Function;
+import com.metabroadcast.sherlock.client.search.helpers.OccurrenceClause;
+import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
+import com.metabroadcast.sherlock.client.search.parameter.Parameter;
+import com.metabroadcast.sherlock.client.search.parameter.PrefixParameter;
+import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
+import com.metabroadcast.sherlock.client.search.parameter.RegexParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleClauseBoolParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.search.parameter.TermsParameter;
+import com.metabroadcast.sherlock.common.type.BooleanMapping;
+import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
+import com.metabroadcast.sherlock.common.type.FloatMapping;
+import com.metabroadcast.sherlock.common.type.InstantMapping;
+import com.metabroadcast.sherlock.common.type.IntegerMapping;
+import com.metabroadcast.sherlock.common.type.KeywordMapping;
+import com.metabroadcast.sherlock.common.type.LongMapping;
+import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
+
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.NestedQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.joda.time.DateTime;
 
 import static org.atlasapi.criteria.attribute.Attributes.ALIASES_NAMESPACE;
@@ -66,8 +75,8 @@ public class EsQueryBuilder {
     /**
      * These are the attributes that are supported by {@link org.atlasapi.util.EsQueryBuilder}
      */
-    public static final ImmutableSet<Attribute> SUPPORTED_ATTRIBUTES =
-            ImmutableSet.<Attribute>builder()
+    public static final ImmutableSet<Attribute<?>> SUPPORTED_ATTRIBUTES =
+            ImmutableSet.<Attribute<?>>builder()
                     .add(CONTENT_TYPE)
                     .add(SOURCE)
                     .add(ALIASES_NAMESPACE)
@@ -83,7 +92,6 @@ public class EsQueryBuilder {
                     .add(SPECIALIZATION)
                     .build();
 
-    private static final Joiner PATH_JOINER = Joiner.on(".");
     private static final String NON_LETTER_PREFIX = "#";
     private static final String NON_LETTER_PREFIX_REGEX = "[^a-zA-Z]+.*";
 
@@ -94,234 +102,182 @@ public class EsQueryBuilder {
         return new EsQueryBuilder();
     }
 
-    public QueryBuilder buildQuery(AttributeQuerySet operands) {
-        return operands.accept(new QueryNodeVisitor<QueryBuilder>() {
+    public BoolParameter buildQuery(Set<AttributeQuery<?>> operands) {
 
-            Stack<String> traversed = new Stack<String>();
+        SingleClauseBoolParameter.Builder mustBuilder =
+                SingleClauseBoolParameter.builder(OccurrenceClause.MUST);
 
-            @Override
-            public QueryBuilder visit(IntermediateNode node) {
-                BoolQueryBuilder conjuncts = QueryBuilders.boolQuery();
-                traversed.addAll(node.pathSegments());
-                for (QueryNode desc : node.getDescendants()) {
-                    conjuncts.must(desc.accept(this));
-                }
-                for (int i = 0; i < node.pathSegments().size(); i++) {
-                    traversed.pop();
-                }
-                return node.pathSegments().isEmpty() ? conjuncts
-                                                     : nest(node, conjuncts);
-            }
+        for (AttributeQuery<?> operand : operands) {
+            mustBuilder.addParameter(queryForTerminal(operand));
+        }
 
-            private NestedQueryBuilder nest(IntermediateNode node, BoolQueryBuilder conjuncts) {
-                return QueryBuilders.nestedQuery(nestPath(node), conjuncts);
-            }
-
-            private String nestPath(IntermediateNode node) {
-                if (traversed.isEmpty()) {
-                    return PATH_JOINER.join(node.pathSegments());
-                }
-                StringBuilder builder = new StringBuilder();
-                builder = PATH_JOINER.appendTo(builder, traversed).append('.');
-                return PATH_JOINER.appendTo(builder, node.pathSegments()).toString();
-            }
-
-            @Override
-            public QueryBuilder visit(TerminalNode node) {
-                AttributeQuery<?> query = node.getQuery();
-                QueryBuilder builder = queryForTerminal(node);
-                if (node.pathSegments().size() > 1) {
-                    builder = QueryBuilders.nestedQuery(
-                            query.getAttribute().getPathPrefix(),
-                            builder
-                    );
-                }
-                return builder;
-            }
-        });
+        return mustBuilder.build();
     }
 
-    private QueryBuilder queryForTerminal(TerminalNode node) {
-        return node.getQuery().accept(new QueryVisitor<QueryBuilder>() {
+    private Parameter queryForTerminal(AttributeQuery<?> attributeQuery) {
+        return attributeQuery.accept(new QueryVisitor<Parameter>() {
 
             @Override
-            public QueryBuilder visit(final IntegerAttributeQuery query) {
-                final String name = query.getAttribute().javaAttributeName();
+            public Parameter visit(final IntegerAttributeQuery query) {
+                final IntegerMapping mapping = (IntegerMapping) query.getAttribute().getMapping();
                 final List<Integer> values = query.getValue();
-                return query.accept(new EsComparableOperatorVisitor<Integer>(name, values));
+                return query.accept(new EsComparableOperatorVisitor<>(mapping, values));
             }
 
             @Override
-            public QueryBuilder visit(StringAttributeQuery query) {
+            public Parameter visit(StringAttributeQuery query) {
+                final ChildTypeMapping<String> mapping =
+                        (ChildTypeMapping<String>) query.getAttribute().getMapping();
                 final List<String> values = query.getValue();
-                final String name = query.getAttribute().javaAttributeName();
-                return query.accept(new EsStringOperatorVisitor(query.getAttribute()
-                        .javaAttributeName(), values));
+                return query.accept(new EsStringOperatorVisitor(mapping, values));
             }
 
             @Override
-            public QueryBuilder visit(BooleanAttributeQuery query) {
-                final String name = query.getAttributeName();
+            public Parameter visit(BooleanAttributeQuery query) {
+                final BooleanMapping mapping = (BooleanMapping) query.getAttribute().getMapping();
                 final List<Boolean> value = query.getValue().subList(0, 1);
-                return query.accept(new EsEqualsOperatorVisitor<Boolean>(name, value));
+                return query.accept(new EsEqualsOperatorVisitor<>(mapping, value));
             }
 
             @Override
-            public QueryBuilder visit(EnumAttributeQuery<?> query) {
-                final String name = query.getAttributeName();
-                /* Specialization is current indexed as uppercase and so we have this bodge
-                    to ensure matches, remove once reindexing has been completed with lowercase values */
-                if ("specialization".equalsIgnoreCase(name)) {
-                    return query.accept(
-                            new EsEqualsOperatorVisitor<>(
-                                    name, Lists.transform(query.getValue(), v -> v.name())
-                            )
-                    );
-                }
+            public Parameter visit(EnumAttributeQuery<?> query) {
+                KeywordMapping<String> mapping =
+                        (KeywordMapping<String>) query.getAttribute().getMapping();
                 final List<String> values = Lists.transform(
                         query.getValue(),
                         Functions.toStringFunction()
                 );
-                return query.accept(new EsEqualsOperatorVisitor<String>(name, values));
+                return query.accept(new EsEqualsOperatorVisitor<>(mapping, values));
             }
 
             @Override
-            public QueryBuilder visit(DateTimeAttributeQuery query) {
-                final String name = query.getAttributeName();
-                final List<Date> values = toDates(query.getValue());
-                return query.accept(new EsComparableOperatorVisitor<Date>(name, values));
+            public Parameter visit(DateTimeAttributeQuery query) {
+                final InstantMapping mapping = (InstantMapping) query.getAttribute().getMapping();
+                final List<Instant> values = toInstants(query.getValue());
+                return query.accept(new EsComparableOperatorVisitor<>(mapping, values));
             }
 
-            private List<Date> toDates(List<DateTime> value) {
-                return Lists.transform(value, new Function<DateTime, Date>() {
-
-                    @Override
-                    public Date apply(DateTime input) {
-                        return input.toDate();
-                    }
-                });
+            private List<Instant> toInstants(List<DateTime> value) {
+                return Lists.transform(value, input -> input.toDate().toInstant());
             }
 
             @Override
-            public QueryBuilder visit(MatchesNothing noOp) {
+            public Parameter visit(MatchesNothing noOp) {
                 throw new IllegalArgumentException();
             }
 
             @Override
-            public QueryBuilder visit(IdAttributeQuery query) {
-                final String name = query.getAttribute().javaAttributeName();
+            public Parameter visit(IdAttributeQuery query) {
+                final KeywordMapping<Long> mapping =
+                        (KeywordMapping<Long>) query.getAttribute().getMapping();
                 final List<Long> value = Lists.transform(query.getValue(), Id.toLongValue());
-                return query.accept(new EsComparableOperatorVisitor<Long>(name, value));
-
+                return query.accept(new EsEqualsOperatorVisitor<>(mapping, value));
             }
 
             @Override
-            public QueryBuilder visit(FloatAttributeQuery query) {
-                final String name = query.getAttribute().javaAttributeName();
+            public Parameter visit(FloatAttributeQuery query) {
+                final FloatMapping mapping = (FloatMapping) query.getAttribute().getMapping();
                 final List<Float> value = query.getValue();
-                return query.accept(new EsComparableOperatorVisitor<Float>(name, value));
+                return query.accept(new EsComparableOperatorVisitor<>(mapping, value));
             }
 
             @Override
-            public QueryBuilder visit(SortAttributeQuery query) {
+            public Parameter visit(SortAttributeQuery query) {
                 return null;
             }
         });
     }
 
-    private static class EsEqualsOperatorVisitor<T>
-            implements EqualsOperatorVisitor<QueryBuilder> {
+    private static class EsEqualsOperatorVisitor<T, M extends ChildTypeMapping<T>>
+            implements EqualsOperatorVisitor<Parameter> {
 
-        protected List<T> value;
-        protected String name;
+        protected List<T> values;
+        protected M mapping;
 
-        public EsEqualsOperatorVisitor(String name, List<T> value) {
-            this.name = name;
-            this.value = value;
+        public EsEqualsOperatorVisitor(M mapping, List<T> values) {
+            this.mapping = mapping;
+            this.values = values;
         }
 
         @Override
-        public QueryBuilder visit(Equals equals) {
-            Object[] values = value.toArray(new Object[value.size()]);
-            return QueryBuilders.termsQuery(name, values);
+        public TermsParameter<T> visit(Equals equals) {
+            return TermsParameter.of(mapping, values);
         }
 
     }
 
-    private static class EsStringOperatorVisitor extends EsEqualsOperatorVisitor<String>
-            implements StringOperatorVisitor<QueryBuilder> {
+    private static class EsStringOperatorVisitor extends EsEqualsOperatorVisitor<String, ChildTypeMapping<String>>
+            implements StringOperatorVisitor<Parameter> {
 
-        public EsStringOperatorVisitor(String name, List<String> value) {
-            super(name, value);
+        public EsStringOperatorVisitor(ChildTypeMapping<String> name, List<String> values) {
+            super(name, values);
         }
 
         @Override
-        public QueryBuilder visit(Beginning beginning) {
-            String prefix = value.get(0);
+        public SingleValueParameter<String> visit(Beginning beginning) {
+            String prefix = values.get(0);
             if (NON_LETTER_PREFIX.equals(prefix)) {
-                return QueryBuilders.regexpQuery(name, NON_LETTER_PREFIX_REGEX);
+                return RegexParameter.of(mapping, NON_LETTER_PREFIX_REGEX);
             }
-            return QueryBuilders.prefixQuery(name, prefix);
+            return PrefixParameter.of(mapping, prefix);
         }
 
         @Override
-        public QueryBuilder visit(Operators.Ascending ascending) {
+        public SingleValueParameter<String> visit(Operators.Ascending ascending) {
             return null;
         }
 
         @Override
-        public QueryBuilder visit(Operators.Descending ascending) {
+        public SingleValueParameter<String> visit(Operators.Descending ascending) {
             return null;
         }
     }
 
     private static class EsComparableOperatorVisitor<T extends Comparable<T>>
-            extends EsEqualsOperatorVisitor<T>
-            implements ComparableOperatorVisitor<QueryBuilder>,
-            DateTimeOperatorVisitor<QueryBuilder> {
+            extends EsEqualsOperatorVisitor<T, RangeTypeMapping<T>>
+            implements ComparableOperatorVisitor<Parameter>,
+            DateTimeOperatorVisitor<Parameter> {
 
-        public EsComparableOperatorVisitor(String name, List<T> value) {
-            super(name, value);
+        public EsComparableOperatorVisitor(RangeTypeMapping<T> mapping, List<T> values) {
+            super(mapping, values);
         }
 
-        private RangeQueryBuilder rangeLessThan(String name, List<T> value) {
-            return QueryBuilders.rangeQuery(name)
-                    .lt(Ordering.natural().max(value));
+        private RangeParameter<T> rangeLessThan(RangeTypeMapping<T> mapping, List<T> values) {
+            return RangeParameter.to(mapping, Ordering.natural().max(values));
         }
 
-        private RangeQueryBuilder rangeMoreThan(String name, List<T> value) {
-            return QueryBuilders.rangeQuery(name)
-                    .gt(Ordering.natural().min(value));
-        }
-
-        @Override
-        public QueryBuilder visit(LessThan lessThan) {
-            return rangeLessThan(name, value);
+        private RangeParameter<T> rangeMoreThan(RangeTypeMapping<T> mapping, List<T> values) {
+            return RangeParameter.from(mapping, Ordering.natural().min(values));
         }
 
         @Override
-        public QueryBuilder visit(GreaterThan greaterThan) {
-            return rangeMoreThan(name, value);
+        public RangeParameter<T> visit(LessThan lessThan) {
+            return rangeLessThan(mapping, values);
         }
 
         @Override
-        public QueryBuilder visit(Operators.Ascending ascending) {
+        public RangeParameter<T> visit(GreaterThan greaterThan) {
+            return rangeMoreThan(mapping, values);
+        }
+
+        @Override
+        public RangeParameter<T> visit(Operators.Ascending ascending) {
             return null;
         }
 
         @Override
-        public QueryBuilder visit(Operators.Descending ascending) {
+        public RangeParameter<T> visit(Operators.Descending ascending) {
             return null;
         }
 
         @Override
-        public QueryBuilder visit(Before before) {
-            return rangeLessThan(name, value);
+        public RangeParameter<T> visit(Before before) {
+            return rangeLessThan(mapping, values);
         }
 
         @Override
-        public QueryBuilder visit(After after) {
-            return rangeMoreThan(name, value);
+        public RangeParameter<T> visit(After after) {
+            return rangeMoreThan(mapping, values);
         }
 
     }

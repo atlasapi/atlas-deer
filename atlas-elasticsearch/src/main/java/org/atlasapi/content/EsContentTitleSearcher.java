@@ -1,152 +1,118 @@
 package org.atlasapi.content;
 
-import java.util.Date;
-import java.util.LinkedList;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
-import org.atlasapi.EsSchema;
-import org.atlasapi.search.SearchQuery;
-import org.atlasapi.search.SearchResults;
 import org.atlasapi.util.FiltersBuilder;
 
-import com.google.common.base.Function;
+import com.metabroadcast.sherlock.client.search.ContentSearcher;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
+import com.metabroadcast.sherlock.client.search.SearchQueryResponse;
+import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
+import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
+import com.metabroadcast.sherlock.client.search.parameter.SingleClauseBoolParameter;
+import com.metabroadcast.sherlock.client.search.scoring.QueryWeighting;
+import com.metabroadcast.sherlock.client.search.scoring.Weighting;
+import com.metabroadcast.sherlock.client.search.scoring.Weightings;
+import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.mapping.IndexMapping;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermsFilterBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-
-import static org.elasticsearch.index.query.FilterBuilders.andFilter;
-import static org.elasticsearch.index.query.FilterBuilders.termFilter;
-import static org.elasticsearch.index.query.FilterBuilders.typeFilter;
-import static org.elasticsearch.index.query.QueryBuilders.filteredQuery;
-import static org.elasticsearch.index.query.QueryBuilders.hasChildQuery;
+import sherlock_client_shaded.org.elasticsearch.common.lucene.search.function.CombineFunction;
+import sherlock_client_shaded.org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
+import sherlock_client_shaded.org.elasticsearch.search.sort.SortOrder;
 
 public class EsContentTitleSearcher implements ContentTitleSearcher {
 
-    private final Client index;
+    private static final ContentMapping CONTENT_MAPPING = IndexMapping.getContent();
 
-    public EsContentTitleSearcher(Client index) {
-        this.index = index;
+    private final ContentSearcher searcher;
+
+    public EsContentTitleSearcher(ContentSearcher searcher) {
+        this.searcher = searcher;
     }
 
     @Override
-    public final ListenableFuture<SearchResults> search(SearchQuery search) {
-        QueryBuilder titleQuery = null;
-        QueryBuilder availabilityQuery = null;
-        QueryBuilder broadcastQuery = null;
-        QueryBuilder contentQuery = null;
+    public final ListenableFuture<SearchQueryResponse> search(org.atlasapi.search.SearchQuery search) {
 
         Preconditions.checkArgument(
                 !Strings.isNullOrEmpty(search.getTerm()),
                 "query term null or empty"
         );
 
-        titleQuery = TitleQueryBuilder.build(search.getTerm(), search.getTitleWeighting());
+        SearchQuery.Builder searchQueryBuilder = SearchQuery.builder();
 
-        List<TermsFilterBuilder> filters = new LinkedList<TermsFilterBuilder>();
-        if (search.getIncludedPublishers() != null && !search.getIncludedPublishers().isEmpty()) {
-            filters.add(FiltersBuilder.buildForPublishers(
-                    EsContent.SOURCE,
+        TitleQueryBuilder.addTitleQueryToBuilder(
+                searchQueryBuilder,
+                search.getTerm(),
+                search.getTitleWeighting()
+        );
+
+        if (search.getIncludedPublishers() != null
+            && !search.getIncludedPublishers().isEmpty()) {
+            searchQueryBuilder.addFilter(FiltersBuilder.buildForPublishers(
+                    CONTENT_MAPPING.getSource().getKey(),
                     search.getIncludedPublishers()
             ));
         }
         if (search.getIncludedSpecializations() != null
-                && !search.getIncludedSpecializations().isEmpty()) {
-            filters.add(FiltersBuilder.buildForSpecializations(search.getIncludedSpecializations()));
-        }
-        if (!filters.isEmpty()) {
-            titleQuery = QueryBuilders.filteredQuery(
-                    titleQuery,
-                    FilterBuilders.andFilter(filters.toArray(new FilterBuilder[filters.size()]))
+            && !search.getIncludedSpecializations().isEmpty()) {
+            searchQueryBuilder.addFilter(
+                    FiltersBuilder.buildForSpecializations(search.getIncludedSpecializations())
             );
         }
 
+        List<Weighting> weightings = new ArrayList<>();
+
         if (search.getBroadcastWeighting() != 0.0f) {
-            broadcastQuery = BroadcastQueryBuilder.build(
-                    titleQuery,
-                    1f
-            );
-        } else {
-            broadcastQuery = titleQuery;
+            weightings.add(Weightings.broadcastWithin30Days(1f));
         }
 
         if (search.getCatchupWeighting() != 0.0f) {
-            availabilityQuery = AvailabilityQueryBuilder.build(
-                    new Date(),
-                    search.getCatchupWeighting()
-            );
+
+            Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+
+            BoolParameter availabilityParameter = SingleClauseBoolParameter.must(
+                    RangeParameter.from(CONTENT_MAPPING.getLocations().getAvailabilityStart(), now),
+                    RangeParameter.to(CONTENT_MAPPING.getLocations().getAvailabilityEnd(), now)
+            ).boost(search.getCatchupWeighting());
+
+            searchQueryBuilder.addSearcher(availabilityParameter);
         }
 
-        if (availabilityQuery != null) {
-            contentQuery = QueryBuilders.boolQuery().must(broadcastQuery).should(availabilityQuery);
-        } else {
-            contentQuery = broadcastQuery;
-        }
+        searchQueryBuilder.withQueryWeighting(QueryWeighting.builder()
+                .withWeightings(weightings)
+                .withScoreMode(FunctionScoreQuery.ScoreMode.SUM)
+                .withCombineFunction(CombineFunction.MULTIPLY)
+                .withMaxBoost(3f)
+                .build());
 
-        QueryBuilder finalQuery = QueryBuilders.boolQuery()
-                .should(
-                        filteredQuery(
-                                contentQuery,
-                                andFilter(
-                                        typeFilter(EsContent.TOP_LEVEL_ITEM),
-                                        termFilter(EsContent.HAS_CHILDREN, Boolean.FALSE)
-                                )
-                        )
-                )
-                .should(
-                        hasChildQuery(EsContent.CHILD_ITEM, contentQuery)
-                                .scoreType("sum")
-                );
+        // TODO do child query
+//        QueryBuilder finalQuery = QueryBuilders.boolQuery()
+//                .should(
+//                        filteredQuery(
+//                                contentQuery,
+//                                andFilter(
+//                                        typeFilter(EsContent.TOP_LEVEL_ITEM),
+//                                        termFilter(EsContent.HAS_CHILDREN, Boolean.FALSE)
+//                                )
+//                        )
+//                )
+//                .should(
+//                        hasChildQuery(EsContent.CHILD_ITEM, contentQuery)
+//                                .scoreType("sum")
+//                );
 
-        final SettableFuture<SearchResults> result = SettableFuture.create();
-        index.prepareSearch(EsSchema.CONTENT_INDEX)
-                .setQuery(finalQuery)
-                .addField(EsContent.ID)
-                .addSort(SortBuilders.scoreSort().order(SortOrder.DESC))
-                .setFrom(search.getSelection().getOffset())
-                .setSize(search.getSelection().limitOrDefaultValue(10))
-                .execute(new SearchResponseListener(result));
-        return result;
-    }
+        SearchQuery searchQuery = searchQueryBuilder
+                .addScoreSort(SortOrder.DESC)
+                .withLimit(search.getSelection().limitOrDefaultValue(10))
+                .withOffset(search.getSelection().getOffset())
+                .build();
 
-    private static class SearchResponseListener implements ActionListener<SearchResponse> {
-
-        private final SettableFuture<SearchResults> result;
-
-        public SearchResponseListener(SettableFuture<SearchResults> result) {
-            this.result = result;
-        }
-
-        @Override
-        public void onResponse(SearchResponse response) {
-            Iterable<Long> uris = Iterables.transform(response.getHits(), new SearchHitToId());
-            result.set(SearchResults.from(uris));
-        }
-
-        @Override
-        public void onFailure(Throwable e) {
-            result.setException(e);
-        }
-    }
-
-    private static class SearchHitToId implements Function<SearchHit, Long> {
-
-        @Override
-        public Long apply(SearchHit input) {
-            Number idNumber = input.field(EsContent.ID).value();
-            return idNumber.longValue();
-        }
+        return searcher.searchForContent(searchQuery);
     }
 }

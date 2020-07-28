@@ -10,7 +10,6 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
@@ -201,7 +200,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         return query.getContext().getApplication();
     }
 
-    private AttributeQuerySet operands(Query<Content> query) {
+    private Set<AttributeQuery<?>> operands(Query<Content> query) {
         return query.getOperands();
     }
 }

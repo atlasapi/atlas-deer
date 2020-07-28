@@ -6,45 +6,25 @@ import org.atlasapi.criteria.operator.ComparableOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.entity.Identified;
 
+import com.metabroadcast.sherlock.common.type.FloatMapping;
+import com.metabroadcast.sherlock.common.type.KeywordMapping;
+
 public class FloatAttribute extends Attribute<Float> {
 
     private FloatAttribute(
             String name,
-            Class<? extends Identified> target,
-            boolean isCollectionOfValues
-    ) {
-        super(name, target, isCollectionOfValues);
-    }
-
-    private FloatAttribute(
-            String name,
-            String javaAttributeName,
-            Class<? extends Identified> target,
-            boolean isCollectionOfValues
-    ) {
-        super(name, javaAttributeName, target, isCollectionOfValues);
-    }
-
-    public static FloatAttribute single(
-            String name,
+            FloatMapping mapping,
             Class<? extends Identified> target
     ) {
-        return new FloatAttribute(name, target, false);
+        super(name, mapping, target);
     }
 
-    public static FloatAttribute single(
+    private static FloatAttribute create(
             String name,
-            String javaAttributeName,
+            FloatMapping mapping,
             Class<? extends Identified> target
     ) {
-        return new FloatAttribute(name, javaAttributeName, target, false);
-    }
-
-    public static FloatAttribute list(
-            String name,
-            Class<? extends Identified> target
-    ) {
-        return new FloatAttribute(name, target, true);
+        return new FloatAttribute(name, mapping, target);
     }
 
     @Override

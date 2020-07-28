@@ -3,7 +3,6 @@ package org.atlasapi.query;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
@@ -69,10 +68,10 @@ public class EsQueryParserTest {
                 .add(query(SPECIALIZATION, Specialization.FILM))
                 .build();
 
-        EsQueryParser.EsQuery query = parser.parse(AttributeQuerySet.create(queries));
+        EsQueryParser.EsQuery query = parser.parse(Set<AttributeQuery<?>>.create(queries));
 
         assertThat(
-                query.getAttributeQuerySet().size(),
+                query.getSet<AttributeQuery<?>>().size(),
                 is(13)
         );
 
@@ -99,14 +98,14 @@ public class EsQueryParserTest {
                 ))
                 .build();
 
-        EsQueryParser.EsQuery query = parser.parse(AttributeQuerySet.create(queries));
+        EsQueryParser.EsQuery query = parser.parse(Set<AttributeQuery<?>>.create(queries));
 
         assertThat(
-                query.getAttributeQuerySet().size(),
+                query.getSet<AttributeQuery<?>>().size(),
                 is(1)
         );
         assertThat(
-                query.getAttributeQuerySet()
+                query.getSet<AttributeQuery<?>>()
                         .iterator()
                         .next()
                         .getOperator(),
@@ -131,9 +130,9 @@ public class EsQueryParserTest {
                 .add(query(SERIES_ID, Id.valueOf(1L)))
                 .build();
 
-        EsQueryParser.EsQuery query = parser.parse(AttributeQuerySet.create(queries));
+        EsQueryParser.EsQuery query = parser.parse(Set<AttributeQuery<?>>.create(queries));
 
-        assertThat(query.getAttributeQuerySet().isEmpty(), is(true));
+        assertThat(query.getSet<AttributeQuery<?>>().isEmpty(), is(true));
 
         IndexQueryParams params = query.getIndexQueryParams();
 
@@ -155,10 +154,10 @@ public class EsQueryParserTest {
                 .add(query(ID, Id.valueOf(1L)))
                 .build();
 
-        EsQueryParser.EsQuery query = parser.parse(AttributeQuerySet.create(queries));
+        EsQueryParser.EsQuery query = parser.parse(Set<AttributeQuery<?>>.create(queries));
 
         assertThat(
-                query.getAttributeQuerySet().size(),
+                query.getSet<AttributeQuery<?>>().size(),
                 is(0)
         );
 

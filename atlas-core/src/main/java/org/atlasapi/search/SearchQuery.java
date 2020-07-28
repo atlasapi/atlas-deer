@@ -6,13 +6,85 @@ import org.atlasapi.content.Specialization;
 import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.url.QueryStringParameters;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 public class SearchQuery {
+
+    private final String term;
+    private final Selection selection;
+    private final Set<Specialization> includedSpecializations;
+    private final Set<Publisher> includedPublishers;
+    private final float titleWeighting;
+    private final float broadcastWeighting;
+    private final float catchupWeighting;
+    private final String type;
+
+    /**
+     * Use a Builder
+     */
+    @Deprecated
+    public SearchQuery(String term, Selection selection, Iterable<Publisher> includedPublishers,
+            float titleWeighting, float broadcastWeighting, float availabilityWeighting) {
+        this(
+                term,
+                selection,
+                Sets.<Specialization>newHashSet(),
+                includedPublishers,
+                titleWeighting,
+                broadcastWeighting,
+                availabilityWeighting,
+                null
+        );
+    }
+
+    public SearchQuery(String term, Selection selection,
+            Iterable<Specialization> includedSpecializations,
+            Iterable<Publisher> includedPublishers,
+            float titleWeighting, float broadcastWeighting, float availabilityWeighting,
+            String type) {
+        this.term = term;
+        this.selection = selection;
+        this.titleWeighting = titleWeighting;
+        this.broadcastWeighting = broadcastWeighting;
+        this.catchupWeighting = availabilityWeighting;
+        this.type = type;
+        this.includedSpecializations = ImmutableSet.copyOf(includedSpecializations);
+        this.includedPublishers = ImmutableSet.copyOf(includedPublishers);
+    }
+
+    public String getTerm() {
+        return term;
+    }
+
+    public Selection getSelection() {
+        return selection;
+    }
+
+    public Set<Specialization> getIncludedSpecializations() {
+        return includedSpecializations;
+    }
+
+    public Set<Publisher> getIncludedPublishers() {
+        return includedPublishers;
+    }
+
+    public float getTitleWeighting() {
+        return titleWeighting;
+    }
+
+    public float getBroadcastWeighting() {
+        return broadcastWeighting;
+    }
+
+    public float getCatchupWeighting() {
+        return catchupWeighting;
+    }
+
+    public String type() {
+        return this.type;
+    }
 
     public static final Builder builder(String query) {
         return new Builder(query);
@@ -28,9 +100,6 @@ public class SearchQuery {
         private float broadcast = 0;
         private float catchup = 0;
         private String type;
-        private Boolean topLevelOnly;
-        private Boolean currentBroadcastsOnly;
-        private float priorityChannelWeighting = 1.0f;
 
         public Builder(String query) {
             this.query = query;
@@ -71,16 +140,6 @@ public class SearchQuery {
             return this;
         }
 
-        public Builder withCurrentBroadcastsOnly(boolean currentBroadcastsOnly) {
-            this.currentBroadcastsOnly = currentBroadcastsOnly;
-            return this;
-        }
-
-        public Builder withPriorityChannelWeighting(float priorityChannelWeighting) {
-            this.priorityChannelWeighting = priorityChannelWeighting;
-            return this;
-        }
-
         public SearchQuery build() {
             return new SearchQuery(query,
                     selection,
@@ -89,157 +148,8 @@ public class SearchQuery {
                     title,
                     broadcast,
                     catchup,
-                    type,
-                    topLevelOnly,
-                    currentBroadcastsOnly,
-                    priorityChannelWeighting
+                    type
             );
         }
-
-        public Builder isTopLevelOnly(Boolean topLevel) {
-            this.topLevelOnly = topLevel;
-            return this;
-        }
-    }
-
-    private static final Joiner CSV = Joiner.on(',');
-
-    private final String term;
-    private final Selection selection;
-    private final Set<Specialization> includedSpecializations;
-    private final Set<Publisher> includedPublishers;
-    private final float titleWeighting;
-    private final float broadcastWeighting;
-    private final float catchupWeighting;
-    private final String type;
-    private final float priorityChannelWeighting;
-    private final Boolean topLevelOnly;
-    private final Boolean currentBroadcastsOnly;
-
-    /**
-     * Use a Builder
-     */
-    @Deprecated
-    public SearchQuery(String term, Selection selection, float titleWeighting,
-            float broadcastWeighting, float availabilityWeighting) {
-        this(
-                term,
-                selection,
-                Sets.<Specialization>newHashSet(),
-                Sets.<Publisher>newHashSet(),
-                titleWeighting,
-                broadcastWeighting,
-                availabilityWeighting,
-                null,
-                null,
-                null,
-                1.0f
-        );
-    }
-
-    /**
-     * Use a Builder
-     */
-    @Deprecated
-    public SearchQuery(String term, Selection selection, Iterable<Publisher> includedPublishers,
-            float titleWeighting, float broadcastWeighting, float availabilityWeighting) {
-        this(
-                term,
-                selection,
-                Sets.<Specialization>newHashSet(),
-                includedPublishers,
-                titleWeighting,
-                broadcastWeighting,
-                availabilityWeighting,
-                null,
-                null,
-                null,
-                1.0f
-        );
-    }
-
-    public SearchQuery(String term, Selection selection,
-            Iterable<Specialization> includedSpecializations,
-            Iterable<Publisher> includedPublishers,
-            float titleWeighting, float broadcastWeighting, float availabilityWeighting,
-            String type, Boolean topLevelOnly, Boolean currentBroadcastsOnly,
-            float priorityChannelWeighting) {
-        this.term = term;
-        this.selection = selection;
-        this.titleWeighting = titleWeighting;
-        this.broadcastWeighting = broadcastWeighting;
-        this.catchupWeighting = availabilityWeighting;
-        this.type = type;
-        this.topLevelOnly = topLevelOnly;
-        this.currentBroadcastsOnly = currentBroadcastsOnly;
-        this.includedSpecializations = ImmutableSet.copyOf(includedSpecializations);
-        this.includedPublishers = ImmutableSet.copyOf(includedPublishers);
-        this.priorityChannelWeighting = priorityChannelWeighting;
-    }
-
-    public String getTerm() {
-        return term;
-    }
-
-    public Selection getSelection() {
-        return selection;
-    }
-
-    public Set<Specialization> getIncludedSpecializations() {
-        return includedSpecializations;
-    }
-
-    public Set<Publisher> getIncludedPublishers() {
-        return includedPublishers;
-    }
-
-    public float getTitleWeighting() {
-        return titleWeighting;
-    }
-
-    public float getBroadcastWeighting() {
-        return broadcastWeighting;
-    }
-
-    public float getCatchupWeighting() {
-        return catchupWeighting;
-    }
-
-    public String type() {
-        return this.type;
-    }
-
-    public Boolean topLevelOnly() {
-        return this.topLevelOnly;
-    }
-
-    public Boolean currentBroadcastsOnly() {
-        return this.currentBroadcastsOnly;
-    }
-
-    public float getPriorityChannelWeighting() {
-        return this.priorityChannelWeighting;
-    }
-
-    public QueryStringParameters toQueryStringParameters() {
-        QueryStringParameters params = new QueryStringParameters()
-                .add("title", term)
-                .addAll(selection.asQueryStringParameters())
-                .add("specializations", CSV.join(includedSpecializations))
-                .add("publishers", CSV.join(includedPublishers))
-                .add("titleWeighting", String.valueOf(titleWeighting))
-                .add("broadcastWeighting", String.valueOf(broadcastWeighting))
-                .add("priorityChannelWeighting", String.valueOf(priorityChannelWeighting))
-                .add("catchupWeighting", String.valueOf(catchupWeighting));
-        if (topLevelOnly != null) {
-            params.add("topLevelOnly", topLevelOnly.toString());
-        }
-        if (type != null) {
-            params.add("type", type);
-        }
-        if (currentBroadcastsOnly != null) {
-            params.add("currentBroadcastsOnly", currentBroadcastsOnly.toString());
-        }
-        return params;
     }
 }

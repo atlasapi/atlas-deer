@@ -6,21 +6,25 @@ import org.atlasapi.criteria.operator.ComparableOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.entity.Identified;
 
+import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
+import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
+
 public class IntegerAttribute extends Attribute<Integer> {
 
     private IntegerAttribute(
             String name,
-            Class<? extends Identified> target,
-            boolean isCollection
-    ) {
-        super(name, target, isCollection);
-    }
-
-    public static IntegerAttribute list(
-            String name,
+            RangeTypeMapping<Integer> mapping,
             Class<? extends Identified> target
     ) {
-        return new IntegerAttribute(name, target, true);
+        super(name, mapping, target);
+    }
+
+    public static IntegerAttribute create(
+            String name,
+            RangeTypeMapping<Integer> mapping,
+            Class<? extends Identified> target
+    ) {
+        return new IntegerAttribute(name, mapping, target);
     }
 
     @Override

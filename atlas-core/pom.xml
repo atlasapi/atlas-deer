@@ -86,5 +86,9 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+        <groupId>com.metabroadcast.sherlock</groupId>
+        <artifactId>client-shaded</artifactId>
+    </dependency>
   </dependencies>
 </project>

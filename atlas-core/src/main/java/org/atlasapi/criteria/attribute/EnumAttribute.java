@@ -6,6 +6,9 @@ import org.atlasapi.criteria.operator.EqualsOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.entity.Identified;
 
+import com.metabroadcast.sherlock.common.type.JodaDateTimeMapping;
+import com.metabroadcast.sherlock.common.type.KeywordMapping;
+
 public class EnumAttribute<T extends Enum<T>> extends Attribute<T> {
 
     private final Class<T> type;
@@ -13,27 +16,20 @@ public class EnumAttribute<T extends Enum<T>> extends Attribute<T> {
     private EnumAttribute(
             String name,
             Class<T> type,
-            Class<? extends Identified> target,
-            boolean isCollection
+            KeywordMapping<String> mapping,
+            Class<? extends Identified> target
     ) {
-        super(name, target, isCollection);
+        super(name, mapping, target);
         this.type = type;
     }
 
-    public static <T extends Enum<T>> EnumAttribute<T> single(
+    public static <T extends Enum<T>> EnumAttribute<T> create(
             String name,
             Class<T> type,
+            KeywordMapping<String> mapping,
             Class<? extends Identified> target
     ) {
-        return new EnumAttribute<T>(name, type, target, false);
-    }
-
-    public static <T extends Enum<T>> EnumAttribute<T> list(
-            String name,
-            Class<T> type,
-            Class<? extends Identified> target
-    ) {
-        return new EnumAttribute<T>(name, type, target, true);
+        return new EnumAttribute<>(name, type, mapping, target);
     }
 
     @Override
@@ -51,6 +47,6 @@ public class EnumAttribute<T extends Enum<T>> extends Attribute<T> {
         if (!(op instanceof EqualsOperator)) {
             throw new IllegalArgumentException();
         }
-        return new EnumAttributeQuery<T>(this, (EqualsOperator) op, values);
+        return new EnumAttributeQuery<>(this, (EqualsOperator) op, values);
     }
 }

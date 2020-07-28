@@ -6,21 +6,25 @@ import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.criteria.operator.StringOperator;
 import org.atlasapi.entity.Identified;
 
+import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
+
 public class StringAttribute extends Attribute<String> {
 
     private StringAttribute(
-            String name, Class<? extends Identified> target,
-            boolean isCollectionOfValues
+            String name,
+            Class<? extends Identified> target,
+            ChildTypeMapping<String> mapping
     ) {
-        super(name, target, isCollectionOfValues);
+        super(name, target, mapping);
     }
 
     private StringAttribute(
-            String name, String javaAttributeName,
+            String name,
+            String javaAttributeName,
             Class<? extends Identified> target,
-            boolean isCollectionOfValues
+            ChildTypeMapping<String> mapping
     ) {
-        super(name, javaAttributeName, target, isCollectionOfValues);
+        super(name, javaAttributeName, target, mapping);
     }
 
     public static StringAttribute single(

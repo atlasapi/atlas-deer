@@ -1,9 +1,10 @@
 package org.atlasapi.topic;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.content.IndexQueryResult;
-import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.EsObject;
@@ -101,7 +102,7 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
     }
 
     @Override
-    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query,
+    public ListenableFuture<IndexQueryResult> query(Set<AttributeQuery<?>> query,
             Iterable<Publisher> publishers, Selection selection) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
         esClient

@@ -1,16 +1,10 @@
 package org.atlasapi.query.v4.topic;
 
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Ordering;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.stream.MoreCollectors;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.NotFoundException;
@@ -22,9 +16,15 @@ import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicIndex;
 import org.atlasapi.topic.TopicResolver;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.stream.MoreCollectors;
+
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Ordering;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -43,7 +43,7 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
         ImmutableList<Id> topicIds = ImmutableList.of();
         boolean queryOnlyIds = false;
         if(query.isListQuery()) {
-            AttributeQuerySet set = query.getOperands();
+            Set<AttributeQuery<?>> set = query.getOperands();
             if (set.size() == 1) {
                 AttributeQuery<?> attribute = set.iterator().next();
                 if (attribute.getAttributeName().equalsIgnoreCase("id")) {

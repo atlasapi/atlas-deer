@@ -6,12 +6,15 @@ import java.util.List;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.analysis.util.CharArraySet;
-import org.apache.lucene.util.Version;
+import sherlock_client_shaded.org.apache.lucene.analysis.TokenStream;
+import sherlock_client_shaded.org.apache.lucene.analysis.en.EnglishAnalyzer;
+import sherlock_client_shaded.org.apache.lucene.analysis.standard.StandardAnalyzer;
+import sherlock_client_shaded.org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
+/**
+ * This class was kept around from pre-live-sherlock days because at the time we had not
+ * implemented stop words. Look into removing this class when that happens.
+ */
 public class Strings {
 
     public static List<String> tokenize(String value, boolean filterStopWords) {
@@ -19,10 +22,9 @@ public class Strings {
         try {
             TokenStream tokens;
             if (filterStopWords) {
-                tokens = new StandardAnalyzer(Version.LATEST)
-                        .tokenStream("", new StringReader(value));
+                tokens = new EnglishAnalyzer().tokenStream("", new StringReader(value));
             } else {
-                tokens = new StandardAnalyzer(Version.LATEST, CharArraySet.EMPTY_SET)
+                tokens = new StandardAnalyzer()
                         .tokenStream("", new StringReader(value));
             }
             tokens.reset();

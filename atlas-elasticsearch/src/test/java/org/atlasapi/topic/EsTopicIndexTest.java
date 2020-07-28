@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.content.IndexQueryResult;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Alias;
@@ -114,7 +113,7 @@ public class EsTopicIndexTest {
         index.index(topic);
         refresh(esClient.client());
 
-        AttributeQuerySet query = AttributeQuerySet.create(ImmutableList.of(
+        Set<AttributeQuery<?>> query = Set<AttributeQuery<?>>.create(ImmutableList.of(
                 Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId()))
         ));
         IndexQueryResult result = Futures.getUnchecked(index.query(
@@ -138,7 +137,7 @@ public class EsTopicIndexTest {
         index.index(topic);
         refresh(esClient.client());
 
-        AttributeQuerySet query = AttributeQuerySet.create(ImmutableList.of(
+        Set<AttributeQuery<?>> query = Set<AttributeQuery<?>>.create(ImmutableList.of(
                 Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId())),
                 Attributes.ALIASES_VALUE.createQuery(Operators.EQUALS, ImmutableList.of("Alias"))
         ));
@@ -163,7 +162,7 @@ public class EsTopicIndexTest {
         index.index(topic);
         refresh(esClient.client());
 
-        AttributeQuerySet query = AttributeQuerySet.create(ImmutableList.of(
+        Set<AttributeQuery<?>> query = Set<AttributeQuery<?>>.create(ImmutableList.of(
                 Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId()))
         ));
         IndexQueryResult result = Futures.getUnchecked(index.query(
@@ -195,7 +194,7 @@ public class EsTopicIndexTest {
         index.index(topic1);
         refresh(esClient.client());
 
-        AttributeQuerySet query = AttributeQuerySet.create(ImmutableList.of(
+        Set<AttributeQuery<?>> query = Set<AttributeQuery<?>>.create(ImmutableList.of(
                 Attributes.ALIASES_VALUE.createQuery(Operators.EQUALS, ImmutableList.of("Alias"))
         ));
         IndexQueryResult result = Futures.getUnchecked(index.query(query,

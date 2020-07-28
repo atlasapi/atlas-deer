@@ -6,45 +6,25 @@ import org.atlasapi.criteria.operator.EqualsOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.entity.Identified;
 
+import com.metabroadcast.sherlock.common.type.BooleanMapping;
+import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
+
 public class BooleanAttribute extends Attribute<Boolean> {
 
     private BooleanAttribute(
             String name,
-            Class<? extends Identified> target,
-            boolean isCollection
-    ) {
-        super(name, target, isCollection);
-    }
-
-    private BooleanAttribute(
-            String name,
-            String javaAttributeName,
-            Class<? extends Identified> target,
-            boolean isCollectionOfValues
-    ) {
-        super(name, javaAttributeName, target, isCollectionOfValues);
-    }
-
-    public static BooleanAttribute single(
-            String name,
+            BooleanMapping mapping,
             Class<? extends Identified> target
     ) {
-        return new BooleanAttribute(name, target, false);
+        super(name, mapping, target);
     }
 
-    public static BooleanAttribute single(
+    public static BooleanAttribute create(
             String name,
-            String javaAttributeName,
+            BooleanMapping mapping,
             Class<? extends Identified> target
     ) {
-        return new BooleanAttribute(name, javaAttributeName, target, false);
-    }
-
-    public static BooleanAttribute list(
-            String name,
-            Class<? extends Identified> target
-    ) {
-        return new BooleanAttribute(name, target, true);
+        return new BooleanAttribute(name, mapping, target);
     }
 
     @Override

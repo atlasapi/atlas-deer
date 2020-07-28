@@ -17,13 +17,17 @@ package org.atlasapi.criteria;
 import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.criteria.operator.ComparableOperator;
 import org.atlasapi.criteria.operator.ComparableOperatorVisitor;
+import org.atlasapi.criteria.operator.EqualsOperator;
+import org.atlasapi.criteria.operator.EqualsOperatorVisitor;
+import org.atlasapi.criteria.operator.StringOperator;
+import org.atlasapi.criteria.operator.StringOperatorVisitor;
 import org.atlasapi.entity.Id;
 
 public class IdAttributeQuery extends AttributeQuery<Id> {
 
-    private final ComparableOperator op;
+    private final EqualsOperator op;
 
-    public IdAttributeQuery(Attribute<Id> attribute, ComparableOperator op, Iterable<Id> values) {
+    public IdAttributeQuery(Attribute<Id> attribute, EqualsOperator op, Iterable<Id> values) {
         super(attribute, op, values);
         this.op = op;
     }
@@ -32,11 +36,11 @@ public class IdAttributeQuery extends AttributeQuery<Id> {
         return visitor.visit(this);
     }
 
-    public <V> V accept(ComparableOperatorVisitor<V> v) {
+    public <V> V accept(EqualsOperatorVisitor<V> v) {
         return op.accept(v);
     }
 
-    public ComparableOperator getOperator() {
+    public EqualsOperator getOperator() {
         return op;
     }
 

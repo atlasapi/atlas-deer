@@ -14,7 +14,6 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.EnumAttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
@@ -116,7 +115,7 @@ public class EsUnequivalentContentIndexTest {
         AttributeQuery<String> genreQuery = Attributes.GENRE.createQuery(
                 Operators.EQUALS, ImmutableList.of("horror")
         );
-        AttributeQuerySet querySet = AttributeQuerySet.create(ImmutableList.of(genreQuery));
+        Set<AttributeQuery<?>> querySet = Set<AttributeQuery<?>>.create(ImmutableList.of(genreQuery));
         IndexQueryResult result = Futures.get(
                 index.query(
                         querySet,
@@ -156,7 +155,7 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(brand, episode);
 
         ListenableFuture<IndexQueryResult> future = index.query(
-                AttributeQuerySet.create(
+                Set<AttributeQuery<?>>.create(
                         ImmutableSet.of(
                                 new StringAttributeQuery(
                                         Attributes.SEARCH_TOPIC_ID,
@@ -201,7 +200,7 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(availableItem, nonAvailableItem);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
-                AttributeQuerySet.create(
+                Set<AttributeQuery<?>>.create(
                         ImmutableSet.of(
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
@@ -249,7 +248,7 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(availableItem, nonAvailableItem);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
-                AttributeQuerySet.create(
+                Set<AttributeQuery<?>>.create(
                         ImmutableSet.of(
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
@@ -302,7 +301,7 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(availableBrand, availableItem, nonAvailableBrand);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
-                AttributeQuerySet.create(
+                Set<AttributeQuery<?>>.create(
                         ImmutableSet.of(
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
@@ -348,7 +347,7 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(availableBrand, availableItem);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
-                AttributeQuerySet.create(
+                Set<AttributeQuery<?>>.create(
                         ImmutableSet.of(
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
@@ -429,7 +428,7 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(availableBrand, availableItem, nonAvailableBrand);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
-                AttributeQuerySet.create(
+                Set<AttributeQuery<?>>.create(
                         ImmutableSet.of(
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
@@ -504,7 +503,7 @@ public class EsUnequivalentContentIndexTest {
                 .createQuery(Operators.BEGINNING, ImmutableList.of("te"));
         IndexQueryResult result = Futures.get(
                 index.query(
-                        AttributeQuerySet.create(ImmutableList.of(query)),
+                        Set<AttributeQuery<?>>.create(ImmutableList.of(query)),
                         ImmutableList.of(Publisher.BBC),
                         Selection.all()
                 ),
@@ -531,7 +530,7 @@ public class EsUnequivalentContentIndexTest {
                 .createQuery(Operators.BEGINNING, ImmutableList.of("#"));
         IndexQueryResult result = Futures.get(
                 index.query(
-                        AttributeQuerySet.create(ImmutableList.of(query)),
+                        Set<AttributeQuery<?>>.create(ImmutableList.of(query)),
                         ImmutableList.of(Publisher.BBC),
                         Selection.all()
                 ),
@@ -556,7 +555,7 @@ public class EsUnequivalentContentIndexTest {
         AttributeQuery<Publisher> query = Attributes.SOURCE
                 .createQuery(Operators.EQUALS, ImmutableList.of(Publisher.METABROADCAST));
 
-        AttributeQuerySet querySet = AttributeQuerySet.create(ImmutableList.of(query));
+        Set<AttributeQuery<?>> querySet = Set<AttributeQuery<?>>.create(ImmutableList.of(query));
         ListenableFuture<IndexQueryResult> result = index.query(
                 querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
@@ -569,7 +568,7 @@ public class EsUnequivalentContentIndexTest {
         query = Attributes.SOURCE
                 .createQuery(Operators.EQUALS, ImmutableList.of(Publisher.BBC));
 
-        querySet = AttributeQuerySet.create(ImmutableList.of(query));
+        querySet = Set<AttributeQuery<?>>.create(ImmutableList.of(query));
         result = index.query(
                 querySet, 
                 ImmutableList.of(Publisher.METABROADCAST), 
@@ -604,7 +603,7 @@ public class EsUnequivalentContentIndexTest {
                 ImmutableList.of(codec.encode(BigInteger.valueOf(2L)))
         );
 
-        AttributeQuerySet querySet = AttributeQuerySet.create(ImmutableList.of(query));
+        Set<AttributeQuery<?>> querySet = Set<AttributeQuery<?>>.create(ImmutableList.of(query));
         ListenableFuture<IndexQueryResult> result = index.query(
                 querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
@@ -646,7 +645,7 @@ public class EsUnequivalentContentIndexTest {
 
         indexAndRefresh(episode1, episode2, episode3);
 
-        AttributeQuerySet querySet = AttributeQuerySet.create(ImmutableList.of(
+        Set<AttributeQuery<?>> querySet = Set<AttributeQuery<?>>.create(ImmutableList.of(
                 Attributes.SEARCH_TOPIC_ID.createQuery(
                         Operators.EQUALS,
                         ImmutableList.of(codec.encode(BigInteger.valueOf(4L)))
@@ -693,7 +692,7 @@ public class EsUnequivalentContentIndexTest {
 
         indexAndRefresh(episode1, episode2, episode3);
 
-        AttributeQuerySet querySet = AttributeQuerySet.create(ImmutableList.of(
+        Set<AttributeQuery<?>> querySet = Set<AttributeQuery<?>>.create(ImmutableList.of(
                 Attributes.ID.createQuery(
                         Operators.EQUALS,
                         ImmutableList.of(Id.valueOf(1), Id.valueOf(2), Id.valueOf(3))
@@ -745,7 +744,7 @@ public class EsUnequivalentContentIndexTest {
                 Operators.EQUALS, ImmutableList.of(1.0f));
 
         IndexQueryResult ids = index.query(
-                AttributeQuerySet.create(ImmutableList.of(query)),
+                Set<AttributeQuery<?>>.create(ImmutableList.of(query)),
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all()
         )
@@ -756,7 +755,7 @@ public class EsUnequivalentContentIndexTest {
                 Operators.LESS_THAN, ImmutableList.of(0.5f));
 
         ids = index.query(
-                AttributeQuerySet.create(ImmutableList.of(query)),
+                Set<AttributeQuery<?>>.create(ImmutableList.of(query)),
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all()
         )
@@ -767,7 +766,7 @@ public class EsUnequivalentContentIndexTest {
                 Operators.GREATER_THAN, ImmutableList.of(0.5f));
 
         ids = index.query(
-                AttributeQuerySet.create(ImmutableList.of(query)),
+                Set<AttributeQuery<?>>.create(ImmutableList.of(query)),
                 ImmutableList.of(Publisher.METABROADCAST), 
                 Selection.all()
         )
@@ -795,7 +794,7 @@ public class EsUnequivalentContentIndexTest {
         item.setActivelyPublished(true);
         indexAndRefresh(item);
 
-        AttributeQuerySet querySet = AttributeQuerySet.create(
+        Set<AttributeQuery<?>> querySet = Set<AttributeQuery<?>>.create(
                 ImmutableList.of(
                         Attributes.ID.createQuery(
                                 Operators.EQUALS,

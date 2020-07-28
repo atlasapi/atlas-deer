@@ -2,7 +2,6 @@ package org.atlasapi.content;
 
 import java.util.List;
 
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
@@ -26,7 +25,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class PseudoEquivalentContentIndexTest {
 
-    private final AttributeQuerySet query = AttributeQuerySet.create(Lists.newArrayList());
+    private final Set<AttributeQuery<?>> query = Set<AttributeQuery<?>>.create(Lists.newArrayList());
 
     private @Mock EsUnequivalentContentIndex esUnequivalentContentIndex;
     private PseudoEquivalentContentIndex pseudoEquivalentContentIndex;
@@ -120,7 +119,7 @@ public class PseudoEquivalentContentIndexTest {
 
     private void setupMocks(DelegateIndexQueryResult queryResult, List<Publisher> publishers) {
         when(esUnequivalentContentIndex.delegateQuery(
-                eq(AttributeQuerySet.create(Lists.newArrayList())),
+                eq(Set<AttributeQuery<?>>.create(Lists.newArrayList())),
                 eq(publishers),
                 any(Selection.class))
         )

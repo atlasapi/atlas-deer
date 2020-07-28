@@ -4,7 +4,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.annotation.ActiveAnnotations;
@@ -64,7 +63,7 @@ public class ContextualQueryParserTest {
         ).withParam("alias.namespace", "ns");
 
         when(attributeParser.parse(req))
-                .thenReturn(AttributeQuerySet.create(ImmutableSet.of()));
+                .thenReturn(Set<AttributeQuery<?>>.create(ImmutableSet.of()));
         when(queryContextParser.parseContext(req))
                 .thenReturn(QueryContext.create(
                         mock(Application.class),
@@ -77,7 +76,7 @@ public class ContextualQueryParserTest {
         Id contextId = query.getContextQuery().getOnlyId();
         assertThat(idCodec.encode(contextId.toBigInteger()), is("cbbh"));
 
-        AttributeQuerySet resourceQuerySet = query.getResourceQuery().getOperands();
+        Set<AttributeQuery<?>> resourceQuerySet = query.getResourceQuery().getOperands();
         AttributeQuery<?> contextAttributeQuery = Iterables.getOnlyElement(resourceQuerySet);
 
         assertThat(contextAttributeQuery.getValue().get(0), is(Id.valueOf(idCodec.decode("cbbh"))));

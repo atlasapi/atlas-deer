@@ -6,20 +6,28 @@ import org.atlasapi.criteria.operator.DateTimeOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.entity.Identified;
 
+import com.metabroadcast.sherlock.common.type.DateMapping;
+import com.metabroadcast.sherlock.common.type.InstantMapping;
+import com.metabroadcast.sherlock.common.type.JodaDateTimeMapping;
+
 import org.joda.time.DateTime;
 
 public class DateTimeAttribute extends Attribute<DateTime> {
 
     private DateTimeAttribute(
             String name,
-            Class<? extends Identified> target,
-            boolean isCollectionOfValues
+            InstantMapping mapping,
+            Class<? extends Identified> target
     ) {
-        super(name, target, isCollectionOfValues);
+        super(name, mapping, target);
     }
 
-    public static DateTimeAttribute single(String name, Class<? extends Identified> target) {
-        return new DateTimeAttribute(name, target, false);
+    public static DateTimeAttribute create(
+            String name,
+            InstantMapping mapping,
+            Class<? extends Identified> target
+    ) {
+        return new DateTimeAttribute(name, mapping, target);
     }
 
     @Override

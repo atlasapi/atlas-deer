@@ -19,7 +19,6 @@ import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -84,7 +83,7 @@ public class ChannelGroupQueryExecutorTest {
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelGroupId);
         when(channelQuery.getContext()).thenReturn(context);
-        when(channelQuery.getOperands()).thenReturn(AttributeQuerySet.create(ImmutableSet.of()));
+        when(channelQuery.getOperands()).thenReturn(Set<AttributeQuery<?>>.create(ImmutableSet.of()));
 
         when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
                 channelGroupId)), anyBoolean()))
@@ -137,7 +136,7 @@ public class ChannelGroupQueryExecutorTest {
         when(attributeQuery.getAttribute()).thenReturn(attribute);
         when(attribute.getPath()).thenReturn(ImmutableList.of("path"));
 
-        AttributeQuerySet attributeQueries = AttributeQuerySet.create(
+        Set<AttributeQuery<?>> attributeQueries = Set<AttributeQuery<?>>.create(
                 Sets.<AttributeQuery<Object>>newHashSet(attributeQuery)
         );
 
@@ -186,7 +185,7 @@ public class ChannelGroupQueryExecutorTest {
         when(channelQuery.getContext()).thenReturn(context);
         when(channelQuery.getOnlyId()).thenReturn(channelGroupId);
         when(channelQuery.isListQuery()).thenReturn(false);
-        when(channelQuery.getOperands()).thenReturn(AttributeQuerySet.create(ImmutableSet.of()));
+        when(channelQuery.getOperands()).thenReturn(Set<AttributeQuery<?>>.create(ImmutableSet.of()));
 
         when(testChannelGroup.getType()).thenReturn("platform");
         when(regionChannelGroupRef.getId()).thenReturn(regionChannelGroupId);
@@ -306,7 +305,7 @@ public class ChannelGroupQueryExecutorTest {
         when(attributeQuery.getAttribute()).thenReturn(attribute);
         when(attribute.getPath()).thenReturn(ImmutableList.of("path"));
 
-        AttributeQuerySet attributeQueries = AttributeQuerySet.create(Sets.<AttributeQuery<Object>>newHashSet(
+        Set<AttributeQuery<?>> attributeQueries = Set<AttributeQuery<?>>.create(Sets.<AttributeQuery<Object>>newHashSet(
                 attributeQuery));
 
         when(channelQuery.getOperands()).thenReturn(attributeQueries);

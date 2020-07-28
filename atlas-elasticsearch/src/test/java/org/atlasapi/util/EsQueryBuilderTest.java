@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.criteria.attribute.BooleanAttribute;
 import org.atlasapi.criteria.attribute.DateTimeAttribute;
@@ -128,7 +127,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testSingleTopLevelQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.<AttributeQuery<?>>of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<?>>of(
                 createQuery(ZERO, "one")
         ));
         SearchHits hits = queryHits(queries);
@@ -137,7 +136,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testTwoTopLevelQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.of(
                 createQuery(ZERO, "one"),
                 createQuery(MINUS_ONE, -1)
         ));
@@ -147,7 +146,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testSingleNestedQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.<AttributeQuery<?>>of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<?>>of(
                 createQuery(ONE_FIRST, "one-first-one")
         ));
         SearchHits hits = queryHits(queries);
@@ -156,7 +155,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testTopAndNestedQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.of(
                 createQuery(ZERO, "one"),
                 createQuery(ONE_FIRST, "one-first-one")
         ));
@@ -166,7 +165,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testTwoNestedQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.of(
                 createQuery(ONE_FIRST, "one-first-one"),
                 createQuery(ONE_SECOND, "one-second-one")
         ));
@@ -176,7 +175,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testDoublyNestedQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.<AttributeQuery<?>>of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<?>>of(
                 createQuery(ONE_TWO_FIRST, 1.0f)
         ));
         SearchHits hits = queryHits(queries);
@@ -185,7 +184,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testTriplyNestedQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.<AttributeQuery<?>>of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<?>>of(
                 createQuery(ONE_TWO_THREE_FIRST, true)
         ));
         SearchHits hits = queryHits(queries);
@@ -194,7 +193,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testTriplyNestedWithTopQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.of(
                 createQuery(ZERO, "one"),
                 createQuery(ONE_TWO_THREE_FIRST, true)
         ));
@@ -216,7 +215,7 @@ public class EsQueryBuilderTest {
                 createQuery(ONE_TWO_THREE_THIRD, Id.valueOf(1234))
         );
         for (Set<AttributeQuery<?>> queries : Iterables.skip(Sets.powerSet(attrQueries), 1)) {
-            AttributeQuerySet set = AttributeQuerySet.create(queries);
+            Set<AttributeQuery<?>> set = Set<AttributeQuery<?>>.create(queries);
             SearchHits hits = queryHits(set);
             assertThat(Iterables.getOnlyElement(hits).id(), is("one"));
         }
@@ -224,7 +223,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testPrefixQueryForNonLetterCharacters() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.<AttributeQuery<?>>of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<?>>of(
                 ONE_FIRST.createQuery(Operators.BEGINNING, ImmutableList.of("#"))
         ));
         SearchHits hits = queryHits(queries);
@@ -233,7 +232,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testPrefixQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.<AttributeQuery<?>>of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<?>>of(
                 ZERO.createQuery(Operators.BEGINNING, ImmutableList.of("on"))
         ));
         SearchHits hits = queryHits(queries);
@@ -242,7 +241,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testDateTimeAfterQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.<AttributeQuery<?>>of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<?>>of(
                 ONE_TWO_THREE_SECOND.createQuery(
                         Operators.AFTER,
                         ImmutableList.of(new DateTime("1986-02-02T14:30:00.000Z"))
@@ -254,7 +253,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testDateTimeBeforeQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.<AttributeQuery<?>>of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<?>>of(
                 ONE_TWO_THREE_SECOND.createQuery(
                         Operators.BEFORE,
                         ImmutableList.of(new DateTime("1988-02-02T14:30:00.000Z"))
@@ -266,7 +265,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testIntegerGreaterThanQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.<AttributeQuery<?>>of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<?>>of(
                 MINUS_ONE.createQuery(Operators.GREATER_THAN, ImmutableList.of(-2))
         ));
         SearchHits hits = queryHits(queries);
@@ -275,7 +274,7 @@ public class EsQueryBuilderTest {
 
     @Test
     public void testIntegerLessThanQuery() throws Exception {
-        AttributeQuerySet queries = AttributeQuerySet.create(ImmutableList.<AttributeQuery<?>>of(
+        Set<AttributeQuery<?>> queries = Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<?>>of(
                 MINUS_ONE.createQuery(Operators.LESS_THAN, ImmutableList.of(0))
         ));
         SearchHits hits = queryHits(queries);
@@ -286,7 +285,7 @@ public class EsQueryBuilderTest {
         return attr.createQuery(Operators.EQUALS, ImmutableList.copyOf(vals));
     }
 
-    private SearchHits queryHits(AttributeQuerySet query) throws Exception {
+    private SearchHits queryHits(Set<AttributeQuery<?>> query) throws Exception {
         return esClient.client().prepareSearch()
                 .setQuery(builder.buildQuery(query))
                 .execute().get().getHits();

@@ -29,11 +29,10 @@ public class MultiFieldAttribute<FROM, TO, M extends ChildTypeMapping<TO>> exten
 
     @Override
     protected SingleClauseBoolParameter createParameter(M[] mappings, FROM value) {
-        return new SingleClauseBoolParameter(
+        return SingleClauseBoolParameter.should(
                 Arrays.stream(mappings)
                         .map(m -> parameterBiFunction.apply(m, value))
-                        .collect(Collectors.toList()),
-                OccurrenceClause.SHOULD
+                        .collect(Collectors.toList())
         );
     }
 }

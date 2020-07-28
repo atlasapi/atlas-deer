@@ -1,6 +1,8 @@
 package org.atlasapi.content;
 
-import org.atlasapi.criteria.AttributeQuerySet;
+import java.util.Set;
+
+import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
@@ -15,12 +17,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class InstrumentedContentIndex implements ContentIndex {
 
     private final ContentIndex delegate;
-    private final Timer contentIndexTimer;
     private final Timer queryTimer;
 
     private InstrumentedContentIndex(ContentIndex delegate, MetricRegistry metrics) {
         this.delegate = checkNotNull(delegate);
-        this.contentIndexTimer = metrics.timer("EsContentIndex.index");
         this.queryTimer = metrics.timer("EsContentIndex.query");
     }
 
@@ -29,20 +29,8 @@ public class InstrumentedContentIndex implements ContentIndex {
     }
 
     @Override
-    public void index(Content content) throws IndexException {
-        Timer.Context time = contentIndexTimer.time();
-        delegate.index(content);
-        time.stop();
-    }
-
-    @Override
-    public void updateCanonicalIds(Id canonicalId, Iterable<Id> setIds) throws IndexException {
-        delegate.updateCanonicalIds(canonicalId, setIds);
-    }
-
-    @Override
     public ListenableFuture<IndexQueryResult> query(
-            AttributeQuerySet query,
+            Set<AttributeQuery<?>> query,
             Iterable<Publisher> publishers,
             Selection selection
     ) {

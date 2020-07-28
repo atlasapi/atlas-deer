@@ -1,9 +1,10 @@
 package org.atlasapi.content;
 
 import java.util.LinkedHashMap;
+import java.util.Set;
 import java.util.stream.StreamSupport;
 
-import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
@@ -36,7 +37,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
 
     @Override
     public ListenableFuture<IndexQueryResult> query(
-            AttributeQuerySet query,
+            Set<AttributeQuery<?>> query,
             Iterable<Publisher> publishers,
             Selection selection
     ) {
@@ -59,16 +60,6 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
-    }
-
-    @Override
-    public void index(Content content) throws IndexException {
-        delegate.index(content);
-    }
-
-    @Override
-    public void updateCanonicalIds(Id canonicalId, Iterable<Id> setIds) throws IndexException {
-        delegate.updateCanonicalIds(canonicalId, setIds);
     }
 
     private Selection getSelectionForDelegate(Iterable<Publisher> publishers, Selection selection) {

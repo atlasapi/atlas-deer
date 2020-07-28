@@ -71,7 +71,8 @@ public class FiltersBuilder {
     public static BoolParameter buildTopicIdFilter(
             ImmutableList<ImmutableList<InclusionExclusionId>> topicIdSets
     ) {
-        List<BoolParameter> topicIdParameters = new ArrayList<>();
+        SingleClauseBoolParameter.Builder boolTopicIdBuilder =
+                SingleClauseBoolParameter.builder(OccurrenceClause.SHOULD);
 
         for (List<InclusionExclusionId> idSet : topicIdSets) {
 
@@ -85,10 +86,11 @@ public class FiltersBuilder {
                     boolParameterBuilder.addValue(id.getId().longValue(), OccurrenceClause.MUST_NOT);
                 }
             }
-            topicIdParameters.add(boolParameterBuilder.build());
+
+            boolTopicIdBuilder.addParameter(boolParameterBuilder.build());
         }
 
-        return new SingleClauseBoolParameter(topicIdParameters, OccurrenceClause.SHOULD);
+        return boolTopicIdBuilder.build();
     }
 
     private static BoolParameter buildAvailabilityFilter() {

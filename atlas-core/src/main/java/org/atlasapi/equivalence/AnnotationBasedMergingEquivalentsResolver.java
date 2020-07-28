@@ -14,7 +14,6 @@ import javax.annotation.Nullable;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 
@@ -53,7 +52,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
             Iterable<Id> ids,
             Application application,
             Set<Annotation> activeAnnotations,
-            AttributeQuerySet operands
+            Set<AttributeQuery<?>> operands
     ) {
         if (activeAnnotations.contains(Annotation.NON_MERGED)) {
             return resolver.resolveIdsWithoutEquivalence(
@@ -88,7 +87,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
 
     @Nullable
     private ConsistencyLevel getRequestedReadConsistencyLevel(
-            AttributeQuerySet operands,
+            Set<AttributeQuery<?>> operands,
             AccessRoles accessRoles
     ) {
         if (operands.stream().anyMatch(isHigherReadConsistency())) {

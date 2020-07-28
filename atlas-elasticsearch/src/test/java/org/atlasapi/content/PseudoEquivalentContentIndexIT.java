@@ -5,7 +5,6 @@ import java.util.concurrent.ExecutionException;
 
 import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraSecondaryIndex;
@@ -71,7 +70,7 @@ public class PseudoEquivalentContentIndexIT {
         indexAndRefresh(item1, item2, item3);
 
         ListenableFuture<IndexQueryResult> result = contentIndex.query(
-                AttributeQuerySet.create(ImmutableList.of()),
+                Set<AttributeQuery<?>>.create(ImmutableList.of()),
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all()
         );
