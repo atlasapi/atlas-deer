@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.metabroadcast.common.stream.MoreCollectors;
-
-import org.atlasapi.content.v2.model.udt.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
@@ -17,6 +15,7 @@ import org.atlasapi.content.v2.model.udt.CrewMember;
 import org.atlasapi.content.v2.model.udt.Image;
 import org.atlasapi.content.v2.model.udt.Interval;
 import org.atlasapi.content.v2.model.udt.KeyPhrase;
+import org.atlasapi.content.v2.model.udt.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.Priority;
 import org.atlasapi.content.v2.model.udt.Rating;
 import org.atlasapi.content.v2.model.udt.Ref;
@@ -30,13 +29,12 @@ import org.atlasapi.content.v2.model.udt.UpdateTimes;
 import org.atlasapi.util.NullOrEmptyEquality;
 import org.joda.time.Instant;
 
+import javax.annotation.Nullable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
-import javax.annotation.Nullable;
 
 public class Clip implements ContentIface {
 
@@ -606,7 +604,10 @@ public class Clip implements ContentIface {
     public static class RestrictionWithTimes {
 
         public static final Comparator<RestrictionWithTimes> COMPARATOR =
-                Comparator.comparing(r -> r.getRestriction().getCanonicalUri());
+                Comparator.comparing(
+                        r -> r.getRestriction().getCanonicalUri(),
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                );
 
         private Restriction restriction;
         private UpdateTimes updateTimes;
