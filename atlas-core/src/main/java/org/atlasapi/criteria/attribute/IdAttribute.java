@@ -1,5 +1,7 @@
 package org.atlasapi.criteria.attribute;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.operator.ComparableOperator;
@@ -16,18 +18,25 @@ public class IdAttribute extends Attribute<Id> {
 
     private IdAttribute(
             String name,
-            ChildTypeMapping<Long> mapping,
+            @Nullable ChildTypeMapping<Long> directMapping,
             Class<? extends Identified> target
     ) {
-        super(name, mapping, target);
+        super(name, directMapping, target);
     }
 
     public static IdAttribute create(
             String name,
-            ChildTypeMapping<Long> mapping,
+            ChildTypeMapping<Long> directMapping,
             Class<? extends Identified> target
     ) {
-        return new IdAttribute(name, mapping, target);
+        return new IdAttribute(name, directMapping, target);
+    }
+
+    public static IdAttribute create(
+            String name,
+            Class<? extends Identified> target
+    ) {
+        return new IdAttribute(name, null, target);
     }
 
     @Override

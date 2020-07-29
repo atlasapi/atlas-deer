@@ -261,7 +261,7 @@ public class ScheduleQueryExecutorImplTest {
                 ImmutableSet.of(itemId),
                 application,
                 ActiveAnnotations.standard().all(),
-                Set<AttributeQuery<?>>.create(ImmutableSet.of())
+                ImmutableSet.of()
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
                         itemId,
@@ -278,7 +278,7 @@ public class ScheduleQueryExecutorImplTest {
                 ImmutableSet.of(itemId),
                 application,
                 ActiveAnnotations.standard().all(),
-                Set<AttributeQuery<?>>.create(ImmutableSet.of())
+                ImmutableSet.of()
         );
 
     }

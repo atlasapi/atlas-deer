@@ -43,7 +43,7 @@ public abstract class Query<T> {
 
     public abstract boolean isListQuery();
 
-    public abstract Set<AttributeQuery<?>> getOperands();
+    public abstract Iterable<AttributeQuery<?>> getOperands();
 
     public abstract Id getOnlyId();
 

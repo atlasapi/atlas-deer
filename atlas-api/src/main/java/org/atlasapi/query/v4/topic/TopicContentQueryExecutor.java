@@ -4,7 +4,7 @@ import java.util.Set;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
@@ -40,12 +40,12 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
     private static final long QUERY_TIMEOUT = 60000;
 
     private final TopicResolver topicResolver;
-    private final ContentIndex index;
+    private final ContentSearcher index;
     private final MergingEquivalentsResolver<Content> contentResolver;
 
     private TopicContentQueryExecutor(
             TopicResolver topicResolver,
-            ContentIndex index,
+            ContentSearcher index,
             MergingEquivalentsResolver<Content> equivalentsResolver
     ) {
         this.topicResolver = checkNotNull(topicResolver);
@@ -55,7 +55,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
 
     public static TopicContentQueryExecutor create(
             TopicResolver topicResolver,
-            ContentIndex index,
+            ContentSearcher index,
             MergingEquivalentsResolver<Content> equivalentsResolver
     ) {
         return new TopicContentQueryExecutor(topicResolver, index, equivalentsResolver);

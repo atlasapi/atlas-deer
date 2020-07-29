@@ -83,7 +83,7 @@ public class ChannelGroupQueryExecutorTest {
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelGroupId);
         when(channelQuery.getContext()).thenReturn(context);
-        when(channelQuery.getOperands()).thenReturn(Set<AttributeQuery<?>>.create(ImmutableSet.of()));
+        when(channelQuery.getOperands()).thenReturn(ImmutableSet.of());
 
         when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
                 channelGroupId)), anyBoolean()))
@@ -132,13 +132,10 @@ public class ChannelGroupQueryExecutorTest {
         when(attributeQuery.getAttributeName()).thenReturn("type");
         when(attributeQuery.getValue()).thenReturn(ImmutableList.of("platform"));
 
-        Attribute attribute = mock(Attribute.class);
+        Attribute<?> attribute = mock(Attribute.class);
         when(attributeQuery.getAttribute()).thenReturn(attribute);
-        when(attribute.getPath()).thenReturn(ImmutableList.of("path"));
 
-        Set<AttributeQuery<?>> attributeQueries = Set<AttributeQuery<?>>.create(
-                Sets.<AttributeQuery<Object>>newHashSet(attributeQuery)
-        );
+        Set<AttributeQuery<?>> attributeQueries = Sets.<AttributeQuery<?>>newHashSet(attributeQuery);
 
         when(channelQuery.getOperands()).thenReturn(attributeQueries);
 
@@ -185,7 +182,7 @@ public class ChannelGroupQueryExecutorTest {
         when(channelQuery.getContext()).thenReturn(context);
         when(channelQuery.getOnlyId()).thenReturn(channelGroupId);
         when(channelQuery.isListQuery()).thenReturn(false);
-        when(channelQuery.getOperands()).thenReturn(Set<AttributeQuery<?>>.create(ImmutableSet.of()));
+        when(channelQuery.getOperands()).thenReturn(ImmutableSet.of());
 
         when(testChannelGroup.getType()).thenReturn("platform");
         when(regionChannelGroupRef.getId()).thenReturn(regionChannelGroupId);
@@ -303,10 +300,8 @@ public class ChannelGroupQueryExecutorTest {
 
         Attribute attribute = mock(Attribute.class);
         when(attributeQuery.getAttribute()).thenReturn(attribute);
-        when(attribute.getPath()).thenReturn(ImmutableList.of("path"));
 
-        Set<AttributeQuery<?>> attributeQueries = Set<AttributeQuery<?>>.create(Sets.<AttributeQuery<Object>>newHashSet(
-                attributeQuery));
+        Set<AttributeQuery<?>> attributeQueries = Sets.<AttributeQuery<Object>>newHashSet(attributeQuery);
 
         when(channelQuery.getOperands()).thenReturn(attributeQueries);
 

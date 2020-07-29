@@ -44,9 +44,6 @@ import org.atlasapi.schedule.FlexibleBroadcastMatcher;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.topic.Topic;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -61,7 +58,7 @@ public class QueryModule {
     @Bean
     QueryExecutor<Topic> topicQueryExecutor() {
         return new IndexBackedTopicQueryExecutor(
-                persistenceModule.topicIndex(),
+                persistenceModule.topicSearcher(),
                 persistenceModule.topicStore()
         );
     }
@@ -70,7 +67,7 @@ public class QueryModule {
     public ContextualQueryExecutor<Topic, Content> topicContentQueryExecutor() {
         return TopicContentQueryExecutor.create(
                 persistenceModule.topicStore(),
-                persistenceModule.contentIndex(),
+                persistenceModule.contentSearcher(),
                 mergingContentResolver()
         );
     }
@@ -88,7 +85,7 @@ public class QueryModule {
     @Bean
     public QueryExecutor<Content> contentQueryExecutor() {
         return IndexBackedEquivalentContentQueryExecutor.create(
-                persistenceModule.contentIndex(),
+                persistenceModule.contentSearcher(),
                 mergingContentResolver()
         );
     }
@@ -138,7 +135,7 @@ public class QueryModule {
     public SearchResolver v4SearchResolver() {
         // FIXME externalize timeout
         return new ContentResolvingSearcher(
-                persistenceModule.contentSearcher(),
+                persistenceModule.contentTitleSearcher(),
                 persistenceModule.contentStore(),
                 60000
         );

@@ -1,5 +1,7 @@
 package org.atlasapi.criteria.attribute;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.operator.Operator;
@@ -12,49 +14,25 @@ public class StringAttribute extends Attribute<String> {
 
     private StringAttribute(
             String name,
-            Class<? extends Identified> target,
-            ChildTypeMapping<String> mapping
+            @Nullable ChildTypeMapping<String> directMapping,
+            Class<? extends Identified> target
     ) {
-        super(name, target, mapping);
+        super(name, directMapping, target);
     }
 
-    private StringAttribute(
+    public static StringAttribute create(
             String name,
-            String javaAttributeName,
-            Class<? extends Identified> target,
-            ChildTypeMapping<String> mapping
+            ChildTypeMapping<String> directMapping,
+            Class<? extends Identified> target
     ) {
-        super(name, javaAttributeName, target, mapping);
+        return new StringAttribute(name, directMapping, target);
     }
 
-    public static StringAttribute single(
+    public static StringAttribute create(
             String name,
             Class<? extends Identified> target
     ) {
-        return new StringAttribute(name, target, false);
-    }
-
-    public static StringAttribute single(
-            String name,
-            String javaAttributeName,
-            Class<? extends Identified> target
-    ) {
-        return new StringAttribute(name, javaAttributeName, target, false);
-    }
-
-    public static StringAttribute list(
-            String name,
-            Class<? extends Identified> target
-    ) {
-        return new StringAttribute(name, target, true);
-    }
-
-    public static StringAttribute list(
-            String name,
-            String javaAttributeName,
-            Class<? extends Identified> target
-    ) {
-        return new StringAttribute(name, javaAttributeName, target, true);
+        return new StringAttribute(name, null, target);
     }
 
     @Override

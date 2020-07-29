@@ -1,10 +1,12 @@
 package org.atlasapi.query.common;
 
+import java.util.Set;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.criteria.attribute.ContentAttributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.attributes.QueryAttributeParser;
@@ -46,7 +48,7 @@ public class ContextualQueryParserTest {
         when(queryContextParser.getOptionalParameters()).thenReturn(ImmutableSet.<String>of());
         when(queryContextParser.getRequiredParameters()).thenReturn(ImmutableSet.<String>of());
         when(attributeParser.getOptionalParameters()).thenReturn(ImmutableSet.of("alias.namespace"));
-        this.parser = new ContextualQueryParser<Topic, Content>(Resource.TOPIC, Attributes.TOPIC_ID,
+        this.parser = new ContextualQueryParser<Topic, Content>(Resource.TOPIC, ContentAttributes.TOPIC_ID,
                 Resource.CONTENT, idCodec, attributeParser, queryContextParser
         );
     }
@@ -63,7 +65,7 @@ public class ContextualQueryParserTest {
         ).withParam("alias.namespace", "ns");
 
         when(attributeParser.parse(req))
-                .thenReturn(Set<AttributeQuery<?>>.create(ImmutableSet.of()));
+                .thenReturn(ImmutableSet.of());
         when(queryContextParser.parseContext(req))
                 .thenReturn(QueryContext.create(
                         mock(Application.class),

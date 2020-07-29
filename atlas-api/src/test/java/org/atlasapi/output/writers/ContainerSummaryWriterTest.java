@@ -57,7 +57,7 @@ public class ContainerSummaryWriterTest {
 
         when(outputContext.getApplication()).thenReturn(application);
         when(outputContext.getActiveAnnotations()).thenReturn(annotations);
-        when(outputContext.getOperands()).thenReturn(Set<AttributeQuery<?>>.create(ImmutableSet.of()));
+        when(outputContext.getOperands()).thenReturn(ImmutableSet.of());
 
         series = new Series(Id.valueOf(10L), Publisher.METABROADCAST);
         series.setTitle("title");
@@ -88,7 +88,7 @@ public class ContainerSummaryWriterTest {
                 series.getId(),
                 application,
                 annotations,
-                Set<AttributeQuery<?>>.create(ImmutableSet.of())
+                ImmutableSet.of()
         )).thenReturn(Optional.of(expectedSummary));
 
         containerSummaryWriter.write(episode, fieldWriter, outputContext);
@@ -102,7 +102,7 @@ public class ContainerSummaryWriterTest {
                 series.getId(),
                 application,
                 annotations,
-                Set<AttributeQuery<?>>.create(ImmutableSet.of())
+                ImmutableSet.of()
         )).thenReturn(Optional.absent());
 
         containerSummaryWriter.write(episode, fieldWriter, outputContext);

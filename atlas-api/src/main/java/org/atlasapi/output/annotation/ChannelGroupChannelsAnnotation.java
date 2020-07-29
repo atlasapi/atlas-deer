@@ -9,7 +9,7 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
-import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.criteria.attribute.ContentAttributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -49,7 +49,7 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ResolvedCha
                 .collect(Collectors.toList());
 
         String genre = ctxt.getRequest()
-                .getParameter(Attributes.CHANNEL_GROUP_CHANNEL_GENRES.externalName());
+                .getParameter(ContentAttributes.CHANNEL_GROUP_CHANNEL_GENRES.externalName());
 
         if (!Strings.isNullOrEmpty(genre)) {
             ImmutableSet<String> genres = ImmutableSet.copyOf(Splitter.on(',')

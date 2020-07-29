@@ -1,5 +1,7 @@
 package org.atlasapi.criteria.attribute;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.DateTimeAttributeQuery;
 import org.atlasapi.criteria.operator.DateTimeOperator;
@@ -16,18 +18,25 @@ public class DateTimeAttribute extends Attribute<DateTime> {
 
     private DateTimeAttribute(
             String name,
-            InstantMapping mapping,
+            @Nullable InstantMapping directMapping,
             Class<? extends Identified> target
     ) {
-        super(name, mapping, target);
+        super(name, directMapping, target);
     }
 
     public static DateTimeAttribute create(
             String name,
-            InstantMapping mapping,
+            InstantMapping directMapping,
             Class<? extends Identified> target
     ) {
-        return new DateTimeAttribute(name, mapping, target);
+        return new DateTimeAttribute(name, directMapping, target);
+    }
+
+    public static DateTimeAttribute create(
+            String name,
+            Class<? extends Identified> target
+    ) {
+        return new DateTimeAttribute(name, null, target);
     }
 
     @Override

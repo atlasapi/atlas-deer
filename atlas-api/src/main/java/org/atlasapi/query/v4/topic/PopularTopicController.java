@@ -18,7 +18,7 @@ import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
-import org.atlasapi.topic.PopularTopicIndex;
+import org.atlasapi.topic.PopularTopicSearcher;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
 
@@ -43,7 +43,7 @@ public class PopularTopicController {
 
     private final DateTimeInQueryParser dateTimeInQueryParser = new DateTimeInQueryParser();
     private final TopicResolver resolver;
-    private final PopularTopicIndex index;
+    private final PopularTopicSearcher searcher;
     private final QueryResultWriter<Topic> resultWriter;
     private final ApplicationFetcher applicationFetcher;
 
@@ -51,12 +51,12 @@ public class PopularTopicController {
 
     public PopularTopicController(
             TopicResolver resolver,
-            PopularTopicIndex index,
+            PopularTopicSearcher searcher,
             QueryResultWriter<Topic> resultWriter,
             ApplicationFetcher applicationFetcher
     ) {
         this.resolver = resolver;
-        this.index = index;
+        this.searcher = searcher;
         this.resultWriter = resultWriter;
         this.applicationFetcher = applicationFetcher;
     }
@@ -81,7 +81,7 @@ public class PopularTopicController {
                     dateTimeInQueryParser.parse(from),
                     dateTimeInQueryParser.parse(to)
             );
-            ListenableFuture<FluentIterable<Id>> topicIds = index.popularTopics(
+            ListenableFuture<FluentIterable<Id>> topicIds = searcher.popularTopics(
                     interval,
                     selection
             );

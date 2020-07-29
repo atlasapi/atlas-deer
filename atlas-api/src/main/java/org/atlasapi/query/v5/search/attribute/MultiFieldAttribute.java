@@ -6,9 +6,9 @@ import java.util.stream.Collectors;
 
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 
-import com.metabroadcast.sherlock.client.search.helpers.OccurrenceClause;
-import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
-import com.metabroadcast.sherlock.client.search.parameter.SingleClauseBoolParameter;
+import com.metabroadcast.sherlock.client.helpers.OccurrenceClause;
+import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleClauseBoolParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 public class MultiFieldAttribute<FROM, TO, M extends ChildTypeMapping<TO>> extends

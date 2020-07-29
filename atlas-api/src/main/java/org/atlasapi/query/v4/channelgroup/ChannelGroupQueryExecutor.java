@@ -24,7 +24,7 @@ import org.atlasapi.channel.Region;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.criteria.attribute.ContentAttributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
@@ -82,7 +82,8 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 Futures.transform(
                         channelGroupResolver.resolveIds(
                                 ImmutableSet.of(query.getOnlyId()),
-                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(Attributes.REFRESH_CACHE_PARAM))
+                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(
+                                        ContentAttributes.REFRESH_CACHE_PARAM))
                         ),
                         (Resolved<ChannelGroup<?>> resolved) -> {
                             if (resolved.getResources().isEmpty()) {
@@ -95,11 +96,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     .first()
                                     .get();
 
-                            boolean queryHasOperands = !query.getOperands().isEmpty();
+                            boolean queryHasOperands = !Iterables.isEmpty(query.getOperands());
                             if (queryHasOperands) {
                                 for (AttributeQuery<?> attributeQuery : query.getOperands()) {
                                     if (attributeQuery.getAttributeName()
-                                            .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
+                                            .equals(ContentAttributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
                                         List<Id> dttIds = (List<Id>) attributeQuery.getValue();
                                         if (!dttIds.isEmpty() && dttIds.contains(channelGroup.getId())) {
                                             filterDttChannels(channelGroup);
@@ -107,7 +108,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     }
 
                                     if (attributeQuery.getAttributeName()
-                                            .equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
+                                            .equals(ContentAttributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
                                         List<Id> ipIds = (List<Id>) attributeQuery.getValue();
                                         if (!ipIds.isEmpty() && ipIds.contains(channelGroup.getId())) {
                                             filterIpChannels(channelGroup);
@@ -159,7 +160,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             if (attributeQuery.getAttributeName()
-                    .equals(Attributes.CHANNEL_GROUP_IDS.externalName())) {
+                    .equals(ContentAttributes.CHANNEL_GROUP_IDS.externalName())) {
                 lids = (List<Id>) attributeQuery.getValue();
             }
         }
@@ -180,7 +181,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     lids,
                                     Boolean.parseBoolean(query.getContext()
                                             .getRequest()
-                                            .getParameter(Attributes.REFRESH_CACHE_PARAM)
+                                            .getParameter(ContentAttributes.REFRESH_CACHE_PARAM)
                                     )
                             ),
                             (Resolved<ChannelGroup<?>> input) -> input.getResources()
@@ -194,7 +195,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             if (attributeQuery.getAttributeName()
-                    .equals(Attributes.CHANNEL_GROUP_TYPE.externalName())) {
+                    .equals(ContentAttributes.CHANNEL_GROUP_TYPE.externalName())) {
                 final String channelGroupType = attributeQuery.getValue().get(0).toString();
                 channelGroups = channelGroups.stream()
                         .filter(channelGroup -> channelGroupType.equals(channelGroup.getType()))
@@ -202,7 +203,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             }
 
             if (attributeQuery.getAttributeName()
-                    .equals(Attributes.SOURCE.externalName())) {
+                    .equals(ContentAttributes.SOURCE.externalName())) {
                 channelGroups = channelGroups.stream()
                         .filter(channelGroup -> channelGroup.getSource()
                                 .key()
@@ -227,7 +228,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             if (attributeQuery.getAttributeName()
-                    .equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
+                    .equals(ContentAttributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
                 List<Id> dttIds = (List<Id>) attributeQuery.getValue();
                 channelGroups.forEach(channelGroup -> {
                     if (dttIds.contains(channelGroup.getId())) {
@@ -237,7 +238,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             }
 
             if (attributeQuery.getAttributeName()
-                    .equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
+                    .equals(ContentAttributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
                 List<Id> ipIds = (List<Id>) attributeQuery.getValue();
                 channelGroups.forEach(channelGroup -> {
                     if (ipIds.contains(channelGroup.getId())) {

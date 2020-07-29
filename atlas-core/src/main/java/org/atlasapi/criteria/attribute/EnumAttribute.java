@@ -1,5 +1,7 @@
 package org.atlasapi.criteria.attribute;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.EnumAttributeQuery;
 import org.atlasapi.criteria.operator.EqualsOperator;
@@ -16,20 +18,28 @@ public class EnumAttribute<T extends Enum<T>> extends Attribute<T> {
     private EnumAttribute(
             String name,
             Class<T> type,
-            KeywordMapping<String> mapping,
+            @Nullable KeywordMapping<String> directMapping,
             Class<? extends Identified> target
     ) {
-        super(name, mapping, target);
+        super(name, directMapping, target);
         this.type = type;
     }
 
     public static <T extends Enum<T>> EnumAttribute<T> create(
             String name,
             Class<T> type,
-            KeywordMapping<String> mapping,
+            KeywordMapping<String> directMapping,
             Class<? extends Identified> target
     ) {
-        return new EnumAttribute<>(name, type, mapping, target);
+        return new EnumAttribute<>(name, type, directMapping, target);
+    }
+
+    public static <T extends Enum<T>> EnumAttribute<T> create(
+            String name,
+            Class<T> type,
+            Class<? extends Identified> target
+    ) {
+        return new EnumAttribute<>(name, type, null, target);
     }
 
     @Override

@@ -3,7 +3,7 @@ package org.atlasapi.query.v4.content;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class IndexBackedEquivalentContentQueryExecutorTest {
 
-    private @Mock ContentIndex contentIndex;
+    private @Mock ContentSearcher contentIndex;
     private @Mock MergingEquivalentsResolver<Content> equivalentContentResolver;
     private IndexBackedEquivalentContentQueryExecutor qe;
 
@@ -53,7 +53,7 @@ public class IndexBackedEquivalentContentQueryExecutorTest {
         when(equivalentContentResolver.resolveIds(ImmutableSet.of(query.getOnlyId()),
                 ctxt.getApplication(),
                 ImmutableSet.copyOf(ctxt.getAnnotations().values()),
-                Set<AttributeQuery<?>>.create(ImmutableSet.of())
+                ImmutableSet.of()
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>empty()));
 

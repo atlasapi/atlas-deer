@@ -1,5 +1,7 @@
 package org.atlasapi.criteria.attribute;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.BooleanAttributeQuery;
 import org.atlasapi.criteria.operator.EqualsOperator;
@@ -13,18 +15,25 @@ public class BooleanAttribute extends Attribute<Boolean> {
 
     private BooleanAttribute(
             String name,
-            BooleanMapping mapping,
+            @Nullable BooleanMapping directMapping,
             Class<? extends Identified> target
     ) {
-        super(name, mapping, target);
+        super(name, directMapping, target);
     }
 
     public static BooleanAttribute create(
             String name,
-            BooleanMapping mapping,
+            BooleanMapping directMapping,
             Class<? extends Identified> target
     ) {
-        return new BooleanAttribute(name, mapping, target);
+        return new BooleanAttribute(name, directMapping, target);
+    }
+
+    public static BooleanAttribute create(
+            String name,
+            Class<? extends Identified> target
+    ) {
+        return new BooleanAttribute(name, null, target);
     }
 
     @Override

@@ -16,7 +16,7 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.content.Content;
-import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.criteria.attribute.ContentAttributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -76,9 +76,9 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
 
     private OutputContext outputContext(QueryContext queryContext) throws IOException {
         String regionParam = queryContext.getRequest()
-                .getParameter(Attributes.REGION.externalName());
+                .getParameter(ContentAttributes.REGION.externalName());
         String platformParam = queryContext.getRequest()
-                .getParameter(Attributes.PLATFORM.externalName());
+                .getParameter(ContentAttributes.PLATFORM.externalName());
 
         OutputContext.Builder builder = OutputContext.builder(queryContext);
 

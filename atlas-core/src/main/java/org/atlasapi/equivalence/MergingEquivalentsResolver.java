@@ -15,7 +15,7 @@ public interface MergingEquivalentsResolver<E extends Equivalable<E>> {
             Iterable<Id> ids,
             Application application,
             Set<Annotation> activeAnnotations,
-            Set<AttributeQuery<?>> operands
+            Iterable<AttributeQuery<?>> operands
     );
 
 }

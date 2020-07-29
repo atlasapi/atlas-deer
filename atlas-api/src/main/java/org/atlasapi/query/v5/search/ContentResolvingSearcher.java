@@ -12,8 +12,8 @@ import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 
-import com.metabroadcast.sherlock.client.search.ContentSearcher;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
+import com.metabroadcast.sherlock.client.search.SherlockSearcher;
 
 import com.google.common.base.Function;
 import com.google.common.util.concurrent.Futures;
@@ -23,12 +23,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContentResolvingSearcher {
 
-    private final ContentSearcher searcher;
+    private final SherlockSearcher searcher;
     private final MergingEquivalentsResolver<Content> contentResolver;
     private final long timeout;
 
     public ContentResolvingSearcher(
-            ContentSearcher searcher,
+            SherlockSearcher searcher,
             MergingEquivalentsResolver<Content> contentResolver,
             long timeout
     ) {

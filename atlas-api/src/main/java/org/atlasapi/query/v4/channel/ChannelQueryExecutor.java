@@ -16,7 +16,7 @@ import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.criteria.attribute.ContentAttributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.channel.ChannelQuery;
@@ -85,7 +85,8 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                 Futures.transform(
                         channelResolver.resolveIds(
                                 ImmutableSet.of(query.getOnlyId()),
-                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(Attributes.REFRESH_CACHE_PARAM))
+                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(
+                                        ContentAttributes.REFRESH_CACHE_PARAM))
                         ),
                         (Function<Resolved<Channel>, QueryResult<ResolvedChannel>>) input -> {
                             if (input.getResources().isEmpty()) {
@@ -122,28 +123,28 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
             Object attributeValue = attributeQuery.getValue().get(0);
 
             switch (attributeQuery.getAttributeName()) {
-            case Attributes.ALIASES_NAMESPACE_PARAM:
+            case ContentAttributes.ALIASES_NAMESPACE_PARAM:
                 channelQueryBuilder.withAliasNamespace((String) attributeValue);
                 break;
-            case Attributes.ALIASES_VALUE_PARAM:
+            case ContentAttributes.ALIASES_VALUE_PARAM:
                 channelQueryBuilder.withAliasValue((String) attributeValue);
                 break;
-            case Attributes.AVAILABLE_FROM_PARAM:
+            case ContentAttributes.AVAILABLE_FROM_PARAM:
                 channelQueryBuilder.withAvailableFrom((Publisher) attributeValue);
                 break;
-            case Attributes.BROADCASTER_PARAM:
+            case ContentAttributes.BROADCASTER_PARAM:
                 channelQueryBuilder.withBroadcaster((Publisher) attributeValue);
                 break;
-            case Attributes.MEDIA_TYPE_PARAM:
+            case ContentAttributes.MEDIA_TYPE_PARAM:
                 channelQueryBuilder.withMediaType(
                         org.atlasapi.media.entity.MediaType.valueOf(
                                 attributeValue.toString().toUpperCase()
                         )
                 );
-            case Attributes.ORDER_BY_PARAM:
+            case ContentAttributes.ORDER_BY_PARAM:
                 ordering = ordering(attributeValue.toString());
                 break;
-            case Attributes.ADVERTISED_FROM_PARAM:
+            case ContentAttributes.ADVERTISED_FROM_PARAM:
                 channelQueryBuilder.withAdvertisedOn(DateTime.now(DateTimeZone.UTC));
                 break;
             default:

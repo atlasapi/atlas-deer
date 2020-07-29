@@ -37,11 +37,11 @@ import org.atlasapi.query.v5.search.attribute.SherlockParameter;
 
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
-import com.metabroadcast.sherlock.client.search.parameter.Parameter;
-import com.metabroadcast.sherlock.client.search.parameter.SearchParameter;
-import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
-import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
-import com.metabroadcast.sherlock.client.search.scoring.QueryWeighting;
+import com.metabroadcast.sherlock.client.parameter.Parameter;
+import com.metabroadcast.sherlock.client.parameter.SearchParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.parameter.TermParameter;
+import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
@@ -64,7 +64,7 @@ public class SearchController {
     private final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
     private static final String EXISTS_KEYWORD = "nonNull";
     private static final String NON_EXISTS_KEYWORD = "null";
-    private static final ContentMapping CONTENT = IndexMapping.getContent();
+    private static final ContentMapping CONTENT_MAPPING = IndexMapping.getContentMapping();
 
     private static final String ANNOTATIONS_PARAM = "annotations";
     private static final String QUERY_PARAM = "q";
@@ -127,9 +127,9 @@ public class SearchController {
                 queryBuilder = SearchQuery.builder();
             } else {
                 if (queryContext.getAnnotations().values().contains(Annotation.NO_SMART_SEARCH)) {
-                    queryBuilder = SearchQuery.getDefaultQuerySearcher(query, false);
+                    queryBuilder = SearchQuery.getDefaultContentQuerySearcher(query, false);
                 } else {
-                    queryBuilder = SearchQuery.getDefaultQuerySearcher(query, true);
+                    queryBuilder = SearchQuery.getDefaultContentQuerySearcher(query, true);
                 }
             }
 
@@ -225,7 +225,7 @@ public class SearchController {
             } else if (parameter == SherlockParameter.PUBLISHER) {
                 for (String enabledReadSourceKey : enabledReadSourcesKeys) {
                     sherlockParameters.add(TermParameter.of(
-                            CONTENT.getSource().getKey(),
+                            CONTENT_MAPPING.getSource().getKey(),
                             enabledReadSourceKey));
                 }
             }
@@ -235,6 +235,6 @@ public class SearchController {
     }
 
     private QueryWeighting parseQueryWeighting(HttpServletRequest request) {
-        return QueryWeighting.defaultQueryWeighting();
+        return QueryWeighting.defaultContentQueryWeighting();
     }
 }

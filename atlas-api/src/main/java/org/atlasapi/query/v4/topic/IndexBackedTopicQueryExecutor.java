@@ -13,7 +13,7 @@ import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.topic.Topic;
-import org.atlasapi.topic.TopicIndex;
+import org.atlasapi.topic.TopicSearcher;
 import org.atlasapi.topic.TopicResolver;
 
 import com.metabroadcast.common.query.Selection;
@@ -30,10 +30,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
 
-    private final TopicIndex index;
+    private final TopicSearcher index;
     private final TopicResolver resolver;
 
-    public IndexBackedTopicQueryExecutor(TopicIndex index, TopicResolver resolver) {
+    public IndexBackedTopicQueryExecutor(TopicSearcher index, TopicResolver resolver) {
         this.index = checkNotNull(index);
         this.resolver = checkNotNull(resolver);
     }
@@ -43,8 +43,8 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
         ImmutableList<Id> topicIds = ImmutableList.of();
         boolean queryOnlyIds = false;
         if(query.isListQuery()) {
-            Set<AttributeQuery<?>> set = query.getOperands();
-            if (set.size() == 1) {
+            Iterable<AttributeQuery<?>> set = query.getOperands();
+            if (Iterables.size(set) == 1) {
                 AttributeQuery<?> attribute = set.iterator().next();
                 if (attribute.getAttributeName().equalsIgnoreCase("id")) {
                     topicIds = attribute.getValue().stream()

@@ -4,8 +4,8 @@ import javax.annotation.Nonnull;
 
 import org.atlasapi.query.common.coercers.BooleanCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
-import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.BooleanMapping;
 
 public class BooleanAttribute extends TermAttribute<Boolean, BooleanMapping> {

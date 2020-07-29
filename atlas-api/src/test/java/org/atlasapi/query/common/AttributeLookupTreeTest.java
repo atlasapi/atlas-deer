@@ -2,7 +2,7 @@ package org.atlasapi.query.common;
 
 import java.util.Set;
 
-import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.criteria.attribute.ContentAttributes;
 import org.atlasapi.query.common.attributes.AttributeLookupTree;
 
 import org.junit.Test;
@@ -20,7 +20,7 @@ public class AttributeLookupTreeTest {
     public void testAttributeLookup() {
         AttributeLookupTree tree = AttributeLookupTree.create();
 
-        tree.put(Attributes.ALIASES_NAMESPACE);
+        tree.put(ContentAttributes.ALIASES_NAMESPACE);
 
         assertFalse(tree.attributeFor("").isPresent());
         assertFalse(tree.attributeFor("w").isPresent());
@@ -30,7 +30,7 @@ public class AttributeLookupTreeTest {
         assertTrue(tree.attributeFor("aliases.namespace.beginning").isPresent());
         assertTrue(tree.attributeFor("aliases.namespace.equals").isPresent());
 
-        tree.put(Attributes.ALIASES_VALUE);
+        tree.put(ContentAttributes.ALIASES_VALUE);
 
         assertFalse(tree.attributeFor("").isPresent());
         assertFalse(tree.attributeFor("w").isPresent());
@@ -48,10 +48,10 @@ public class AttributeLookupTreeTest {
     public void testDoesntProduceNullWhenBestMatchIsNonLeafNode() {
         AttributeLookupTree tree = AttributeLookupTree.create();
 
-        tree.put(Attributes.TAG_RELATIONSHIP);
-        tree.put(Attributes.TAG_SUPERVISED);
+        tree.put(ContentAttributes.TAG_RELATIONSHIP);
+        tree.put(ContentAttributes.TAG_SUPERVISED);
 
-        assertNotNull(tree.attributeFor(Attributes.TOPIC_ID.externalName()));
+        assertNotNull(tree.attributeFor(ContentAttributes.TOPIC_ID.externalName()));
 
     }
 
@@ -59,9 +59,9 @@ public class AttributeLookupTreeTest {
     public void testGetAllKeys() {
         AttributeLookupTree tree = AttributeLookupTree.create();
 
-        tree.put(Attributes.ID);
-        tree.put(Attributes.ALIASES_NAMESPACE);
-        tree.put(Attributes.ALIASES_VALUE);
+        tree.put(ContentAttributes.ID);
+        tree.put(ContentAttributes.ALIASES_NAMESPACE);
+        tree.put(ContentAttributes.ALIASES_VALUE);
 
         Set<String> keys = tree.allKeys();
         assertThat(keys.size(), is(3));
@@ -72,17 +72,17 @@ public class AttributeLookupTreeTest {
     public void getAllKeysWhenOneKeyIsPrefixOfAnother() throws Exception {
         AttributeLookupTree tree = AttributeLookupTree.create();
 
-        tree.put(Attributes.CONTENT_TITLE_PREFIX);
-        tree.put(Attributes.TITLE_BOOST);
+        tree.put(ContentAttributes.CONTENT_TITLE_PREFIX);
+        tree.put(ContentAttributes.TITLE_BOOST);
 
         Set<String> keys = tree.allKeys();
         assertThat(keys.size(), is(2));
         assertThat(
-                keys.contains(Attributes.CONTENT_TITLE_PREFIX.externalName()),
+                keys.contains(ContentAttributes.CONTENT_TITLE_PREFIX.externalName()),
                 is(true)
         );
         assertThat(
-                keys.contains(Attributes.TITLE_BOOST.externalName()),
+                keys.contains(ContentAttributes.TITLE_BOOST.externalName()),
                 is(true)
         );
     }

@@ -2,7 +2,6 @@ package org.atlasapi.system.bootstrap;
 
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.channel.Channel;
-import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.media.entity.Publisher;

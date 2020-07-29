@@ -2,8 +2,8 @@ package org.atlasapi.query.v5.search.attribute;
 
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.BoolParameter;
-import com.metabroadcast.sherlock.client.search.parameter.SingleClauseBoolParameter;
+import com.metabroadcast.sherlock.client.parameter.BoolParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleClauseBoolParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 public abstract class SherlockBoolAttribute<FROM, TO, M extends ChildTypeMapping<TO>> extends

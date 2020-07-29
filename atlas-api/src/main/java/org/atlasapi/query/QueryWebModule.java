@@ -16,7 +16,8 @@ import org.atlasapi.content.ContentType;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.Specialization;
-import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.criteria.attribute.ContentAttributes;
+import org.atlasapi.criteria.attribute.TopicAttributes;
 import org.atlasapi.event.Event;
 import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
@@ -166,7 +167,7 @@ import org.atlasapi.query.v5.search.ContentResolvingSearcher;
 import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.source.Sources;
-import org.atlasapi.topic.PopularTopicIndex;
+import org.atlasapi.topic.PopularTopicSearcher;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
 
@@ -292,7 +293,7 @@ public class QueryWebModule {
 
     private
     @Autowired
-    PopularTopicIndex popularTopicIndex;
+    PopularTopicSearcher popularTopicSearcher;
 
     private
     @Autowired
@@ -409,7 +410,7 @@ public class QueryWebModule {
         );
 
         ContextualQueryParser<Topic, Content> parser = new ContextualQueryParser<>(
-                Resource.TOPIC, Attributes.TOPIC_ID, Resource.CONTENT, idCodec(),
+                Resource.TOPIC, ContentAttributes.TOPIC_ID, Resource.CONTENT, idCodec(),
                 contentQueryAttributeParser(),
                 contextParser
         );
@@ -500,115 +501,115 @@ public class QueryWebModule {
         return QueryAttributeParser.create(
                 ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
                         QueryAtomParser.create(
-                                Attributes.ID,
+                                ContentAttributes.ID,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.CONTENT_TYPE,
+                                ContentAttributes.CONTENT_TYPE,
                                 EnumCoercer.create(ContentType.fromKey())
                         ),
                         QueryAtomParser.create(
-                                Attributes.SOURCE,
+                                ContentAttributes.SOURCE,
                                 EnumCoercer.create(Sources.fromKey())
                         ),
                         QueryAtomParser.create(
-                                Attributes.ALIASES_NAMESPACE,
+                                ContentAttributes.ALIASES_NAMESPACE,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.ALIASES_VALUE,
+                                ContentAttributes.ALIASES_VALUE,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.LOCATIONS_ALIASES_NAMESPACE,
+                                ContentAttributes.LOCATIONS_ALIASES_NAMESPACE,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.LOCATIONS_ALIASES_VALUE,
+                                ContentAttributes.LOCATIONS_ALIASES_VALUE,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.TAG_RELATIONSHIP,
+                                ContentAttributes.TAG_RELATIONSHIP,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.TAG_SUPERVISED,
+                                ContentAttributes.TAG_SUPERVISED,
                                 BooleanCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.TAG_WEIGHTING,
+                                ContentAttributes.TAG_WEIGHTING,
                                 FloatCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.CONTENT_TITLE_PREFIX,
+                                ContentAttributes.CONTENT_TITLE_PREFIX,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.GENRE,
+                                ContentAttributes.GENRE,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.CONTENT_GROUP,
+                                ContentAttributes.CONTENT_GROUP,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.SPECIALIZATION,
+                                ContentAttributes.SPECIALIZATION,
                                 EnumCoercer.create(Specialization.FROM_KEY())
                         ),
                         QueryAtomParser.create(
-                                Attributes.Q,
+                                ContentAttributes.Q,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.TITLE_BOOST,
+                                ContentAttributes.TITLE_BOOST,
                                 FloatCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.ORDER_BY,
+                                ContentAttributes.ORDER_BY,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.REGION,
+                                ContentAttributes.REGION,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.PLATFORM,
+                                ContentAttributes.PLATFORM,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.CHANNEL_GROUP_DTT_CHANNELS,
+                                ContentAttributes.CHANNEL_GROUP_DTT_CHANNELS,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.CHANNEL_GROUP_IP_CHANNELS,
+                                ContentAttributes.CHANNEL_GROUP_IP_CHANNELS,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.BROADCAST_WEIGHT,
+                                ContentAttributes.BROADCAST_WEIGHT,
                                 FloatCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.SEARCH_TOPIC_ID,
+                                ContentAttributes.SEARCH_TOPIC_ID,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.BRAND_ID,
+                                ContentAttributes.BRAND_ID,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.EPISODE_BRAND_ID,
+                                ContentAttributes.EPISODE_BRAND_ID,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.ACTIONABLE_FILTER_PARAMETERS,
+                                ContentAttributes.ACTIONABLE_FILTER_PARAMETERS,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.SERIES_ID,
+                                ContentAttributes.SERIES_ID,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.HIGHER_READ_CONSISTENCY,
+                                ContentAttributes.HIGHER_READ_CONSISTENCY,
                                 BooleanCoercer.create()
                         )
                 )
@@ -741,35 +742,35 @@ public class QueryWebModule {
         return QueryAttributeParser.create(
                 ImmutableList.of(
                         QueryAtomParser.create(
-                                Attributes.ID,
+                                ContentAttributes.ID,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.CHANNEL_GROUP_TYPE,
+                                ContentAttributes.CHANNEL_GROUP_TYPE,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.CHANNEL_GROUP_CHANNEL_GENRES,
+                                ContentAttributes.CHANNEL_GROUP_CHANNEL_GENRES,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.CHANNEL_GROUP_DTT_CHANNELS,
+                                ContentAttributes.CHANNEL_GROUP_DTT_CHANNELS,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.CHANNEL_GROUP_IP_CHANNELS,
+                                ContentAttributes.CHANNEL_GROUP_IP_CHANNELS,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.SOURCE,
+                                ContentAttributes.SOURCE,
                                 EnumCoercer.create(Sources.fromKey())
                         ),
                         QueryAtomParser.create(
-                                Attributes.CHANNEL_GROUP_REFRESH_CACHE,
+                                ContentAttributes.CHANNEL_GROUP_REFRESH_CACHE,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.CHANNEL_GROUP_IDS,
+                                ContentAttributes.CHANNEL_GROUP_IDS,
                                 IdCoercer.create(idCodec())
                         )
                 )
@@ -796,39 +797,39 @@ public class QueryWebModule {
         return QueryAttributeParser.create(
                 ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
                         QueryAtomParser.create(
-                                Attributes.ID,
+                                ContentAttributes.ID,
                                 IdCoercer.create(idCodec())
                         ),
                         QueryAtomParser.create(
-                                Attributes.AVAILABLE_FROM,
+                                ContentAttributes.AVAILABLE_FROM,
                                 EnumCoercer.create(Sources.fromKey())
                         ),
                         QueryAtomParser.create(
-                                Attributes.BROADCASTER,
+                                ContentAttributes.BROADCASTER,
                                 EnumCoercer.create(Sources.fromKey())
                         ),
                         QueryAtomParser.create(
-                                Attributes.ORDER_BY_CHANNEL,
+                                ContentAttributes.ORDER_BY_CHANNEL,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.ADVERTISED_ON,
+                                ContentAttributes.ADVERTISED_ON,
                                 BooleanCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.MEDIA_TYPE,
+                                ContentAttributes.MEDIA_TYPE,
                                 EnumCoercer.create(MediaType::fromKey)
                         ),
                         QueryAtomParser.create(
-                                Attributes.ALIASES_NAMESPACE,
+                                ContentAttributes.ALIASES_NAMESPACE,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.ALIASES_VALUE,
+                                ContentAttributes.ALIASES_VALUE,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
-                                Attributes.REFRESH_CACHE,
+                                ContentAttributes.REFRESH_CACHE,
                                 StringCoercer.create()
                         )
                 )
@@ -847,23 +848,23 @@ public class QueryWebModule {
                 QueryAttributeParser.create(
                         ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
                                 QueryAtomParser.create(
-                                        Attributes.ID,
+                                        TopicAttributes.ID,
                                         IdCoercer.create(idCodec())
                                 ),
                                 QueryAtomParser.create(
-                                        Attributes.TOPIC_TYPE,
+                                        TopicAttributes.TOPIC_TYPE,
                                         EnumCoercer.create(Topic.Type.fromKey())
                                 ),
                                 QueryAtomParser.create(
-                                        Attributes.SOURCE,
+                                        TopicAttributes.SOURCE,
                                         EnumCoercer.create(Sources.fromKey())
                                 ),
                                 QueryAtomParser.create(
-                                        Attributes.ALIASES_NAMESPACE,
+                                        TopicAttributes.ALIASES_NAMESPACE,
                                         StringCoercer.create()
                                 ),
                                 QueryAtomParser.create(
-                                        Attributes.ALIASES_VALUE,
+                                        TopicAttributes.ALIASES_VALUE,
                                         StringCoercer.create()
                                 )
                         )
@@ -884,19 +885,19 @@ public class QueryWebModule {
                 QueryAttributeParser.create(
                         ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
                                 QueryAtomParser.create(
-                                        Attributes.ID,
+                                        ContentAttributes.ID,
                                         IdCoercer.create(idCodec())
                                 ),
                                 QueryAtomParser.create(
-                                        Attributes.SOURCE,
+                                        ContentAttributes.SOURCE,
                                         EnumCoercer.create(Sources.fromKey())
                                 ),
                                 QueryAtomParser.create(
-                                        Attributes.ALIASES_NAMESPACE,
+                                        ContentAttributes.ALIASES_NAMESPACE,
                                         StringCoercer.create()
                                 ),
                                 QueryAtomParser.create(
-                                        Attributes.ALIASES_VALUE,
+                                        ContentAttributes.ALIASES_VALUE,
                                         StringCoercer.create()
                                 )
                         )
@@ -915,7 +916,7 @@ public class QueryWebModule {
         return StandardQueryParser.create(Resource.ORGANISATION,
                 QueryAttributeParser.create(ImmutableList.of(
                         QueryAtomParser.create(
-                                Attributes.ID,
+                                ContentAttributes.ID,
                                 IdCoercer.create(idCodec())
                         )
                 )),
@@ -927,7 +928,7 @@ public class QueryWebModule {
     PopularTopicController popularTopicController() {
         return new PopularTopicController(
                 topicResolver,
-                popularTopicIndex,
+                popularTopicSearcher,
                 new TopicQueryResultWriter(topicListWriter(), licenseWriter, requestWriter()),
                 configFetcher
         );

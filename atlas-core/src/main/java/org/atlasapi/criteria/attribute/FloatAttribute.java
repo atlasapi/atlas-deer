@@ -1,5 +1,7 @@
 package org.atlasapi.criteria.attribute;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.FloatAttributeQuery;
 import org.atlasapi.criteria.operator.ComparableOperator;
@@ -13,18 +15,25 @@ public class FloatAttribute extends Attribute<Float> {
 
     private FloatAttribute(
             String name,
-            FloatMapping mapping,
+            @Nullable FloatMapping directMapping,
             Class<? extends Identified> target
     ) {
-        super(name, mapping, target);
+        super(name, directMapping, target);
     }
 
-    private static FloatAttribute create(
+    public static FloatAttribute create(
             String name,
-            FloatMapping mapping,
+            FloatMapping directMapping,
             Class<? extends Identified> target
     ) {
-        return new FloatAttribute(name, mapping, target);
+        return new FloatAttribute(name, directMapping, target);
+    }
+
+    public static FloatAttribute create(
+            String name,
+            Class<? extends Identified> target
+    ) {
+        return new FloatAttribute(name, null, target);
     }
 
     @Override

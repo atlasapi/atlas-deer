@@ -1,5 +1,7 @@
 package org.atlasapi.criteria.attribute;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Identified;
 
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
@@ -10,16 +12,16 @@ public abstract class Attribute<T> implements QueryFactory<T> {
 
     protected final String name;
 
-    private final ChildTypeMapping<?> mapping;
+    private final ChildTypeMapping<?> directMapping;
     private final Class<? extends Identified> target;
 
     protected Attribute(
             String name,
-            ChildTypeMapping<?> mapping,
+            @Nullable ChildTypeMapping<?> directMapping,
             Class<? extends Identified> target
     ) {
         this.name = checkNotNull(name);
-        this.mapping = checkNotNull(mapping);
+        this.directMapping = directMapping;
         this.target = target;
     }
 
@@ -41,7 +43,8 @@ public abstract class Attribute<T> implements QueryFactory<T> {
         return name;
     }
 
-    public ChildTypeMapping<?> getMapping() {
-        return mapping;
+    @Nullable
+    public ChildTypeMapping<?> getDirectMapping() {
+        return directMapping;
     }
 }

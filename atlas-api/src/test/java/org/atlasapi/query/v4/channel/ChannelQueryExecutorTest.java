@@ -14,7 +14,7 @@ import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.BooleanAttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
-import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.criteria.attribute.ContentAttributes;
 import org.atlasapi.criteria.operator.EqualsOperator;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.criteria.operator.StringOperator;
@@ -124,9 +124,7 @@ public class ChannelQueryExecutorTest {
 
         when(channelQuery.isListQuery()).thenReturn(true);
         when(channelQuery.getContext()).thenReturn(context);
-        when(channelQuery.getOperands()).thenReturn(
-                Set<AttributeQuery<?>>.create(Sets.<AttributeQuery<Object>>newHashSet())
-        );
+        when(channelQuery.getOperands()).thenReturn(Sets.newHashSet());
         when(channelResolver.resolveChannels(any(ChannelQuery.class)))
                 .thenReturn(
                         Futures.immediateFuture(
@@ -240,9 +238,7 @@ public class ChannelQueryExecutorTest {
 
         when(channelQuery.isListQuery()).thenReturn(true);
         when(channelQuery.getContext()).thenReturn(context);
-        when(channelQuery.getOperands()).thenReturn(
-                Set<AttributeQuery<?>>.create(Sets.<AttributeQuery<Object>>newHashSet())
-        );
+        when(channelQuery.getOperands()).thenReturn(Sets.newHashSet());
 
         when(channelResolver.resolveChannels(any(ChannelQuery.class)))
                 .thenReturn(
@@ -292,12 +288,12 @@ public class ChannelQueryExecutorTest {
 
         StringOperator op = Operators.BEGINNING;
         AttributeQuery namespaceAttribute = new StringAttributeQuery(
-                Attributes.ALIASES_NAMESPACE,
+                ContentAttributes.ALIASES_NAMESPACE,
                 op,
                 ImmutableList.of("namespace")
         );
         AttributeQuery valueAttribute = new StringAttributeQuery(
-                Attributes.ALIASES_VALUE,
+                ContentAttributes.ALIASES_VALUE,
                 op,
                 ImmutableList.of("value")
         );
@@ -324,12 +320,10 @@ public class ChannelQueryExecutorTest {
 
         when(query.isListQuery()).thenReturn(true);
         when(query.getContext()).thenReturn(context);
-        when(query.getOperands()).thenReturn(
-                Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<Object>>of(
-                        namespaceAttribute,
-                        valueAttribute
-                ))
-        );
+        when(query.getOperands()).thenReturn(ImmutableList.<AttributeQuery<Object>>of(
+                namespaceAttribute,
+                valueAttribute
+        ));
 
         when(channelResolver.resolveChannelsWithAliases(any(ChannelQuery.class)))
                 .thenReturn(
@@ -359,17 +353,17 @@ public class ChannelQueryExecutorTest {
         StringOperator stringOperator = Operators.BEGINNING;
         EqualsOperator booleanOperator = Operators.EQUALS;
         AttributeQuery namespaceAttribute = new StringAttributeQuery(
-                Attributes.ALIASES_NAMESPACE,
+                ContentAttributes.ALIASES_NAMESPACE,
                 stringOperator,
                 ImmutableList.of("namespace")
         );
         AttributeQuery valueAttribute = new StringAttributeQuery(
-                Attributes.ALIASES_VALUE,
+                ContentAttributes.ALIASES_VALUE,
                 stringOperator,
                 ImmutableList.of("value")
         );
         AttributeQuery advertisedOnAttribute = new BooleanAttributeQuery(
-                Attributes.ADVERTISED_ON,
+                ContentAttributes.ADVERTISED_ON,
                 booleanOperator,
                 ImmutableList.of(true)
         );
@@ -399,11 +393,11 @@ public class ChannelQueryExecutorTest {
         when(query.isListQuery()).thenReturn(true);
         when(query.getContext()).thenReturn(context);
         when(query.getOperands()).thenReturn(
-                Set<AttributeQuery<?>>.create(ImmutableList.<AttributeQuery<Object>>of(
+                ImmutableList.<AttributeQuery<Object>>of(
                         namespaceAttribute,
                         valueAttribute,
                         advertisedOnAttribute
-                ))
+                )
         );
 
         when(channelResolver.resolveChannels(any(ChannelQuery.class)))

@@ -21,29 +21,16 @@ public class SearchQuery {
     private final float catchupWeighting;
     private final String type;
 
-    /**
-     * Use a Builder
-     */
-    @Deprecated
-    public SearchQuery(String term, Selection selection, Iterable<Publisher> includedPublishers,
-            float titleWeighting, float broadcastWeighting, float availabilityWeighting) {
-        this(
-                term,
-                selection,
-                Sets.<Specialization>newHashSet(),
-                includedPublishers,
-                titleWeighting,
-                broadcastWeighting,
-                availabilityWeighting,
-                null
-        );
-    }
-
-    public SearchQuery(String term, Selection selection,
+    private SearchQuery(
+            String term,
+            Selection selection,
             Iterable<Specialization> includedSpecializations,
             Iterable<Publisher> includedPublishers,
-            float titleWeighting, float broadcastWeighting, float availabilityWeighting,
-            String type) {
+            float titleWeighting,
+            float broadcastWeighting,
+            float availabilityWeighting,
+            String type
+    ) {
         this.term = term;
         this.selection = selection;
         this.titleWeighting = titleWeighting;
@@ -86,7 +73,7 @@ public class SearchQuery {
         return this.type;
     }
 
-    public static final Builder builder(String query) {
+    public static Builder builder(String query) {
         return new Builder(query);
     }
 
