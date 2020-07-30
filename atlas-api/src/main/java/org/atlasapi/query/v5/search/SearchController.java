@@ -42,6 +42,7 @@ import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.client.parameter.TermParameter;
 import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
+import com.metabroadcast.sherlock.common.SherlockIndex;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
@@ -148,6 +149,7 @@ public class SearchController {
                     .withQueryWeighting(parseQueryWeighting(request))
                     .withLimit(selection.getLimit())
                     .withOffset(selection.getOffset())
+                    .withIndex(SherlockIndex.CONTENT)
                     .build();
 
             QueryResult<Content> contentResult = searcher.search(searchQuery, queryContext);
