@@ -15,10 +15,9 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.query.common.coercers.IdCoercer;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.promise.Promise;
-import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
-import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
 public class ChannelGroupAttribute extends

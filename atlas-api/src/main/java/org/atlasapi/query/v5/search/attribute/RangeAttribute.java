@@ -5,9 +5,9 @@ import javax.annotation.Nonnull;
 import org.atlasapi.query.v5.search.coercer.Range;
 import org.atlasapi.query.v5.search.coercer.RangeCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
-import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
-import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
+import com.metabroadcast.sherlock.client.parameter.RangeParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
 
 public class RangeAttribute<T> extends

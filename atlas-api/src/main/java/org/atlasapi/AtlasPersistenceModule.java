@@ -97,8 +97,7 @@ import com.metabroadcast.common.properties.Parameter;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
 import com.metabroadcast.common.time.SystemClock;
-import com.metabroadcast.sherlock.client.search.ContentSearcher;
-import com.metabroadcast.sherlock.common.SherlockIndex;
+import com.metabroadcast.sherlock.client.search.SherlockSearcher;
 import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
 import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
 
@@ -448,15 +447,10 @@ public class AtlasPersistenceModule {
 
     @Bean
     @Primary
-    public ContentSearcher contentSearcherV5() {
-        return ContentSearcher.builder()
-                .withElasticSearchProcessor(
-                        new ElasticSearchProcessor(
-                                sherlockElasticSearchConfig().getElasticSearchClient()
-                        )
-                )
-                .withIndex(SherlockIndex.CONTENT)
-                .build();
+    public SherlockSearcher contentSearcherV5() {
+        return new SherlockSearcher(new ElasticSearchProcessor(
+                sherlockElasticSearchConfig().getElasticSearchClient()
+        ));
     }
 
     @Bean

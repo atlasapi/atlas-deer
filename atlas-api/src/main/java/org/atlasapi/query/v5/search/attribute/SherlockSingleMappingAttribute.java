@@ -2,8 +2,8 @@ package org.atlasapi.query.v5.search.attribute;
 
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.ExistParameter;
-import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.parameter.ExistParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 public abstract class SherlockSingleMappingAttribute<FROM, TO, M extends ChildTypeMapping<TO>>

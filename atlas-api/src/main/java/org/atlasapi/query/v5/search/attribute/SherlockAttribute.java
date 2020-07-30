@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import org.atlasapi.query.common.coercers.AttributeCoercer;
 import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 
-import com.metabroadcast.sherlock.client.search.parameter.Parameter;
+import com.metabroadcast.sherlock.client.parameter.Parameter;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 public abstract class SherlockAttribute<FROM, P extends Parameter, TO, M extends ChildTypeMapping<TO>> {
