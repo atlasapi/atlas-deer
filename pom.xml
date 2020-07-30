@@ -484,6 +484,11 @@
         <version>${spring.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.springframework.data</groupId>
+        <artifactId>spring-data-elasticsearch</artifactId>
+        <version>${spring.data.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-core</artifactId>
         <version>${jackson.version}</version>
@@ -580,6 +585,7 @@
     <metrics.version>3.0.1</metrics.version>
     <amq.version>5.15.10</amq.version>
     <spring.version>5.2.1.RELEASE</spring.version>
+    <spring.data.version>4.0.2.RELEASE</spring.data.version>
     <datastax.version>3.1.0</datastax.version>
     <jackson.version>2.11.1</jackson.version>
     <metrics-dw.version>3.1.2</metrics-dw.version>

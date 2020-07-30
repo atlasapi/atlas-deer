@@ -283,6 +283,10 @@
       <artifactId>client</artifactId>
       <version>${representative-id-service.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-elasticsearch</artifactId>
+    </dependency>
   </dependencies>
 
   <distributionManagement>
