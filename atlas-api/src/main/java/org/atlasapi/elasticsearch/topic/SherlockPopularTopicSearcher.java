@@ -10,6 +10,7 @@ import com.metabroadcast.sherlock.client.parameter.RangeParameter;
 import com.metabroadcast.sherlock.client.response.IdSearchQueryResponse;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.SherlockSearcher;
+import com.metabroadcast.sherlock.common.SherlockIndex;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 
 import com.google.common.collect.FluentIterable;
@@ -56,6 +57,7 @@ public class SherlockPopularTopicSearcher implements PopularTopicSearcher {
         SearchQuery searchQuery = SearchQuery.builder()
                 .addFilter(rangeParameter)
                 .addAggregation(topicIdAggregation)
+                .withIndex(SherlockIndex.CONTENT)
                 .build();
 
         ListenableFuture<IdSearchQueryResponse> response = sherlockSearcher.searchForIds(searchQuery);

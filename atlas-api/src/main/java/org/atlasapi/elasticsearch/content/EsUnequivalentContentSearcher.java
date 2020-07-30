@@ -28,6 +28,7 @@ import com.metabroadcast.sherlock.client.scoring.Weighting;
 import com.metabroadcast.sherlock.client.scoring.Weightings;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.SherlockSearcher;
+import com.metabroadcast.sherlock.common.SherlockIndex;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
@@ -141,6 +142,7 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
                                 contentMapping.getSource().getKey(),
                                 publishers)
                 )
+                .withIndex(SherlockIndex.CONTENT)
                 .withOffset(selection.getOffset())
                 .withLimit(selection.getLimit() == null ? DEFAULT_LIMIT : selection.getLimit());
 
