@@ -8,9 +8,7 @@ import org.atlasapi.criteria.operator.DateTimeOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.entity.Identified;
 
-import com.metabroadcast.sherlock.common.type.DateMapping;
 import com.metabroadcast.sherlock.common.type.InstantMapping;
-import com.metabroadcast.sherlock.common.type.JodaDateTimeMapping;
 
 import org.joda.time.DateTime;
 

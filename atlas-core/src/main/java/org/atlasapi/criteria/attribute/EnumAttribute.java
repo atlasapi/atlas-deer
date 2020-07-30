@@ -8,7 +8,6 @@ import org.atlasapi.criteria.operator.EqualsOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.entity.Identified;
 
-import com.metabroadcast.sherlock.common.type.JodaDateTimeMapping;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
 public class EnumAttribute<T extends Enum<T>> extends Attribute<T> {
