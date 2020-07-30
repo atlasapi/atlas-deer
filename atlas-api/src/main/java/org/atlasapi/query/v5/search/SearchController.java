@@ -32,16 +32,17 @@ import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.v2.ParameterChecker;
 import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
-import org.atlasapi.query.v5.search.attribute.SherlockSingleMappingAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockParameter;
+import org.atlasapi.query.v5.search.attribute.SherlockSingleMappingAttribute;
 
 import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.parameter.Parameter;
 import com.metabroadcast.sherlock.client.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.client.parameter.TermParameter;
 import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
+import com.metabroadcast.sherlock.common.SherlockIndex;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 
@@ -64,7 +65,7 @@ public class SearchController {
     private final Splitter SPLITTER = Splitter.on(",").omitEmptyStrings().trimResults();
     private static final String EXISTS_KEYWORD = "nonNull";
     private static final String NON_EXISTS_KEYWORD = "null";
-    private static final ContentMapping CONTENT_MAPPING = IndexMapping.getContentMapping();
+    private static final ContentMapping CONTENT = IndexMapping.getContentMapping();
 
     private static final String ANNOTATIONS_PARAM = "annotations";
     private static final String QUERY_PARAM = "q";
@@ -148,6 +149,7 @@ public class SearchController {
                     .withQueryWeighting(parseQueryWeighting(request))
                     .withLimit(selection.getLimit())
                     .withOffset(selection.getOffset())
+                    .withIndex(SherlockIndex.CONTENT)
                     .build();
 
             QueryResult<Content> contentResult = searcher.search(searchQuery, queryContext);
@@ -225,7 +227,7 @@ public class SearchController {
             } else if (parameter == SherlockParameter.PUBLISHER) {
                 for (String enabledReadSourceKey : enabledReadSourcesKeys) {
                     sherlockParameters.add(TermParameter.of(
-                            CONTENT_MAPPING.getSource().getKey(),
+                            CONTENT.getSource().getKey(),
                             enabledReadSourceKey));
                 }
             }

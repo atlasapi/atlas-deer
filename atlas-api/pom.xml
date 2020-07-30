@@ -286,12 +286,6 @@
     <dependency>
       <groupId>com.metabroadcast.sherlock</groupId>
       <artifactId>client-shaded</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>joda-time</groupId>
-          <artifactId>joda-time</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 

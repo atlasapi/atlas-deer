@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -80,7 +81,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -93,6 +96,10 @@ public class CqlContentStore implements ContentStore {
 
     private static final String METER_CALLED = "meter.called";
     private static final String METER_FAILURE = "meter.failure";
+
+    private static final ConcurrentMap<Id, AtomicLong> writeCounts = Maps.newConcurrentMap();
+    private static final ConcurrentMap<Id, AtomicLong> broadcastWriteCounts = Maps.newConcurrentMap();
+    private static final int writeRateToLog = 100;
 
     private final Session session;
     private final Mapper<org.atlasapi.content.v2.model.Content> mapper;
@@ -167,6 +174,13 @@ public class CqlContentStore implements ContentStore {
                     = resolvePreviousSerialized(content);
             Content previous = deserializeIfFull(previousSerialized);
 
+            if (content.getId() != null && content.getId().longValue() == 20408351) {
+                log.warn("Ignoring {} for now since it has a known Nitro API flip-flopping issue", content.getId());
+                return WriteResult.<Content, Content>result(content, false)
+                        .withPrevious(previous)
+                        .build();
+            }
+
             BatchStatement batch = new BatchStatement();
 
             Container container = resolveContainer(content);
@@ -228,7 +242,23 @@ public class CqlContentStore implements ContentStore {
                     content.toRef()
             ));
 
-            sendMessages(messages.build());
+            ImmutableList<ResourceUpdatedMessage> messagesList = messages.build();
+
+            for (ResourceUpdatedMessage message : messagesList) {
+                Id id = message.getUpdatedResource().getId();
+                AtomicLong count = writeCounts.get(id);
+                if (count == null) {
+                    writeCounts.putIfAbsent(id, new AtomicLong(0));
+                    count = writeCounts.get(id);
+                }
+                long newCount = count.incrementAndGet();
+                if (newCount % writeRateToLog == 0) {
+                    log.info("{} updated {} times", id, newCount);
+                }
+            }
+
+
+            sendMessages(messagesList);
 
 
             return new WriteResult<>(content, true, DateTime.now(), previous);
@@ -315,6 +345,17 @@ public class CqlContentStore implements ContentStore {
             }
 
             session.execute(batch);
+
+            Id id = item.getId();
+            AtomicLong count = broadcastWriteCounts.get(id);
+            if (count == null) {
+                broadcastWriteCounts.putIfAbsent(id, new AtomicLong(0));
+                count = broadcastWriteCounts.get(id);
+            }
+            long newCount = count.incrementAndGet();
+            if (newCount % writeRateToLog == 0) {
+                log.info("{} updated due to a broadcast {} times", id, newCount);
+            }
 
             sendMessages(ImmutableList.of(new ResourceUpdatedMessage(
                     UUID.randomUUID().toString(),

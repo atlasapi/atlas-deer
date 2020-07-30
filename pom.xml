@@ -527,7 +527,7 @@
       <dependency>
         <groupId>com.metabroadcast.sherlock</groupId>
         <artifactId>client-shaded</artifactId>
-        <version>1.071-SNAPSHOT</version>
+        <version>${sherlock.version}</version>
         <exclusions>
           <exclusion>
             <groupId>org.apache.logging.log4j</groupId>

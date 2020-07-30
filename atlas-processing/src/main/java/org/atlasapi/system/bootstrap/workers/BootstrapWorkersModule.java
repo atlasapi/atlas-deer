@@ -110,7 +110,8 @@ public class BootstrapWorkersModule {
             Publisher.all(),
             ImmutableSet.of(
                     Publisher.PA, Publisher.BBC_NITRO, Publisher.BT_BLACKOUT,
-                    Publisher.YOUVIEW, Publisher.YOUVIEW_SCOTLAND_RADIO, Publisher.YOUVIEW_BT
+                    Publisher.YOUVIEW, Publisher.YOUVIEW_SCOTLAND_RADIO, Publisher.YOUVIEW_BT,
+                    Publisher.YOUVIEW_JSON
             )
     );
 
