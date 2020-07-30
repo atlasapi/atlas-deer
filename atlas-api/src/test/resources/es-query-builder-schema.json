@@ -1,0 +1,52 @@
+{
+    "test" : {
+        "properties" : {
+            "minusone" : {
+                "type" : "integer"
+            },
+            "zero" : {
+                    "type" : "string",
+                    "index" : "not_analyzed"
+            },
+            "one" : {
+                "type" : "nested",
+                "properties" : {
+                    "first" : {
+                        "type" : "string",
+                        "index" : "not_analyzed"
+                    },
+                    "second" : {
+                        "type" : "string",
+                        "index" : "not_analyzed"
+                    },
+                    "two" : {
+                        "type" : "nested",
+                        "properties" : {
+                            "first" : {
+                                "type" : "float"
+                            },
+                            "second" : {
+                                "type" : "string",
+                                "index" : "not_analyzed"
+                            },
+                            "three" : {
+                                "type" : "nested",
+                                "properties" : {
+                                    "first" : {
+                                        "type" : "boolean"
+                                    },
+                                    "second" : {
+                                        "type" : "date"
+                                    },
+                                    "third" : {
+                                        "type" : "long"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

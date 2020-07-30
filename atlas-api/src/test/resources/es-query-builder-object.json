@@ -1,0 +1,26 @@
+{
+    "minusone": -1,
+    "zero": "one",
+    "one": [{
+        "first": "one-first-one", 
+        "second": "one-second-one"
+    }, {
+        "first": "one-first-two",
+        "second": "one-second-two"
+    },{
+        "first": "one-first-three",
+        "second": "one-second-three",
+        "two": [{
+            "first": 1.0,
+            "second": "INSTANCE",
+            "three": [{
+                "first": true, 
+                "second": "1987-02-02T14:30:00.000Z",
+                "third": 1234
+            }]
+        }]
+    },{
+        "first": "1test!",
+        "second": "one-second-two"
+    }]
+}     
