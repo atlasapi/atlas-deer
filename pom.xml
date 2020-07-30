@@ -526,7 +526,7 @@
       </dependency>
       <dependency>
         <groupId>com.metabroadcast.sherlock</groupId>
-        <artifactId>client-shaded</artifactId>
+        <artifactId>client</artifactId>
         <version>${sherlock.version}</version>
         <exclusions>
           <exclusion>
@@ -534,12 +534,28 @@
             <artifactId>log4j-core</artifactId>
           </exclusion>
           <exclusion>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
           </exclusion>
           <exclusion>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-jackson</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>com.metabroadcast.common</groupId>
             <artifactId>common</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.metabroadcast.common.health</groupId>
+            <artifactId>common-health</artifactId>
           </exclusion>
         </exclusions>
       </dependency>

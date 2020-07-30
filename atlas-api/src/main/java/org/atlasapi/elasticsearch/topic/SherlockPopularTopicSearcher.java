@@ -15,9 +15,9 @@ import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.google.common.collect.FluentIterable;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.joda.time.Interval;
-import sherlock_client_shaded.org.elasticsearch.search.aggregations.AggregationBuilder;
-import sherlock_client_shaded.org.elasticsearch.search.aggregations.AggregationBuilders;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

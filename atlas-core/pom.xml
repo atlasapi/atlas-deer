@@ -88,7 +88,17 @@
     </dependency>
     <dependency>
         <groupId>com.metabroadcast.sherlock</groupId>
-        <artifactId>client-shaded</artifactId>
+        <artifactId>client</artifactId>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+          </exclusion>
+        </exclusions>
     </dependency>
   </dependencies>
 </project>

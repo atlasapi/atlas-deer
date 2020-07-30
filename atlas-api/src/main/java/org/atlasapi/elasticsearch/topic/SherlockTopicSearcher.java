@@ -20,9 +20,9 @@ import com.metabroadcast.sherlock.common.mapping.TopicMapping;
 import com.google.common.base.Objects;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sherlock_client_shaded.org.elasticsearch.search.sort.SortOrder;
 
 public class SherlockTopicSearcher implements TopicSearcher {
 

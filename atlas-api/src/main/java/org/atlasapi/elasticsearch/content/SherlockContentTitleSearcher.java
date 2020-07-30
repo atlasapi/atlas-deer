@@ -23,9 +23,9 @@ import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.ListenableFuture;
-import sherlock_client_shaded.org.elasticsearch.common.lucene.search.function.CombineFunction;
-import sherlock_client_shaded.org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
-import sherlock_client_shaded.org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.common.lucene.search.function.CombineFunction;
+import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
+import org.elasticsearch.search.sort.SortOrder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

@@ -6,10 +6,10 @@ import java.util.List;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import sherlock_client_shaded.org.apache.lucene.analysis.TokenStream;
-import sherlock_client_shaded.org.apache.lucene.analysis.en.EnglishAnalyzer;
-import sherlock_client_shaded.org.apache.lucene.analysis.standard.StandardAnalyzer;
-import sherlock_client_shaded.org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 /**
  * This class was kept around from pre-live-sherlock days because at the time we had not
