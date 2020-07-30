@@ -25,7 +25,7 @@ public class SherlockAttributes {
 
     private final NumberToShortStringCodec idCodec;
     private final ChannelGroupResolver channelGroupResolver;
-    private final ContentMapping content = IndexMapping.getContent();
+    private final ContentMapping content = IndexMapping.getContentMapping();
 
     public SherlockAttributes(NumberToShortStringCodec idCodec, ChannelGroupResolver channelGroupResolver) {
         this.idCodec = idCodec;

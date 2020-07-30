@@ -5,8 +5,8 @@ import javax.annotation.Nonnull;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.coercers.IdCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
-import com.metabroadcast.sherlock.client.search.parameter.TermParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.parameter.TermParameter;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
 public class IdAttribute extends SherlockSingleMappingAttribute<Id, Long, KeywordMapping<Long>> {

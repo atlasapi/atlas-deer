@@ -6,8 +6,8 @@ import javax.annotation.Nonnull;
 
 import org.atlasapi.query.common.coercers.BooleanCoercer;
 
-import com.metabroadcast.sherlock.client.search.parameter.RangeParameter;
-import com.metabroadcast.sherlock.client.search.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.parameter.RangeParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
 import com.metabroadcast.sherlock.common.type.InstantMapping;
 
 public class BeforeAfterAttribute extends
