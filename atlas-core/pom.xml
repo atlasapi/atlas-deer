@@ -90,5 +90,9 @@
         <groupId>com.metabroadcast.sherlock</groupId>
         <artifactId>client</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-core</artifactId>
+    </dependency>
   </dependencies>
 </project>
