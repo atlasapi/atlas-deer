@@ -1,5 +1,7 @@
 package org.atlasapi.messaging;
 
+import java.io.InputStream;
+
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.Episode;
@@ -16,11 +18,14 @@ import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.io.IOUtils;
 import org.joda.time.DateTime;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class JacksonMessageSerializerTest {
 
@@ -109,6 +114,10 @@ public class JacksonMessageSerializerTest {
 
         byte[] serialized = serializer.serialize(msg);
 
+        InputStream modelStream = getClass().getResourceAsStream("/resouce_updated_message_serialised.json");
+        String model = IOUtils.toString(modelStream);
+        assertEquals(model, new String(serialized));
+
         ResourceUpdatedMessage deserialized = serializer.deserialize(serialized);
 
         assertThat(deserialized.getMessageId(), is(msg.getMessageId()));
@@ -168,6 +177,41 @@ public class JacksonMessageSerializerTest {
         assertThat(deserialized.getTimestamp(), is(msg.getTimestamp()));
         assertThat(deserialized.getEquivalentSetId(), is(msg.getEquivalentSetId()));
         assertThat(deserialized.getContentRef(), is(contentRef));
+    }
+
+    @Test
+    public void testDeserialisationOfSerialisedMessage()
+            throws MessageDeserializationException, MessageSerializationException {
+
+        JacksonMessageSerializer<ResourceUpdatedMessage> serializer
+                = JacksonMessageSerializer.forType(ResourceUpdatedMessage.class);
+
+        String resourceUpdatedMessage = "{"
+                + "\"@class\":\"org.atlasapi.messaging.ResourceUpdatedMessage\", "
+                + "\"messageId\":\"f194131b-ac23-4915-ba3d-47baf4a50db5\","
+                + "\"timestamp\":{"
+                    + "\"@class\":\"com.metabroadcast.common.time.Timestamp\", "
+                    + "\"millis\": [\"java.lang.Long\",1596188747111]"
+                + "},"
+                + "\"updatedResource\": {"
+                    + "\"@class\":\"org.atlasapi.topic.TopicRef\", "
+                    + "\"id\":{"
+                        + "\"@class\":\"org.atlasapi.entity.Id\", "
+                        + "\"longValue\":[\"java.lang.Long\",561337]"
+                    + "},"
+                    + "\"source\":["
+                        + "\"org.atlasapi.media.entity.Publisher\",\"PA\""
+                    + "]"
+                + "}"
+        + "}";
+
+        ResourceUpdatedMessage msg = serializer.deserialize(resourceUpdatedMessage.getBytes());
+
+        byte[] serialized = serializer.serialize(msg);
+
+        assertTrue((new String(serialized)).contains("\"millis\":[\"java.lang.Long\",1596188747111]"));
+
+        serializer.deserialize(serialized);
     }
 
 }
