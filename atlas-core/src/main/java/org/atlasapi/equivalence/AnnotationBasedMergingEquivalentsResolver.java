@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.attribute.ContentAttributes;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 
 import com.metabroadcast.applications.client.model.internal.AccessRoles;
@@ -105,7 +105,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
     }
 
     private Predicate<AttributeQuery<?>> isHigherReadConsistency() {
-        return operand -> operand.getAttribute().equals(ContentAttributes.HIGHER_READ_CONSISTENCY)
+        return operand -> operand.getAttribute().equals(Attributes.HIGHER_READ_CONSISTENCY)
                 && Boolean.parseBoolean(operand.getValue().get(0).toString());
     }
 

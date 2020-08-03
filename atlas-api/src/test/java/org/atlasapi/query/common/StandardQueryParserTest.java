@@ -4,7 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.attribute.ContentAttributes;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.attributes.QueryAtomParser;
@@ -47,10 +47,10 @@ public class StandardQueryParserTest {
     private final QueryAttributeParser atrributes = QueryAttributeParser.create(
             ImmutableList.of(
                     QueryAtomParser.create(
-                            ContentAttributes.ID,
+                            Attributes.ID,
                             IdCoercer.create(idCodec)
                     ),
-                    QueryAtomParser.create(ContentAttributes.ALIASES_NAMESPACE, StringCoercer.create())
+                    QueryAtomParser.create(Attributes.ALIASES_NAMESPACE, StringCoercer.create())
             )
     );
 

@@ -14,7 +14,7 @@ import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.BooleanAttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
-import org.atlasapi.criteria.attribute.ContentAttributes;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.operator.EqualsOperator;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.criteria.operator.StringOperator;
@@ -288,12 +288,12 @@ public class ChannelQueryExecutorTest {
 
         StringOperator op = Operators.BEGINNING;
         AttributeQuery namespaceAttribute = new StringAttributeQuery(
-                ContentAttributes.ALIASES_NAMESPACE,
+                Attributes.ALIASES_NAMESPACE,
                 op,
                 ImmutableList.of("namespace")
         );
         AttributeQuery valueAttribute = new StringAttributeQuery(
-                ContentAttributes.ALIASES_VALUE,
+                Attributes.ALIASES_VALUE,
                 op,
                 ImmutableList.of("value")
         );
@@ -353,17 +353,17 @@ public class ChannelQueryExecutorTest {
         StringOperator stringOperator = Operators.BEGINNING;
         EqualsOperator booleanOperator = Operators.EQUALS;
         AttributeQuery namespaceAttribute = new StringAttributeQuery(
-                ContentAttributes.ALIASES_NAMESPACE,
+                Attributes.ALIASES_NAMESPACE,
                 stringOperator,
                 ImmutableList.of("namespace")
         );
         AttributeQuery valueAttribute = new StringAttributeQuery(
-                ContentAttributes.ALIASES_VALUE,
+                Attributes.ALIASES_VALUE,
                 stringOperator,
                 ImmutableList.of("value")
         );
         AttributeQuery advertisedOnAttribute = new BooleanAttributeQuery(
-                ContentAttributes.ADVERTISED_ON,
+                Attributes.ADVERTISED_ON,
                 booleanOperator,
                 ImmutableList.of(true)
         );

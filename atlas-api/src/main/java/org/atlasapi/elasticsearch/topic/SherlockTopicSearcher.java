@@ -2,6 +2,7 @@ package org.atlasapi.elasticsearch.topic;
 
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.legacy.LegacyTopicFieldTranslator;
 import org.atlasapi.elasticsearch.util.EsQueryBuilder;
 import org.atlasapi.elasticsearch.util.FiltersBuilder;
 import org.atlasapi.entity.Id;
@@ -17,7 +18,7 @@ import com.metabroadcast.sherlock.client.search.SherlockSearcher;
 import com.metabroadcast.sherlock.common.SherlockIndex;
 import com.metabroadcast.sherlock.common.mapping.TopicMapping;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.search.sort.SortOrder;
@@ -37,7 +38,7 @@ public class SherlockTopicSearcher implements TopicSearcher {
     public SherlockTopicSearcher(SherlockSearcher sherlockSearcher, TopicMapping topicMapping) {
         this.sherlockSearcher = sherlockSearcher;
         this.topicMapping = topicMapping;
-        this.builder = EsQueryBuilder.create();
+        this.builder = EsQueryBuilder.create(LegacyTopicFieldTranslator::translate);
     }
 
     @Override
@@ -52,7 +53,7 @@ public class SherlockTopicSearcher implements TopicSearcher {
                 .addSort(topicMapping.getId(), SortOrder.ASC)
                 .withIndex(SherlockIndex.TOPICS)
                 .withOffset(selection.getOffset())
-                .withLimit(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
+                .withLimit(MoreObjects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
                 .build();
 
         ListenableFuture<IdSearchQueryResponse> response = sherlockSearcher.searchForIds(searchQuery);

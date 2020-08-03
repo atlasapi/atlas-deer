@@ -4,24 +4,31 @@ import javax.annotation.Nullable;
 
 import org.atlasapi.entity.Identified;
 
-import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class Attribute<T> implements QueryFactory<T> {
 
     protected final String name;
 
-    private final ChildTypeMapping<?> directMapping;
+    private final String javaAttributeName;
     private final Class<? extends Identified> target;
 
     protected Attribute(
             String name,
-            @Nullable ChildTypeMapping<?> directMapping,
             Class<? extends Identified> target
     ) {
         this.name = checkNotNull(name);
-        this.directMapping = directMapping;
+        this.javaAttributeName = null;
+        this.target = target;
+    }
+
+    protected Attribute(
+            String name,
+            String javaAttributeName,
+            Class<? extends Identified> target
+    ) {
+        this.name = checkNotNull(name);
+        this.javaAttributeName = javaAttributeName;
         this.target = target;
     }
 
@@ -44,7 +51,7 @@ public abstract class Attribute<T> implements QueryFactory<T> {
     }
 
     @Nullable
-    public ChildTypeMapping<?> getDirectMapping() {
-        return directMapping;
+    public String javaAttributeName() {
+        return javaAttributeName;
     }
 }

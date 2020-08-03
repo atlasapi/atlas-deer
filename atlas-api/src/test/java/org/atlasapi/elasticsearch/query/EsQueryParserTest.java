@@ -12,31 +12,30 @@ import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.atlasapi.criteria.attribute.ContentAttributes.ACTIONABLE_FILTER_PARAMETERS;
-import static org.atlasapi.criteria.attribute.ContentAttributes.ALIASES_NAMESPACE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.ALIASES_VALUE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.BRAND_ID;
-import static org.atlasapi.criteria.attribute.ContentAttributes.BROADCAST_WEIGHT;
-import static org.atlasapi.criteria.attribute.ContentAttributes.CONTENT_GROUP;
-import static org.atlasapi.criteria.attribute.ContentAttributes.CONTENT_TITLE_PREFIX;
-import static org.atlasapi.criteria.attribute.ContentAttributes.CONTENT_TYPE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.EPISODE_BRAND_ID;
-import static org.atlasapi.criteria.attribute.ContentAttributes.GENRE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.ID;
-import static org.atlasapi.criteria.attribute.ContentAttributes.LOCATIONS_ALIASES_NAMESPACE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.LOCATIONS_ALIASES_VALUE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.ORDER_BY;
-import static org.atlasapi.criteria.attribute.ContentAttributes.PLATFORM;
-import static org.atlasapi.criteria.attribute.ContentAttributes.Q;
-import static org.atlasapi.criteria.attribute.ContentAttributes.REGION;
-import static org.atlasapi.criteria.attribute.ContentAttributes.SEARCH_TOPIC_ID;
-import static org.atlasapi.criteria.attribute.ContentAttributes.SERIES_ID;
-import static org.atlasapi.criteria.attribute.ContentAttributes.SOURCE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.SPECIALIZATION;
-import static org.atlasapi.criteria.attribute.ContentAttributes.TAG_RELATIONSHIP;
-import static org.atlasapi.criteria.attribute.ContentAttributes.TAG_SUPERVISED;
-import static org.atlasapi.criteria.attribute.ContentAttributes.TAG_WEIGHTING;
-import static org.atlasapi.criteria.attribute.ContentAttributes.TITLE_BOOST;
+import static org.atlasapi.criteria.attribute.Attributes.ACTIONABLE_FILTER_PARAMETERS;
+import static org.atlasapi.criteria.attribute.Attributes.ALIASES_NAMESPACE;
+import static org.atlasapi.criteria.attribute.Attributes.ALIASES_VALUE;
+import static org.atlasapi.criteria.attribute.Attributes.BRAND_ID;
+import static org.atlasapi.criteria.attribute.Attributes.BROADCAST_WEIGHT;
+import static org.atlasapi.criteria.attribute.Attributes.CONTENT_TITLE_PREFIX;
+import static org.atlasapi.criteria.attribute.Attributes.CONTENT_TYPE;
+import static org.atlasapi.criteria.attribute.Attributes.EPISODE_BRAND_ID;
+import static org.atlasapi.criteria.attribute.Attributes.GENRE;
+import static org.atlasapi.criteria.attribute.Attributes.ID;
+import static org.atlasapi.criteria.attribute.Attributes.LOCATIONS_ALIASES_NAMESPACE;
+import static org.atlasapi.criteria.attribute.Attributes.LOCATIONS_ALIASES_VALUE;
+import static org.atlasapi.criteria.attribute.Attributes.ORDER_BY;
+import static org.atlasapi.criteria.attribute.Attributes.PLATFORM;
+import static org.atlasapi.criteria.attribute.Attributes.Q;
+import static org.atlasapi.criteria.attribute.Attributes.REGION;
+import static org.atlasapi.criteria.attribute.Attributes.SEARCH_TOPIC_ID;
+import static org.atlasapi.criteria.attribute.Attributes.SERIES_ID;
+import static org.atlasapi.criteria.attribute.Attributes.SOURCE;
+import static org.atlasapi.criteria.attribute.Attributes.SPECIALIZATION;
+import static org.atlasapi.criteria.attribute.Attributes.TAG_RELATIONSHIP;
+import static org.atlasapi.criteria.attribute.Attributes.TAG_SUPERVISED;
+import static org.atlasapi.criteria.attribute.Attributes.TAG_WEIGHTING;
+import static org.atlasapi.criteria.attribute.Attributes.TITLE_BOOST;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
@@ -64,7 +63,6 @@ public class EsQueryParserTest {
                 .add(query(TAG_WEIGHTING, 5.0F))
                 .add(query(CONTENT_TITLE_PREFIX, "title"))
                 .add(query(GENRE, "genre"))
-                .add(query(CONTENT_GROUP, Id.valueOf(1L)))
                 .add(query(SPECIALIZATION, Specialization.FILM))
                 .build();
 

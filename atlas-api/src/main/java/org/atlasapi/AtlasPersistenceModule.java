@@ -15,7 +15,6 @@ import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ContentTitleSearcher;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.elasticsearch.SherlockSearchModule;
-import org.atlasapi.elasticsearch.content.SherlockContentTitleSearcher;
 import org.atlasapi.elasticsearch.topic.SherlockPopularTopicSearcher;
 import org.atlasapi.elasticsearch.topic.SherlockTopicSearcher;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -99,7 +98,6 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
 import com.metabroadcast.common.time.SystemClock;
 import com.metabroadcast.sherlock.client.search.SherlockSearcher;
-import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
 import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
 
 import com.datastax.driver.core.CodecRegistry;
@@ -111,7 +109,6 @@ import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.primitives.Ints;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.ReadPreference;
@@ -428,9 +425,7 @@ public class AtlasPersistenceModule {
     @Bean
     @Primary
     public SherlockSearcher contentSearcherV5() {
-        return new SherlockSearcher(new ElasticSearchProcessor(
-                sherlockElasticSearchConfig().getElasticSearchClient()
-        ));
+        return sherlockSearchModule().getSherlockSearcher();
     }
 
     @Bean

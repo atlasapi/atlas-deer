@@ -1,6 +1,6 @@
 package org.atlasapi.query.common;
 
-import org.atlasapi.criteria.attribute.ContentAttributes;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.query.common.attributes.QueryAtomParser;
 import org.atlasapi.query.common.attributes.QueryAttributeParser;
 import org.atlasapi.query.common.coercers.IdCoercer;
@@ -19,11 +19,11 @@ public class QueryAttributeParserTest {
     private NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final QueryAttributeParser parser = QueryAttributeParser.create(ImmutableList.of(
             QueryAtomParser.create(
-                    ContentAttributes.ID,
+                    Attributes.ID,
                     IdCoercer.create(idCodec)
             ),
-            QueryAtomParser.create(ContentAttributes.ALIASES_NAMESPACE, StringCoercer.create()),
-            QueryAtomParser.create(ContentAttributes.ALIASES_VALUE, StringCoercer.create())
+            QueryAtomParser.create(Attributes.ALIASES_NAMESPACE, StringCoercer.create()),
+            QueryAtomParser.create(Attributes.ALIASES_VALUE, StringCoercer.create())
     ));
 
     @Test(expected = InvalidOperatorException.class)

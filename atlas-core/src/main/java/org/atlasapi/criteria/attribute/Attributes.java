@@ -15,46 +15,34 @@ import org.atlasapi.entity.Identified;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.Topic;
 
-import com.metabroadcast.sherlock.common.mapping.ContentMapping;
-import com.metabroadcast.sherlock.common.mapping.IndexMapping;
-import com.metabroadcast.sherlock.common.mapping.TopicMapping;
+public class Attributes {
 
-public class ContentAttributes {
-
-    private static final ContentMapping CONTENT_MAPPING = IndexMapping.getContentMapping();
-
-    private ContentAttributes() {
+    private Attributes() {
     }
 
     public static final Attribute<Id> ID = IdAttribute.create(
             "id",
-            CONTENT_MAPPING.getId(),
             Identified.class
     );
     public static final Attribute<Publisher> SOURCE = EnumAttribute.create(
             "source",
             Publisher.class,
-            CONTENT_MAPPING.getSource().getKey(),
             Identified.class
     );
     public static final Attribute<String> ALIASES_NAMESPACE = StringAttribute.create(
             "aliases.namespace",
-            CONTENT_MAPPING.getAliases().getNamespace(),
             Identified.class
     );
     public static final Attribute<String> ALIASES_VALUE = StringAttribute.create(
             "aliases.value",
-            CONTENT_MAPPING.getAliases().getValue(),
             Identified.class
     );
     public static final Attribute<String> LOCATIONS_ALIASES_NAMESPACE = StringAttribute.create(
             "locations.aliases.namespace",
-            CONTENT_MAPPING.getLocations().getAliases().getNamespace(),
             Identified.class
     );
     public static final Attribute<String> LOCATIONS_ALIASES_VALUE = StringAttribute.create(
             "locations.aliases.value",
-            CONTENT_MAPPING.getLocations().getAliases().getValue(),
             Identified.class
     );
     public static final Attribute<Id> REGION = IdAttribute.create(
@@ -72,43 +60,48 @@ public class ContentAttributes {
 
     /**
      * This attribute is intended for use only by the topic endpoint. This cannot be used on the
-     * content endpoint. Values captured by this attribute should be decoded long ids.
+     * content endpoint.
      */
 
     public static final Attribute<Id> TOPIC_ID = IdAttribute.create(
             "tags.topic.id",
-            CONTENT_MAPPING.getTags().getId(),
+            "topics.topic.id",
             Identified.class
     );
 
     /**
      * This attribute is intended for use on by the content endpoint. This should not be used on
-     * the topic endpoint. Values captured by this attribute should be encoded string ids.
+     * the topic endpoint.
      */
     public static final Attribute<String> SEARCH_TOPIC_ID = StringAttribute.create(
             "tags.topic.id",
+            "topics.topic.id",
             Identified.class
     );
 
     public static final Attribute<String> TAG_RELATIONSHIP = StringAttribute.create(
             "tags.relationship",
-            CONTENT_MAPPING.getTags().getRelationship(),
+            "topics.relationship",
             Identified.class
     );
     public static final Attribute<Float> TAG_WEIGHTING = FloatAttribute.create(
             "tags.weighting",
-            CONTENT_MAPPING.getTags().getWeighting(),
+            "topics.weighting",
             Identified.class
     );
     public static final Attribute<Boolean> TAG_SUPERVISED = BooleanAttribute.create(
             "tags.supervised",
-            CONTENT_MAPPING.getTags().getSupervised(),
+            "topics.supervised",
             Identified.class
+    );
+    public static final Attribute<Topic.Type> TOPIC_TYPE = EnumAttribute.create(
+            "type",
+            Topic.Type.class,
+            Topic.class
     );
     public static final Attribute<ContentType> CONTENT_TYPE = EnumAttribute.create(
             "type",
             ContentType.class,
-            CONTENT_MAPPING.getType(),
             Content.class
     );
     public static final Attribute<String> CHANNEL_GROUP_TYPE = StringAttribute.create(
@@ -149,7 +142,6 @@ public class ContentAttributes {
     );
     public static final Attribute<Id> BRAND_ID = IdAttribute.create(
             "brand.id",
-            CONTENT_MAPPING.getBrandId(),
             Identified.class
     );
     public static final Attribute<Id> EPISODE_BRAND_ID = IdAttribute.create(
@@ -158,7 +150,6 @@ public class ContentAttributes {
     );
     public static final Attribute<Id> SERIES_ID = IdAttribute.create(
             "series.id",
-            CONTENT_MAPPING.getSeriesId(),
             Identified.class
     );
     public static final Attribute<String> ACTIONABLE_FILTER_PARAMETERS = StringAttribute.create(
@@ -216,26 +207,18 @@ public class ContentAttributes {
     // For filtering
     public static final Attribute<String> CONTENT_TITLE_PREFIX = StringAttribute.create(
             "title",
-            CONTENT_MAPPING.getTitle(),
+            "parentFlattenedTitle",
             Content.class
     );
 
     public static final Attribute<String> GENRE = StringAttribute.create(
             "genre",
-            CONTENT_MAPPING.getGenres(),
             Container.class
     );
 
     public static final Attribute<Specialization> SPECIALIZATION = EnumAttribute.create(
             "specialization",
             Specialization.class,
-            CONTENT_MAPPING.getSpecialization(),
             Described.class
-    );
-
-    // possibly no longer used
-    public static final Attribute<Id> CONTENT_GROUP = IdAttribute.create(
-            "contentGroups",
-            Content.class
     );
 }

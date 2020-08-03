@@ -1,7 +1,5 @@
 package org.atlasapi.criteria.attribute;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.operator.ComparableOperator;
@@ -11,32 +9,36 @@ import org.atlasapi.criteria.operator.StringOperator;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 
-import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
-import com.metabroadcast.sherlock.common.type.KeywordMapping;
-
 public class IdAttribute extends Attribute<Id> {
 
     private IdAttribute(
             String name,
-            @Nullable ChildTypeMapping<Long> directMapping,
             Class<? extends Identified> target
     ) {
-        super(name, directMapping, target);
+        super(name, target);
+    }
+
+    private IdAttribute(
+            String name,
+            String javaAttributeName,
+            Class<? extends Identified> target
+    ) {
+        super(name, javaAttributeName, target);
     }
 
     public static IdAttribute create(
             String name,
-            ChildTypeMapping<Long> directMapping,
             Class<? extends Identified> target
     ) {
-        return new IdAttribute(name, directMapping, target);
+        return new IdAttribute(name, target);
     }
 
     public static IdAttribute create(
             String name,
+            String javaAttributeName,
             Class<? extends Identified> target
     ) {
-        return new IdAttribute(name, null, target);
+        return new IdAttribute(name, javaAttributeName, target);
     }
 
     @Override

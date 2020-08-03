@@ -2,7 +2,10 @@ package org.atlasapi.elasticsearch.util;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
+import java.util.function.Function;
+
+import javax.annotation.Nullable;
 
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.BooleanAttributeQuery;
@@ -16,6 +19,7 @@ import org.atlasapi.criteria.QueryVisitor;
 import org.atlasapi.criteria.SortAttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.attribute.Attribute;
+import org.atlasapi.criteria.legacy.LegacyTranslation;
 import org.atlasapi.criteria.operator.ComparableOperatorVisitor;
 import org.atlasapi.criteria.operator.DateTimeOperatorVisitor;
 import org.atlasapi.criteria.operator.EqualsOperatorVisitor;
@@ -52,19 +56,18 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import org.joda.time.DateTime;
 
-import static org.atlasapi.criteria.attribute.ContentAttributes.ALIASES_NAMESPACE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.ALIASES_VALUE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.CONTENT_GROUP;
-import static org.atlasapi.criteria.attribute.ContentAttributes.CONTENT_TITLE_PREFIX;
-import static org.atlasapi.criteria.attribute.ContentAttributes.CONTENT_TYPE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.GENRE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.LOCATIONS_ALIASES_NAMESPACE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.LOCATIONS_ALIASES_VALUE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.SOURCE;
-import static org.atlasapi.criteria.attribute.ContentAttributes.SPECIALIZATION;
-import static org.atlasapi.criteria.attribute.ContentAttributes.TAG_RELATIONSHIP;
-import static org.atlasapi.criteria.attribute.ContentAttributes.TAG_SUPERVISED;
-import static org.atlasapi.criteria.attribute.ContentAttributes.TAG_WEIGHTING;
+import static org.atlasapi.criteria.attribute.Attributes.ALIASES_NAMESPACE;
+import static org.atlasapi.criteria.attribute.Attributes.ALIASES_VALUE;
+import static org.atlasapi.criteria.attribute.Attributes.CONTENT_TITLE_PREFIX;
+import static org.atlasapi.criteria.attribute.Attributes.CONTENT_TYPE;
+import static org.atlasapi.criteria.attribute.Attributes.GENRE;
+import static org.atlasapi.criteria.attribute.Attributes.LOCATIONS_ALIASES_NAMESPACE;
+import static org.atlasapi.criteria.attribute.Attributes.LOCATIONS_ALIASES_VALUE;
+import static org.atlasapi.criteria.attribute.Attributes.SOURCE;
+import static org.atlasapi.criteria.attribute.Attributes.SPECIALIZATION;
+import static org.atlasapi.criteria.attribute.Attributes.TAG_RELATIONSHIP;
+import static org.atlasapi.criteria.attribute.Attributes.TAG_SUPERVISED;
+import static org.atlasapi.criteria.attribute.Attributes.TAG_WEIGHTING;
 
 public class EsQueryBuilder {
 
@@ -84,18 +87,20 @@ public class EsQueryBuilder {
                     .add(TAG_WEIGHTING)
                     .add(CONTENT_TITLE_PREFIX)
                     .add(GENRE)
-                    .add(CONTENT_GROUP)
                     .add(SPECIALIZATION)
                     .build();
 
     private static final String NON_LETTER_PREFIX = "#";
     private static final String NON_LETTER_PREFIX_REGEX = "[^a-zA-Z]+.*";
 
-    private EsQueryBuilder() {
+    private final Function<String, LegacyTranslation> fieldTranslator;
+
+    private EsQueryBuilder(Function<String, LegacyTranslation> fieldTranslator) {
+        this.fieldTranslator = fieldTranslator;
     }
 
-    public static EsQueryBuilder create() {
-        return new EsQueryBuilder();
+    public static EsQueryBuilder create(Function<String, LegacyTranslation> fieldTranslator) {
+        return new EsQueryBuilder(fieldTranslator);
     }
 
     public BoolParameter buildQuery(Iterable<AttributeQuery<?>> operands) {
@@ -104,53 +109,83 @@ public class EsQueryBuilder {
                 SingleClauseBoolParameter.builder(OccurrenceClause.MUST);
 
         for (AttributeQuery<?> operand : operands) {
-            mustBuilder.addParameter(queryForTerminal(operand));
+            Optional<Parameter> parameter = queryForTerminal(operand);
+            parameter.ifPresent(mustBuilder::addParameter);
         }
 
         return mustBuilder.build();
     }
 
-    private Parameter queryForTerminal(AttributeQuery<?> attributeQuery) {
-        return attributeQuery.accept(new QueryVisitor<Parameter>() {
+    private Optional<Parameter> queryForTerminal(AttributeQuery<?> attributeQuery) {
+        return attributeQuery.accept(new QueryVisitor<Optional<Parameter>>() {
 
             @Override
-            public Parameter visit(final IntegerAttributeQuery query) {
-                final IntegerMapping mapping = (IntegerMapping) query.getAttribute().getDirectMapping();
-                final List<Integer> values = query.getValue();
-                return query.accept(new EsComparableOperatorVisitor<>(mapping, values));
+            public Optional<Parameter> visit(final IntegerAttributeQuery query) {
+                final String name = query.getAttribute().javaAttributeName();
+                final LegacyTranslation translation = getTranslationForAttributeName(name);
+                if (translation.shouldSilentlyIgnore()) {
+                    return Optional.empty();
+                } else {
+                    final IntegerMapping mapping = (IntegerMapping) translation.getMapping();
+                    final List<Integer> values = query.getValue();
+                    return Optional.of(query.accept(new EsComparableOperatorVisitor<>(mapping, values)));
+                }
             }
 
             @Override
-            public Parameter visit(StringAttributeQuery query) {
-                final ChildTypeMapping<String> mapping =
-                        (ChildTypeMapping<String>) query.getAttribute().getDirectMapping();
-                final List<String> values = query.getValue();
-                return query.accept(new EsStringOperatorVisitor(mapping, values));
+            public Optional<Parameter> visit(StringAttributeQuery query) {
+                final String name = query.getAttribute().javaAttributeName();
+                final LegacyTranslation translation = getTranslationForAttributeName(name);
+                if (translation.shouldSilentlyIgnore()) {
+                    return Optional.empty();
+                } else {
+                    final ChildTypeMapping<String> mapping =
+                            (ChildTypeMapping<String>) translation.getMapping();
+                    final List<String> values = query.getValue();
+                    return Optional.of(query.accept(new EsStringOperatorVisitor(mapping, values)));
+                }
             }
 
             @Override
-            public Parameter visit(BooleanAttributeQuery query) {
-                final BooleanMapping mapping = (BooleanMapping) query.getAttribute().getDirectMapping();
-                final List<Boolean> value = query.getValue().subList(0, 1);
-                return query.accept(new EsEqualsOperatorVisitor<>(mapping, value));
+            public Optional<Parameter> visit(BooleanAttributeQuery query) {
+                final String name = query.getAttributeName();
+                final LegacyTranslation translation = getTranslationForAttributeName(name);
+                if (translation.shouldSilentlyIgnore()) {
+                    return Optional.empty();
+                } else {
+                    final BooleanMapping mapping = (BooleanMapping) translation.getMapping();
+                    final List<Boolean> value = query.getValue().subList(0, 1);
+                    return Optional.of(query.accept(new EsEqualsOperatorVisitor<>(mapping, value)));
+                }
             }
 
             @Override
-            public Parameter visit(EnumAttributeQuery<?> query) {
-                KeywordMapping<String> mapping =
-                        (KeywordMapping<String>) query.getAttribute().getDirectMapping();
-                final List<String> values = Lists.transform(
-                        query.getValue(),
-                        Functions.toStringFunction()
-                );
-                return query.accept(new EsEqualsOperatorVisitor<>(mapping, values));
+            public Optional<Parameter> visit(EnumAttributeQuery<?> query) {
+                final String name = query.getAttributeName();
+                final LegacyTranslation translation = getTranslationForAttributeName(name);
+                if (translation.shouldSilentlyIgnore()) {
+                    return Optional.empty();
+                } else {
+                    KeywordMapping<String> mapping = (KeywordMapping<String>) translation.getMapping();
+                    final List<String> values = Lists.transform(
+                            query.getValue(),
+                            Functions.toStringFunction()
+                    );
+                    return Optional.of(query.accept(new EsEqualsOperatorVisitor<>(mapping, values)));
+                }
             }
 
             @Override
-            public Parameter visit(DateTimeAttributeQuery query) {
-                final InstantMapping mapping = (InstantMapping) query.getAttribute().getDirectMapping();
-                final List<Instant> values = toInstants(query.getValue());
-                return query.accept(new EsComparableOperatorVisitor<>(mapping, values));
+            public Optional<Parameter> visit(DateTimeAttributeQuery query) {
+                final String name = query.getAttributeName();
+                final LegacyTranslation translation = getTranslationForAttributeName(name);
+                if (translation.shouldSilentlyIgnore()) {
+                    return Optional.empty();
+                } else {
+                    final InstantMapping mapping = (InstantMapping) translation.getMapping();
+                    final List<Instant> values = toInstants(query.getValue());
+                    return Optional.of(query.accept(new EsComparableOperatorVisitor<>(mapping, values)));
+                }
             }
 
             private List<Instant> toInstants(List<DateTime> value) {
@@ -158,28 +193,50 @@ public class EsQueryBuilder {
             }
 
             @Override
-            public Parameter visit(MatchesNothing noOp) {
+            public Optional<Parameter> visit(MatchesNothing noOp) {
                 throw new IllegalArgumentException();
             }
 
             @Override
-            public Parameter visit(IdAttributeQuery query) {
-                final KeywordMapping<Long> mapping =
-                        (KeywordMapping<Long>) query.getAttribute().getDirectMapping();
-                final List<Long> value = Lists.transform(query.getValue(), Id.toLongValue());
-                return query.accept(new EsEqualsOperatorVisitor<>(mapping, value));
+            public Optional<Parameter> visit(IdAttributeQuery query) {
+                final String name = query.getAttribute().javaAttributeName();
+                final LegacyTranslation translation = getTranslationForAttributeName(name);
+                if (translation.shouldSilentlyIgnore()) {
+                    return Optional.empty();
+                } else {
+                    final KeywordMapping<Long> mapping = (KeywordMapping<Long>) translation.getMapping();
+                    final List<Long> values = Lists.transform(query.getValue(), Id.toLongValue());
+                    return Optional.of(query.accept(new EsEqualsOperatorVisitor<>(mapping, values)));
+                }
             }
 
             @Override
-            public Parameter visit(FloatAttributeQuery query) {
-                final FloatMapping mapping = (FloatMapping) query.getAttribute().getDirectMapping();
-                final List<Float> value = query.getValue();
-                return query.accept(new EsComparableOperatorVisitor<>(mapping, value));
+            public Optional<Parameter> visit(FloatAttributeQuery query) {
+                final String name = query.getAttribute().javaAttributeName();
+                final LegacyTranslation translation = getTranslationForAttributeName(name);
+                if (translation.shouldSilentlyIgnore()) {
+                    return Optional.empty();
+                } else {
+                    final FloatMapping mapping = (FloatMapping) translation.getMapping();
+                    final List<Float> values = query.getValue();
+                    return Optional.of(query.accept(new EsComparableOperatorVisitor<>(mapping, values)));
+                }
             }
 
             @Override
-            public Parameter visit(SortAttributeQuery query) {
-                return null;
+            public Optional<Parameter> visit(SortAttributeQuery query) {
+                return Optional.empty();
+            }
+
+            private LegacyTranslation getTranslationForAttributeName(@Nullable String name) {
+                if (com.google.common.base.Strings.isNullOrEmpty(name)) {
+                    throw new IllegalArgumentException("Tried to add a query for a null or empty field name.");
+                }
+                final LegacyTranslation translation = fieldTranslator.apply(name);
+                if (!translation.shouldThrowException()) {
+                    throw new IllegalArgumentException(name + " is not a known field.");
+                }
+                return translation;
             }
         });
     }

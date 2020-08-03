@@ -9,7 +9,7 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
-import org.atlasapi.criteria.attribute.ContentAttributes;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -50,7 +50,7 @@ public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<R
                 .collect(Collectors.toList());
 
         String genre = ctxt.getRequest()
-                .getParameter(ContentAttributes.CHANNEL_GROUP_CHANNEL_GENRES.externalName());
+                .getParameter(Attributes.CHANNEL_GROUP_CHANNEL_GENRES.externalName());
 
         if (!Strings.isNullOrEmpty(genre)) {
             final ImmutableSet<String> genres = ImmutableSet.copyOf(Splitter.on(',').split(genre));

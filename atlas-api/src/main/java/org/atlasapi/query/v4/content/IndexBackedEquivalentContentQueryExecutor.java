@@ -12,7 +12,7 @@ import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
-import org.atlasapi.criteria.attribute.ContentAttributes;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
@@ -145,7 +145,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         // Check if the query is requesting specific IDs
         Optional<ListenableFuture<IndexQueryResult>> naiveResult =
                 StreamSupport.stream(query.getOperands().spliterator(), false)
-                        .filter(attributeQuery -> attributeQuery.getAttribute().equals(ContentAttributes.ID))
+                        .filter(attributeQuery -> attributeQuery.getAttribute().equals(Attributes.ID))
                         .map(attributeQuery -> (IdAttributeQuery) attributeQuery)
                         .map(AttributeQuery::getValue)
                         .map(ids -> IndexQueryResult.withIds(ids, ids.size()))

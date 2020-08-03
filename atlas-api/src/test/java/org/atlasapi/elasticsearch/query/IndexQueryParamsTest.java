@@ -12,17 +12,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static org.atlasapi.criteria.attribute.ContentAttributes.ACTIONABLE_FILTER_PARAMETERS;
-import static org.atlasapi.criteria.attribute.ContentAttributes.BRAND_ID;
-import static org.atlasapi.criteria.attribute.ContentAttributes.BROADCAST_WEIGHT;
-import static org.atlasapi.criteria.attribute.ContentAttributes.EPISODE_BRAND_ID;
-import static org.atlasapi.criteria.attribute.ContentAttributes.ORDER_BY;
-import static org.atlasapi.criteria.attribute.ContentAttributes.PLATFORM;
-import static org.atlasapi.criteria.attribute.ContentAttributes.Q;
-import static org.atlasapi.criteria.attribute.ContentAttributes.REGION;
-import static org.atlasapi.criteria.attribute.ContentAttributes.SEARCH_TOPIC_ID;
-import static org.atlasapi.criteria.attribute.ContentAttributes.SERIES_ID;
-import static org.atlasapi.criteria.attribute.ContentAttributes.TITLE_BOOST;
+import static org.atlasapi.criteria.attribute.Attributes.ACTIONABLE_FILTER_PARAMETERS;
+import static org.atlasapi.criteria.attribute.Attributes.BRAND_ID;
+import static org.atlasapi.criteria.attribute.Attributes.BROADCAST_WEIGHT;
+import static org.atlasapi.criteria.attribute.Attributes.EPISODE_BRAND_ID;
+import static org.atlasapi.criteria.attribute.Attributes.ORDER_BY;
+import static org.atlasapi.criteria.attribute.Attributes.PLATFORM;
+import static org.atlasapi.criteria.attribute.Attributes.Q;
+import static org.atlasapi.criteria.attribute.Attributes.REGION;
+import static org.atlasapi.criteria.attribute.Attributes.SEARCH_TOPIC_ID;
+import static org.atlasapi.criteria.attribute.Attributes.SERIES_ID;
+import static org.atlasapi.criteria.attribute.Attributes.TITLE_BOOST;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 

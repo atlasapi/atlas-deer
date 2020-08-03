@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 
 public class SherlockSearchModule implements SearchModule {
 
-    private final Logger log = LoggerFactory.getLogger(SherlockSearchModule.class);
-
     private final SherlockSearcher sherlockSearcher;
     private final ContentSearcher equivContentSearcher;
     private final SherlockTopicSearcher topicSearcher;
@@ -47,7 +45,7 @@ public class SherlockSearchModule implements SearchModule {
                 elasticSearchConfig.getElasticSearchClient()
         ));
 
-        EsUnequivalentContentSearcher unequivIndex = EsUnequivalentContentSearcher.create(
+        EsUnequivalentContentSearcher unequivSearcher = EsUnequivalentContentSearcher.create(
                 sherlockSearcher,
                 contentMapping,
                 channelGroupResolver,
@@ -55,7 +53,7 @@ public class SherlockSearchModule implements SearchModule {
         );
 
         PseudoEquivalentContentSearcher equivalentContentSearcher =
-                PseudoEquivalentContentSearcher.create(unequivIndex);
+                PseudoEquivalentContentSearcher.create(unequivSearcher);
 
         this.equivContentSearcher = InstrumentedContentSearcher.create(equivalentContentSearcher, metrics);
         this.popularTopicsSearcher = new SherlockPopularTopicSearcher(sherlockSearcher, contentMapping);

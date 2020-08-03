@@ -1,14 +1,10 @@
 package org.atlasapi.criteria.attribute;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.EnumAttributeQuery;
 import org.atlasapi.criteria.operator.EqualsOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.entity.Identified;
-
-import com.metabroadcast.sherlock.common.type.KeywordMapping;
 
 public class EnumAttribute<T extends Enum<T>> extends Attribute<T> {
 
@@ -17,28 +13,18 @@ public class EnumAttribute<T extends Enum<T>> extends Attribute<T> {
     private EnumAttribute(
             String name,
             Class<T> type,
-            @Nullable KeywordMapping<String> directMapping,
             Class<? extends Identified> target
     ) {
-        super(name, directMapping, target);
+        super(name, target);
         this.type = type;
     }
 
     public static <T extends Enum<T>> EnumAttribute<T> create(
             String name,
             Class<T> type,
-            KeywordMapping<String> directMapping,
             Class<? extends Identified> target
     ) {
-        return new EnumAttribute<>(name, type, directMapping, target);
-    }
-
-    public static <T extends Enum<T>> EnumAttribute<T> create(
-            String name,
-            Class<T> type,
-            Class<? extends Identified> target
-    ) {
-        return new EnumAttribute<>(name, type, null, target);
+        return new EnumAttribute<T>(name, type, target);
     }
 
     @Override
@@ -56,6 +42,6 @@ public class EnumAttribute<T extends Enum<T>> extends Attribute<T> {
         if (!(op instanceof EqualsOperator)) {
             throw new IllegalArgumentException();
         }
-        return new EnumAttributeQuery<>(this, (EqualsOperator) op, values);
+        return new EnumAttributeQuery<T>(this, (EqualsOperator) op, values);
     }
 }

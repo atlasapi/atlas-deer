@@ -10,6 +10,7 @@ import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.FuzzyQueryParams;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.legacy.LegacyTranslation;
 import org.atlasapi.elasticsearch.query.EsQueryParser;
 import org.atlasapi.elasticsearch.query.IndexQueryParams;
 import org.atlasapi.elasticsearch.query.QueryOrdering;
@@ -17,6 +18,7 @@ import org.atlasapi.elasticsearch.util.EsQueryBuilder;
 import org.atlasapi.elasticsearch.util.FiltersBuilder;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.criteria.legacy.LegacyContentFieldTranslator;
 import org.atlasapi.util.SecondaryIndex;
 
 import com.metabroadcast.common.query.Selection;
@@ -30,7 +32,7 @@ import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.SherlockSearcher;
 import com.metabroadcast.sherlock.common.SherlockIndex;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
-import com.metabroadcast.sherlock.common.mapping.IndexMapping;
+import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -65,7 +67,7 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
         this.equivIdIndex = checkNotNull(equivIdIndex);
         this.esQueryParser = EsQueryParser.create();
-        this.queryBuilderFactory = EsQueryBuilder.create();
+        this.queryBuilderFactory = EsQueryBuilder.create(LegacyContentFieldTranslator::translate);
     }
 
     public static EsUnequivalentContentSearcher create(
@@ -256,10 +258,16 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
             if ("relevance".equalsIgnoreCase(clause.getPath())) {
                 searchQueryBuilder.addScoreSort(SortOrder.DESC);
             } else {
-                searchQueryBuilder.addSort(
-                        IndexMapping.getContentChildMappingByName(clause.getPath()).get(),
-                        clause.isAscending() ? SortOrder.ASC : SortOrder.DESC
-                );
+                LegacyTranslation translation = LegacyContentFieldTranslator.translate(clause.getPath());
+                if (translation.shouldThrowException()) {
+                    throw new IllegalArgumentException(clause.getPath() + " is not a known field.");
+                } else if (!translation.shouldSilentlyIgnore()) {
+                    ChildTypeMapping<?> mapping = translation.getMapping();
+                    searchQueryBuilder.addSort(
+                            mapping,
+                            clause.isAscending() ? SortOrder.ASC : SortOrder.DESC
+                    );
+                }
             }
         }
     }

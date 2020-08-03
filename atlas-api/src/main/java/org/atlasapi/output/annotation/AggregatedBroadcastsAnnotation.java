@@ -9,7 +9,7 @@ import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.BroadcastAggregator;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
-import org.atlasapi.criteria.attribute.ContentAttributes;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -68,7 +68,7 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
     ) throws IOException {
 
         String downweighIds = ctxt.getRequest()
-                .getParameter(ContentAttributes.DOWNWEIGH.externalName());
+                .getParameter(Attributes.DOWNWEIGH.externalName());
 
         List<Id> downweighChannelIds;
 

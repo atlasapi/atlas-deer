@@ -1,38 +1,41 @@
 package org.atlasapi.criteria.attribute;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.criteria.operator.StringOperator;
 import org.atlasapi.entity.Identified;
 
-import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
-
 public class StringAttribute extends Attribute<String> {
 
     private StringAttribute(
             String name,
-            @Nullable ChildTypeMapping<String> directMapping,
             Class<? extends Identified> target
     ) {
-        super(name, directMapping, target);
+        super(name, target);
+    }
+
+    private StringAttribute(
+            String name,
+            String javaAttributeName,
+            Class<? extends Identified> target
+    ) {
+        super(name, javaAttributeName, target);
     }
 
     public static StringAttribute create(
             String name,
-            ChildTypeMapping<String> directMapping,
             Class<? extends Identified> target
     ) {
-        return new StringAttribute(name, directMapping, target);
+        return new StringAttribute(name, target);
     }
 
     public static StringAttribute create(
             String name,
+            String javaAttributeName,
             Class<? extends Identified> target
     ) {
-        return new StringAttribute(name, null, target);
+        return new StringAttribute(name, javaAttributeName, target);
     }
 
     @Override
