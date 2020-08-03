@@ -11,6 +11,7 @@ import org.atlasapi.messaging.JacksonMessageSerializer;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.IOUtils;
 import org.joda.time.DateTime;
@@ -103,29 +104,51 @@ public class EquivalenceGraphUpdateMessageTest {
 
     @Test
     public void testDeSerializationOfOldGraphUpdateModel() throws Exception {
-        EquivalenceGraphUpdate equivalenceGraphUpdate = EquivalenceGraphUpdate.builder(
-                EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC))
-        )
-                .withCreated(
-                        ImmutableSet.of(EquivalenceGraph.valueOf(new BrandRef(
-                                Id.valueOf(2),
-                                Publisher.BBC
-                        )))
-                )
+
+        BrandRef brandRef1 = new BrandRef(Id.valueOf(1), Publisher.BBC);
+        EquivalenceGraph.Adjacents adjacents1 = new EquivalenceGraph.Adjacents(
+                brandRef1,
+                new DateTime(1470155535169L),
+                ImmutableSet.of(brandRef1),
+                ImmutableSet.of(brandRef1)
+        );
+        EquivalenceGraph equivalenceGraph1 = new EquivalenceGraph(
+                ImmutableMap.of(brandRef1.getId(), adjacents1),
+                new DateTime(1470155535152L)
+        );
+
+        BrandRef brandRef2 = new BrandRef(Id.valueOf(2), Publisher.BBC);
+        EquivalenceGraph.Adjacents adjacents2 = new EquivalenceGraph.Adjacents(
+                brandRef2,
+                new DateTime(1470155535188L),
+                ImmutableSet.of(brandRef2),
+                ImmutableSet.of(brandRef2)
+        );
+        EquivalenceGraph equivalenceGraph2 = new EquivalenceGraph(
+                ImmutableMap.of(brandRef2.getId(), adjacents2),
+                new DateTime(1470155535188L)
+        );
+
+        EquivalenceGraphUpdate equivalenceGraphUpdate = EquivalenceGraphUpdate.builder(equivalenceGraph1)
+                .withCreated(ImmutableSet.of(equivalenceGraph2))
                 .withDeleted(ImmutableSet.of(Id.valueOf(1)))
                 .build();
 
         EquivalenceGraphUpdateMessage latestModel = new EquivalenceGraphUpdateMessage(
                 "message", Timestamp.of(0), equivalenceGraphUpdate
         );
+        byte[] serialised = serializer.serialize(latestModel);
 
-        InputStream model = getClass().getResourceAsStream(
+        InputStream modelStream = getClass().getResourceAsStream(
                 "/old_equiv_graph_model_byte_array.txt");
+        String model = IOUtils.toString(modelStream);
+        assertEquals(model, new String(serialised));
+
         EquivalenceGraphUpdateMessage oldModel = serializer.deserialize(
-                IOUtils.toByteArray(model)
+                model.getBytes()
         );
         EquivalenceGraphUpdateMessage newModel = serializer.deserialize(
-                serializer.serialize(latestModel)
+                serialised
         );
         assertEquals(oldModel, newModel);
     }

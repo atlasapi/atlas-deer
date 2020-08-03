@@ -1,0 +1,1 @@
+{"@class":"org.atlasapi.messaging.ResourceUpdatedMessage","messageId":"1","timestamp":{"@class":"com.metabroadcast.common.time.Timestamp","millis":["java.lang.Long",1234]},"updatedResource":{"@class":"org.atlasapi.topic.TopicRef","id":{"@class":"org.atlasapi.entity.Id","longValue":["java.lang.Long",1]},"source":["org.atlasapi.media.entity.Publisher","BBC"]}}
