@@ -4,6 +4,8 @@ import javax.annotation.Nullable;
 
 import org.atlasapi.entity.Identified;
 
+import com.google.common.collect.ImmutableList;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class Attribute<T> implements QueryFactory<T> {
@@ -17,9 +19,7 @@ public abstract class Attribute<T> implements QueryFactory<T> {
             String name,
             Class<? extends Identified> target
     ) {
-        this.name = checkNotNull(name);
-        this.javaAttributeName = null;
-        this.target = target;
+        this(name, name, target);
     }
 
     protected Attribute(
@@ -28,7 +28,7 @@ public abstract class Attribute<T> implements QueryFactory<T> {
             Class<? extends Identified> target
     ) {
         this.name = checkNotNull(name);
-        this.javaAttributeName = javaAttributeName;
+        this.javaAttributeName = checkNotNull(javaAttributeName);
         this.target = target;
     }
 
