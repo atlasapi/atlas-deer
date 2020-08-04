@@ -175,7 +175,7 @@ public class FiltersBuilder {
         // broadcastTimeGreaterThan and broadcastTimeLessThan
         if (broadcastTimeGreaterThan != null) {
             parentParameters.add(RangeParameter.from(
-                    CONTENT_MAPPING.getBroadcasts().getTransmissionStartTime(),
+                    CONTENT_MAPPING.getBroadcasts().getTransmissionEndTime(),
                     broadcastTimeGreaterThan.truncatedTo(ChronoUnit.MINUTES)
             ));
         }
