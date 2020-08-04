@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Content> {
 
@@ -71,10 +70,11 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
     public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         if (entity instanceof Item) {
             Item item = (Item) entity;
-            Stream<Broadcast> broadcastStream = item.getBroadcasts().stream()
+            List<Broadcast> filteredBroadcasts = item.getBroadcasts().stream()
                     .filter(Broadcast::isActivelyPublished)
                     .filter(b -> b.getTransmissionEndTime()
-                            .isAfter(DateTime.now(DateTimeZone.UTC)));
+                            .isAfter(DateTime.now(DateTimeZone.UTC)))
+                    .collect(MoreCollectors.toImmutableList());
 
             if (ctxt.getRegions().isPresent()) {
                 List<Region> regions = ctxt.getRegions().get();
@@ -82,7 +82,7 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
                 List<Broadcast> broadcasts = Lists.newArrayList();
                 regions.forEach(region -> {
                     Iterable<Broadcast> broadcastsToAdd = channelsBroadcastFilter.sortAndFilter(
-                            broadcastStream.collect(MoreCollectors.toImmutableList()),
+                            filteredBroadcasts,
                             region
                     );
                     Iterables.addAll(broadcasts, broadcastsToAdd);
@@ -103,12 +103,12 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
                         ctxt
                 );
             } else {
-                Set<Id> channelIds = broadcastStream.map(Broadcast::getChannelId)
+                Set<Id> channelIds = filteredBroadcasts.stream().map(Broadcast::getChannelId)
                         .collect(MoreCollectors.toImmutableSet());
                 Map<Id, ResolvedChannel> channelMap = resolveChannelMap(channelIds);
                 writer.writeList(
                         broadcastWriter,
-                        broadcastStream.map(broadcast ->
+                        filteredBroadcasts.stream().map(broadcast ->
                                 ResolvedBroadcast.create(broadcast, channelMap.get(broadcast.getChannelId()))
                         )
                                 .collect(MoreCollectors.toImmutableList()),

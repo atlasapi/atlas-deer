@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public class BroadcastsAnnotation extends OutputAnnotation<Content> {
 
@@ -79,9 +78,9 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
             Item item,
             OutputContext ctxt
     ) throws IOException {
-        Stream<Broadcast> broadcastStream = item.getBroadcasts()
-                .stream()
-                .filter(Broadcast::isActivelyPublished);
+        List<Broadcast> filteredBroadcasts = item.getBroadcasts().stream()
+                .filter(Broadcast::isActivelyPublished)
+                .collect(MoreCollectors.toImmutableList());
 
         if (ctxt.getRegions().isPresent()) {
             List<Region> regions = ctxt.getRegions().get();
@@ -89,7 +88,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
             List<Broadcast> broadcasts = Lists.newArrayList();
             regions.forEach(region -> {
                 Iterable<Broadcast> broadcastsToAdd = channelsBroadcastFilter.sortAndFilter(
-                        broadcastStream.collect(MoreCollectors.toImmutableList()),
+                        filteredBroadcasts,
                         region
                 );
                 Iterables.addAll(broadcasts, broadcastsToAdd);
@@ -106,12 +105,12 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
 
             writer.writeList(broadcastWriter, resolvedBroadcasts, ctxt);
         } else {
-            Set<Id> channelIds = broadcastStream.map(Broadcast::getChannelId)
+            Set<Id> channelIds = filteredBroadcasts.stream().map(Broadcast::getChannelId)
                     .collect(MoreCollectors.toImmutableSet());
             Map<Id, ResolvedChannel> channelMap = resolveChannelMap(channelIds);
             writer.writeList(
                     broadcastWriter,
-                    broadcastStream.map(broadcast ->
+                    filteredBroadcasts.stream().map(broadcast ->
                             ResolvedBroadcast.create(broadcast, channelMap.get(broadcast.getChannelId()))
                     )
                             .collect(MoreCollectors.toImmutableList()),
