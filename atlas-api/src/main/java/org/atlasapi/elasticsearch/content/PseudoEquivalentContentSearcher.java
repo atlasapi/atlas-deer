@@ -72,7 +72,11 @@ public class PseudoEquivalentContentSearcher implements ContentSearcher {
             delegateLimit += selection.getOffset() * numberOfSources;
         }
 
-        return Selection.limitedTo(delegateLimit);
+        if (delegateLimit > 10000) {
+            return Selection.limitedTo(10000);
+        } else {
+            return Selection.limitedTo(delegateLimit);
+        }
     }
 
     private ImmutableList<Id> dedupeIds(DelegateIndexQueryResult result,
