@@ -69,7 +69,6 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
                     activeAnnotations,
                     getRequestedReadConsistencyLevel(operands, application.getAccessRoles())
             );
-            log.info("Finished resolving content: {}", ids);
             try {
                 if (unmerged.get() == null) {
                     log.error(
@@ -83,6 +82,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
             } catch (InterruptedException | ExecutionException e) {
                 log.error("Failed to see into the future :(");
             }
+            log.info("Finished resolving content: {}", ids);
             return Futures.transform(unmerged, mergeUsing(application, activeAnnotations));
         }
     }
@@ -122,12 +122,15 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
                         merge(entry.getKey(), entry.getValue(), application, activeAnnotations)
                 );
             }
-            log.info("Finished merging");
+            log.info("Finished all merging");
             return builder.build();
         };
     }
 
     private Iterable<E> merge(Id id, Collection<E> equivs, Application application, Set<Annotation> activeAnnotations) {
-        return merger.merge(Optional.of(id), equivs, application, activeAnnotations);
+        log.info("Merging {}", id);
+        Iterable<E> merged = merger.merge(Optional.of(id), equivs, application, activeAnnotations);
+        log.info("Merging {} finished", id);
+        return merged;
     }
 }

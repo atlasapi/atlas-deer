@@ -275,6 +275,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         if (resolved.isPresent()) {
                             result.set(resolved.get());
                         } else if (readConsistency != ConsistencyLevel.QUORUM) {
+                            log.info("Resolving again");
                             resolveWithConsistency(
                                     result,
                                     ids,
@@ -326,6 +327,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                     sets.get(value)
             ));
 
+            log.info("toEquivalentSets Finish");
             return Optional.of(resolved.build());
         };
     }
