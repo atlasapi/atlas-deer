@@ -17,6 +17,7 @@ import static org.atlasapi.criteria.attribute.Attributes.ALIASES_NAMESPACE;
 import static org.atlasapi.criteria.attribute.Attributes.ALIASES_VALUE;
 import static org.atlasapi.criteria.attribute.Attributes.BRAND_ID;
 import static org.atlasapi.criteria.attribute.Attributes.BROADCAST_WEIGHT;
+import static org.atlasapi.criteria.attribute.Attributes.CONTENT_GROUP;
 import static org.atlasapi.criteria.attribute.Attributes.CONTENT_TITLE_PREFIX;
 import static org.atlasapi.criteria.attribute.Attributes.CONTENT_TYPE;
 import static org.atlasapi.criteria.attribute.Attributes.EPISODE_BRAND_ID;
@@ -63,6 +64,7 @@ public class EsQueryParserTest {
                 .add(query(TAG_WEIGHTING, 5.0F))
                 .add(query(CONTENT_TITLE_PREFIX, "title"))
                 .add(query(GENRE, "genre"))
+                .add(query(CONTENT_GROUP, Id.valueOf(1L)))
                 .add(query(SPECIALIZATION, Specialization.FILM))
                 .build();
 

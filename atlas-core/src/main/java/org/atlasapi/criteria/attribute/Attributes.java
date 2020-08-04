@@ -216,6 +216,12 @@ public class Attributes {
             Container.class
     );
 
+    public static final Attribute<Id> CONTENT_GROUP = IdAttribute.create(
+            "contentGroups",
+            "contentGroups",
+            Content.class
+    );
+
     public static final Attribute<Specialization> SPECIALIZATION = EnumAttribute.create(
             "specialization",
             Specialization.class,

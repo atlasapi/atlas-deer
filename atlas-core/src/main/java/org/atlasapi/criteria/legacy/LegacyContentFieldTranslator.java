@@ -67,6 +67,8 @@ public class LegacyContentFieldTranslator {
             return LegacyTranslation.of(CONTENT_MAPPING.getLocations().getPricing().getPrice());
         case "age":
             return LegacyTranslation.of(CONTENT_MAPPING.getMaxAgeRating());
+        case "contentGroups":
+            return LegacyTranslation.silentlyIgnore();
         case "priority":
             return LegacyTranslation.silentlyIgnore();
         case "seriesNumber":

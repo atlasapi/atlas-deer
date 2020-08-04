@@ -58,6 +58,7 @@ import org.joda.time.DateTime;
 
 import static org.atlasapi.criteria.attribute.Attributes.ALIASES_NAMESPACE;
 import static org.atlasapi.criteria.attribute.Attributes.ALIASES_VALUE;
+import static org.atlasapi.criteria.attribute.Attributes.CONTENT_GROUP;
 import static org.atlasapi.criteria.attribute.Attributes.CONTENT_TITLE_PREFIX;
 import static org.atlasapi.criteria.attribute.Attributes.CONTENT_TYPE;
 import static org.atlasapi.criteria.attribute.Attributes.GENRE;
@@ -87,6 +88,7 @@ public class EsQueryBuilder {
                     .add(TAG_WEIGHTING)
                     .add(CONTENT_TITLE_PREFIX)
                     .add(GENRE)
+                    .add(CONTENT_GROUP)
                     .add(SPECIALIZATION)
                     .build();
 
@@ -228,12 +230,12 @@ public class EsQueryBuilder {
                 return Optional.empty();
             }
 
-            private LegacyTranslation getTranslationForAttributeName(@Nullable String name) {
+            private LegacyTranslation getTranslationForAttributeName(String name) {
                 if (com.google.common.base.Strings.isNullOrEmpty(name)) {
                     throw new IllegalArgumentException("Tried to add a query for a null or empty field name.");
                 }
                 final LegacyTranslation translation = fieldTranslator.apply(name);
-                if (!translation.shouldThrowException()) {
+                if (translation.shouldThrowException()) {
                     throw new IllegalArgumentException(name + " is not a known field.");
                 }
                 return translation;

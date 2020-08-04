@@ -549,6 +549,10 @@ public class QueryWebModule {
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
+                                Attributes.CONTENT_GROUP,
+                                IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
                                 Attributes.SPECIALIZATION,
                                 EnumCoercer.create(Specialization.FROM_KEY())
                         ),
