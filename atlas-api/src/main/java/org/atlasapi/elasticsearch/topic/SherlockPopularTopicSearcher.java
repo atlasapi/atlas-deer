@@ -7,7 +7,7 @@ import org.atlasapi.topic.PopularTopicSearcher;
 
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.sherlock.client.parameter.RangeParameter;
-import com.metabroadcast.sherlock.client.response.IdSearchQueryResponse;
+import com.metabroadcast.sherlock.client.response.NestedTermsAggregationQueryResponse;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.SherlockSearcher;
 import com.metabroadcast.sherlock.common.SherlockIndex;
@@ -57,15 +57,16 @@ public class SherlockPopularTopicSearcher implements PopularTopicSearcher {
         SearchQuery searchQuery = SearchQuery.builder()
                 .addFilter(rangeParameter)
                 .addAggregation(topicIdAggregation)
+                .withLimit(0) // we're not interested in search hits, only aggregations
                 .withIndex(SherlockIndex.CONTENT)
                 .build();
 
-        ListenableFuture<IdSearchQueryResponse> response = sherlockSearcher.searchForIds(searchQuery);
-
+        ListenableFuture<NestedTermsAggregationQueryResponse> response =
+                sherlockSearcher.searchForAggregation(searchQuery);
 
         return Futures.transform(
                 response,
-                (IdSearchQueryResponse input) ->
+                (NestedTermsAggregationQueryResponse input) ->
                         FluentIterable.from(input.getIds()).transform(Id::valueOf)
         );
     }
