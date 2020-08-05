@@ -25,6 +25,7 @@ import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
 import com.metabroadcast.sherlock.client.parameter.BoolParameter;
+import com.metabroadcast.sherlock.client.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.response.ContentSearchQueryResponse;
 import com.metabroadcast.sherlock.client.scoring.Weighting;
 import com.metabroadcast.sherlock.client.scoring.Weightings;
@@ -277,10 +278,18 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
             IndexQueryParams queryParams
     ) {
         FuzzyQueryParams searchParams = queryParams.getFuzzyQueryParams().get();
-        TitleQueryBuilder.addTitleQueryToBuilder(
-                searchQueryBuilder,
-                searchParams.getSearchTerm(),
-                searchParams.getBoost().orElse(5F)
+        searchQueryBuilder.addSearcher(
+            SearchParameter.builder()
+                    .withValue(searchParams.getSearchTerm())
+                    .withMapping(contentMapping.getTitle())
+                    .withExactMapping(contentMapping.getTitleExact())
+                    .withFuzziness()
+                    .withFuzzinessPrefixLength(2)
+                    .withFuzzinessBoost(50F)
+                    .withPhraseBoost(100F)
+                    .withExactMatchBoost(200F)
+                    .withBoost(searchParams.getBoost().orElse(5F))
+                    .build()
         );
     }
 

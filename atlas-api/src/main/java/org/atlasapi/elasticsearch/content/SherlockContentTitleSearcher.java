@@ -10,6 +10,7 @@ import org.atlasapi.elasticsearch.util.FiltersBuilder;
 
 import com.metabroadcast.sherlock.client.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.parameter.RangeParameter;
+import com.metabroadcast.sherlock.client.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.parameter.SingleClauseBoolParameter;
 import com.metabroadcast.sherlock.client.response.IdSearchQueryResponse;
 import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
@@ -49,10 +50,18 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
 
         SearchQuery.Builder searchQueryBuilder = SearchQuery.builder();
 
-        TitleQueryBuilder.addTitleQueryToBuilder(
-                searchQueryBuilder,
-                search.getTerm(),
-                search.getTitleWeighting()
+        searchQueryBuilder.addSearcher(
+                SearchParameter.builder()
+                        .withValue(search.getTerm())
+                        .withMapping(contentMapping.getTitle())
+                        .withExactMapping(contentMapping.getTitleExact())
+                        .withFuzziness()
+                        .withFuzzinessPrefixLength(2)
+                        .withFuzzinessBoost(50F)
+                        .withPhraseBoost(100F)
+                        .withExactMatchBoost(200F)
+                        .withBoost(search.getTitleWeighting())
+                        .build()
         );
 
         if (search.getIncludedPublishers() != null
