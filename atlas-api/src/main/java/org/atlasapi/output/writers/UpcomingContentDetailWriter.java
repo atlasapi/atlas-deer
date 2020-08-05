@@ -1,53 +1,40 @@
 package org.atlasapi.output.writers;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelEquivRef;
-import org.atlasapi.channel.ChannelResolver;
+import com.google.common.collect.Iterables;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ResolvedBroadcast;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.output.ResolvedChannelResolver;
 
-import com.google.common.collect.Iterables;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
 
-    private static final Logger log = LoggerFactory.getLogger(UpcomingContentDetailWriter.class);
-
     private final BroadcastWriter broadcastWriter;
     private final ItemDetailWriter itemDetailWriter;
-    private final ChannelResolver channelResolver;
+    private final ResolvedChannelResolver resolvedChannelResolver;
 
     public UpcomingContentDetailWriter(
             BroadcastWriter broadcastWriter,
             ItemDetailWriter itemDetailWriter,
-            ChannelResolver channelResolver
+            ResolvedChannelResolver resolvedChannelResolver
     ) {
         this.broadcastWriter = checkNotNull(broadcastWriter);
         this.itemDetailWriter = checkNotNull(itemDetailWriter);
-        this.channelResolver = checkNotNull(channelResolver);
+        this.resolvedChannelResolver = checkNotNull(resolvedChannelResolver);
     }
 
     @Override
@@ -58,10 +45,17 @@ public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
     @Override
     public void write(@Nonnull Item entity, @Nonnull FieldWriter writer,
             @Nonnull OutputContext ctxt) throws IOException {
-        List<ResolvedBroadcast> sortedBroadcasts = entity.getBroadcasts()
+        List<Broadcast> broadcasts = entity.getBroadcasts()
                 .stream()
                 .sorted(Broadcast.startTimeOrdering())
-                .map(broadcast -> ResolvedBroadcast.create(broadcast, resolveChannel(broadcast)))
+                .collect(MoreCollectors.toImmutableList());
+        Set<Id> channelIds = broadcasts.stream()
+                .map(Broadcast::getChannelId)
+                .collect(MoreCollectors.toImmutableSet());
+        Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(channelIds);
+
+        List<ResolvedBroadcast> sortedBroadcasts = broadcasts.stream()
+                .map(broadcast -> ResolvedBroadcast.create(broadcast, channelMap.get(broadcast.getChannelId())))
                 .collect(Collectors.toList());
 
         writer.writeObject(broadcastWriter, Iterables.getFirst(sortedBroadcasts, null), ctxt);
@@ -72,46 +66,5 @@ public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
     @Override
     public String fieldName(Item entity) {
         return null;
-    }
-
-    //TODO: Move resolution logic to query executor
-    private ResolvedChannel resolveChannel(Broadcast broadcast) {
-
-        try {
-            Channel channel = Futures.getChecked(
-                    channelResolver.resolveIds(
-                            ImmutableList.of(broadcast.getChannelId())
-                    ),
-                    IOException.class
-            )
-                    .getResources()
-                    .first()
-                    .orNull();
-
-            return ResolvedChannel.builder()
-                    .withChannel(channel)
-                    .withResolvedEquivalents(resolveEquivalents(channel.getSameAs()))
-                    .build();
-
-        } catch (IOException e) {
-            log.error("Failed to resolve channel: {}", broadcast.getChannelId(), e);
-            return null;
-        }
-
-    }
-
-    @Nullable
-    private Iterable<Channel> resolveEquivalents(Set<ChannelEquivRef> channelRefs) {
-        try {
-            if (channelRefs != null && !channelRefs.isEmpty()) {
-                Iterable<Id> ids = Iterables.transform(channelRefs, ResourceRef::getId);
-                return channelResolver.resolveIds(ids).get(1, TimeUnit.MINUTES).getResources();
-            }
-
-            return null;
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.error("Failed to resolve channel equivlents", e);
-            return null;
-        }
     }
 }
