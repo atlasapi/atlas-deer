@@ -36,7 +36,7 @@ public class ScheduleEntryListWriter implements EntityListWriter<ItemAndBroadcas
 
         ResolvedBroadcast broadcast = ResolvedBroadcast.create(
                 entity.getBroadcast(),
-                resolvedChannelResolver.resolveChannel(entity.getBroadcast().getChannelId())
+                resolvedChannelResolver.resolveChannel(entity.getBroadcast())
         );
 
         writer.writeObject(broadcastWriter, "broadcast", broadcast, ctxt);

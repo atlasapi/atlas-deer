@@ -22,7 +22,6 @@ import org.joda.time.DateTimeZone;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Content> {
 
@@ -75,10 +74,7 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
                     Iterables.addAll(broadcasts, broadcastsToAdd);
                 });
 
-                Set<Id> channelIds = broadcasts.stream()
-                        .map(Broadcast::getChannelId)
-                        .collect(MoreCollectors.toImmutableSet());
-                Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(channelIds);
+                Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(broadcasts);
 
                 List<ResolvedBroadcast> resolvedBroadcasts = broadcasts.stream()
                         .map(broadcast -> ResolvedBroadcast.create(broadcast, channelMap.get(broadcast.getChannelId())))
@@ -90,9 +86,7 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
                         ctxt
                 );
             } else {
-                Set<Id> channelIds = filteredBroadcasts.stream().map(Broadcast::getChannelId)
-                        .collect(MoreCollectors.toImmutableSet());
-                Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(channelIds);
+                Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(filteredBroadcasts);
                 writer.writeList(
                         broadcastWriter,
                         filteredBroadcasts.stream().map(broadcast ->

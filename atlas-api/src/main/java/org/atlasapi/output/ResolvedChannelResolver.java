@@ -5,10 +5,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.stream.MoreStreams;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelEquivRef;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
+import org.atlasapi.content.Broadcast;
 import org.atlasapi.entity.Id;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +35,20 @@ public class ResolvedChannelResolver {
         this.channelResolver = checkNotNull(channelResolver);
     }
 
+    public ResolvedChannel resolveChannel(Broadcast broadcast) {
+        return resolveChannel(broadcast.getChannelId());
+    }
+
     public ResolvedChannel resolveChannel(Id channelId) {
         return resolveChannelMap(ImmutableSet.of(channelId)).get(channelId);
+    }
+
+    public Map<Id, ResolvedChannel> resolveChannelMap(Iterable<Broadcast> broadcasts) {
+        return resolveChannelMap(
+                MoreStreams.stream(broadcasts)
+                        .map(Broadcast::getChannelId)
+                        .collect(MoreCollectors.toImmutableSet())
+        );
     }
 
     //TODO: Move resolution logic to query executor?

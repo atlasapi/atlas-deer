@@ -16,7 +16,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -49,10 +48,8 @@ public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
                 .stream()
                 .sorted(Broadcast.startTimeOrdering())
                 .collect(MoreCollectors.toImmutableList());
-        Set<Id> channelIds = broadcasts.stream()
-                .map(Broadcast::getChannelId)
-                .collect(MoreCollectors.toImmutableSet());
-        Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(channelIds);
+
+        Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(broadcasts);
 
         List<ResolvedBroadcast> sortedBroadcasts = broadcasts.stream()
                 .map(broadcast -> ResolvedBroadcast.create(broadcast, channelMap.get(broadcast.getChannelId())))

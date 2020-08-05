@@ -20,7 +20,6 @@ import org.atlasapi.output.writers.BroadcastWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class BroadcastsAnnotation extends OutputAnnotation<Content> {
 
@@ -81,10 +80,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
                 Iterables.addAll(broadcasts, broadcastsToAdd);
             });
 
-            Set<Id> channelIds = broadcasts.stream()
-                    .map(Broadcast::getChannelId)
-                    .collect(MoreCollectors.toImmutableSet());
-            Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(channelIds);
+            Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(broadcasts);
 
             List<ResolvedBroadcast> resolvedBroadcasts = broadcasts.stream()
                     .map(broadcast -> ResolvedBroadcast.create(broadcast, channelMap.get(broadcast.getChannelId())))
@@ -92,9 +88,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
 
             writer.writeList(broadcastWriter, resolvedBroadcasts, ctxt);
         } else {
-            Set<Id> channelIds = filteredBroadcasts.stream().map(Broadcast::getChannelId)
-                    .collect(MoreCollectors.toImmutableSet());
-            Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(channelIds);
+            Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(filteredBroadcasts);
             writer.writeList(
                     broadcastWriter,
                     filteredBroadcasts.stream().map(broadcast ->

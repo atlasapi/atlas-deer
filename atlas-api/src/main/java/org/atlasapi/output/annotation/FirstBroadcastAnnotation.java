@@ -20,7 +20,6 @@ import org.joda.time.DateTime;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class FirstBroadcastAnnotation extends OutputAnnotation<Content> {
@@ -66,10 +65,7 @@ public class FirstBroadcastAnnotation extends OutputAnnotation<Content> {
 
         List<Broadcast> firstBroadcasts = ImmutableList.copyOf(firstBroadcasts(broadcasts));
 
-        Set<Id> channelIds = firstBroadcasts.stream()
-                .map(Broadcast::getChannelId)
-                .collect(MoreCollectors.toImmutableSet());
-        Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(channelIds);
+        Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(firstBroadcasts);
 
         List<ResolvedBroadcast> resolvedBroadcasts = firstBroadcasts.stream()
                 .map(broadcast -> ResolvedBroadcast.create(broadcast, channelMap.get(broadcast.getChannelId())))

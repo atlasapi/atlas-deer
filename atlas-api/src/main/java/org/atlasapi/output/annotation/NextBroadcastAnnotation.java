@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class NextBroadcastAnnotation extends OutputAnnotation<Content> {
 
@@ -75,10 +74,7 @@ public class NextBroadcastAnnotation extends OutputAnnotation<Content> {
 
         List<Broadcast> nextBroadcasts = ImmutableList.copyOf(nextBroadcast(broadcasts));
 
-        Set<Id> channelIds = nextBroadcasts.stream()
-                .map(Broadcast::getChannelId)
-                .collect(MoreCollectors.toImmutableSet());
-        Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(channelIds);
+        Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(nextBroadcasts);
 
         List<ResolvedBroadcast> resolvedBroadcasts = nextBroadcasts.stream()
                 .map(broadcast -> ResolvedBroadcast.create(broadcast, channelMap.get(broadcast.getChannelId())))
