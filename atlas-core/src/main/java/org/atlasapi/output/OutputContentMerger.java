@@ -159,22 +159,18 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             final Application application,
             Set<Annotation> activeAnnotations)
     {
-        log.info("Merging start");
         T chosen = createMerged(sortedEquivalents);
-        log.info("Created initial merged content");
         return chosen.accept(new ContentVisitorAdapter<T>() {
 
             @Override
             protected T visitContainer(Container container) {
                 mergeIn(application, container, filterEquivs(sortedEquivalents, Container.class));
-                log.info("Merging end");
                 return uncheckedCast(container);
             }
 
             @Override
             protected T visitItem(Item item) {
                 mergeIn(application, item, filterEquivs(sortedEquivalents, Item.class), activeAnnotations);
-                log.info("Merging end");
                 return uncheckedCast(item);
             }
 
@@ -284,7 +280,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private <T extends Content> void mergeContent(Application application, T chosen,
             Iterable<T> orderedContent) {
-        log.info("mergeContent");
         mergeDescribed(application, chosen, orderedContent);
         for (T content : orderedContent) {
             for (Clip clip : content.getClips()) {
@@ -333,7 +328,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         mergeLanguages(chosen, orderedContent);
         mergeCertificates(chosen, orderedContent);
-        log.info("mergeContent end");
     }
 
     private <T extends Content> void mergeDuration(T chosen, Iterable<T> orderedContent) {
@@ -393,7 +387,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private <T extends Item> void mergeIn(Application application, T chosen,
             Iterable<T> orderedContent,
             Set<Annotation> activeAnnotations) {
-        log.info("mergeIn Item");
         mergeContent(application, chosen, orderedContent);
         mergeVersions(application, chosen, orderedContent, activeAnnotations);
 
@@ -406,7 +399,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getContainerSummary() == null) {
             chosen.setContainerSummary(first(orderedContent, TO_CONTAINER_SUMMARY));
         }
-        log.info("mergeIn Item end");
     }
 
     private <T extends Content> void mergeKeyPhrases(T chosen, Iterable<T> orderedContent) {
@@ -496,7 +488,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private <T extends Item> void mergeVersions(Application application, T chosen,
             Iterable<T> orderedContent, Set<Annotation> activeAnnotations) {
-        log.info("mergeVersions");
 
         mergeBroadcasts(application, chosen, orderedContent, activeAnnotations);
 
@@ -514,7 +505,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             }
         }
         chosen.setSegmentEvents(segmentEvents.build());
-        log.info("mergeVersions end");
     }
 
     private <T extends Item> void mergeBroadcasts(
@@ -523,7 +513,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<T> orderedContent,
             Set<Annotation> activeAnnotations
     ) {
-        log.info("mergeBroadcasts");
 
         // Behaviour of "broadcasts" annotation: take broadcasts from the most precedent source with
         // broadcasts, and merge them with broadcasts from less precedent sources
@@ -595,13 +584,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
 
         if (chosen.getBroadcasts() != null && !chosen.getBroadcasts().isEmpty()) {
-            log.info("matchAndMerge {} broadcasts", chosen.getBroadcasts().size());
             for (Broadcast chosenBroadcast : chosen.getBroadcasts()) {
                 matchAndMerge(chosenBroadcast, orderedContent);
             }
-            log.info("matchAndMerge broadcasts end");
         }
-        log.info("mergeBroadcasts end");
     }
 
     private <T extends Content> void mergeEncodings(T chosen, Iterable<T> orderedContent) {
@@ -639,14 +625,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<T> orderedContent) {
         List<Broadcast> equivBroadcasts = Lists.newArrayList();
         for (T item : orderedContent) {
-            log.info("matchAndMerging to {} broadcasts", item.getBroadcasts().size());
             Iterable<Broadcast> broadcasts = item.getBroadcasts();
             if (broadcasts != null) {
                 Optional<Broadcast> matched = Iterables.tryFind(
                         broadcasts,
                         input -> broadcastsMatch(chosenBroadcast, input)
                 );
-                log.info("tryFind finish");
                 if (matched.isPresent() && matched.get() != chosenBroadcast) {
                     equivBroadcasts.add(matched.get());
                 }
