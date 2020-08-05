@@ -69,7 +69,6 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
                     activeAnnotations,
                     getRequestedReadConsistencyLevel(operands, application.getAccessRoles())
             );
-            log.info("Finished resolving content: {}", ids);
             try {
                 if (unmerged.get() == null) {
                     log.error(
@@ -122,7 +121,6 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
                         merge(entry.getKey(), entry.getValue(), application, activeAnnotations)
                 );
             }
-            log.info("Finished merging");
             return builder.build();
         };
     }

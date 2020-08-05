@@ -65,14 +65,12 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
 
         OutputContext ctxt = outputContext(result.getContext());
 
-        log.info("Writing response");
         if (result.isListResult()) {
             FluentIterable<Content> resources = result.getResources();
             writer.writeList(contentListWriter, resources, ctxt);
         } else {
             writer.writeObject(contentListWriter, result.getOnlyResource(), ctxt);
         }
-        log.info("Finished writing response");
 
     }
 
@@ -86,16 +84,12 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
 
         if (!Strings.isNullOrEmpty(regionParam)) {
             List<String> regions = Arrays.asList(regionParam.split("\\s*,\\s*"));
-            log.info("Resolving regions: {}", regions);
             builder.withRegions(resolveRegions(regions));
-            log.info("Finished resolving regions: {}", regions);
         }
 
         if (!Strings.isNullOrEmpty(platformParam)) {
             List<String> platforms = Arrays.asList(platformParam.split("\\s*,\\s*"));
-            log.info("Resolving platforms: {}", platforms);
             builder.withPlatforms(resolvePlatforms(platforms));
-            log.info("Finished resolving platforms: {}", platforms);
         }
 
         return builder.build();

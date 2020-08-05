@@ -381,7 +381,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 setRows,
                 activeAnnotations
         );
-        log.info("Finished deserializing content");
 
         return filterContentSets(selectedSources, content, graphs, index, activeAnnotations);
     }
@@ -500,8 +499,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                     filteredContent
             );
         }
-
-        log.info("Finished filtering content sets");
 
         return filteredContentBuilder.build();
     }
