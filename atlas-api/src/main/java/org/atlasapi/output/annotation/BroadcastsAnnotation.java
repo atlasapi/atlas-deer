@@ -1,20 +1,9 @@
 package org.atlasapi.output.annotation;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import javax.annotation.Nullable;
-
-import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelEquivRef;
-import org.atlasapi.channel.ChannelResolver;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Region;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
@@ -23,42 +12,34 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ResolvedBroadcast;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.output.ResolvedChannelResolver;
 import org.atlasapi.output.writers.BroadcastWriter;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public class BroadcastsAnnotation extends OutputAnnotation<Content> {
 
-    private static final Logger log = LoggerFactory.getLogger(BroadcastsAnnotation.class);
-
     private final BroadcastWriter broadcastWriter;
     private final ChannelsBroadcastFilter channelsBroadcastFilter;
-    private final ChannelResolver channelResolver;
+    private final ResolvedChannelResolver resolvedChannelResolver;
 
     private BroadcastsAnnotation(
             BroadcastWriter broadcastWriter,
             ChannelsBroadcastFilter channelsBroadcastFilter,
-            ChannelResolver channelResolver
+            ResolvedChannelResolver resolvedChannelResolver
     ) {
         this.broadcastWriter = broadcastWriter;
         this.channelsBroadcastFilter = channelsBroadcastFilter;
-        this.channelResolver = channelResolver;
+        this.resolvedChannelResolver = resolvedChannelResolver;
     }
 
     public static BroadcastsAnnotation create(
             NumberToShortStringCodec codec,
-            ChannelResolver channelResolver
+            ResolvedChannelResolver resolvedChannelResolver
     ) {
         return new BroadcastsAnnotation(
                 BroadcastWriter.create(
@@ -67,7 +48,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
                         codec
                 ),
                 ChannelsBroadcastFilter.create(),
-                channelResolver
+                resolvedChannelResolver
         );
     }
 
@@ -83,9 +64,9 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
             Item item,
             OutputContext ctxt
     ) throws IOException {
-        Stream<Broadcast> broadcastStream = item.getBroadcasts()
-                .stream()
-                .filter(Broadcast::isActivelyPublished);
+        List<Broadcast> filteredBroadcasts = item.getBroadcasts().stream()
+                .filter(Broadcast::isActivelyPublished)
+                .collect(MoreCollectors.toImmutableList());
 
         if (ctxt.getRegions().isPresent()) {
             List<Region> regions = ctxt.getRegions().get();
@@ -93,67 +74,29 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
             List<Broadcast> broadcasts = Lists.newArrayList();
             regions.forEach(region -> {
                 Iterable<Broadcast> broadcastsToAdd = channelsBroadcastFilter.sortAndFilter(
-                        broadcastStream.collect(MoreCollectors.toImmutableList()),
+                        filteredBroadcasts,
                         region
                 );
                 Iterables.addAll(broadcasts, broadcastsToAdd);
             });
 
+            Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(broadcasts);
+
             List<ResolvedBroadcast> resolvedBroadcasts = broadcasts.stream()
-                    .map(broadcast -> ResolvedBroadcast.create(broadcast, resolveChannel(broadcast)))
+                    .map(broadcast -> ResolvedBroadcast.create(broadcast, channelMap.get(broadcast.getChannelId())))
                     .collect(MoreCollectors.toImmutableList());
 
             writer.writeList(broadcastWriter, resolvedBroadcasts, ctxt);
         } else {
+            Map<Id, ResolvedChannel> channelMap = resolvedChannelResolver.resolveChannelMap(filteredBroadcasts);
             writer.writeList(
                     broadcastWriter,
-                    broadcastStream.map(broadcast ->
-                            ResolvedBroadcast.create(broadcast, resolveChannel(broadcast))
+                    filteredBroadcasts.stream().map(broadcast ->
+                            ResolvedBroadcast.create(broadcast, channelMap.get(broadcast.getChannelId()))
                     )
                             .collect(MoreCollectors.toImmutableList()),
                     ctxt
             );
-        }
-    }
-
-    //TODO: Move resolution logic to query executor
-    private ResolvedChannel resolveChannel(Broadcast broadcast) {
-
-        try {
-            Channel channel = Futures.getChecked(
-                    channelResolver.resolveIds(
-                            ImmutableList.of(broadcast.getChannelId())
-                    ),
-                    IOException.class
-            )
-                    .getResources()
-                    .first()
-                    .orNull();
-
-            return ResolvedChannel.builder()
-                    .withChannel(channel)
-                    .withResolvedEquivalents(resolveEquivalents(channel.getSameAs()))
-                    .build();
-
-        } catch (IOException e) {
-            log.error("Failed to resolve channel: {}", broadcast.getChannelId(), e);
-            return null;
-        }
-
-    }
-
-    @Nullable
-    private Iterable<Channel> resolveEquivalents(Set<ChannelEquivRef> channelRefs) {
-        try {
-            if (channelRefs != null && !channelRefs.isEmpty()) {
-                Iterable<Id> ids = Iterables.transform(channelRefs, ResourceRef::getId);
-                return channelResolver.resolveIds(ids).get(1, TimeUnit.MINUTES).getResources();
-            }
-
-            return null;
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.error("Failed to resolve channel equivlents", e);
-            return null;
         }
     }
 
