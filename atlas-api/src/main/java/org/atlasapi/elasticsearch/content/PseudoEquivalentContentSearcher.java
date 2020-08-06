@@ -1,7 +1,6 @@
 package org.atlasapi.elasticsearch.content;
 
 import java.util.LinkedHashMap;
-import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.content.ContentSearcher;

@@ -20,8 +20,6 @@ import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 import com.metabroadcast.sherlock.common.mapping.TopicMapping;
 
 import com.codahale.metrics.MetricRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SherlockSearchModule implements SearchModule {
 

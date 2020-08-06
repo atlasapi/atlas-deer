@@ -1,7 +1,5 @@
 package org.atlasapi.elasticsearch.content;
 
-import java.util.Set;
-
 import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.media.entity.Publisher;

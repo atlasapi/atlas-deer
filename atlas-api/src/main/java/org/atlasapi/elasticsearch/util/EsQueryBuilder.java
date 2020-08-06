@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.BooleanAttributeQuery;
 import org.atlasapi.criteria.DateTimeAttributeQuery;

@@ -10,6 +10,7 @@ import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.FuzzyQueryParams;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.legacy.LegacyContentFieldTranslator;
 import org.atlasapi.criteria.legacy.LegacyTranslation;
 import org.atlasapi.elasticsearch.query.EsQueryParser;
 import org.atlasapi.elasticsearch.query.IndexQueryParams;
@@ -18,7 +19,6 @@ import org.atlasapi.elasticsearch.util.EsQueryBuilder;
 import org.atlasapi.elasticsearch.util.FiltersBuilder;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.criteria.legacy.LegacyContentFieldTranslator;
 import org.atlasapi.util.SecondaryIndex;
 
 import com.metabroadcast.common.query.Selection;
