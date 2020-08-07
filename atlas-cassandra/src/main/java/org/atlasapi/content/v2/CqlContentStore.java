@@ -167,7 +167,7 @@ public class CqlContentStore implements ContentStore {
                     = resolvePreviousSerialized(content);
             Content previous = deserializeIfFull(previousSerialized);
 
-            if (content.getId() != null && content.getId().longValue() == 20408351) {
+            if (content.getId().longValue() == 20408351) {
                 log.warn("Ignoring {} for now since it has a known Nitro API flip-flopping issue", content.getId());
                 return WriteResult.<Content, Content>result(content, false)
                         .withPrevious(previous)
