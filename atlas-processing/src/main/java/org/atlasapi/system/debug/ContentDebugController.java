@@ -38,7 +38,6 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.neo4j.service.Neo4jContentStore;
-import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
 import org.atlasapi.system.bootstrap.ContentBootstrapListener;
 import org.atlasapi.system.bootstrap.ContentNeo4jMigrator;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
@@ -47,12 +46,9 @@ import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.util.EsObject;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -99,8 +95,6 @@ public class ContentDebugController {
     private final ContentBootstrapListener contentEquivAndHierarchyBootstrapListener;
     private final ContentBootstrapListener nullMessageSendingContentEquivAndHierarchyBootstrapListener;
     private final ContentNeo4jMigrator contentNeo4jMigrator;
-
-    private static Logger log = LoggerFactory.getLogger(ContentDebugController.class);
 
     private ContentDebugController(Builder builder) {
         gson = new GsonBuilder()
@@ -425,29 +419,18 @@ public class ContentDebugController {
 
     @RequestMapping("/system/debug/content/{id}/migrate")
     public void forceEquivUpdate(
-            @RequestHeader Map<String, String> headers,
             @PathVariable("id") String id,
             @RequestParam(name = "equivalents", defaultValue = "false") boolean migrateEquivalents,
             @RequestParam(name = "hierarchy", defaultValue = "true") boolean migrateHierarchy,
             @RequestParam(name = "sendKafkaMessages", defaultValue = "true") boolean sendKafkaMessages,
             final HttpServletResponse response
     ) throws IOException {
-        log.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-                DateTime.now(),
-                "singleId",
-                headers.get("Referer"),
-                headers.get("Origin"),
-                id,
-                migrateEquivalents,
-                migrateHierarchy,
-                sendKafkaMessages);
         Content content = getContentById(id);
         migrateContent(migrateEquivalents, migrateHierarchy, sendKafkaMessages, response, content);
     }
 
     @RequestMapping("/system/debug/content/migrate")
     public void forceListEquivUpdate(
-            @RequestHeader Map<String, String> headers,
             @RequestParam(name = "ids", defaultValue = "") String ids,
             @RequestParam(name = "uris", defaultValue = "") String uris,
             @RequestParam(name = "equivalents", defaultValue = "false") boolean migrateEquivalents,
@@ -463,30 +446,12 @@ public class ContentDebugController {
 
         Iterable<String> requestedIds = commaSplitter.split(ids);
         for (String id : requestedIds) {
-            log.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-                    DateTime.now(),
-                    ids+(!ids.equals("")&&!uris.equals("")?",":"")+uris,
-                    headers.get("Referer"),
-                    headers.get("Origin"),
-                    id,
-                    migrateEquivalents,
-                    migrateHierarchy,
-                    sendKafkaMessages);
             Content content = getContentById(id);
             migrateContent(migrateEquivalents, migrateHierarchy, sendKafkaMessages, response, content);
         }
 
         Iterable<String> requestedUris = commaSplitter.split(uris);
         for (String uri : requestedUris) {
-            log.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-                    DateTime.now(),
-                    ids+(!ids.equals("")&&!uris.equals("")?",":"")+uris,
-                    headers.get("Referer"),
-                    headers.get("Origin"),
-                    uri,
-                    migrateEquivalents,
-                    migrateHierarchy,
-                    sendKafkaMessages);
             Content content = getContentByUri(uri);
             migrateContent(migrateEquivalents, migrateHierarchy, sendKafkaMessages, response, content);
         }
