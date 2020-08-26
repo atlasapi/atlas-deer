@@ -1,16 +1,17 @@
 package org.atlasapi.output.writers;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.stream.MoreCollectors;
+import org.atlasapi.content.Broadcast;
+import org.atlasapi.entity.Alias;
+import org.atlasapi.media.entity.Publisher;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
-import org.atlasapi.content.Broadcast;
-import org.atlasapi.entity.Alias;
-
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BroadcastIdAliasMapping implements Function<Broadcast, Alias> {
 
@@ -48,6 +49,10 @@ public class BroadcastIdAliasMapping implements Function<Broadcast, Alias> {
 
     }
 
+    private ImmutableSet<Publisher> enabledPublisherNamespaces = ImmutableSet.of(
+            Publisher.YOUVIEW_JSON
+    );
+
     private ImmutableList<AliasMapper> mappers = ImmutableList.<AliasMapper>builder()
             .add(new GroupAliasMapper("^gb:bt:sport:([a-zA-Z0-9\\-]*)?$", "ebs:slot", 1))
             .add(new GroupAliasMapper("^pa:([0-9]*)$", "pa:slot", 1))
@@ -68,6 +73,17 @@ public class BroadcastIdAliasMapping implements Function<Broadcast, Alias> {
                 }
             })
             .add(new GroupAliasMapper("^([0-9]*)$", "rovicorp:slot", 1))
+            .addAll(
+                    enabledPublisherNamespaces.stream()
+                            .map(publisher ->
+                                    new GroupAliasMapper(
+                                            "^" + publisher.key() + ":(.*)$",
+                                            publisher.key() + ":slot",
+                                            1
+                                    )
+                            )
+                            .collect(MoreCollectors.toImmutableList())
+            )
             .build();
 
     @Override
