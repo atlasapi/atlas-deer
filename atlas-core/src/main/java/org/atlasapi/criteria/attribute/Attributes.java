@@ -84,12 +84,12 @@ public class Attributes {
             "topics.relationship",
             Identified.class
     );
-    public static final Attribute<Float> TAG_WEIGHTING = FloatAttribute.list(
+    public static final Attribute<Float> TAG_WEIGHTING = FloatAttribute.single(
             "tags.weighting",
             "topics.weighting",
             Identified.class
     );
-    public static final Attribute<Boolean> TAG_SUPERVISED = BooleanAttribute.list(
+    public static final Attribute<Boolean> TAG_SUPERVISED = BooleanAttribute.single(
             "tags.supervised",
             "topics.supervised",
             Identified.class
@@ -128,27 +128,27 @@ public class Attributes {
             "q",
             Identified.class
     );
-    public static final Attribute<Float> TITLE_BOOST = FloatAttribute.list(
+    public static final Attribute<Float> TITLE_BOOST = FloatAttribute.single(
             "title_boost",
             Identified.class
     );
-    public static final Attribute<String> ORDER_BY = StringAttribute.list(
+    public static final Attribute<String> ORDER_BY = StringAttribute.single(
             "order_by",
             Identified.class
     );
-    public static final Attribute<Float> BROADCAST_WEIGHT = FloatAttribute.list(
+    public static final Attribute<Float> BROADCAST_WEIGHT = FloatAttribute.single(
             "broadcastWeight",
             Identified.class
     );
-    public static final Attribute<Id> BRAND_ID = IdAttribute.list(
+    public static final Attribute<Id> BRAND_ID = IdAttribute.single(
             "brand.id",
             Identified.class
     );
-    public static final Attribute<Id> EPISODE_BRAND_ID = IdAttribute.list(
+    public static final Attribute<Id> EPISODE_BRAND_ID = IdAttribute.single(
             "episode.brand.id",
             Identified.class
     );
-    public static final Attribute<Id> SERIES_ID = IdAttribute.list(
+    public static final Attribute<Id> SERIES_ID = IdAttribute.single(
             "series.id",
             Identified.class
     );
@@ -156,7 +156,7 @@ public class Attributes {
             "actionableFilterParameters",
             Identified.class
     );
-    public static final Attribute<Boolean> HIGHER_READ_CONSISTENCY = BooleanAttribute.list(
+    public static final Attribute<Boolean> HIGHER_READ_CONSISTENCY = BooleanAttribute.single(
             "higherReadConsistency",
             Identified.class
     );
@@ -171,7 +171,7 @@ public class Attributes {
     public static final String ALIASES_VALUE_PARAM = "aliases.value";
     public static final String REFRESH_CACHE_PARAM = "refresh_cache";
 
-    public static final Attribute<Boolean> ADVERTISED_ON = BooleanAttribute.list(
+    public static final Attribute<Boolean> ADVERTISED_ON = BooleanAttribute.single(
             ADVERTISED_FROM_PARAM,
             Identified.class
     );
@@ -185,27 +185,27 @@ public class Attributes {
             Publisher.class,
             Identified.class
     );
-    public static final Attribute<MediaType> MEDIA_TYPE = EnumAttribute.list(
+    public static final Attribute<MediaType> MEDIA_TYPE = EnumAttribute.single(
             MEDIA_TYPE_PARAM,
             MediaType.class,
             Identified.class
     );
-    public static final Attribute<String> ORDER_BY_CHANNEL = StringAttribute.list(
+    public static final Attribute<String> ORDER_BY_CHANNEL = StringAttribute.single(
             ORDER_BY_PARAM,
             Channel.class
     );
 
-    public static final Attribute<String> REFRESH_CACHE = StringAttribute.list(
+    public static final Attribute<String> REFRESH_CACHE = StringAttribute.single(
             REFRESH_CACHE_PARAM,
             Channel.class
     );
-    public static final Attribute<String> CHANNEL_GROUP_REFRESH_CACHE = StringAttribute.list(
+    public static final Attribute<String> CHANNEL_GROUP_REFRESH_CACHE = StringAttribute.single(
             REFRESH_CACHE_PARAM,
             ChannelGroup.class
     );
 
     // For filtering
-    public static final Attribute<String> CONTENT_TITLE_PREFIX = StringAttribute.list(
+    public static final Attribute<String> CONTENT_TITLE_PREFIX = StringAttribute.single(
             "title",
             "parentFlattenedTitle",
             Content.class
@@ -224,7 +224,7 @@ public class Attributes {
     )
             .withAlias("contentGroups");
 
-    public static final Attribute<Specialization> SPECIALIZATION = EnumAttribute.list(
+    public static final Attribute<Specialization> SPECIALIZATION = EnumAttribute.single(
             "specialization",
             Specialization.class,
             Described.class
