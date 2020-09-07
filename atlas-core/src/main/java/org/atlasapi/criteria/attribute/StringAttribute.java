@@ -43,7 +43,7 @@ public class StringAttribute extends Attribute<String> {
             String javaAttributeName,
             Class<? extends Identified> target
     ) {
-        return new StringAttribute(name, javaAttributeName, target, true);
+        return new StringAttribute(name, javaAttributeName, target, false);
     }
 
     public static StringAttribute singleFreeText(
