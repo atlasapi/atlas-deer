@@ -78,7 +78,7 @@ public class QueryAttributeParser implements ParameterNameProvider {
                 for (String paramString : param.getValue()) {
 
                     Iterable<String> values;
-                    if (attribute.isCollectionOfValues()) {
+                    if (attribute.shouldSplitValuesIntoList()) {
                         values = splitVals(paramString);
                     } else {
                         values = Collections.singletonList(paramString);

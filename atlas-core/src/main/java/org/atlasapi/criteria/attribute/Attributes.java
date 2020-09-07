@@ -124,7 +124,7 @@ public class Attributes {
             "ids",
             ChannelGroup.class
     );
-    public static final Attribute<String> Q = StringAttribute.single(
+    public static final Attribute<String> Q = StringAttribute.singleFreeText(
             "q",
             Identified.class
     );

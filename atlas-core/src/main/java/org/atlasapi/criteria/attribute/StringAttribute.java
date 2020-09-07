@@ -16,6 +16,14 @@ public class StringAttribute extends Attribute<String> {
     }
 
     private StringAttribute(
+            String name, Class<? extends Identified> target,
+            boolean isCollectionOfValues,
+            boolean shouldSplitValuesIntoList
+    ) {
+        super(name, target, isCollectionOfValues, shouldSplitValuesIntoList);
+    }
+
+    private StringAttribute(
             String name, String javaAttributeName,
             Class<? extends Identified> target,
             boolean isCollectionOfValues
@@ -35,7 +43,14 @@ public class StringAttribute extends Attribute<String> {
             String javaAttributeName,
             Class<? extends Identified> target
     ) {
-        return new StringAttribute(name, javaAttributeName, target, false);
+        return new StringAttribute(name, javaAttributeName, target, true);
+    }
+
+    public static StringAttribute singleFreeText(
+            String name,
+            Class<? extends Identified> target
+    ) {
+        return new StringAttribute(name, target, false, false);
     }
 
     public static StringAttribute list(
