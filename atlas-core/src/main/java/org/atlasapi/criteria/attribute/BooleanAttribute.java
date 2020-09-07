@@ -47,6 +47,14 @@ public class BooleanAttribute extends Attribute<Boolean> {
         return new BooleanAttribute(name, target, true);
     }
 
+    public static BooleanAttribute list(
+            String name,
+            String javaAttributeName,
+            Class<? extends Identified> target
+    ) {
+        return new BooleanAttribute(name, javaAttributeName, target, true);
+    }
+
     @Override
     public String toString() {
         return "Boolean valued attribute: " + name;

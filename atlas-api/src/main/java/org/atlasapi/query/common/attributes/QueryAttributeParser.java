@@ -1,6 +1,7 @@
 package org.atlasapi.query.common.attributes;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -68,13 +69,22 @@ public class QueryAttributeParser implements ParameterNameProvider {
         ImmutableSet.Builder<AttributeQuery<?>> operands = ImmutableSet.builder();
 
         for (Entry<String, String[]> param : getParameterMap(request).entrySet()) {
-            Optional<Attribute<?>> attribute = attributesLookup.attributeFor(param.getKey());
+            Optional<Attribute<?>> optionalAttribute = attributesLookup.attributeFor(param.getKey());
 
-            if (attribute.isPresent()) {
-                QueryAtomParser<?> parser = parsers.get(attribute.get());
+            if (optionalAttribute.isPresent()) {
+                Attribute<?> attribute = optionalAttribute.get();
+                QueryAtomParser<?> parser = parsers.get(attribute);
 
                 for (String paramString : param.getValue()) {
-                    operands.add(parser.parse(param.getKey(), splitVals(paramString)));
+
+                    Iterable<String> values;
+                    if (attribute.isCollectionOfValues()) {
+                        values = splitVals(paramString);
+                    } else {
+                        values = Collections.singletonList(paramString);
+                    }
+
+                    operands.add(parser.parse(param.getKey(), values));
                 }
             }
         }

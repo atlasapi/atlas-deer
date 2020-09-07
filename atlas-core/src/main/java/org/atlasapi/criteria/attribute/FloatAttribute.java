@@ -47,6 +47,14 @@ public class FloatAttribute extends Attribute<Float> {
         return new FloatAttribute(name, target, true);
     }
 
+    public static FloatAttribute list(
+            String name,
+            String javaAttributeName,
+            Class<? extends Identified> target
+    ) {
+        return new FloatAttribute(name, javaAttributeName, target, true);
+    }
+
     @Override
     public String toString() {
         return "Float valued attribute: " + name;
