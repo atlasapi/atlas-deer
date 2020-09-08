@@ -12,6 +12,7 @@ import org.atlasapi.content.QueryParseException;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attribute;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.query.common.ParameterNameProvider;
 
 import com.google.common.base.Optional;
@@ -69,22 +70,27 @@ public class QueryAttributeParser implements ParameterNameProvider {
         ImmutableSet.Builder<AttributeQuery<?>> operands = ImmutableSet.builder();
 
         for (Entry<String, String[]> param : getParameterMap(request).entrySet()) {
-            Optional<Attribute<?>> optionalAttribute = attributesLookup.attributeFor(param.getKey());
 
-            if (optionalAttribute.isPresent()) {
-                Attribute<?> attribute = optionalAttribute.get();
-                QueryAtomParser<?> parser = parsers.get(attribute);
+            Optional<Attribute<?>> attribute = attributesLookup.attributeFor(param.getKey());
+
+            if (attribute.isPresent()) {
+                QueryAtomParser<?> parser = parsers.get(attribute.get());
 
                 for (String paramString : param.getValue()) {
 
-                    Iterable<String> values;
-                    if (attribute.shouldSplitValuesIntoList()) {
-                        values = splitVals(paramString);
+                    Iterable<String> rawValues;
+                    // Workaround specifically for the q parameter. Could use isCollectionOfValues
+                    // on the Attribute object for a more general solution, however, the field has
+                    // not been in use and thus every parameter is currently treated as a list, so
+                    // as not to cause any unwanted side effects of correctly implementing the
+                    // field, do this instead.
+                    if (param.getKey().equals(Attributes.Q.externalName())) {
+                        rawValues = Collections.singletonList(paramString);
                     } else {
-                        values = Collections.singletonList(paramString);
+                        rawValues = splitVals(paramString);
                     }
 
-                    operands.add(parser.parse(param.getKey(), values));
+                    operands.add(parser.parse(param.getKey(), rawValues));
                 }
             }
         }
