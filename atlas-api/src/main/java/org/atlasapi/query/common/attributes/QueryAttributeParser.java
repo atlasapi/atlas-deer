@@ -70,7 +70,6 @@ public class QueryAttributeParser implements ParameterNameProvider {
         ImmutableSet.Builder<AttributeQuery<?>> operands = ImmutableSet.builder();
 
         for (Entry<String, String[]> param : getParameterMap(request).entrySet()) {
-
             Optional<Attribute<?>> attribute = attributesLookup.attributeFor(param.getKey());
 
             if (attribute.isPresent()) {
