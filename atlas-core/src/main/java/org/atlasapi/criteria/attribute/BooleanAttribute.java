@@ -10,32 +10,41 @@ public class BooleanAttribute extends Attribute<Boolean> {
 
     private BooleanAttribute(
             String name,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollection
     ) {
-        super(name, target);
+        super(name, target, isCollection);
     }
 
     private BooleanAttribute(
             String name,
             String javaAttributeName,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollectionOfValues
     ) {
-        super(name, javaAttributeName, target);
+        super(name, javaAttributeName, target, isCollectionOfValues);
     }
 
-    public static BooleanAttribute create(
+    public static BooleanAttribute single(
             String name,
             Class<? extends Identified> target
     ) {
-        return new BooleanAttribute(name, target);
+        return new BooleanAttribute(name, target, false);
     }
 
-    public static BooleanAttribute create(
+    public static BooleanAttribute single(
             String name,
             String javaAttributeName,
             Class<? extends Identified> target
     ) {
-        return new BooleanAttribute(name, javaAttributeName, target);
+        return new BooleanAttribute(name, javaAttributeName, target, false);
+    }
+
+    public static BooleanAttribute list(
+            String name,
+            Class<? extends Identified> target
+    ) {
+        return new BooleanAttribute(name, target, true);
     }
 
     @Override

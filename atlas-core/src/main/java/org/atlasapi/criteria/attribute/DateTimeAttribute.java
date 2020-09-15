@@ -12,13 +12,14 @@ public class DateTimeAttribute extends Attribute<DateTime> {
 
     private DateTimeAttribute(
             String name,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollectionOfValues
     ) {
-        super(name, target);
+        super(name, target, isCollectionOfValues);
     }
 
-    public static DateTimeAttribute create(String name, Class<? extends Identified> target) {
-        return new DateTimeAttribute(name, target);
+    public static DateTimeAttribute single(String name, Class<? extends Identified> target) {
+        return new DateTimeAttribute(name, target, false);
     }
 
     @Override

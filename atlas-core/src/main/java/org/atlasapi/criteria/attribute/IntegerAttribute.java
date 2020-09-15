@@ -10,16 +10,17 @@ public class IntegerAttribute extends Attribute<Integer> {
 
     private IntegerAttribute(
             String name,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollection
     ) {
-        super(name, target);
+        super(name, target, isCollection);
     }
 
-    public static IntegerAttribute create(
+    public static IntegerAttribute list(
             String name,
             Class<? extends Identified> target
     ) {
-        return new IntegerAttribute(name, target);
+        return new IntegerAttribute(name, target, true);
     }
 
     @Override

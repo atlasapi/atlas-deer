@@ -13,32 +13,41 @@ public class IdAttribute extends Attribute<Id> {
 
     private IdAttribute(
             String name,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollection
     ) {
-        super(name, target);
+        super(name, target, isCollection);
     }
 
     private IdAttribute(
             String name,
             String javaAttributeName,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollectionOfValues
     ) {
-        super(name, javaAttributeName, target);
+        super(name, javaAttributeName, target, isCollectionOfValues);
     }
 
-    public static IdAttribute create(
+    public static IdAttribute single(
             String name,
             Class<? extends Identified> target
     ) {
-        return new IdAttribute(name, target);
+        return new IdAttribute(name, target, false);
     }
 
-    public static IdAttribute create(
+    public static IdAttribute list(
+            String name,
+            Class<? extends Identified> target
+    ) {
+        return new IdAttribute(name, target, true);
+    }
+
+    public static IdAttribute list(
             String name,
             String javaAttributeName,
             Class<? extends Identified> target
     ) {
-        return new IdAttribute(name, javaAttributeName, target);
+        return new IdAttribute(name, javaAttributeName, target, true);
     }
 
     @Override

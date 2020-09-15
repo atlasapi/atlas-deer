@@ -10,32 +10,41 @@ public class FloatAttribute extends Attribute<Float> {
 
     private FloatAttribute(
             String name,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollectionOfValues
     ) {
-        super(name, target);
+        super(name, target, isCollectionOfValues);
     }
 
     private FloatAttribute(
             String name,
             String javaAttributeName,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollectionOfValues
     ) {
-        super(name, javaAttributeName, target);
+        super(name, javaAttributeName, target, isCollectionOfValues);
     }
 
-    public static FloatAttribute create(
+    public static FloatAttribute single(
             String name,
             Class<? extends Identified> target
     ) {
-        return new FloatAttribute(name, target);
+        return new FloatAttribute(name, target, false);
     }
 
-    public static FloatAttribute create(
+    public static FloatAttribute single(
             String name,
             String javaAttributeName,
             Class<? extends Identified> target
     ) {
-        return new FloatAttribute(name, javaAttributeName, target);
+        return new FloatAttribute(name, javaAttributeName, target, false);
+    }
+
+    public static FloatAttribute list(
+            String name,
+            Class<? extends Identified> target
+    ) {
+        return new FloatAttribute(name, target, true);
     }
 
     @Override

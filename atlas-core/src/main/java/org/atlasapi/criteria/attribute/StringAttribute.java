@@ -9,33 +9,48 @@ import org.atlasapi.entity.Identified;
 public class StringAttribute extends Attribute<String> {
 
     private StringAttribute(
-            String name,
-            Class<? extends Identified> target
+            String name, Class<? extends Identified> target,
+            boolean isCollectionOfValues
     ) {
-        super(name, target);
+        super(name, target, isCollectionOfValues);
     }
 
     private StringAttribute(
+            String name, String javaAttributeName,
+            Class<? extends Identified> target,
+            boolean isCollectionOfValues
+    ) {
+        super(name, javaAttributeName, target, isCollectionOfValues);
+    }
+
+    public static StringAttribute single(
+            String name,
+            Class<? extends Identified> target
+    ) {
+        return new StringAttribute(name, target, false);
+    }
+
+    public static StringAttribute single(
             String name,
             String javaAttributeName,
             Class<? extends Identified> target
     ) {
-        super(name, javaAttributeName, target);
+        return new StringAttribute(name, javaAttributeName, target, false);
     }
 
-    public static StringAttribute create(
+    public static StringAttribute list(
             String name,
             Class<? extends Identified> target
     ) {
-        return new StringAttribute(name, target);
+        return new StringAttribute(name, target, true);
     }
 
-    public static StringAttribute create(
+    public static StringAttribute list(
             String name,
             String javaAttributeName,
             Class<? extends Identified> target
     ) {
-        return new StringAttribute(name, javaAttributeName, target);
+        return new StringAttribute(name, javaAttributeName, target, true);
     }
 
     @Override

@@ -4,8 +4,6 @@ import javax.annotation.Nullable;
 
 import org.atlasapi.entity.Identified;
 
-import com.google.common.collect.ImmutableList;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class Attribute<T> implements QueryFactory<T> {
@@ -14,22 +12,26 @@ public abstract class Attribute<T> implements QueryFactory<T> {
 
     private final String javaAttributeName;
     private final Class<? extends Identified> target;
+    private final boolean isCollectionOfValues;
 
     protected Attribute(
             String name,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollectionOfValues
     ) {
-        this(name, name, target);
+        this(name, name, target, isCollectionOfValues);
     }
 
     protected Attribute(
             String name,
             String javaAttributeName,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollectionOfValues
     ) {
         this.name = checkNotNull(name);
         this.javaAttributeName = checkNotNull(javaAttributeName);
         this.target = target;
+        this.isCollectionOfValues = isCollectionOfValues;
     }
 
     @Override
@@ -53,5 +55,9 @@ public abstract class Attribute<T> implements QueryFactory<T> {
     @Nullable
     public String javaAttributeName() {
         return javaAttributeName;
+    }
+
+    public boolean isCollectionOfValues() {
+        return isCollectionOfValues;
     }
 }

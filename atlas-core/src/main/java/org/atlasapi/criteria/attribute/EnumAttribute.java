@@ -13,18 +13,27 @@ public class EnumAttribute<T extends Enum<T>> extends Attribute<T> {
     private EnumAttribute(
             String name,
             Class<T> type,
-            Class<? extends Identified> target
+            Class<? extends Identified> target,
+            boolean isCollection
     ) {
-        super(name, target);
+        super(name, target, isCollection);
         this.type = type;
     }
 
-    public static <T extends Enum<T>> EnumAttribute<T> create(
+    public static <T extends Enum<T>> EnumAttribute<T> single(
             String name,
             Class<T> type,
             Class<? extends Identified> target
     ) {
-        return new EnumAttribute<T>(name, type, target);
+        return new EnumAttribute<T>(name, type, target, false);
+    }
+
+    public static <T extends Enum<T>> EnumAttribute<T> list(
+            String name,
+            Class<T> type,
+            Class<? extends Identified> target
+    ) {
+        return new EnumAttribute<T>(name, type, target, true);
     }
 
     @Override
