@@ -1,6 +1,7 @@
 package org.atlasapi.query.common.attributes;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -10,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attribute;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.query.common.ParameterNameProvider;
 
 import com.google.common.base.Optional;
@@ -73,7 +75,20 @@ public class QueryAttributeParser implements ParameterNameProvider {
                 QueryAtomParser<?> parser = parsers.get(attribute.get());
 
                 for (String paramString : param.getValue()) {
-                    operands.add(parser.parse(param.getKey(), splitVals(paramString)));
+
+                    Iterable<String> rawValues;
+                    // Workaround specifically for the q parameter. Could use isCollectionOfValues
+                    // on the Attribute object for a more general solution, however, the field has
+                    // not been in use and thus every parameter is currently treated as a list, so
+                    // as not to cause any unwanted side effects of correctly implementing the
+                    // field, do this instead.
+                    if (param.getKey().equals(Attributes.Q.externalName())) {
+                        rawValues = Collections.singletonList(paramString);
+                    } else {
+                        rawValues = splitVals(paramString);
+                    }
+
+                    operands.add(parser.parse(param.getKey(), rawValues));
                 }
             }
         }

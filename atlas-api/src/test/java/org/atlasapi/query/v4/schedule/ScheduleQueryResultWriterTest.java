@@ -1,11 +1,13 @@
 package org.atlasapi.query.v4.schedule;
 
-import java.io.IOException;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.servlet.StubHttpServletRequest;
+import com.metabroadcast.common.servlet.StubHttpServletResponse;
+import com.metabroadcast.common.time.DateTimeZones;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
@@ -22,6 +24,7 @@ import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.output.License;
+import org.atlasapi.output.ResolvedChannelResolver;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.LicenseWriter;
 import org.atlasapi.output.writers.RequestWriter;
@@ -30,18 +33,13 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.schedule.ChannelSchedule;
-
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.servlet.StubHttpServletRequest;
-import com.metabroadcast.common.servlet.StubHttpServletResponse;
-import com.metabroadcast.common.time.DateTimeZones;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
@@ -52,6 +50,7 @@ import static org.mockito.Mockito.when;
 public class ScheduleQueryResultWriterTest {
 
     private final ChannelResolver channelResolver = mock(ChannelResolver.class);
+    private final ResolvedChannelResolver resolvedChannelResolver = new ResolvedChannelResolver(channelResolver);
 
     private final AnnotationRegistry<Content> contentAnnotations = AnnotationRegistry.<Content>builder()
             .build();
@@ -65,7 +64,7 @@ public class ScheduleQueryResultWriterTest {
     );
     private final EntityListWriter<ChannelSchedule> scheduleWriter = new ScheduleListWriter(
             new ChannelListWriter(channelAnnotations),
-            new ScheduleEntryListWriter(contentWriter, broadcastWriter, channelResolver),
+            new ScheduleEntryListWriter(contentWriter, broadcastWriter, resolvedChannelResolver),
             channelResolver
     );
     private final EntityWriter<Object> licenseWriter = new LicenseWriter(new License("test"));

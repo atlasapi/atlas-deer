@@ -30,6 +30,7 @@ import org.atlasapi.output.ChannelMerger;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.QueryResultWriter;
+import org.atlasapi.output.ResolvedChannelResolver;
 import org.atlasapi.output.ScrubbablesSegmentRelatedLinkMerger;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
 import org.atlasapi.output.annotation.AggregatedBroadcastsAnnotation;
@@ -346,6 +347,11 @@ public class QueryWebModule {
     }
 
     @Bean
+    ResolvedChannelResolver resolvedChannelResolver() {
+        return new ResolvedChannelResolver(channelResolver);
+    }
+
+    @Bean
     ScheduleController v4ScheduleController() {
         EntityListWriter<ItemAndBroadcast> entryListWriter =
                 new ScheduleEntryListWriter(
@@ -355,7 +361,7 @@ public class QueryWebModule {
                                 "broadcast",
                                 idCodec()
                         ),
-                        channelResolver
+                        resolvedChannelResolver()
                 );
         ScheduleListWriter scheduleWriter = new ScheduleListWriter(
                 channelListWriter(),
@@ -1111,24 +1117,24 @@ public class QueryWebModule {
                 )
                 .register(
                         BROADCASTS,
-                        BroadcastsAnnotation.create(idCodec(), channelResolver),
+                        BroadcastsAnnotation.create(idCodec(), resolvedChannelResolver()),
                         commonImplied
                 )
                 .register(
                         ALL_MERGED_BROADCASTS,
-                        BroadcastsAnnotation.create(idCodec(), channelResolver),
+                        BroadcastsAnnotation.create(idCodec(), resolvedChannelResolver()),
                         commonImplied
                 )
                 .register(
                         ALL_BROADCASTS,
-                        BroadcastsAnnotation.create(idCodec(), channelResolver),
+                        BroadcastsAnnotation.create(idCodec(), resolvedChannelResolver()),
                         commonImplied
                 )
                 .register(
                         UPCOMING_BROADCASTS,
                         UpcomingBroadcastsAnnotation.create(
                                 idCodec(),
-                                channelResolver
+                                resolvedChannelResolver()
                         ),
                         commonImplied
                 )
@@ -1136,7 +1142,7 @@ public class QueryWebModule {
                         CURRENT_AND_FUTURE_BROADCASTS,
                         CurrentAndFutureBroadcastsAnnotation.create(
                                 idCodec(),
-                                channelResolver
+                                resolvedChannelResolver()
                         ),
                         commonImplied
                 )
@@ -1144,7 +1150,7 @@ public class QueryWebModule {
                         FIRST_BROADCASTS,
                         FirstBroadcastAnnotation.create(
                                 idCodec(),
-                                channelResolver
+                                resolvedChannelResolver()
                         ),
                         commonImplied
                 )
@@ -1153,7 +1159,7 @@ public class QueryWebModule {
                         NextBroadcastAnnotation.create(
                                 new SystemClock(),
                                 idCodec(),
-                                channelResolver
+                                resolvedChannelResolver()
                         ),
                         commonImplied
                 )
@@ -1187,7 +1193,7 @@ public class QueryWebModule {
                                                         idSummaryWriter
                                                 )
                                         ),
-                                        channelResolver
+                                        resolvedChannelResolver()
                                 )
                         ), commonImplied
                 )

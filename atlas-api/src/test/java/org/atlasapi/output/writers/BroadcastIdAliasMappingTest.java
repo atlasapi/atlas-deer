@@ -44,7 +44,8 @@ public class BroadcastIdAliasMappingTest {
                 { "e4:27917775", new Alias("c4:e4:slot", "27917775") },
                 { "m4:27916151", new Alias("c4:m4:slot", "27916151") },
                 { "4s:28482091", new Alias("c4:4s:slot", "28482091") },
-                { "1781166741", new Alias("rovicorp:slot", "1781166741") }
+                { "1781166741", new Alias("rovicorp:slot", "1781166741") },
+                { "api.youview.tv:dvb://111a..2222;3333", new Alias("api.youview.tv:slot", "dvb://111a..2222;3333") },
         });
     }
 
