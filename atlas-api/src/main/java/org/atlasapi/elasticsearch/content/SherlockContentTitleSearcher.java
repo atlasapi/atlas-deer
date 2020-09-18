@@ -8,6 +8,7 @@ import java.util.List;
 import org.atlasapi.content.ContentTitleSearcher;
 import org.atlasapi.elasticsearch.util.FiltersBuilder;
 
+import com.metabroadcast.sherlock.client.helpers.OccurrenceClause;
 import com.metabroadcast.sherlock.client.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.parameter.RangeParameter;
@@ -25,6 +26,7 @@ import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
@@ -106,9 +108,13 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
 
             Instant now = Instant.now().truncatedTo(ChronoUnit.MINUTES);
 
-            BoolParameter availabilityParameter = SingleClauseBoolParameter.must(
-                    RangeParameter.to(contentMapping.getLocations().getAvailabilityStart(), now),
-                    RangeParameter.from(contentMapping.getLocations().getAvailabilityEnd(), now)
+            BoolParameter availabilityParameter = new SingleClauseBoolParameter(
+                    ImmutableList.of(
+                            RangeParameter.to(contentMapping.getLocations().getAvailabilityStart(), now),
+                            RangeParameter.from(contentMapping.getLocations().getAvailabilityEnd(), now)
+                    ),
+                    OccurrenceClause.SHOULD,
+                    0
             ).boost(search.getCatchupWeighting());
 
             searchQueryBuilder.addSearcher(availabilityParameter);
