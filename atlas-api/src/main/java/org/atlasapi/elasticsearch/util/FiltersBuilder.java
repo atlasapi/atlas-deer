@@ -96,20 +96,16 @@ public class FiltersBuilder {
 
     private static BoolParameter buildAvailabilityFilter() {
 
+        Instant nowMinute = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+
         return SingleClauseBoolParameter.must(
                 RangeParameter.to(
                         CONTENT_MAPPING.getLocations().getAvailabilityStart(),
-                        Instant.now().truncatedTo(ChronoUnit.MINUTES)),
+                        nowMinute),
                 RangeParameter.from(
                         CONTENT_MAPPING.getLocations().getAvailabilityEnd(),
-                        Instant.now().truncatedTo(ChronoUnit.MINUTES))
+                        nowMinute)
         );
-
-        // TODO look for children with availability too
-//        return FilterBuilders.orFilter(
-//                rangeFilter,
-//                FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, rangeFilter)
-//        );
     }
 
     public static BoolParameter buildActionableFilter(
@@ -200,17 +196,7 @@ public class FiltersBuilder {
             parentParameters.add(channelGroupFilter);
         }
 
-        // TODO add has child query
-//        HasChildFilterBuilder childFilter = FilterBuilders.hasChildFilter(
-//                EsContent.CHILD_ITEM,
-//                parentFilter
-//        );
-//        FilterBuilders.orFilter(parentFilter, childFilter).cache(true);
-        return SingleClauseBoolParameter.should(
-                SingleClauseBoolParameter.must(parentParameters)
-                // TODO add child parameters
-        );
-
+        return SingleClauseBoolParameter.must(parentParameters);
     }
 
     public static TermsParameter<Long> getSeriesIdFilter(Id id, SecondaryIndex equivIdIndex) {

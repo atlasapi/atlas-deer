@@ -9,9 +9,11 @@ import org.atlasapi.content.ContentTitleSearcher;
 import org.atlasapi.elasticsearch.util.FiltersBuilder;
 
 import com.metabroadcast.sherlock.client.parameter.BoolParameter;
+import com.metabroadcast.sherlock.client.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.parameter.RangeParameter;
 import com.metabroadcast.sherlock.client.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.parameter.SingleClauseBoolParameter;
+import com.metabroadcast.sherlock.client.parameter.TermParameter;
 import com.metabroadcast.sherlock.client.response.IdSearchQueryResponse;
 import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
 import com.metabroadcast.sherlock.client.scoring.Weighting;
@@ -50,6 +52,7 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
 
         SearchQuery.Builder searchQueryBuilder = SearchQuery.builder();
 
+        // Search on content title
         searchQueryBuilder.addSearcher(
                 SearchParameter.builder()
                         .withValue(search.getTerm())
@@ -62,6 +65,27 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
                         .withExactMatchBoost(200F)
                         .withBoost(search.getTitleWeighting())
                         .build()
+        );
+
+        // Filter to top level items, or content with children scoring on children title
+        searchQueryBuilder.addSearcher(
+                SingleClauseBoolParameter.should(
+                        TermParameter.of(contentMapping.getTopLevel(), true),
+                        SingleClauseBoolParameter.must(
+                                ExistParameter.exists(contentMapping.getChildren().getId()),
+                                SearchParameter.builder()
+                                        .withValue(search.getTerm())
+                                        .withMapping(contentMapping.getTitle())
+                                        .withExactMapping(contentMapping.getTitleExact())
+                                        .withFuzziness()
+                                        .withFuzzinessPrefixLength(2)
+                                        .withFuzzinessBoost(50F)
+                                        .withPhraseBoost(100F)
+                                        .withExactMatchBoost(200F)
+                                        .withBoost(search.getTitleWeighting())
+                                        .build()
+                        )
+                )
         );
 
         if (search.getIncludedPublishers() != null
@@ -78,15 +102,9 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
             );
         }
 
-        List<Weighting> weightings = new ArrayList<>();
-
-        if (search.getBroadcastWeighting() != 0.0f) {
-            weightings.add(Weightings.broadcastWithin30Days(1f));
-        }
-
         if (search.getCatchupWeighting() != 0.0f) {
 
-            Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+            Instant now = Instant.now().truncatedTo(ChronoUnit.MINUTES);
 
             BoolParameter availabilityParameter = SingleClauseBoolParameter.must(
                     RangeParameter.to(contentMapping.getLocations().getAvailabilityStart(), now),
@@ -96,28 +114,17 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
             searchQueryBuilder.addSearcher(availabilityParameter);
         }
 
+        List<Weighting> weightings = new ArrayList<>();
+        if (search.getBroadcastWeighting() != 0.0f) {
+            weightings.add(Weightings.broadcastWithin30Days(1f));
+        }
+
         searchQueryBuilder.withQueryWeighting(QueryWeighting.builder()
                 .withWeightings(weightings)
                 .withScoreMode(FunctionScoreQuery.ScoreMode.SUM)
                 .withCombineFunction(CombineFunction.MULTIPLY)
                 .withMaxBoost(3f)
                 .build());
-
-        // TODO do child query
-//        QueryBuilder finalQuery = QueryBuilders.boolQuery()
-//                .should(
-//                        filteredQuery(
-//                                contentQuery,
-//                                andFilter(
-//                                        typeFilter(EsContent.TOP_LEVEL_ITEM),
-//                                        termFilter(EsContent.HAS_CHILDREN, Boolean.FALSE)
-//                                )
-//                        )
-//                )
-//                .should(
-//                        hasChildQuery(EsContent.CHILD_ITEM, contentQuery)
-//                                .scoreType("sum")
-//                );
 
         SearchQuery searchQuery = searchQueryBuilder
                 .addScoreSort(SortOrder.DESC)
