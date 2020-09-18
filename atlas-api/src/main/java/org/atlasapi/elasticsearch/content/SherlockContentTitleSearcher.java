@@ -108,16 +108,12 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
 
             Instant now = Instant.now().truncatedTo(ChronoUnit.MINUTES);
 
-            BoolParameter availabilityParameter = new SingleClauseBoolParameter(
-                    ImmutableList.of(
-                            RangeParameter.to(contentMapping.getLocations().getAvailabilityStart(), now),
-                            RangeParameter.from(contentMapping.getLocations().getAvailabilityEnd(), now)
-                    ),
-                    OccurrenceClause.SHOULD,
-                    0
+            BoolParameter availabilityParameter = SingleClauseBoolParameter.must(
+                    RangeParameter.to(contentMapping.getLocations().getAvailabilityStart(), now),
+                    RangeParameter.from(contentMapping.getLocations().getAvailabilityEnd(), now)
             ).boost(search.getCatchupWeighting());
 
-            searchQueryBuilder.addSearcher(availabilityParameter);
+            searchQueryBuilder.addInfluencer(availabilityParameter);
         }
 
         List<Weighting> weightings = new ArrayList<>();
