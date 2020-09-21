@@ -74,7 +74,7 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
                 SingleClauseBoolParameter.should(
                         TermParameter.of(contentMapping.getTopLevel(), true),
                         SingleClauseBoolParameter.must(
-                                ExistParameter.exists(contentMapping.getChildren().getId()),
+                                ExistParameter.exists(contentMapping.getChildren().getId()), // TODO hasChildren field?
                                 SearchParameter.builder()
                                         .withValue(search.getTerm())
                                         .withMapping(contentMapping.getTitle())
@@ -104,21 +104,12 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
             );
         }
 
-        if (search.getCatchupWeighting() != 0.0f) {
-
-            Instant now = Instant.now().truncatedTo(ChronoUnit.MINUTES);
-
-            BoolParameter availabilityParameter = SingleClauseBoolParameter.must(
-                    RangeParameter.to(contentMapping.getLocations().getAvailabilityStart(), now),
-                    RangeParameter.from(contentMapping.getLocations().getAvailabilityEnd(), now)
-            ).boost(search.getCatchupWeighting());
-
-            searchQueryBuilder.addInfluencer(availabilityParameter);
-        }
-
         List<Weighting> weightings = new ArrayList<>();
         if (search.getBroadcastWeighting() != 0.0f) {
             weightings.add(Weightings.broadcastWithin30Days(1f));
+        }
+        if (search.getCatchupWeighting() != 0.0f) {
+            weightings.add(Weightings.availability(search.getCatchupWeighting()));
         }
 
         searchQueryBuilder.withQueryWeighting(QueryWeighting.builder()
