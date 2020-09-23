@@ -74,7 +74,7 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
                 SingleClauseBoolParameter.should(
                         TermParameter.of(contentMapping.getTopLevel(), true),
                         SingleClauseBoolParameter.must(
-                                ExistParameter.exists(contentMapping.getChildren().getId()), // TODO hasChildren field?
+                                TermParameter.of(contentMapping.getType(), "series"),
                                 SearchParameter.builder()
                                         .withValue(search.getTerm())
                                         .withMapping(contentMapping.getTitle())
