@@ -1,17 +1,11 @@
 package org.atlasapi.elasticsearch.content;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.atlasapi.content.ContentTitleSearcher;
 import org.atlasapi.elasticsearch.util.FiltersBuilder;
 
-import com.metabroadcast.sherlock.client.helpers.OccurrenceClause;
-import com.metabroadcast.sherlock.client.parameter.BoolParameter;
-import com.metabroadcast.sherlock.client.parameter.ExistParameter;
-import com.metabroadcast.sherlock.client.parameter.RangeParameter;
 import com.metabroadcast.sherlock.client.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.parameter.SingleClauseBoolParameter;
 import com.metabroadcast.sherlock.client.parameter.TermParameter;
@@ -26,10 +20,11 @@ import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -54,27 +49,11 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
 
         SearchQuery.Builder searchQueryBuilder = SearchQuery.builder();
 
-        // Search on content title
-        searchQueryBuilder.addSearcher(
-                SearchParameter.builder()
-                        .withValue(search.getTerm())
-                        .withMapping(contentMapping.getTitle())
-                        .withExactMapping(contentMapping.getTitleExact())
-                        .withFuzziness()
-                        .withFuzzinessPrefixLength(2)
-                        .withFuzzinessBoost(50F)
-                        .withPhraseBoost(100F)
-                        .withExactMatchBoost(200F)
-                        .withBoost(search.getTitleWeighting())
-                        .build()
-        );
-
-        // Filter to top level items, or content with children scoring on children title
+        // If top level then search on content title, otherwise search on child titles
         searchQueryBuilder.addSearcher(
                 SingleClauseBoolParameter.should(
-                        TermParameter.of(contentMapping.getTopLevel(), true),
                         SingleClauseBoolParameter.must(
-                                TermParameter.of(contentMapping.getType(), "series"),
+                                TermParameter.of(contentMapping.getTopLevel(), true),
                                 SearchParameter.builder()
                                         .withValue(search.getTerm())
                                         .withMapping(contentMapping.getTitle())
@@ -86,8 +65,20 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
                                         .withExactMatchBoost(200F)
                                         .withBoost(search.getTitleWeighting())
                                         .build()
-                        )
+                        ),
+                        SearchParameter.builder()
+                                .withValue(search.getTerm())
+                                .withMapping(contentMapping.getChildren().getTitle())
+                                .withExactMapping(contentMapping.getChildren().getTitleExact())
+                                .withFuzziness()
+                                .withFuzzinessPrefixLength(2)
+                                .withFuzzinessBoost(50F)
+                                .withPhraseBoost(100F)
+                                .withExactMatchBoost(200F)
+                                .withBoost(search.getTitleWeighting())
+                                .build()
                 )
+
         );
 
         if (search.getIncludedPublishers() != null

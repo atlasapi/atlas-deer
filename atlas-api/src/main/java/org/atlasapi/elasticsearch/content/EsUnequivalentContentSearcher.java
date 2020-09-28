@@ -27,6 +27,7 @@ import com.metabroadcast.common.stream.MoreStreams;
 import com.metabroadcast.sherlock.client.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.response.ContentSearchQueryResponse;
+import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
 import com.metabroadcast.sherlock.client.scoring.Weighting;
 import com.metabroadcast.sherlock.client.scoring.Weightings;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
@@ -37,6 +38,8 @@ import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.elasticsearch.common.lucene.search.function.CombineFunction;
+import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,10 +155,21 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
         EsQueryParser.EsQuery esQuery = esQueryParser.parse(query);
         addOrdering(esQuery.getIndexQueryParams(), searchQueryBuilder);
 
-        List<Weighting> weightings = new ArrayList<>();
         BoolParameter queryBuilder = queryBuilderFactory.buildQuery(esQuery.getAttributeQuerySet());
-        weightings.addAll(addFuzzyQueryAndGetBroadcastWeighting(searchQueryBuilder, esQuery.getIndexQueryParams()));
         searchQueryBuilder.addSearcher(queryBuilder);
+
+        List<Weighting> weightings = addFuzzyQueryAndGetBroadcastWeighting(
+                searchQueryBuilder,
+                esQuery.getIndexQueryParams()
+        );
+        searchQueryBuilder.withQueryWeighting(
+                QueryWeighting.builder()
+                        .withWeightings(weightings)
+                        .withScoreMode(FunctionScoreQuery.ScoreMode.SUM)
+                        .withCombineFunction(CombineFunction.MULTIPLY)
+                        .withMaxBoost(3.0F)
+                        .build()
+        );
 
         addBrandId(esQuery.getIndexQueryParams(), searchQueryBuilder);
         addSeriesId(esQuery.getIndexQueryParams(), searchQueryBuilder);
