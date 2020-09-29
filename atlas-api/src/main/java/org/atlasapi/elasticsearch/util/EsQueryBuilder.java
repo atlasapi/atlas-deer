@@ -46,6 +46,7 @@ import com.metabroadcast.sherlock.common.type.FloatMapping;
 import com.metabroadcast.sherlock.common.type.InstantMapping;
 import com.metabroadcast.sherlock.common.type.IntegerMapping;
 import com.metabroadcast.sherlock.common.type.KeywordMapping;
+import com.metabroadcast.sherlock.common.type.LongMapping;
 import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
 
 import com.google.common.base.Functions;
@@ -204,7 +205,7 @@ public class EsQueryBuilder {
                 if (translation.shouldSilentlyIgnore()) {
                     return Optional.empty();
                 } else {
-                    final KeywordMapping<Long> mapping = (KeywordMapping<Long>) translation.getMapping();
+                    final ChildTypeMapping<Long> mapping = (ChildTypeMapping<Long>) translation.getMapping();
                     final List<Long> values = Lists.transform(query.getValue(), Id.toLongValue());
                     return Optional.of(query.accept(new EsEqualsOperatorVisitor<>(mapping, values)));
                 }
