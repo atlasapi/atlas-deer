@@ -158,18 +158,18 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
         BoolParameter queryBuilder = queryBuilderFactory.buildQuery(esQuery.getAttributeQuerySet());
         searchQueryBuilder.addSearcher(queryBuilder);
 
-        List<Weighting> weightings = addFuzzyQueryAndGetBroadcastWeighting(
+        QueryWeighting.Builder queryWeightingBuilder = QueryWeighting.builder()
+                .withScoreMode(FunctionScoreQuery.ScoreMode.SUM)
+                .withCombineFunction(CombineFunction.MULTIPLY)
+                .withMaxBoost(3.0F);
+
+        addFuzzyQueryAndBroadcastWeighting(
                 searchQueryBuilder,
+                queryWeightingBuilder,
                 esQuery.getIndexQueryParams()
         );
-        searchQueryBuilder.withQueryWeighting(
-                QueryWeighting.builder()
-                        .withWeightings(weightings)
-                        .withScoreMode(FunctionScoreQuery.ScoreMode.SUM)
-                        .withCombineFunction(CombineFunction.MULTIPLY)
-                        .withMaxBoost(3.0F)
-                        .build()
-        );
+
+        searchQueryBuilder.withQueryWeighting(queryWeightingBuilder.build());
 
         addBrandId(esQuery.getIndexQueryParams(), searchQueryBuilder);
         addSeriesId(esQuery.getIndexQueryParams(), searchQueryBuilder);
@@ -190,25 +190,22 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
         }
     }
 
-    private List<Weighting> addFuzzyQueryAndGetBroadcastWeighting(
+    private void addFuzzyQueryAndBroadcastWeighting(
             SearchQuery.Builder searchQueryBuilder,
+            QueryWeighting.Builder queryWeightingBuilder,
             IndexQueryParams queryParams
     ) {
-        List<Weighting> weightings = new ArrayList<>();
         if (queryParams.getFuzzyQueryParams().isPresent()) {
             addTitleQuery(searchQueryBuilder, queryParams);
+            float broadcastWeighting;
             if (queryParams.getBroadcastWeighting().isPresent()) {
-                weightings.add(
-                        Weightings.broadcastWithin30Days(
-                                queryParams.getBroadcastWeighting().get()
-                        )
-                );
+                broadcastWeighting = queryParams.getBroadcastWeighting().get();
             } else {
-                weightings.add(Weightings.broadcastWithin30Days(5f));
+                broadcastWeighting = 5f;
             }
+            queryWeightingBuilder.withWeighting(Weightings.broadcastWithin30Days(broadcastWeighting));
             searchQueryBuilder.addScoreSort(SortOrder.DESC);
         }
-        return weightings;
     }
 
     private void addBrandId(
@@ -293,17 +290,9 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
     ) {
         FuzzyQueryParams searchParams = queryParams.getFuzzyQueryParams().get();
         searchQueryBuilder.addSearcher(
-            SearchParameter.builder()
-                    .withValue(searchParams.getSearchTerm())
-                    .withMapping(contentMapping.getTitle())
-                    .withExactMapping(contentMapping.getTitleExact())
-                    .withFuzziness()
-                    .withFuzzinessPrefixLength(2)
-                    .withFuzzinessBoost(50F)
-                    .withPhraseBoost(100F)
-                    .withExactMatchBoost(200F)
-                    .withBoost(searchParams.getBoost().orElse(5F))
-                    .build()
+                TitleQueryBuilder.build(
+                        searchParams.getSearchTerm(),
+                        searchParams.getBoost().orElse(5F))
         );
     }
 

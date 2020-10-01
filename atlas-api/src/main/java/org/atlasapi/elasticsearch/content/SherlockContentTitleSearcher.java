@@ -59,39 +59,8 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
                 )
         );
 
-        // match content that has a container and whose container title matches
-        // or match content which do not have a container and whose title matches
         searchQueryBuilder.addSearcher(
-                SingleClauseBoolParameter.should(
-                        SingleClauseBoolParameter.must(
-                                ParentExistParameter.exists(contentMapping.getContainerMapping()),
-                                SearchParameter.builder()
-                                        .withValue(search.getTerm())
-                                        .withMapping(contentMapping.getContainer().getTitle())
-                                        .withExactMapping(contentMapping.getContainer().getTitleExact())
-                                        .withFuzziness()
-                                        .withFuzzinessPrefixLength(2)
-                                        .withFuzzinessBoost(50F)
-                                        .withPhraseBoost(100F)
-                                        .withExactMatchBoost(200F)
-                                        .withBoost(search.getTitleWeighting())
-                                        .build()
-                        ),
-                        SingleClauseBoolParameter.must(
-                                ParentExistParameter.notExists(contentMapping.getContainerMapping()),
-                                SearchParameter.builder()
-                                        .withValue(search.getTerm())
-                                        .withMapping(contentMapping.getTitle())
-                                        .withExactMapping(contentMapping.getTitleExact())
-                                        .withFuzziness()
-                                        .withFuzzinessPrefixLength(2)
-                                        .withFuzzinessBoost(50F)
-                                        .withPhraseBoost(100F)
-                                        .withExactMatchBoost(200F)
-                                        .withBoost(search.getTitleWeighting())
-                                        .build()
-                        )
-                )
+                TitleQueryBuilder.build(search.getTerm(), search.getTitleWeighting())
         );
 
         if (search.getIncludedPublishers() != null
