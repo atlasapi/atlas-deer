@@ -1,7 +1,5 @@
 package org.atlasapi.elasticsearch.content;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,10 +23,8 @@ import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
 import com.metabroadcast.sherlock.client.parameter.BoolParameter;
-import com.metabroadcast.sherlock.client.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.response.ContentSearchQueryResponse;
 import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
-import com.metabroadcast.sherlock.client.scoring.Weighting;
 import com.metabroadcast.sherlock.client.scoring.Weightings;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.SherlockSearcher;

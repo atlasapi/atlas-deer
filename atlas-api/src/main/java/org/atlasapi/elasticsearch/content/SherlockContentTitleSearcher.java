@@ -6,6 +6,7 @@ import java.util.List;
 import org.atlasapi.content.ContentTitleSearcher;
 import org.atlasapi.elasticsearch.util.FiltersBuilder;
 
+import com.metabroadcast.sherlock.client.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.parameter.ParentExistParameter;
 import com.metabroadcast.sherlock.client.parameter.SearchParameter;
@@ -51,17 +52,8 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
 
         SearchQuery.Builder searchQueryBuilder = SearchQuery.builder();
 
-        // filter to top level items, or series
-        searchQueryBuilder.addFilter(
-                SingleClauseBoolParameter.should(
-                        TermParameter.of(contentMapping.getTopLevel(), true),
-                        TermParameter.of(contentMapping.getType(), "series")
-                )
-        );
-
-        searchQueryBuilder.addSearcher(
-                TitleQueryBuilder.build(search.getTerm(), search.getTitleWeighting())
-        );
+        BoolParameter titleQuery = TitleQueryBuilder.build(search.getTerm(), search.getTitleWeighting());
+        searchQueryBuilder.addSearcher(titleQuery);
 
         if (search.getIncludedPublishers() != null
             && !search.getIncludedPublishers().isEmpty()) {
@@ -91,6 +83,13 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
                 .withCombineFunction(CombineFunction.MULTIPLY)
                 .withMaxBoost(3f)
                 .build());
+
+        searchQueryBuilder.addFilter(
+                SingleClauseBoolParameter.should(
+                        TermParameter.of(contentMapping.getTopLevel(), true),
+                        TermParameter.of(contentMapping.getType(), "series")
+                )
+        );
 
         SearchQuery searchQuery = searchQueryBuilder
                 .addScoreSort(SortOrder.DESC)

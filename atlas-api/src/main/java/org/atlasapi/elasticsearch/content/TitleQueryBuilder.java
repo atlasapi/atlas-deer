@@ -11,8 +11,13 @@ public class TitleQueryBuilder {
 
     private static final ContentMapping CONTENT_MAPPING = IndexMapping.getContentMapping();
 
+    private static final Integer FUZZINESS_PREFIX_LENGTH = 2;
+    private static final Float FUZZINESS_BOOST = 50f;
+    private static final Float PHRASE_BOOST = 100f;
+    private static final Float EXACT_MATCH_BOOST = 200f;
+
     // match content that has a container and whose container title matches
-    // or match content which do not have a container and whose title matches
+    // or match content that does not have a container and whose title matches
     public static BoolParameter build(String title, float weighting) {
         return SingleClauseBoolParameter.should(
                 SingleClauseBoolParameter.must(
@@ -22,10 +27,10 @@ public class TitleQueryBuilder {
                                 .withMapping(CONTENT_MAPPING.getContainer().getTitle())
                                 .withExactMapping(CONTENT_MAPPING.getContainer().getTitleExact())
                                 .withFuzziness()
-                                .withFuzzinessPrefixLength(2)
-                                .withFuzzinessBoost(50F)
-                                .withPhraseBoost(100F)
-                                .withExactMatchBoost(200F)
+                                .withFuzzinessPrefixLength(FUZZINESS_PREFIX_LENGTH)
+                                .withFuzzinessBoost(FUZZINESS_BOOST)
+                                .withPhraseBoost(PHRASE_BOOST)
+                                .withExactMatchBoost(EXACT_MATCH_BOOST)
                                 .withBoost(weighting)
                                 .build()
                 ),
@@ -36,10 +41,10 @@ public class TitleQueryBuilder {
                                 .withMapping(CONTENT_MAPPING.getTitle())
                                 .withExactMapping(CONTENT_MAPPING.getTitleExact())
                                 .withFuzziness()
-                                .withFuzzinessPrefixLength(2)
-                                .withFuzzinessBoost(50F)
-                                .withPhraseBoost(100F)
-                                .withExactMatchBoost(200F)
+                                .withFuzzinessPrefixLength(FUZZINESS_PREFIX_LENGTH)
+                                .withFuzzinessBoost(FUZZINESS_BOOST)
+                                .withPhraseBoost(PHRASE_BOOST)
+                                .withExactMatchBoost(EXACT_MATCH_BOOST)
                                 .withBoost(weighting)
                                 .build()
                 )
