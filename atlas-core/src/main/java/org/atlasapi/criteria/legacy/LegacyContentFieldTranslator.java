@@ -24,9 +24,9 @@ public class LegacyContentFieldTranslator {
         case "flattenedTitle":
             return LegacyTranslation.of(CONTENT_MAPPING.getTitle());
         case "parentTitle":
-            return LegacyTranslation.of(CONTENT_MAPPING.getParentTitle());
+            return LegacyTranslation.of(CONTENT_MAPPING.getContainer().getTitle());
         case "parentFlattenedTitle":
-            return LegacyTranslation.of(CONTENT_MAPPING.getParentTitle());
+            return LegacyTranslation.of(CONTENT_MAPPING.getContainer().getTitle());
         case "specialization":
             return LegacyTranslation.of(CONTENT_MAPPING.getSpecialization());
         case "broadcasts.id":
