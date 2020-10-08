@@ -15,6 +15,7 @@ public class TitleQueryBuilder {
     private static final Float FUZZINESS_BOOST = 50f;
     private static final Float PHRASE_BOOST = 100f;
     private static final Float EXACT_MATCH_BOOST = 200f;
+    private static final Float PREFIX_BOOST = 75f;
 
     // match content that has a container and whose container title matches
     // or match content that does not have a container and whose title matches
@@ -31,6 +32,7 @@ public class TitleQueryBuilder {
                                 .withFuzzinessBoost(FUZZINESS_BOOST)
                                 .withPhraseBoost(PHRASE_BOOST)
                                 .withExactMatchBoost(EXACT_MATCH_BOOST)
+                                .withPrefixOnExactMappingBoost(PREFIX_BOOST)
                                 .withBoost(weighting)
                                 .build()
                 ),
@@ -45,6 +47,7 @@ public class TitleQueryBuilder {
                                 .withFuzzinessBoost(FUZZINESS_BOOST)
                                 .withPhraseBoost(PHRASE_BOOST)
                                 .withExactMatchBoost(EXACT_MATCH_BOOST)
+                                .withPrefixOnExactMappingBoost(PREFIX_BOOST)
                                 .withBoost(weighting)
                                 .build()
                 )
