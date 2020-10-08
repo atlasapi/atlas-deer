@@ -32,7 +32,7 @@ public class TitleQueryBuilder {
                                 .withFuzzinessBoost(FUZZINESS_BOOST)
                                 .withPhraseBoost(PHRASE_BOOST)
                                 .withExactMatchBoost(EXACT_MATCH_BOOST)
-                                .withPrefixOnExactMappingBoost(PREFIX_BOOST)
+                                .withPrefix(PREFIX_BOOST)
                                 .withBoost(weighting)
                                 .build()
                 ),
@@ -47,7 +47,7 @@ public class TitleQueryBuilder {
                                 .withFuzzinessBoost(FUZZINESS_BOOST)
                                 .withPhraseBoost(PHRASE_BOOST)
                                 .withExactMatchBoost(EXACT_MATCH_BOOST)
-                                .withPrefixOnExactMappingBoost(PREFIX_BOOST)
+                                .withPrefix(PREFIX_BOOST)
                                 .withBoost(weighting)
                                 .build()
                 )
