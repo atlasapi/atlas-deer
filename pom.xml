@@ -588,7 +588,7 @@
     <metrics-dw.version>3.1.2</metrics-dw.version>
     <prometheus.version>0.0.19</prometheus.version>
     <representative-id-service.version>1.1-SNAPSHOT</representative-id-service.version>
-    <sherlock.version>1.071-SNAPSHOT</sherlock.version>
+    <sherlock.version>1.0-SNAPSHOT</sherlock.version>
 
     <sonar.jacoco.itReportPath>${project.basedir}/target/jacoco-it.exec</sonar.jacoco.itReportPath>
     <sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
