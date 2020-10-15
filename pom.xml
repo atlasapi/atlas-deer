@@ -560,7 +560,7 @@
     <common.queue.version>2.0-SNAPSHOT</common.queue.version>
     <metrics.version>3.0.1</metrics.version>
     <amq.version>5.15.10</amq.version>
-    <spring.version>5.2.1.RELEASE</spring.version>
+    <spring.version>5.2.9.RELEASE</spring.version>
     <datastax.version>3.1.0</datastax.version>
     <jackson.version>2.11.1</jackson.version>
     <metrics-dw.version>3.1.2</metrics-dw.version>
