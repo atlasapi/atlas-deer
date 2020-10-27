@@ -101,9 +101,10 @@ public class EquivalentContentIndexingContentWorker
 
         if (contentOptional.isPresent()) {
             Content content = contentOptional.get();
-            LOG.debug("Indexing message {}", content);
+            LOG.info("Indexing message {}", content.getId());
             contentIndex.index(content);
 
+            LOG.info("Indexing message done {}", content.getId());
             latencyTimer.update(
                     getTimeToProcessInMillis(timestamp),
                     TimeUnit.MILLISECONDS
