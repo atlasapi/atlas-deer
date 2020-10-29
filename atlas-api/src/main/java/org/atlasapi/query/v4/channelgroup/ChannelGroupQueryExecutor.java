@@ -316,11 +316,13 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                     )
             );
         } else if (contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
-            contextHasAnnotation(ctxt, Annotation.CHANNELS)) {
+                contextHasAnnotation(ctxt, Annotation.CHANNELS)) {
+            boolean lcnSharing = contextHasAnnotation(ctxt, Annotation.LCN_SHARING);
             resolvedChannelGroupBuilder.withAdvertisedChannels(
                     resolveAdvertisedChannels(
                             channelGroup,
-                            false
+                            false,
+                            lcnSharing
                     )
             );
         } else {
@@ -432,14 +434,24 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             ChannelGroup<?> entity,
             boolean withFutureChannels
     ) {
+        return resolveAdvertisedChannels(entity, withFutureChannels, false);
+    }
+
+    private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannels(
+            ChannelGroup<?> entity,
+            boolean withFutureChannels,
+            boolean lcnSharing
+    ) {
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
 
         Iterable<? extends ChannelGroupMembership> availableChannels;
 
         if (withFutureChannels) {
-            availableChannels = entity.getChannels();
+            // N.B. futureChannels should effectively always allow lcnSharing, since future channel
+            // might have same LCN as existing, to-be-deprecated channel
+            availableChannels = entity.getChannels();   // this fetches future AND old, expired channels?
         } else {
-            availableChannels = entity.getChannelsAvailable(LocalDate.now());
+            availableChannels = entity.getChannelsAvailable(LocalDate.now(), lcnSharing);
         }
 
         List<Id> orderedIds = StreamSupport.stream(availableChannels.spliterator(), false)

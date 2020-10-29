@@ -89,6 +89,7 @@ public enum Annotation {
     CUSTOM_FIELDS,
     LOCATION_PROVIDERS,
     NO_SMART_SEARCH,
+    LCN_SHARING,
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());
