@@ -38,17 +38,12 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
     }
 
     @Override
-    public Iterable<ChannelNumbering> getChannelsAvailable(LocalDate date) {
-        return getChannelsAvailable(date, false);
-    }
-
-    @Override
     public Iterable<ChannelNumbering> getChannelsAvailable(LocalDate date, boolean lcnSharing) {
         if (lcnSharing) {
-            return StreamSupport.stream(super.getChannelsAvailable(date).spliterator(), false)
+            return StreamSupport.stream(super.getChannelsAvailable(date, lcnSharing).spliterator(), false)
                     .sorted(CHANNEL_NUMBERING_ORDERING).collect(MoreCollectors.toImmutableList());
         }
-        return StreamSupport.stream(super.getChannelsAvailable(date).spliterator(), false)
+        return StreamSupport.stream(super.getChannelsAvailable(date, lcnSharing).spliterator(), false)
                 //we need to use randomUUID in order to avoid deduplicating chanels which have no numbering
                 .collect(Collectors.groupingBy(cn -> cn.getChannelNumber()
                         .orElse(UUID.randomUUID().toString())))
