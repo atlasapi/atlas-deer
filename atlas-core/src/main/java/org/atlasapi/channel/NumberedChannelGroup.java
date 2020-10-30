@@ -39,6 +39,8 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
 
     @Override
     public Iterable<ChannelNumbering> getChannelsAvailable(LocalDate date, boolean lcnSharing) {
+        // normally within a channel group, we expect/want only channel per channel number AKA lcn.
+        // with lcnSharing = true (via annotation), we allow more than one to be served.
         if (lcnSharing) {
             return StreamSupport.stream(super.getChannelsAvailable(date, lcnSharing).spliterator(), false)
                     .sorted(CHANNEL_NUMBERING_ORDERING).collect(MoreCollectors.toImmutableList());
