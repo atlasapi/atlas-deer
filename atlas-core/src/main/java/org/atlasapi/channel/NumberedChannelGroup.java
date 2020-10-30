@@ -43,7 +43,8 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
         // with lcnSharing = true (via annotation), we allow more than one to be served.
         if (lcnSharing) {
             return StreamSupport.stream(super.getChannelsAvailable(date, lcnSharing).spliterator(), false)
-                    .sorted(CHANNEL_NUMBERING_ORDERING).collect(MoreCollectors.toImmutableList());
+                    .sorted(CHANNEL_NUMBERING_ORDERING)
+                    .collect(MoreCollectors.toImmutableList());
         }
         return StreamSupport.stream(super.getChannelsAvailable(date, lcnSharing).spliterator(), false)
                 //we need to use randomUUID in order to avoid deduplicating chanels which have no numbering
