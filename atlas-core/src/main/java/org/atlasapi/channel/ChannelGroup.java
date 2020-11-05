@@ -68,6 +68,10 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
     }
 
     public Iterable<T> getChannelsAvailable(LocalDate date) {
+        return getChannelsAvailable(date, false);
+    }
+
+    public Iterable<T> getChannelsAvailable(LocalDate date, boolean lcnSharing) {
         return channels.stream()
                 .filter(ch -> ch.isAvailable(date))
                 .collect(MoreCollectors.toImmutableSet());

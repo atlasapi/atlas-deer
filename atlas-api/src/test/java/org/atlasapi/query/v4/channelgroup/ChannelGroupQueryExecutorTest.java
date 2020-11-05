@@ -273,6 +273,10 @@ public class ChannelGroupQueryExecutorTest {
             .thenReturn(channels);
         when(testChannelGroup3.getChannelsAvailable(any(LocalDate.class)))
             .thenReturn(channels);
+        when(testChannelGroup.getChannelsAvailable(any(LocalDate.class), anyBoolean()))
+                .thenReturn(channels);
+        when(testChannelGroup3.getChannelsAvailable(any(LocalDate.class), anyBoolean()))
+                .thenReturn(channels);
 
         when(testChannelGroup.getType()).thenReturn("platform");
         when(testChannelGroup2.getType()).thenReturn("region");

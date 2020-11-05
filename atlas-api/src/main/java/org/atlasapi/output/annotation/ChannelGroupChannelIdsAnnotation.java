@@ -2,6 +2,7 @@ package org.atlasapi.output.annotation;
 
 import java.io.IOException;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.output.FieldWriter;
@@ -24,8 +25,9 @@ public class ChannelGroupChannelIdsAnnotation extends OutputAnnotation<ResolvedC
     @Override
     public void write(ResolvedChannelGroup entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
+        boolean lcnSharing = ctxt.getActiveAnnotations().contains(Annotation.LCN_SHARING);
         ImmutableList<ChannelGroupMembership> channels = ImmutableList.copyOf(
-                entity.getChannelGroup().getChannelsAvailable(LocalDate.now())
+                entity.getChannelGroup().getChannelsAvailable(LocalDate.now(), lcnSharing)
         );
         writer.writeList(channelIdsWriter, channels, ctxt);
     }

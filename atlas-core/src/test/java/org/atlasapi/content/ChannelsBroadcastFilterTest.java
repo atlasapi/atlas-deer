@@ -105,9 +105,10 @@ public class ChannelsBroadcastFilterTest {
 
     private ImmutableList<Broadcast> filterBroadcasts(Broadcast... broadcasts) {
         return ImmutableList.copyOf(filter.sortAndFilter(
-                    ImmutableList.copyOf(broadcasts),
-                    channelGroup
-            ));
+                ImmutableList.copyOf(broadcasts),
+                channelGroup,
+                false
+                ));
     }
 
     private ChannelGroupMembership getChannelGroupMembership(Id channelId) {

@@ -84,12 +84,14 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
                             .collect(Collectors.toSet());
                     if (ctxt.getRegions().isPresent()) {
                         List<Region> regions = ctxt.getRegions().get();
+                        boolean lcnSharing = ctxt.getActiveAnnotations().contains(Annotation.LCN_SHARING);
 
                         List<Broadcast> broadcasts = Lists.newArrayList();
                         for (Region region : regions) {
                             Iterable<Broadcast> broadcastsToAdd = channelsBroadcastFilter.sortAndFilter(
                                     upcomingBroadcasts,
-                                    region
+                                    region,
+                                    lcnSharing
                             );
                             Iterables.addAll(broadcasts, broadcastsToAdd);
                         }
