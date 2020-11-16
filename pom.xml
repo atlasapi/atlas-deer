@@ -551,7 +551,7 @@
     <telescope-client.version>1.0-SNAPSHOT</telescope-client.version>
     <guava.version>19.0</guava.version>
     <protonpack.version>1.7</protonpack.version>
-    <jetty.version>9.4.32.v20200930</jetty.version>
+    <jetty.version>9.4.34.v20201102</jetty.version>
     <slf4j.version>1.7.5</slf4j.version>
     <astyanax.version>2.0.2</astyanax.version>
     <common.version>2.2-SNAPSHOT</common.version>
