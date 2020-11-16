@@ -1,8 +1,10 @@
 package org.atlasapi.query.v5.search.attribute;
 
-import java.time.Instant;
-import java.util.List;
-
+import com.google.common.collect.ImmutableList;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.media.MimeType;
+import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Specialization;
@@ -14,12 +16,8 @@ import org.atlasapi.query.v5.search.coercer.InstantRangeCoercer;
 import org.atlasapi.query.v5.search.coercer.NumberRangeCoercer;
 import org.atlasapi.source.Sources;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.media.MimeType;
-import com.metabroadcast.sherlock.common.mapping.ContentMapping;
-import com.metabroadcast.sherlock.common.mapping.IndexMapping;
-
-import com.google.common.collect.ImmutableList;
+import java.time.Instant;
+import java.util.List;
 
 public class SherlockAttributes {
 
@@ -62,11 +60,6 @@ public class SherlockAttributes {
                         SherlockParameter.TITLE,
                         content.getTitle()
                 ),
-                new KeywordAttribute<>(
-                        SherlockParameter.TITLE_EXACT,
-                        content.getTitleExact(),
-                        StringCoercer.create()
-                ),
                 new SearchAttribute(
                         SherlockParameter.DESCRIPTION,
                         content.getDescription()
@@ -81,13 +74,9 @@ public class SherlockAttributes {
                         content.getSpecialization(),
                         EnumCoercer.create(Specialization.FROM_KEY())
                 ),
-                new SearchAttribute(
-                        SherlockParameter.GENRES,
-                        content.getGenres()
-                ),
                 new KeywordAttribute<>(
-                        SherlockParameter.GENRES_EXACT,
-                        content.getGenresExact(),
+                        SherlockParameter.GENRES,
+                        content.getGenres(),
                         StringCoercer.create()
                 ),
                 new EnumAttribute<>(
@@ -170,15 +159,6 @@ public class SherlockAttributes {
                         SherlockParameter.RESTRICTIONS_MINIMUM_AGE,
                         content.getRestrictions().getMinimumAge(),
                         NumberRangeCoercer.createIntegerCoercer()
-                ),
-                new SearchAttribute(
-                        SherlockParameter.RESTRICTIONS_MESSAGE,
-                        content.getRestrictions().getMessage()
-                ),
-                new KeywordAttribute<>(
-                        SherlockParameter.RESTRICTIONS_MESSAGE_EXACT,
-                        content.getRestrictions().getMessageExact(),
-                        StringCoercer.create()
                 )
         );
     }
@@ -485,11 +465,6 @@ public class SherlockAttributes {
                         SherlockParameter.CONTAINER_TITLE,
                         content.getContainer().getTitle()
                 ),
-                new KeywordAttribute<>(
-                        SherlockParameter.CONTAINER_TITLE_EXACT,
-                        content.getContainer().getTitleExact(),
-                        StringCoercer.create()
-                ),
                 new SearchAttribute(
                         SherlockParameter.CONTAINER_DESCRIPTION,
                         content.getContainer().getDescription()
@@ -512,11 +487,6 @@ public class SherlockAttributes {
                 new SearchAttribute(
                         SherlockParameter.SERIES_TITLE,
                         content.getSeries().getTitle()
-                ),
-                new KeywordAttribute<>(
-                        SherlockParameter.SERIES_TITLE_EXACT,
-                        content.getSeries().getTitleExact(),
-                        StringCoercer.create()
                 ),
                 new SearchAttribute(
                         SherlockParameter.SERIES_DESCRIPTION,
@@ -541,11 +511,6 @@ public class SherlockAttributes {
                         SherlockParameter.CHILDREN_TITLE,
                         content.getChildren().getTitle()
                 ),
-                new KeywordAttribute<>(
-                        SherlockParameter.CHILDREN_TITLE_EXACT,
-                        content.getChildren().getTitleExact(),
-                        StringCoercer.create()
-                ),
                 new SearchAttribute(
                         SherlockParameter.CHILDREN_DESCRIPTION,
                         content.getChildren().getDescription()
@@ -565,22 +530,14 @@ public class SherlockAttributes {
                         content.getAwards().getOutcome(),
                         StringCoercer.create()
                 ),
-                new SearchAttribute(
-                        SherlockParameter.AWARDS_TITLE,
-                        content.getAwards().getTitle()
-                ),
                 new KeywordAttribute<>(
-                        SherlockParameter.AWARDS_TITLE_EXACT,
-                        content.getAwards().getTitleExact(),
+                        SherlockParameter.AWARDS_TITLE,
+                        content.getAwards().getTitle(),
                         StringCoercer.create()
                 ),
-                new SearchAttribute(
-                        SherlockParameter.AWARDS_DESCRIPTION,
-                        content.getAwards().getDescription()
-                ),
                 new KeywordAttribute<>(
-                        SherlockParameter.AWARDS_DESCRIPTION_EXACT,
-                        content.getAwards().getDescriptionExact(),
+                        SherlockParameter.AWARDS_DESCRIPTION,
+                        content.getAwards().getDescription(),
                         StringCoercer.create()
                 ),
                 new RangeAttribute<>(
