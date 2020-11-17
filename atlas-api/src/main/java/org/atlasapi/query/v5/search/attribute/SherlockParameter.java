@@ -8,12 +8,10 @@ public enum SherlockParameter {
 
     // Content
     TITLE(Type.SEARCH, "title"),
-    TITLE_EXACT(Type.FILTER, "title"),
     DESCRIPTION(Type.SEARCH, "description"),
     MEDIA_TYPE(Type.FILTER, "media_type"),
     SPECIALIZATION(Type.FILTER, "specialization"),
-    GENRES(Type.SEARCH, "genre"),
-    GENRES_EXACT(Type.FILTER, "genre"),
+    GENRES(Type.FILTER, "genre"),
     TYPE(Type.FILTER, "type"),
     EPISODE_NUMBER(Type.FILTER, "episode_number"),
     SERIES_NUMBER(Type.FILTER, "series_number"),
@@ -33,8 +31,6 @@ public enum SherlockParameter {
     RESTRICTIONS_AUTHORITY(Type.FILTER, Group.RESTRICTIONS, "authority"),
     RESTRICTIONS_RATING(Type.FILTER, Group.RESTRICTIONS, "rating"),
     RESTRICTIONS_MINIMUM_AGE(Type.FILTER, Group.RESTRICTIONS, "minimum_age"),
-    RESTRICTIONS_MESSAGE(Type.SEARCH, Group.RESTRICTIONS, "message"),
-    RESTRICTIONS_MESSAGE_EXACT(Type.FILTER, Group.RESTRICTIONS, "message"),
 
     // Certificates
     CERTIFICATES_CLASSIFICATION(Type.FILTER, Group.CERTIFICATES, "classification"),
@@ -105,30 +101,25 @@ public enum SherlockParameter {
     // Container
     CONTAINER_ID(Type.FILTER, Group.CONTAINER, "id"),
     CONTAINER_TITLE(Type.SEARCH, Group.CONTAINER, "title"),
-    CONTAINER_TITLE_EXACT(Type.FILTER, Group.CONTAINER, "title"),
     CONTAINER_DESCRIPTION(Type.SEARCH, Group.CONTAINER, "description"),
     CONTAINER_TYPE(Type.FILTER, Group.CONTAINER, "type"),
 
     // Series
     SERIES_ID(Type.FILTER, Group.SERIES, "id"),
     SERIES_TITLE(Type.SEARCH, Group.SERIES, "title"),
-    SERIES_TITLE_EXACT(Type.FILTER, Group.SERIES, "title"),
     SERIES_DESCRIPTION(Type.SEARCH, Group.SERIES, "description"),
     SERIES_SERIES_NUMBER(Type.FILTER, Group.SERIES, "series_number"),
 
     // Children
     CHILDREN_ID(Type.FILTER, Group.CHILDREN, "id"),
     CHILDREN_TITLE(Type.SEARCH, Group.CHILDREN, "title"),
-    CHILDREN_TITLE_EXACT(Type.FILTER, Group.CHILDREN, "title"),
     CHILDREN_DESCRIPTION(Type.SEARCH, Group.CHILDREN, "description"),
     CHILDREN_EPISODE_NUMBER(Type.FILTER, Group.CHILDREN, "episode_number"),
 
     // Awards
     AWARDS_OUTCOME(Type.FILTER, Group.AWARDS, "outcome"),
-    AWARDS_TITLE(Type.SEARCH, Group.AWARDS, "title"),
-    AWARDS_TITLE_EXACT(Type.FILTER, Group.AWARDS, "title"),
-    AWARDS_DESCRIPTION(Type.SEARCH, Group.AWARDS, "description"),
-    AWARDS_DESCRIPTION_EXACT(Type.FILTER, Group.AWARDS, "description"),
+    AWARDS_TITLE(Type.FILTER, Group.AWARDS, "title"),
+    AWARDS_DESCRIPTION(Type.FILTER, Group.AWARDS, "description"),
     AWARDS_YEAR(Type.FILTER, Group.AWARDS, "year"),
 
     // Ratings
