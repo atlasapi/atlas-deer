@@ -2,7 +2,7 @@ package org.atlasapi.elasticsearch.content;
 
 import com.metabroadcast.sherlock.client.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.parameter.CompositeTitleSearchParameter;
-import com.metabroadcast.sherlock.client.parameter.ParentExistParameter;
+import com.metabroadcast.sherlock.client.parameter.ExistParameter;
 import com.metabroadcast.sherlock.client.parameter.SingleClauseBoolParameter;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
@@ -16,13 +16,13 @@ public class TitleQueryBuilder {
     public static BoolParameter build(String title, float weighting) {
         return SingleClauseBoolParameter.should(
                 SingleClauseBoolParameter.must(
-                        ParentExistParameter.exists(CONTENT_MAPPING.getContainerMapping()),
+                        ExistParameter.exists(CONTENT_MAPPING.getContainer().getId()),
                         CompositeTitleSearchParameter.forContainerTitle(title)
                                 .withRelativeDefaultBoosts(weighting)
                                 .build()
                 ),
                 SingleClauseBoolParameter.must(
-                        ParentExistParameter.notExists(CONTENT_MAPPING.getContainerMapping()),
+                        ExistParameter.notExists(CONTENT_MAPPING.getContainer().getId()),
                         CompositeTitleSearchParameter.forContentTitle(title)
                                 .withRelativeDefaultBoosts(weighting)
                                 .build()
