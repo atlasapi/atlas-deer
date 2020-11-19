@@ -1,8 +1,20 @@
 package org.atlasapi.elasticsearch.content;
 
-import java.util.Objects;
-import java.util.Optional;
-
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.stream.MoreStreams;
+import com.metabroadcast.sherlock.client.parameter.BoolParameter;
+import com.metabroadcast.sherlock.client.response.ContentSearchQueryResponse;
+import com.metabroadcast.sherlock.client.scoring.ConstantValueWeighting;
+import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
+import com.metabroadcast.sherlock.client.scoring.Weightings;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
+import com.metabroadcast.sherlock.client.search.SherlockSearcher;
+import com.metabroadcast.sherlock.common.SherlockIndex;
+import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.FuzzyQueryParams;
@@ -18,27 +30,14 @@ import org.atlasapi.elasticsearch.util.FiltersBuilder;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.SecondaryIndex;
-
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.stream.MoreStreams;
-import com.metabroadcast.sherlock.client.parameter.BoolParameter;
-import com.metabroadcast.sherlock.client.response.ContentSearchQueryResponse;
-import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
-import com.metabroadcast.sherlock.client.scoring.Weightings;
-import com.metabroadcast.sherlock.client.search.SearchQuery;
-import com.metabroadcast.sherlock.client.search.SherlockSearcher;
-import com.metabroadcast.sherlock.common.SherlockIndex;
-import com.metabroadcast.sherlock.common.mapping.ContentMapping;
-import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
-
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -157,7 +156,8 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
         QueryWeighting.Builder queryWeightingBuilder = QueryWeighting.builder()
                 .withScoreMode(FunctionScoreQuery.ScoreMode.SUM)
                 .withCombineFunction(CombineFunction.MULTIPLY)
-                .withMaxBoost(3.0F);
+                .withMaxBoost(3.0F)
+                .withWeighting(ConstantValueWeighting.of(1f));
 
         addFuzzyQueryAndBroadcastWeighting(
                 searchQueryBuilder,

@@ -1,18 +1,13 @@
 package org.atlasapi.elasticsearch.content;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.atlasapi.content.ContentTitleSearcher;
-import org.atlasapi.elasticsearch.util.FiltersBuilder;
-
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.sherlock.client.parameter.BoolParameter;
-import com.metabroadcast.sherlock.client.parameter.ExistParameter;
-import com.metabroadcast.sherlock.client.parameter.ParentExistParameter;
-import com.metabroadcast.sherlock.client.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.parameter.SingleClauseBoolParameter;
 import com.metabroadcast.sherlock.client.parameter.TermParameter;
 import com.metabroadcast.sherlock.client.response.IdSearchQueryResponse;
+import com.metabroadcast.sherlock.client.scoring.ConstantValueWeighting;
 import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
 import com.metabroadcast.sherlock.client.scoring.Weighting;
 import com.metabroadcast.sherlock.client.scoring.Weightings;
@@ -20,15 +15,14 @@ import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.client.search.SherlockSearcher;
 import com.metabroadcast.sherlock.common.SherlockIndex;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
-
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
-import com.google.common.util.concurrent.ListenableFuture;
+import org.atlasapi.content.ContentTitleSearcher;
+import org.atlasapi.elasticsearch.util.FiltersBuilder;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -70,6 +64,7 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
         }
 
         List<Weighting> weightings = new ArrayList<>();
+        weightings.add(ConstantValueWeighting.of(1f));
         if (search.getBroadcastWeighting() != 0.0f) {
             weightings.add(Weightings.broadcastWithin30Days(1f));
         }
