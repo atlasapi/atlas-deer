@@ -192,13 +192,10 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
             IndexQueryParams queryParams
     ) {
         if (queryParams.getFuzzyQueryParams().isPresent()) {
-            addTitleQuery(searchQueryBuilder, queryParams);
-            float broadcastWeighting;
-            if (queryParams.getBroadcastWeighting().isPresent()) {
-                broadcastWeighting = queryParams.getBroadcastWeighting().get();
-            } else {
-                broadcastWeighting = 5f;
-            }
+            addTitleQuery(searchQueryBuilder, queryParams.getFuzzyQueryParams().get());
+            float broadcastWeighting = queryParams.getBroadcastWeighting().isPresent()
+                    ? queryParams.getBroadcastWeighting().get()
+                    : 1f;
             queryWeightingBuilder.withWeighting(Weightings.broadcastWithin30Days(broadcastWeighting));
             searchQueryBuilder.addScoreSort(SortOrder.DESC);
         }
@@ -282,9 +279,8 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
 
     private void addTitleQuery(
             SearchQuery.Builder searchQueryBuilder,
-            IndexQueryParams queryParams
+            FuzzyQueryParams searchParams
     ) {
-        FuzzyQueryParams searchParams = queryParams.getFuzzyQueryParams().get();
         searchQueryBuilder.addSearcher(
                 TitleQueryBuilder.build(
                         searchParams.getSearchTerm(),
