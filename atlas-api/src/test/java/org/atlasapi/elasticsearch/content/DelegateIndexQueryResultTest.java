@@ -2,7 +2,6 @@ package org.atlasapi.elasticsearch.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -23,8 +22,8 @@ public class DelegateIndexQueryResultTest {
     @Test
     public void testResultWithCanonicalIdsAndPublishers() throws Exception {
         DelegateIndexQueryResult result = DelegateIndexQueryResult.builder(4)
-                .add(idA, canonicalIdA, Publisher.METABROADCAST)
-                .add(idB, canonicalIdB, Publisher.BBC)
+                .add(idA, 1f, canonicalIdA, Publisher.METABROADCAST, null)
+                .add(idB, 1f, canonicalIdB, Publisher.BBC, null)
                 .build();
 
         assertThat(result.getTotalCount(), is(4L));
@@ -48,7 +47,7 @@ public class DelegateIndexQueryResultTest {
     public void testResultBuilderRejectsNullCanonicalIds() throws Exception {
         exception.expect(NullPointerException.class);
         DelegateIndexQueryResult.builder(1)
-                .add(idA, null, Publisher.METABROADCAST)
+                .add(idA, 1f, null, Publisher.METABROADCAST, null)
                 .build();
     }
 
@@ -56,7 +55,7 @@ public class DelegateIndexQueryResultTest {
     public void testResultBuilderRejectsNullPublishers() throws Exception {
         exception.expect(NullPointerException.class);
         DelegateIndexQueryResult.builder(1)
-                .add(idA, canonicalIdA, null)
+                .add(idA, 1f, canonicalIdA, null, null)
                 .build();
     }
 }

@@ -1,21 +1,19 @@
 package org.atlasapi.elasticsearch.content;
 
-import java.util.List;
-
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.query.Selection;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-
-import com.metabroadcast.common.query.Selection;
-
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.List;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -41,9 +39,9 @@ public class PseudoEquivalentContentIndexTest {
     @Test
     public void testQuery() throws Exception {
         DelegateIndexQueryResult delegateResult = DelegateIndexQueryResult.builder(10L)
-                .add(Id.valueOf(0L), Id.valueOf(10L), Publisher.METABROADCAST)
-                .add(Id.valueOf(1L), Id.valueOf(10L), Publisher.BBC)
-                .add(Id.valueOf(2L), Id.valueOf(11L), Publisher.METABROADCAST)
+                .add(Id.valueOf(0L), 1f, Id.valueOf(10L), Publisher.METABROADCAST, null)
+                .add(Id.valueOf(1L), 1f, Id.valueOf(10L), Publisher.BBC, null)
+                .add(Id.valueOf(2L), 1f, Id.valueOf(11L), Publisher.METABROADCAST, null)
                 .build();
 
         List<Publisher> publishers = Lists.newArrayList(
@@ -66,12 +64,12 @@ public class PseudoEquivalentContentIndexTest {
     @Test
     public void testQueryPagination() throws Exception {
         DelegateIndexQueryResult delegateResult = DelegateIndexQueryResult.builder(100L)
-                .add(Id.valueOf(0L), Id.valueOf(10L), Publisher.METABROADCAST)
-                .add(Id.valueOf(1L), Id.valueOf(11L), Publisher.METABROADCAST)
-                .add(Id.valueOf(2L), Id.valueOf(12L), Publisher.METABROADCAST)
-                .add(Id.valueOf(3L), Id.valueOf(13L), Publisher.METABROADCAST)
-                .add(Id.valueOf(4L), Id.valueOf(14L), Publisher.METABROADCAST)
-                .add(Id.valueOf(5L), Id.valueOf(15L), Publisher.METABROADCAST)
+                .add(Id.valueOf(0L), 1f, Id.valueOf(10L), Publisher.METABROADCAST, null)
+                .add(Id.valueOf(1L), 1f, Id.valueOf(11L), Publisher.METABROADCAST, null)
+                .add(Id.valueOf(2L), 1f, Id.valueOf(12L), Publisher.METABROADCAST, null)
+                .add(Id.valueOf(3L), 1f, Id.valueOf(13L), Publisher.METABROADCAST, null)
+                .add(Id.valueOf(4L), 1f, Id.valueOf(14L), Publisher.METABROADCAST, null)
+                .add(Id.valueOf(5L), 1f, Id.valueOf(15L), Publisher.METABROADCAST, null)
                 .build();
 
         List<Publisher> publishers = Lists.newArrayList(Publisher.METABROADCAST);
@@ -93,12 +91,12 @@ public class PseudoEquivalentContentIndexTest {
         Id canonicalIdC = Id.valueOf(12L);
 
         DelegateIndexQueryResult delegateResult = DelegateIndexQueryResult.builder(100L)
-                .add(Id.valueOf(0L), canonicalIdA, Publisher.METABROADCAST)
-                .add(Id.valueOf(1L), canonicalIdB, Publisher.METABROADCAST)
-                .add(Id.valueOf(2L), canonicalIdA, Publisher.BBC)
-                .add(Id.valueOf(3L), canonicalIdC, Publisher.BBC)
-                .add(Id.valueOf(4L), canonicalIdC, Publisher.METABROADCAST)
-                .add(Id.valueOf(5L), canonicalIdA, Publisher.PA)
+                .add(Id.valueOf(0L), 1f, canonicalIdA, Publisher.METABROADCAST, null)
+                .add(Id.valueOf(1L), 1f, canonicalIdB, Publisher.METABROADCAST, null)
+                .add(Id.valueOf(2L), 1f, canonicalIdA, Publisher.BBC, null)
+                .add(Id.valueOf(3L), 1f, canonicalIdC, Publisher.BBC, null)
+                .add(Id.valueOf(4L), 1f, canonicalIdC, Publisher.METABROADCAST, null)
+                .add(Id.valueOf(5L), 1f, canonicalIdA, Publisher.PA, null)
                 .build();
 
         List<Publisher> publishers = Lists.newArrayList(

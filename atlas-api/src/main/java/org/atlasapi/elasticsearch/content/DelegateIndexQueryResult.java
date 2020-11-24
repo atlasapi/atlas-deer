@@ -1,16 +1,15 @@
 package org.atlasapi.elasticsearch.content;
 
-import java.util.LinkedList;
-import java.util.List;
-
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
+import javax.annotation.Nullable;
+import java.util.LinkedList;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -58,8 +57,23 @@ public class DelegateIndexQueryResult {
             this.totalResultCount = totalResultCount;
         }
 
-        public Builder add(Id id, Id canonicalId, Publisher publisher) {
-            results.add(Result.of(id, canonicalId, publisher));
+
+        public Builder add(
+                Id id,
+                float score,
+                Id canonicalId,
+                Publisher publisher,
+                @Nullable String title
+        ) {
+            results.add(
+                    Result.of(
+                            id,
+                            score,
+                            canonicalId,
+                            publisher,
+                            title
+                    )
+            );
             return this;
         }
 
@@ -71,21 +85,47 @@ public class DelegateIndexQueryResult {
     public static class Result {
 
         private final Id id;
+        private final float score;
         private final Id canonicalId;
         private final Publisher publisher;
+        private final String title;
 
-        private Result(Id id, Id canonicalId, Publisher publisher) {
+        private Result(
+                Id id,
+                float score,
+                Id canonicalId,
+                Publisher publisher,
+                @Nullable String title
+        ) {
             this.id = checkNotNull(id);
+            this.score = score;
             this.canonicalId = checkNotNull(canonicalId);
             this.publisher = checkNotNull(publisher);
+            this.title = title;
         }
 
-        public static Result of(Id id, Id canonicalId, Publisher publisher) {
-            return new Result(id, canonicalId, publisher);
+        public static Result of(
+                Id id,
+                float score,
+                Id canonicalId,
+                Publisher publisher,
+                @Nullable String title
+        ) {
+            return new Result(
+                    id,
+                    score,
+                    canonicalId,
+                    publisher,
+                    title
+            );
         }
 
         public Id getId() {
             return id;
+        }
+
+        public float getScore() {
+            return score;
         }
 
         public Id getCanonicalId() {
@@ -96,5 +136,9 @@ public class DelegateIndexQueryResult {
             return publisher;
         }
 
+        @Nullable
+        public String getTitle() {
+            return title;
+        }
     }
 }

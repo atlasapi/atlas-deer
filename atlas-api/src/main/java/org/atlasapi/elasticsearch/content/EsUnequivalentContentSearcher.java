@@ -124,8 +124,10 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
                     .filter(Objects::nonNull)
                     .forEach(hit -> resultBuilder.add(
                             Id.valueOf(hit.getId()),
+                            hit.getScore(),
                             Id.valueOf(hit.getCanonicalId()),
-                            Publisher.fromKey(hit.getSource()).requireValue()
+                            Publisher.fromKey(hit.getSource()).requireValue(),
+                            hit.getTitle()
                     ));
 
             return resultBuilder.build();
