@@ -197,8 +197,8 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
             addTitleQuery(searchQueryBuilder, queryParams.getFuzzyQueryParams().get());
             float broadcastWeighting = queryParams.getBroadcastWeighting().isPresent()
                     ? queryParams.getBroadcastWeighting().get()
-                    : 1f;
-            queryWeightingBuilder.withWeighting(Weightings.broadcastWithin30Days(broadcastWeighting));
+                    : 0.2f;
+            queryWeightingBuilder.withWeighting(Weightings.recentBroadcast(broadcastWeighting));
             searchQueryBuilder.addScoreSort(SortOrder.DESC);
         }
     }

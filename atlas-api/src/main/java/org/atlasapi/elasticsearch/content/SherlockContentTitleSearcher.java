@@ -66,7 +66,7 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
         List<Weighting> weightings = new ArrayList<>();
         weightings.add(ConstantValueWeighting.of(1f));
         if (search.getBroadcastWeighting() != 0.0f) {
-            weightings.add(Weightings.broadcastWithin30Days(1f));
+            weightings.add(Weightings.recentBroadcast(search.getBroadcastWeighting()));
         }
         if (search.getCatchupWeighting() != 0.0f) {
             weightings.add(Weightings.availability(search.getCatchupWeighting()));
