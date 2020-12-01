@@ -71,10 +71,6 @@ public class EquivalentContentIndexingContentWorker
         messageReceivedMeter.mark();
 
         Id contentId = getContentId(message);
-        if (message.getEquivalentSetId() == 121552457) {
-            LOG.info("skipping peppa.");
-            return;
-        }
 
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
                 contentId, getTimeToProcessInMillis(message.getTimestamp()) / 1000L, message);
