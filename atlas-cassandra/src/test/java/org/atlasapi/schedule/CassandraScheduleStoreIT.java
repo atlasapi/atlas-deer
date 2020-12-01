@@ -1,9 +1,23 @@
 package org.atlasapi.schedule;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
+import com.codahale.metrics.MetricRegistry;
+import com.datastax.driver.core.Session;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.ids.SequenceGenerator;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.time.DateTimeZones;
+import com.metabroadcast.common.time.TimeMachine;
+import com.netflix.astyanax.AstyanaxContext;
+import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
+import com.netflix.astyanax.model.ConsistencyLevel;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.Broadcast;
@@ -21,26 +35,6 @@ import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraInit;
-
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.ids.SequenceGenerator;
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.time.DateTimeZones;
-import com.metabroadcast.common.time.TimeMachine;
-
-import com.codahale.metrics.MetricRegistry;
-import com.datastax.driver.core.Session;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.netflix.astyanax.AstyanaxContext;
-import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
-import com.netflix.astyanax.model.ConsistencyLevel;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.After;
@@ -52,6 +46,10 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 import org.mockito.Mock;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -264,9 +262,10 @@ public abstract class CassandraScheduleStoreIT {
         assertThat(channelSchedule.getEntries().get(0).getItem().getId().longValue(), is(2L));
         assertThat(channelSchedule.getEntries().get(1).getItem().getId().longValue(), is(3L));
 
-        Resolved<Content> resolved = future(contentStore.resolveIds(ImmutableList.of(Id.valueOf(1))));
-        Item two = (Item) resolved.getResources().first().get();
-        assertFalse(Iterables.getOnlyElement(two.getBroadcasts()).isActivelyPublished());
+        // We're now assuming that this broadcast is removed separately via the content change queue.
+//        Resolved<Content> resolved = future(contentStore.resolveIds(ImmutableList.of(Id.valueOf(1))));
+//        Item two = (Item) resolved.getResources().first().get();
+//        assertFalse(Iterables.getOnlyElement(two.getBroadcasts()).isActivelyPublished());
     }
 
     @Test
@@ -492,9 +491,10 @@ public abstract class CassandraScheduleStoreIT {
         assertThat(channelSchedule.getInterval(), is(requestedInterval));
         assertThat(channelSchedule.getEntries().size(), is(0));
 
-        Resolved<Content> resolved = future(contentStore.resolveIds(ImmutableList.of(Id.valueOf(1))));
-        Item two = (Item) resolved.getResources().first().get();
-        assertFalse(Iterables.getOnlyElement(two.getBroadcasts()).isActivelyPublished());
+        // We're now assuming that this broadcast is removed separately via the content change queue.
+//        Resolved<Content> resolved = future(contentStore.resolveIds(ImmutableList.of(Id.valueOf(1))));
+//        Item two = (Item) resolved.getResources().first().get();
+//        assertFalse(Iterables.getOnlyElement(two.getBroadcasts()).isActivelyPublished());
     }
 
     @Test
