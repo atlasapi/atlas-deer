@@ -4,6 +4,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
+
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Region;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
@@ -66,12 +68,14 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
 
             if (ctxt.getRegions().isPresent()) {
                 List<Region> regions = ctxt.getRegions().get();
+                boolean lcnSharing = ctxt.getActiveAnnotations().contains(Annotation.LCN_SHARING);
 
                 List<Broadcast> broadcasts = Lists.newArrayList();
                 regions.forEach(region -> {
                     Iterable<Broadcast> broadcastsToAdd = channelsBroadcastFilter.sortAndFilter(
                             filteredBroadcasts,
-                            region
+                            region,
+                            lcnSharing
                     );
                     Iterables.addAll(broadcasts, broadcastsToAdd);
                 });

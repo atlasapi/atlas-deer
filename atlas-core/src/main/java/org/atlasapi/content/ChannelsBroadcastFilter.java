@@ -11,9 +11,7 @@ import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
 public class ChannelsBroadcastFilter {
@@ -27,14 +25,15 @@ public class ChannelsBroadcastFilter {
 
     public Iterable<Broadcast> sortAndFilter(
             Iterable<Broadcast> broadcasts,
-            ChannelGroup<?> channelGroup
+            ChannelGroup<?> channelGroup,
+            boolean lcnSharing
     ) {
         if (Iterables.isEmpty(broadcasts)) {
             return ImmutableList.of();
         }
 
         ImmutableList<Id> channelIds = StreamSupport.stream(
-                channelGroup.getChannelsAvailable(LocalDate.now()).spliterator(),
+                channelGroup.getChannelsAvailable(LocalDate.now(), lcnSharing).spliterator(),
                 false
         )
                 .map(channel -> channel.getChannel().getId())

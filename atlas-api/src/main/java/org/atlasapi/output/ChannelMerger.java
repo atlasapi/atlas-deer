@@ -24,8 +24,7 @@ public class ChannelMerger {
 
         Application application = ctxt.getApplication();
 
-        if (!application.getConfiguration().isPrecedenceEnabled()
-                || channel.getSource() != Publisher.METABROADCAST) {
+        if (!application.getConfiguration().isPrecedenceEnabled()) {
             return channel;
         }
 

@@ -131,12 +131,15 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
                     updateLog(itemsAndBroadcasts),
                     updateLog(update.getStaleEntries())
             );
-            for (ItemAndBroadcast staleEntry : Iterables.concat(
-                    update.getStaleEntries(),
-                    update.getStaleContent()
-            )) {
-                updateStaleItemInContentStore(staleEntry);
-            }
+            // We used to update the content store here to mark stale broadcasts as unpublished, however this would
+            // end up being undone anyway whenever the content was next written due to the underlying Owl data.
+            // This code is left in place in case it is necessary once Owl has been decommissioned.
+//            for (ItemAndBroadcast staleEntry : Iterables.concat(
+//                    update.getStaleEntries(),
+//                    update.getStaleContent()
+//            )) {
+//                updateStaleItemInContentStore(staleEntry);
+//            }
             doWrite(source, removeAdditionalBroadcasts(update.getUpdatedBlocks()));
             sendUpdateMessage(source, content, update, channel, interval);
             return writeResults;

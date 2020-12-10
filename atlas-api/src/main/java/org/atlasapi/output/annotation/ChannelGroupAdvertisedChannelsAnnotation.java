@@ -66,8 +66,9 @@ public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<R
                 builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
             }
         } else {
+            boolean lcnSharing = ctxt.getActiveAnnotations().contains(Annotation.LCN_SHARING);
             for (ChannelGroupMembership channelGroupMembership :
-                    entity.getChannelGroup().getChannelsAvailable(LocalDate.now())) {
+                    entity.getChannelGroup().getChannelsAvailable(LocalDate.now(), lcnSharing)) {
                 builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
             }
         }
