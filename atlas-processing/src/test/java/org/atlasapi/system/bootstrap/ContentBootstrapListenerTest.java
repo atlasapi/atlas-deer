@@ -3,7 +3,7 @@ package org.atlasapi.system.bootstrap;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
@@ -50,7 +50,6 @@ public class ContentBootstrapListenerTest {
     private @Mock ContentWriter contentWriter;
     private @Mock DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     private @Mock EquivalentContentStore equivalentContentStore;
-    private @Mock ContentIndex contentIndex;
     private @Mock LegacySegmentMigrator legacySegmentMigrator;
     private @Mock ContentResolver legacyContentResolver;
     private @Mock EquivalenceGraphStore equivalenceGraphStore;
@@ -80,7 +79,6 @@ public class ContentBootstrapListenerTest {
                 .withContentWriter(contentWriter)
                 .withEquivalenceMigrator(equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
-                .withContentIndex(contentIndex)
                 .withMigrateHierarchies(legacySegmentMigrator, legacyContentResolver)
                 .build();
     }
@@ -134,7 +132,6 @@ public class ContentBootstrapListenerTest {
                 .withContentWriter(contentWriter)
                 .withEquivalenceMigrator(equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
-                .withContentIndex(contentIndex)
                 .withMigrateHierarchies(legacySegmentMigrator, legacyContentResolver)
                 .withMigrateEquivalents(equivalenceGraphStore)
                 .build();
@@ -214,6 +211,5 @@ public class ContentBootstrapListenerTest {
         verify(equivalenceMigrator).migrateEquivalence(contentRef);
         verify(equivalentContentStore).updateContent(content.getId());
         verify(equivalentContentStore).updateEquivalences(graphUpdate);
-        verify(contentIndex).index(content);
     }
 }

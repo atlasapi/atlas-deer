@@ -82,7 +82,8 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 Futures.transform(
                         channelGroupResolver.resolveIds(
                                 ImmutableSet.of(query.getOnlyId()),
-                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(Attributes.REFRESH_CACHE_PARAM))
+                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(
+                                        Attributes.REFRESH_CACHE_PARAM))
                         ),
                         (Resolved<ChannelGroup<?>> resolved) -> {
                             if (resolved.getResources().isEmpty()) {
@@ -95,7 +96,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     .first()
                                     .get();
 
-                            boolean queryHasOperands = !query.getOperands().isEmpty();
+                            boolean queryHasOperands = !Iterables.isEmpty(query.getOperands());
                             if (queryHasOperands) {
                                 for (AttributeQuery<?> attributeQuery : query.getOperands()) {
                                     if (attributeQuery.getAttributeName()

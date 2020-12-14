@@ -6,7 +6,6 @@ import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
-import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.attributes.QueryAtomParser;
 import org.atlasapi.query.common.attributes.QueryAttributeParser;
@@ -101,7 +100,7 @@ public class StandardQueryParserTest {
                 .withParam("id", "cbbh"));
 
         assertTrue(q.isListQuery());
-        assertThat(q.getOperands().size(), is(1));
+        assertThat(Iterables.size(q.getOperands()), is(1));
         AttributeQuery<Id> operand = (AttributeQuery<Id>) Iterables.getOnlyElement(q.getOperands());
         assertThat(operand.getValue(), hasItem(Id.valueOf(idCodec.decode("cbbh"))));
 
@@ -118,7 +117,7 @@ public class StandardQueryParserTest {
                 .withParam("aliases.namespace.beginning", "prefix"));
 
         assertTrue(q.isListQuery());
-        assertThat(q.getOperands().size(), is(1));
+        assertThat(Iterables.size(q.getOperands()), is(1));
         AttributeQuery<String> operand =
                 (AttributeQuery<String>) Iterables.getOnlyElement(q.getOperands());
         assertThat(operand.getValue(), hasItem("prefix"));

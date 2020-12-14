@@ -42,8 +42,6 @@ public class WorkersModule {
 
     private final String contentChanges =
             Configurer.get("messaging.destination.content.changes").get();
-    private final String topicChanges =
-            Configurer.get("messaging.destination.topics.changes").get();
     private final String scheduleChanges =
             Configurer.get("messaging.destination.schedule.changes").get();
     private final String contentEquivalenceGraphChanges =
@@ -53,8 +51,6 @@ public class WorkersModule {
     private final String equivalentContentGraphChanges = Configurer
             .get("messaging.destination.equivalent.content.graph.changes").get();
 
-    private final Integer topicIndexingNumOfConsumers =
-            Configurer.get("messaging.deer.topic.indexer.consumers").toInt();
     private final Integer equivContentContentChangesNumOfConsumers =
             Configurer.get("messaging.deer.equivalent.content.content.changes.consumers").toInt();
     private final Integer equivContentGraphChangesNumOfConsumers =
@@ -67,10 +63,6 @@ public class WorkersModule {
             Configurer.get("messaging.deer.equivalent.schedule.schedule.changes.consumers").toInt();
     private final Integer contentEquivalenceGraphChangesNumOfConsumers =
             Configurer.get("messaging.deer.equivalence.content.graph.changes.consumers").toInt();
-    private final Integer contentIndexingNumOfConsumers =
-            Configurer.get("messaging.deer.content.indexer.consumers").toInt();
-    private final Integer contentIndexingEquivalenceGraphChangesNumOfConsumers =
-            Configurer.get("messaging.deer.content.indexer.graph.changes.consumers").toInt();
     private final Integer neo4jContentStoreContentUpdateNumOfConsumers =
             Configurer.get("messaging.deer.content.neo4j.content.changes.consumers").toInt();
     private final Integer neo4jContentStoreGraphUpdateNumOfConsumers =
@@ -79,8 +71,6 @@ public class WorkersModule {
     private final String equivSystem = Configurer.get("equiv.update.producer.system").get();
     private final String equivTopic = Configurer.get("equiv.update.producer.topic").get();
 
-    private final Boolean contentIndexerEnabled =
-            Configurer.get("messaging.deer.content.indexer.enabled").toBoolean();
     private final Boolean equivalentContentStoreEnabled =
             Configurer.get("messaging.deer.equivalent.content.content.changes.enabled").toBoolean();
     private final Boolean equivalentContentGraphEnabled =
@@ -93,8 +83,6 @@ public class WorkersModule {
                     .toBoolean();
     private final Boolean equivalentScheduleGraphEnabled =
             Configurer.get("messaging.deer.equivalent.schedule.graph.changes.enabled").toBoolean();
-    private final Boolean topicIndexerEnabled =
-            Configurer.get("messaging.deer.topic.indexer.enabled").toBoolean();
     private final Boolean equivalenceGraphEnabled =
             Configurer.get("messaging.deer.equivalence.content.graph.changes.enabled").toBoolean();
     private final Boolean neo4jContentStoreContentUpdateEnabled =
@@ -110,30 +98,6 @@ public class WorkersModule {
     private ProcessingMetricsModule metricsModule;
 
     private ServiceManager consumerManager;
-
-    @Bean
-    @Lazy
-    public KafkaConsumer topicIndexerMessageListener() {
-        String workerName = "TopicIndexer";
-
-        return messaging.messageConsumerFactory()
-                .createConsumer(
-                        TopicIndexingWorker.create(
-                                persistence.topicStore(),
-                                persistence.topicIndex(),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
-                        serializer(ResourceUpdatedMessage.class),
-                        topicChanges,
-                        workerName
-                )
-                .withDefaultConsumers(topicIndexingNumOfConsumers)
-                .withMaxConsumers(topicIndexingNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
-                .withMetricRegistry(metricsModule.metrics())
-                .build();
-    }
 
     @Bean
     @Lazy
@@ -281,58 +245,6 @@ public class WorkersModule {
 
     @Bean
     @Lazy
-    public KafkaConsumer equivalentContentIndexingMessageListener() {
-        String workerName = "EquivalentContentIndexer";
-
-        return messaging.messageConsumerFactory()
-                .createConsumer(
-                        EquivalentContentIndexingContentWorker.create(
-                                persistence.contentStore(),
-                                persistence.contentIndex(),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
-                        serializer(EquivalentContentUpdatedMessage.class),
-                        equivalentContentChanges,
-                        workerName
-                )
-                .withMaxConsumers(contentIndexingNumOfConsumers)
-                .withDefaultConsumers(contentIndexingNumOfConsumers)
-                .withConsumerSystem(consumerSystem)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
-                .withMetricRegistry(metricsModule.metrics())
-                .build();
-    }
-
-    @Bean
-    @Lazy()
-    public KafkaConsumer equivalentContentIndexingGraphMessageListener() {
-        String workerName = "EquivalentContentIndexer";
-
-        return messaging.messageConsumerFactory()
-                .createConsumer(
-                        EquivalentContentIndexingGraphWorker.create(
-                                persistence.contentIndex(),
-                                EquivalenceGraphUpdateResolver.create(
-                                        persistence.getContentEquivalenceGraphStore()
-                                ),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
-                        serializer(EquivalenceGraphUpdateMessage.class),
-                        contentEquivalenceGraphChanges,
-                        workerName
-                )
-                .withMaxConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
-                .withDefaultConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
-                .withConsumerSystem(consumerSystem)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
-                .withMetricRegistry(metricsModule.metrics())
-                .build();
-    }
-
-    @Bean
-    @Lazy
     public KafkaConsumer neo4jContentStoreContentUpdateMessageListener() {
         String workerName = "Neo4jContentStoreContentUpdateWorker";
 
@@ -392,10 +304,6 @@ public class WorkersModule {
     public void start() throws TimeoutException {
         ImmutableList.Builder<Service> services = ImmutableList.builder();
 
-        if (contentIndexerEnabled) {
-            services.add(equivalentContentIndexingMessageListener());
-            services.add(equivalentContentIndexingGraphMessageListener());
-        }
         if (equivalentContentStoreEnabled) {
             services.add(equivalentContentStoreContentUpdateListener());
         }
@@ -410,9 +318,6 @@ public class WorkersModule {
         }
         if (equivalentScheduleGraphEnabled) {
             services.add(equivalentScheduleStoreGraphUpdateListener());
-        }
-        if (topicIndexerEnabled) {
-            services.add(topicIndexerMessageListener());
         }
         if (equivalenceGraphEnabled) {
             services.add(equivUpdateListener());

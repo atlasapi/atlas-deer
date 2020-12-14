@@ -15,9 +15,7 @@ import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.content.Brand;
-import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ContentType;
@@ -25,7 +23,6 @@ import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.EquivalentContentStore;
-import org.atlasapi.content.IndexException;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.Series;
 import org.atlasapi.entity.Id;
@@ -75,7 +72,6 @@ public class ContentBootstrapController {
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final ResourceLister<Content> contentLister;
-    private final ContentIndex contentIndex;
     private final Integer maxSourceBootstrapThreads;
     private final ProgressStore progressStore;
     private final Timer timer;
@@ -100,7 +96,6 @@ public class ContentBootstrapController {
     private ContentBootstrapController(Builder builder) {
         read = checkNotNull(builder.read);
         contentLister = checkNotNull(builder.contentLister);
-        contentIndex = checkNotNull(builder.contentIndex);
         maxSourceBootstrapThreads = checkNotNull(builder.maxSourceBootstrapThreads);
         progressStore = checkNotNull(builder.progressStore);
         timer = checkNotNull(builder.metrics).timer(getClass().getSimpleName());
@@ -117,7 +112,6 @@ public class ContentBootstrapController {
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
                 .withSegmentMigratorAndContentResolver(null, legacyResolver)
-                .withContentIndex(contentIndex)
                 .build();
 
         nullSendingMessageContentBootstrapListener = ContentBootstrapListener.builder()
@@ -125,7 +119,6 @@ public class ContentBootstrapController {
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(nullMessageSenderEquivalentContentStore)
                 .withSegmentMigratorAndContentResolver(null, legacyResolver)
-                .withContentIndex(contentIndex)
                 .build();
 
         contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
@@ -133,7 +126,6 @@ public class ContentBootstrapController {
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
                 .withSegmentMigratorAndContentResolver(null, legacyResolver)
-                .withContentIndex(contentIndex)
                 .withMigrateEquivalents(builder.equivalenceGraphStore)
                 .build();
 
@@ -142,7 +134,6 @@ public class ContentBootstrapController {
                 .withEquivalenceMigrator(builder.equivalenceMigrator)
                 .withEquivalentContentStore(nullMessageSenderEquivalentContentStore)
                 .withSegmentMigratorAndContentResolver(null, legacyResolver)
-                .withContentIndex(contentIndex)
                 .withMigrateEquivalents(builder.equivalenceGraphStore)
                 .build();
 
@@ -414,19 +405,6 @@ public class ContentBootstrapController {
         }
     }
 
-        @RequestMapping(value = "/system/index/source", method = RequestMethod.POST)
-    public void indexSource(
-            @RequestParam("source") final String sourceString,
-            HttpServletResponse resp
-    ) {
-        ContentVisitorAdapter<Class<Void>> visitor = contentIndexingVisitor();
-        log.info("Bootstrapping source: {}", sourceString);
-        Optional<Publisher> fromKey = Publisher.fromKey(sourceString).toOptional();
-        Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.get().toString());
-        executorService.execute(indexingRunnable(visitor, fromKey.get(), progress));
-        resp.setStatus(HttpStatus.ACCEPTED.value());
-    }
-
     @RequestMapping(value = "/system/neo4j/source", method = RequestMethod.POST)
     public void bootstrapSourceInNeo4j(
             @RequestParam("source") String sourceString,
@@ -539,41 +517,6 @@ public class ContentBootstrapController {
         };
     }
 
-    private ContentVisitorAdapter<Class<Void>> contentIndexingVisitor() {
-        return new ContentVisitorAdapter<Class<Void>>() {
-
-            @Override
-            protected Class<Void> visitItem(Item item) {
-                try {
-                    contentIndex.index(item);
-                } catch (IndexException e) {
-                    log.error("Failed to index content", e);
-                }
-                return Void.TYPE;
-            }
-
-            @Override
-            protected Class<Void> visitContainer(Container container) {
-                try {
-                    contentIndex.index(container);
-                } catch (IndexException e) {
-                    log.error("Failed to index content", e);
-                }
-                return Void.TYPE;
-            }
-        };
-    }
-
-    private Runnable indexingRunnable(
-            ContentVisitorAdapter<Class<Void>> visitor,
-            Publisher source,
-            Optional<ContentListingProgress> progress
-    ) {
-        FluentIterable<Content> contentIterable = getContentIterable(source, progress);
-
-        return () -> visitContentIterable(visitor, source, contentIterable);
-    }
-
     private Runnable neo4jBootstrapRunnable(
             Publisher source,
             Optional<ContentListingProgress> progress,
@@ -677,7 +620,6 @@ public class ContentBootstrapController {
         private ContentStore contentStore;
         private MetricRegistry metrics;
         private ResourceLister<Content> contentLister;
-        private ContentIndex contentIndex;
         private Integer maxSourceBootstrapThreads;
         private ProgressStore progressStore;
 
@@ -750,11 +692,6 @@ public class ContentBootstrapController {
 
         public Builder withContentLister(ResourceLister<Content> val) {
             contentLister = val;
-            return this;
-        }
-
-        public Builder withContentIndex(ContentIndex val) {
-            contentIndex = val;
             return this;
         }
 

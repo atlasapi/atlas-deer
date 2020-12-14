@@ -9,7 +9,6 @@ import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.slf4j.Logger;
@@ -51,7 +50,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
             Iterable<Id> ids,
             Application application,
             Set<Annotation> activeAnnotations,
-            AttributeQuerySet operands
+            Iterable<AttributeQuery<?>> operands
     ) {
         if (activeAnnotations.contains(Annotation.NON_MERGED)) {
             return resolver.resolveIdsWithoutEquivalence(
@@ -86,10 +85,10 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
 
     @Nullable
     private ConsistencyLevel getRequestedReadConsistencyLevel(
-            AttributeQuerySet operands,
+            Iterable<AttributeQuery<?>> operands,
             AccessRoles accessRoles
     ) {
-        if (operands.stream().anyMatch(isHigherReadConsistency())) {
+        if (StreamSupport.stream(operands.spliterator(), false).anyMatch(isHigherReadConsistency())) {
             return ConsistencyLevel.QUORUM;
         }
 

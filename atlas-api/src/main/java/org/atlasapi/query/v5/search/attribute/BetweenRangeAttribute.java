@@ -17,40 +17,35 @@ public class BetweenRangeAttribute<T> extends SherlockBoolAttribute<Boolean, T, 
 
     public BetweenRangeAttribute(
             SherlockParameter parameter,
-            RangeTypeMapping<T> mappingFrom,
             RangeTypeMapping<T> mappingTo,
+            RangeTypeMapping<T> mappingFrom,
             T valueToBeWithinRange
     ) {
-        super(parameter, BooleanCoercer.create(), mappingFrom, mappingTo);
+        super(parameter, BooleanCoercer.create(), mappingTo, mappingFrom);
         this.valueToBeWithinRange = valueToBeWithinRange;
     }
 
     @Override
     protected BoolParameter createParameter(RangeTypeMapping<T>[] mappings, Boolean value) {
 
-        RangeTypeMapping<T> fromMapping = mappings[0];
-        RangeTypeMapping<T> toMapping = mappings[1];
+        RangeTypeMapping<T> toMapping = mappings[0];
+        RangeTypeMapping<T> fromMapping = mappings[1];
 
-        RangeParameter<T> from = RangeParameter.to(fromMapping, valueToBeWithinRange);
-        RangeParameter<T> to = RangeParameter.from(toMapping, valueToBeWithinRange);
+        RangeParameter<T> from = RangeParameter.to(toMapping, valueToBeWithinRange);
+        RangeParameter<T> to = RangeParameter.from(fromMapping, valueToBeWithinRange);
 
-        SingleClauseBoolParameter both = new SingleClauseBoolParameter(
-                ImmutableList.of(from, to),
-                OccurrenceClause.MUST);
+        SingleClauseBoolParameter both = SingleClauseBoolParameter.must(from, to);
 
         ExistParameter<T> nullFrom = ExistParameter.notExists(fromMapping);
-        SingleClauseBoolParameter toAndNullFrom = new SingleClauseBoolParameter(
-                ImmutableList.of(nullFrom, to),
-                OccurrenceClause.MUST);
+        SingleClauseBoolParameter toAndNullFrom = SingleClauseBoolParameter.must(nullFrom, to);
 
         ExistParameter<T> nullTo = ExistParameter.notExists(toMapping);
-        SingleClauseBoolParameter fromAndNullTo = new SingleClauseBoolParameter(
-                ImmutableList.of(nullTo, to),
-                OccurrenceClause.MUST);
+        SingleClauseBoolParameter fromAndNullTo = SingleClauseBoolParameter.must(nullTo, to);
 
-        SingleClauseBoolParameter inRange = new SingleClauseBoolParameter(
-                ImmutableList.of(both, toAndNullFrom, fromAndNullTo),
-                OccurrenceClause.SHOULD
+        SingleClauseBoolParameter inRange = SingleClauseBoolParameter.should(
+                both,
+                toAndNullFrom,
+                fromAndNullTo
         );
 
         if (value) {

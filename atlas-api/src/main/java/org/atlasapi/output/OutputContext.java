@@ -2,6 +2,7 @@ package org.atlasapi.output;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -10,7 +11,6 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.Resource;
@@ -32,7 +32,7 @@ public class OutputContext {
 
     private final ActiveAnnotations annotations;
     private final Application application;
-    private final AttributeQuerySet operands;
+    private final Set<AttributeQuery<?>> operands;
     private final List<Resource> resources;
     private final HttpServletRequest request;
     private final Optional<List<Region>> regions;
@@ -89,7 +89,7 @@ public class OutputContext {
 
     public Optional<List<Platform>> getPlatforms() { return platforms; }
 
-    public AttributeQuerySet getOperands() {
+    public Set<AttributeQuery<?>> getOperands() {
         return operands;
     }
 
@@ -98,7 +98,7 @@ public class OutputContext {
         private final QueryContext queryContext;
         private ActiveAnnotations activeAnnotations;
         private Application application;
-        private AttributeQuerySet operands;
+        private Set<AttributeQuery<?>> operands;
         private HttpServletRequest request;
         private Optional<List<Region>> regions = Optional.empty();
         private Optional<List<Platform>> platforms = Optional.empty();
@@ -117,7 +117,7 @@ public class OutputContext {
             return this;
         }
 
-        public Builder withOperands(AttributeQuerySet operands) {
+        public Builder withOperands(Set<AttributeQuery<?>> operands) {
             this.operands = operands;
             return this;
         }

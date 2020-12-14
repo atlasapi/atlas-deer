@@ -5,7 +5,6 @@ import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Series;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.FieldWriter;
@@ -58,7 +57,7 @@ public class ContainerSummaryWriterTest {
 
         when(outputContext.getApplication()).thenReturn(application);
         when(outputContext.getActiveAnnotations()).thenReturn(annotations);
-        when(outputContext.getOperands()).thenReturn(AttributeQuerySet.create(ImmutableSet.of()));
+        when(outputContext.getOperands()).thenReturn(ImmutableSet.of());
 
         series = new Series(Id.valueOf(10L), Publisher.METABROADCAST);
         series.setTitle("title");
@@ -89,7 +88,7 @@ public class ContainerSummaryWriterTest {
                 series.getId(),
                 application,
                 annotations,
-                AttributeQuerySet.create(ImmutableSet.of())
+                ImmutableSet.of()
         )).thenReturn(Optional.of(expectedSummary));
 
         containerSummaryWriter.write(episode, fieldWriter, outputContext);
@@ -103,7 +102,7 @@ public class ContainerSummaryWriterTest {
                 series.getId(),
                 application,
                 annotations,
-                AttributeQuerySet.create(ImmutableSet.of())
+                ImmutableSet.of()
         )).thenReturn(Optional.absent());
 
         containerSummaryWriter.write(episode, fieldWriter, outputContext);

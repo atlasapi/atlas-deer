@@ -94,11 +94,6 @@
     <dependency>
       <groupId>org.atlasapi</groupId>
       <version>${atlas.version}</version>
-      <artifactId>atlas-elasticsearch</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.atlasapi</groupId>
-      <version>${atlas.version}</version>
       <artifactId>atlas-core</artifactId>
     </dependency>
     <dependency>
@@ -287,10 +282,6 @@
       <groupId>com.metabroadcast.representative</groupId>
       <artifactId>client</artifactId>
       <version>${representative-id-service.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.metabroadcast.sherlock</groupId>
-      <artifactId>client-shaded</artifactId>
     </dependency>
   </dependencies>
 

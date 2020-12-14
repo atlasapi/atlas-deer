@@ -1,8 +1,8 @@
 package org.atlasapi.query.common;
 
-import java.util.Objects;
+import java.util.Set;
 
-import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.context.QueryContext;
 
@@ -13,15 +13,22 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class Query<T> {
 
     public static final <T> SingleQuery<T> singleQuery(Id id, QueryContext context) {
-        return new SingleQuery<T>(id, context);
+        return new SingleQuery<>(id, context);
     }
 
-    public static final <T> SingleQuery<T> singleQuery(Id id, QueryContext context, AttributeQuerySet queryAttributes) {
-        return new SingleQuery<T>(id, context, queryAttributes);
+    public static final <T> SingleQuery<T> singleQuery(
+            Id id,
+            QueryContext context,
+            Set<AttributeQuery<?>> queryAttributes
+    ) {
+        return new SingleQuery<>(id, context, queryAttributes);
     }
 
-    public static final <T> ListQuery<T> listQuery(AttributeQuerySet operands, QueryContext context) {
-        return new ListQuery<T>(operands, context);
+    public static final <T> ListQuery<T> listQuery(
+            Set<AttributeQuery<?>> operands,
+            QueryContext context
+    ) {
+        return new ListQuery<>(operands, context);
     }
 
     private final QueryContext context;
@@ -36,22 +43,22 @@ public abstract class Query<T> {
 
     public abstract boolean isListQuery();
 
-    public abstract AttributeQuerySet getOperands();
+    public abstract Iterable<AttributeQuery<?>> getOperands();
 
     public abstract Id getOnlyId();
 
     public static final class SingleQuery<T> extends Query<T> {
 
         private final Id id;
-        private final AttributeQuerySet operands;
+        private final Set<AttributeQuery<?>> operands;
 
         public SingleQuery(Id id, QueryContext context) {
             super(context);
             this.id = checkNotNull(id);
-            this.operands = AttributeQuerySet.create(ImmutableSet.of());
+            this.operands = ImmutableSet.of();
         }
 
-        public SingleQuery(Id id, QueryContext context, AttributeQuerySet operands) {
+        public SingleQuery(Id id, QueryContext context, Set<AttributeQuery<?>> operands) {
             super(context);
             this.id = checkNotNull(id);
             this.operands = checkNotNull(operands);
@@ -67,7 +74,7 @@ public abstract class Query<T> {
         }
 
         @Override
-        public AttributeQuerySet getOperands() {
+        public Set<AttributeQuery<?>> getOperands() {
             return operands;
         }
 
@@ -75,14 +82,14 @@ public abstract class Query<T> {
 
     public static final class ListQuery<T> extends Query<T> {
 
-        private final AttributeQuerySet operands;
+        private final Set<AttributeQuery<?>> operands;
 
-        public ListQuery(AttributeQuerySet operands, QueryContext context) {
+        public ListQuery(Set<AttributeQuery<?>> operands, QueryContext context) {
             super(context);
             this.operands = checkNotNull(operands);
         }
 
-        public AttributeQuerySet getOperands() {
+        public Set<AttributeQuery<?>> getOperands() {
             return this.operands;
         }
 

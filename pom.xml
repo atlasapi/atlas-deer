@@ -11,7 +11,6 @@
     <module>atlas-core</module>
     <module>atlas-testlib</module>
     <module>atlas-cassandra</module>
-    <module>atlas-elasticsearch</module>
     <module>atlas-processing</module>
     <module>atlas-api</module>
     <module>atlas-legacy</module>
@@ -527,18 +526,40 @@
       </dependency>
       <dependency>
         <groupId>com.metabroadcast.sherlock</groupId>
-        <artifactId>client-shaded</artifactId>
+        <artifactId>client</artifactId>
         <version>${sherlock.version}</version>
         <exclusions>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-          </exclusion>
           <exclusion>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-jackson</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.metabroadcast.common</groupId>
+            <artifactId>common</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.metabroadcast.common.health</groupId>
+            <artifactId>common-health</artifactId>
+          </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.lucene</groupId>
+        <artifactId>lucene-core</artifactId>
+        <version>8.6.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.5.10</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -561,6 +582,7 @@
     <metrics.version>3.0.1</metrics.version>
     <amq.version>5.15.10</amq.version>
     <spring.version>5.2.9.RELEASE</spring.version>
+    <spring.data.version>4.0.2.RELEASE</spring.data.version>
     <datastax.version>3.1.0</datastax.version>
     <jackson.version>2.11.1</jackson.version>
     <metrics-dw.version>3.1.2</metrics-dw.version>

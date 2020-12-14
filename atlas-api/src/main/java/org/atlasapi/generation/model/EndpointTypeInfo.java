@@ -1,6 +1,6 @@
 package org.atlasapi.generation.model;
 
-import org.elasticsearch.common.base.Objects;
+import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

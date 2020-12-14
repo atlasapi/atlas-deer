@@ -6,7 +6,6 @@ import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.AnnotationBasedMergingEquivalentsResolver;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
@@ -85,14 +84,14 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
                 containerIds,
                 application,
                 ImmutableSet.of(),
-                AttributeQuerySet.create(ImmutableSet.of())
+                ImmutableSet.of()
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
                 application,
                 ImmutableSet.of(),
-                AttributeQuerySet.create(ImmutableSet.of())
+                ImmutableSet.of()
         );
 
         assertThat(containerSummaryOptional.get(), is(containerSummary));
@@ -110,14 +109,14 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
                 containerIds,
                 application,
                 ImmutableSet.of(),
-                AttributeQuerySet.create(ImmutableSet.of())
+                ImmutableSet.of()
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
                 application,
                 ImmutableSet.of(),
-                AttributeQuerySet.create(ImmutableSet.of())
+                ImmutableSet.of()
         );
 
         assertThat(containerSummaryOptional.isPresent(), is(false));
@@ -145,14 +144,14 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
                 containerIds,
                 application,
                 ImmutableSet.of(),
-                AttributeQuerySet.create(ImmutableSet.of())
+                ImmutableSet.of()
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
                 application,
                 ImmutableSet.of(),
-                AttributeQuerySet.create(ImmutableSet.of())
+                ImmutableSet.of()
         );
 
         assertThat(containerSummaryOptional.isPresent(), is(false));
@@ -175,7 +174,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
                 ImmutableSet.of(),
                 application,
                 ImmutableSet.of(Annotation.NON_MERGED),
-                AttributeQuerySet.create(ImmutableSet.of())
+                ImmutableSet.of()
         );
         verify(resolver).resolveIdsWithoutEquivalence(
                 ImmutableSet.of(),

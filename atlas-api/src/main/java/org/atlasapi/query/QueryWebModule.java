@@ -1,14 +1,7 @@
 package org.atlasapi.query;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.query.Selection.SelectionBuilder;
-import com.metabroadcast.common.time.SystemClock;
-import com.metabroadcast.representative.client.RepIdClient;
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -175,17 +168,26 @@ import org.atlasapi.query.v5.search.ContentResolvingSearcher;
 import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.source.Sources;
-import org.atlasapi.topic.PopularTopicIndex;
+import org.atlasapi.topic.PopularTopicSearcher;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.time.SystemClock;
+import com.metabroadcast.representative.client.RepIdClient;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-
-import javax.servlet.http.HttpServletRequest;
 
 import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
@@ -292,7 +294,7 @@ public class QueryWebModule {
 
     private
     @Autowired
-    PopularTopicIndex popularTopicIndex;
+    PopularTopicSearcher popularTopicSearcher;
 
     private
     @Autowired
@@ -932,7 +934,7 @@ public class QueryWebModule {
     PopularTopicController popularTopicController() {
         return new PopularTopicController(
                 topicResolver,
-                popularTopicIndex,
+                popularTopicSearcher,
                 new TopicQueryResultWriter(topicListWriter(), licenseWriter, requestWriter()),
                 configFetcher
         );

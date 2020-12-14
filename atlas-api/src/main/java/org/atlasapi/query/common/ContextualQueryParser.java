@@ -1,5 +1,6 @@
 package org.atlasapi.query.common;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -8,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
@@ -22,6 +22,7 @@ import org.atlasapi.query.common.validation.QueryRequestParameterValidator;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -70,8 +71,11 @@ public class ContextualQueryParser<C, R> {
             QueryContext context
     )
             throws QueryParseException {
-        AttributeQuerySet querySet = attributeParser.parse(request);
-        querySet = querySet.copyWith(contextAttributeQuery(contextId));
+        Set<AttributeQuery<?>> querySet = attributeParser.parse(request);
+        querySet = ImmutableSet.<AttributeQuery<?>>builder()
+                .addAll(querySet)
+                .add(contextAttributeQuery(contextId))
+                .build();
         return Query.listQuery(querySet, context);
     }
 

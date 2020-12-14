@@ -85,7 +85,8 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                 Futures.transform(
                         channelResolver.resolveIds(
                                 ImmutableSet.of(query.getOnlyId()),
-                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(Attributes.REFRESH_CACHE_PARAM))
+                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(
+                                        Attributes.REFRESH_CACHE_PARAM))
                         ),
                         (Function<Resolved<Channel>, QueryResult<ResolvedChannel>>) input -> {
                             if (input.getResources().isEmpty()) {

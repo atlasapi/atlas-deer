@@ -7,11 +7,10 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
@@ -58,7 +57,7 @@ import static org.mockito.Mockito.when;
 public class TopicContentQueryExecutorTest {
 
     private @Mock TopicResolver topicResolver;
-    private @Mock ContentIndex contentIndex;
+    private @Mock ContentSearcher contentIndex;
     private @Mock MergingEquivalentsResolver<Content> equivalentsResolver;
     private @Mock Application application;
     private @Mock HttpServletRequest request;
@@ -82,16 +81,14 @@ public class TopicContentQueryExecutorTest {
     @Test
     public void testExecutingTopicContentQuery() throws QueryExecutionException {
 
-        AttributeQuerySet emptyAttributeQuerySet = AttributeQuerySet.create(ImmutableSet.<AttributeQuery<?>>of());
-
         QueryContext context = QueryContext.create(
                 application,
                 ActiveAnnotations.standard(),
-                emptyAttributeQuerySet,
+                ImmutableSet.of(),
                 mock(HttpServletRequest.class)
         );
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context);
-        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, context);
+        ListQuery<Content> resourceQuery = Query.listQuery(ImmutableSet.of(), context);
 
         Topic topic = new Topic();
         topic.setId(Id.valueOf(1234));
@@ -104,7 +101,7 @@ public class TopicContentQueryExecutorTest {
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableSet.of(topic))));
         FluentIterable<Id> returning = FluentIterable.from(ImmutableSet.of(content.getId()));
         when(contentIndex.query(
-                emptyAttributeQuerySet,
+                ImmutableSet.of(),
                 context.getApplication().getConfiguration().getEnabledReadSources(),
                 Selection.all()
         ))
@@ -113,7 +110,7 @@ public class TopicContentQueryExecutorTest {
                 argThat(hasItems(content.getId())),
                 argThat(is(context.getApplication())),
                 argThat(is(context.getAnnotations().all())),
-                argThat(is(emptyAttributeQuerySet))
+                argThat(is(ImmutableSet.of()))
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
                         Id.valueOf(1235),
@@ -131,9 +128,8 @@ public class TopicContentQueryExecutorTest {
     @Test(expected = NotFoundException.class)
     public void testFailsWhenTopicIsMissing() throws Throwable {
 
-        AttributeQuerySet emptyAttributeQuerySet = AttributeQuerySet.create(ImmutableSet.<AttributeQuery<?>>of());
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), queryContext);
-        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, queryContext);
+        ListQuery<Content> resourceQuery = Query.listQuery(ImmutableSet.of(), queryContext);
 
         when(topicResolver.resolveIds(argThat(hasItems(Id.valueOf(1234)))))
                 .thenReturn(Futures.immediateFuture(Resolved.<Topic>empty()));
@@ -149,9 +145,8 @@ public class TopicContentQueryExecutorTest {
     @Test(expected = ForbiddenException.class)
     public void testFailsWhenTopicIsForbidden() throws Throwable {
 
-        AttributeQuerySet emptyAttributeQuerySet = AttributeQuerySet.create(ImmutableSet.<AttributeQuery<?>>of());
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), queryContext);
-        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, queryContext);
+        ListQuery<Content> resourceQuery = Query.listQuery(ImmutableSet.of(), queryContext);
 
         Topic topic = new Topic();
         topic.setId(Id.valueOf(1234));
@@ -170,7 +165,7 @@ public class TopicContentQueryExecutorTest {
 
     private void verifyException(QueryExecutionException qee) throws Throwable {
         verify(contentIndex, never()).query(
-                argThat(isA(AttributeQuerySet.class)),
+                argThat(isA(Iterable.class)),
                 argThat(isA(Iterable.class)),
                 argThat(isA(Selection.class))
         );
@@ -178,7 +173,7 @@ public class TopicContentQueryExecutorTest {
                 argThat(isA(Iterable.class)),
                 argThat(isA(Application.class)),
                 argThat(isA(Set.class)),
-                argThat(isA(AttributeQuerySet.class))
+                argThat(isA(Set.class))
         );
         throw qee.getCause();
     }

@@ -41,6 +41,7 @@ import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.scheduling.UpdateProgress;
 
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -48,7 +49,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.elasticsearch.common.base.Objects;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;

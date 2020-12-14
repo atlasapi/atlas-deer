@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.query.common.ParameterNameProvider;
@@ -51,8 +50,8 @@ public class QueryAttributeParser implements ParameterNameProvider {
         return lookup;
     }
 
-    public AttributeQuerySet parse(HttpServletRequest request) throws QueryParseException {
-        return AttributeQuerySet.create(parseListQuery(request));
+    public Set<AttributeQuery<?>> parse(HttpServletRequest request) throws QueryParseException {
+        return parseListQuery(request);
     }
 
     @Override
@@ -65,7 +64,7 @@ public class QueryAttributeParser implements ParameterNameProvider {
         return ImmutableSet.of();
     }
 
-    private Iterable<? extends AttributeQuery<?>> parseListQuery(HttpServletRequest request)
+    private Set<AttributeQuery<?>> parseListQuery(HttpServletRequest request)
             throws QueryParseException {
         ImmutableSet.Builder<AttributeQuery<?>> operands = ImmutableSet.builder();
 

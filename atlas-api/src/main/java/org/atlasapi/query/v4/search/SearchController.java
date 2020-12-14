@@ -55,13 +55,9 @@ public class SearchController {
     private static final String BROADCAST_WEIGHTING_PARAM = "broadcastWeighting";
     private static final String CATCHUP_WEIGHTING_PARAM = "catchupWeighting";
     private static final String TYPE_PARAM = "type";
-    private static final String TOP_LEVEL_PARAM = "topLevelOnly";
-    private static final String CURRENT_BROADCASTS_ONLY = "currentBroadcastsOnly";
-    private static final String PRIORITY_CHANNEL_WEIGHTING = "priorityChannelWeighting";
     private static final String ANNOTATIONS_PARAM = "annotations";
 
     private static final float DEFAULT_TITLE_WEIGHTING = 1.0f;
-    private static final float DEFAULT_PRIORITY_CHANNEL_WEIGHTING = 1.0f;
     private static final float DEFAULT_BROADCAST_WEIGHTING = 0.2f;
     private static final float DEFAULT_CATCHUP_WEIGHTING = 0.15f;
 
@@ -83,10 +79,7 @@ public class SearchController {
             CATCHUP_WEIGHTING_PARAM,
             JsonResponseWriter.CALLBACK,
             ANNOTATIONS_PARAM,
-            TYPE_PARAM,
-            TOP_LEVEL_PARAM,
-            CURRENT_BROADCASTS_ONLY,
-            PRIORITY_CHANNEL_WEIGHTING
+            TYPE_PARAM
     ));
 
     public SearchController(SearchResolver searcher, ApplicationFetcher applicationFetcher,
@@ -107,12 +100,6 @@ public class SearchController {
             @RequestParam(value = CATCHUP_WEIGHTING_PARAM,
                     required = false) String catchupWeightingParam,
             @RequestParam(value = TYPE_PARAM, required = false) String type,
-            @RequestParam(value = TOP_LEVEL_PARAM, required = false,
-                    defaultValue = "true") String topLevel,
-            @RequestParam(value = CURRENT_BROADCASTS_ONLY, required = false,
-                    defaultValue = "false") String currentBroadcastsOnly,
-            @RequestParam(value = PRIORITY_CHANNEL_WEIGHTING,
-                    required = false) String priorityChannelWeightingParam,
             HttpServletRequest request, HttpServletResponse response) throws IOException {
         ResponseWriter writer = null;
         try {
@@ -137,10 +124,6 @@ public class SearchController {
                     catchupWeightingParam,
                     DEFAULT_CATCHUP_WEIGHTING
             );
-            float priorityChannelWeighting = getFloatParam(
-                    priorityChannelWeightingParam,
-                    DEFAULT_PRIORITY_CHANNEL_WEIGHTING
-            );
 
             Application application = applicationFetcher.applicationFor(request)
                     .orElse(DefaultApplication.create());
@@ -153,14 +136,7 @@ public class SearchController {
                     .withTitleWeighting(titleWeighting)
                     .withBroadcastWeighting(broadcastWeighting)
                     .withCatchupWeighting(catchupWeighting)
-                    .withPriorityChannelWeighting(priorityChannelWeighting)
                     .withType(type)
-                    .isTopLevelOnly(!Strings.isNullOrEmpty(topLevel)
-                                    ? Boolean.valueOf(topLevel)
-                                    : null)
-                    .withCurrentBroadcastsOnly(!Strings.isNullOrEmpty(currentBroadcastsOnly)
-                                               ? Boolean.valueOf(currentBroadcastsOnly)
-                                               : false)
                     .build(), application);
             resultWriter.write(QueryResult.listResult(
                     Iterables.filter(content, Content.class),

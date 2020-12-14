@@ -1,10 +1,12 @@
 package org.atlasapi.query.common.context;
 
+import java.util.Set;
+
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.DefaultApplication;
-import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 
 import com.metabroadcast.applications.client.model.internal.Application;
@@ -20,14 +22,14 @@ public class QueryContext {
 
     private final Application application;
     private final ActiveAnnotations annotations;
-    private final AttributeQuerySet operands;
+    private final Set<AttributeQuery<?>> operands;
     private final Optional<Selection> selection;
     private final HttpServletRequest request;
 
     private QueryContext(
             Application application,
             ActiveAnnotations annotations,
-            AttributeQuerySet operands,
+            Set<AttributeQuery<?>> operands,
             @Nullable Selection selection,
             HttpServletRequest request
     ) {
@@ -43,7 +45,7 @@ public class QueryContext {
         return new QueryContext(
                 DefaultApplication.create(),
                 ActiveAnnotations.standard(),
-                AttributeQuerySet.create(ImmutableSet.of()),
+                ImmutableSet.of(),
                 null,
                 request
         );
@@ -57,7 +59,7 @@ public class QueryContext {
         return new QueryContext(
                 application,
                 annotations,
-                AttributeQuerySet.create(ImmutableSet.of()),
+                ImmutableSet.of(),
                 null,
                 request
         );
@@ -72,7 +74,7 @@ public class QueryContext {
         return new QueryContext(
                 application,
                 annotations,
-                AttributeQuerySet.create(ImmutableSet.of()),
+                ImmutableSet.of(),
                 selection,
                 request
         );
@@ -81,7 +83,7 @@ public class QueryContext {
     public static QueryContext create(
             Application application,
             ActiveAnnotations annotations,
-            AttributeQuerySet operands,
+            Set<AttributeQuery<?>> operands,
             HttpServletRequest request
     ) {
         return new QueryContext(application, annotations, operands, null, request);
@@ -103,7 +105,7 @@ public class QueryContext {
         return request;
     }
 
-    public AttributeQuerySet getOperands() {
+    public Set<AttributeQuery<?>> getOperands() {
         return operands;
     }
 

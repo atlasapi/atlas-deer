@@ -4,13 +4,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
@@ -40,12 +40,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<Content> {
 
-    private final ContentIndex index;
+    private final ContentSearcher index;
     private final MergingEquivalentsResolver<Content> resolver;
     private static final Logger log = LoggerFactory.getLogger(IndexBackedEquivalentContentQueryExecutor.class);
 
     private IndexBackedEquivalentContentQueryExecutor(
-            ContentIndex contentIndex,
+            ContentSearcher contentIndex,
             MergingEquivalentsResolver<Content> equivalentContentResolver
     ) {
         this.index = checkNotNull(contentIndex);
@@ -53,7 +53,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
     }
 
     public static IndexBackedEquivalentContentQueryExecutor create(
-            ContentIndex contentIndex,
+            ContentSearcher contentIndex,
             MergingEquivalentsResolver<Content> equivalentContentResolver
     ) {
         return new IndexBackedEquivalentContentQueryExecutor(
@@ -143,14 +143,14 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
 
     private ListenableFuture<IndexQueryResult> executeIndexQuery(Query<Content> query) {
         // Check if the query is requesting specific IDs
-        Optional<ListenableFuture<IndexQueryResult>> naiveResult = query.getOperands()
-                .stream()
-                .filter(attributeQuery -> attributeQuery.getAttribute().equals(Attributes.ID))
-                .map(attributeQuery -> (IdAttributeQuery) attributeQuery)
-                .map(AttributeQuery::getValue)
-                .map(ids -> IndexQueryResult.withIds(ids, ids.size()))
-                .map(Futures::immediateFuture)
-                .findFirst();
+        Optional<ListenableFuture<IndexQueryResult>> naiveResult =
+                StreamSupport.stream(query.getOperands().spliterator(), false)
+                        .filter(attributeQuery -> attributeQuery.getAttribute().equals(Attributes.ID))
+                        .map(attributeQuery -> (IdAttributeQuery) attributeQuery)
+                        .map(AttributeQuery::getValue)
+                        .map(ids -> IndexQueryResult.withIds(ids, ids.size()))
+                        .map(Futures::immediateFuture)
+                        .findFirst();
 
         if (naiveResult.isPresent()) {
             return naiveResult.get();
@@ -201,7 +201,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         return query.getContext().getApplication();
     }
 
-    private AttributeQuerySet operands(Query<Content> query) {
+    private Iterable<AttributeQuery<?>> operands(Query<Content> query) {
         return query.getOperands();
     }
 }

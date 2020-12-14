@@ -1,5 +1,6 @@
 package org.atlasapi.query.common;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -8,7 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.content.QueryParseException;
-import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.attributes.QueryAttributeParser;
 import org.atlasapi.query.common.context.QueryContextParser;
@@ -79,7 +80,7 @@ public class StandardQueryParser<T> implements QueryParser<T> {
 
     private Query<T> singleQuery(HttpServletRequest request, Id singleId)
             throws QueryParseException, ApplicationResolutionException {
-        AttributeQuerySet querySet = attributeParser.parse(request);
+        Set<AttributeQuery<?>> querySet = attributeParser.parse(request);
         if (querySet.isEmpty()) {
             return Query.singleQuery(singleId, contextParser.parseSingleContext(request));
         }
@@ -89,7 +90,7 @@ public class StandardQueryParser<T> implements QueryParser<T> {
 
     private Query<T> listQuery(HttpServletRequest request)
             throws QueryParseException, ApplicationResolutionException {
-        AttributeQuerySet querySet = attributeParser.parse(request);
+        Set<AttributeQuery<?>> querySet = attributeParser.parse(request);
         return Query.listQuery(
                 querySet,
                 contextParser.parseListContext(request)

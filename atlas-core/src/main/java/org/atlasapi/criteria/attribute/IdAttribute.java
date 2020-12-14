@@ -3,6 +3,7 @@ package org.atlasapi.criteria.attribute;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.operator.ComparableOperator;
+import org.atlasapi.criteria.operator.EqualsOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.criteria.operator.StringOperator;
 import org.atlasapi.entity.Id;
@@ -64,6 +65,6 @@ public class IdAttribute extends Attribute<Id> {
         if (!(op instanceof StringOperator)) {
             throw new IllegalArgumentException();
         }
-        return new IdAttributeQuery(this, (ComparableOperator) op, values);
+        return new IdAttributeQuery(this, (EqualsOperator) op, values);
     }
 }

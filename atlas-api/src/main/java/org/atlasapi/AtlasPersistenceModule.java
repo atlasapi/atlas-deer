@@ -10,11 +10,13 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.CassandraEquivalentContentStore;
-import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.ContentTitleSearcher;
 import org.atlasapi.content.EquivalentContentStore;
-import org.atlasapi.content.EsContentTitleSearcher;
-import org.atlasapi.content.EsContentTranslator;
+import org.atlasapi.elasticsearch.SherlockSearchModule;
+import org.atlasapi.elasticsearch.topic.SherlockPopularTopicSearcher;
+import org.atlasapi.elasticsearch.topic.SherlockTopicSearcher;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.event.EventResolver;
@@ -80,8 +82,6 @@ import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.system.legacy.LegacyTopicLister;
 import org.atlasapi.system.legacy.LegacyTopicResolver;
 import org.atlasapi.system.legacy.PaTagMap;
-import org.atlasapi.topic.EsPopularTopicIndex;
-import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
 import org.atlasapi.util.CassandraSecondaryIndex;
 
@@ -98,7 +98,6 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
 import com.metabroadcast.common.time.SystemClock;
 import com.metabroadcast.sherlock.client.search.SherlockSearcher;
-import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
 import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
 
 import com.datastax.driver.core.CodecRegistry;
@@ -110,7 +109,6 @@ import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.primitives.Ints;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.ReadPreference;
@@ -160,17 +158,10 @@ public class AtlasPersistenceModule {
     private final Integer cassandraDatastaxReadTimeout = Configurer.get(
             "cassandra.datastax.timeouts.read").toInt();
 
-    private final String esSeeds = Configurer.get("elasticsearch.seeds").get();
-    private final int port = Ints.saturatedCast(Configurer.get("elasticsearch.port").toLong());
-    private final boolean ssl = Configurer.get("elasticsearch.ssl").toBoolean();
-    private final String esCluster = Configurer.get("elasticsearch.cluster").get();
-    private final String esIndex = Configurer.get("elasticsearch.index").get();
-    private final String esRequestTimeout = Configurer.get("elasticsearch.requestTimeout").get();
-    private final Parameter processingConfig = Configurer.get("processing.config");
-
     private final String sherlockScheme = Configurer.get("sherlock.scheme").get();
     private final String sherlockHostname = Configurer.get("sherlock.hostname").get();
     private final Integer sherlockPort = Configurer.get("sherlock.port").toInt();
+    private final Parameter processingConfig = Configurer.get("processing.config");
 
     private final String neo4jHost = Configurer.get("neo4j.host").get();
     private final Integer neo4jPort = Configurer.get("neo4j.port").toInt();
@@ -354,25 +345,17 @@ public class AtlasPersistenceModule {
     }
 
     @Bean
-    public ElasticSearchContentIndexModule esContentIndexModule() {
-        ElasticSearchContentIndexModule module =
-                new ElasticSearchContentIndexModule(
-                        esSeeds,
-                        port,
-                        ssl,
-                        esCluster,
-                        esIndex,
-                        Long.parseLong(esRequestTimeout),
-                        metricsModule.metrics(),
-                        channelGroupResolver(),
-                        new CassandraSecondaryIndex(
-                                persistenceModule().getSession(),
-                                CassandraEquivalentContentStore.EQUIVALENT_CONTENT_INDEX,
-                                persistenceModule().getReadConsistencyLevel()
-                        )
-                );
-        module.init();
-        return module;
+    public SherlockSearchModule sherlockSearchModule() {
+        return new SherlockSearchModule(
+                sherlockElasticSearchConfig(),
+                metricsModule.metrics(),
+                channelGroupResolver(),
+                new CassandraSecondaryIndex(
+                        persistenceModule().getSession(),
+                        CassandraEquivalentContentStore.EQUIVALENT_CONTENT_INDEX,
+                        persistenceModule().getReadConsistencyLevel()
+                )
+        );
     }
 
     @Bean
@@ -417,40 +400,32 @@ public class AtlasPersistenceModule {
 
     @Bean
     @Primary
-    public ContentIndex contentIndex() {
-        return esContentIndexModule().equivContentIndex();
+    public ContentSearcher contentSearcher() {
+        return sherlockSearchModule().equivContentSearcher();
     }
 
     @Bean
     @Primary
-    public EsContentTranslator esContentTranslator() {
-        return esContentIndexModule().translator();
+    public SherlockTopicSearcher topicSearcher() {
+        return sherlockSearchModule().topicSearcher();
     }
 
     @Bean
     @Primary
-    public EsTopicIndex topicIndex() {
-        return esContentIndexModule().topicIndex();
+    public SherlockPopularTopicSearcher popularTopicSearcher() {
+        return sherlockSearchModule().popularTopicSearcher();
     }
 
     @Bean
     @Primary
-    public EsPopularTopicIndex popularTopicIndex() {
-        return esContentIndexModule().topicSearcher();
-    }
-
-    @Bean
-    @Primary
-    public EsContentTitleSearcher contentSearcher() {
-        return esContentIndexModule().contentTitleSearcher();
+    public ContentTitleSearcher contentTitleSearcher() {
+        return sherlockSearchModule().contentTitleSearcher();
     }
 
     @Bean
     @Primary
     public SherlockSearcher contentSearcherV5() {
-        return new SherlockSearcher(new ElasticSearchProcessor(
-                sherlockElasticSearchConfig().getElasticSearchClient()
-        ));
+        return sherlockSearchModule().getSherlockSearcher();
     }
 
     @Bean

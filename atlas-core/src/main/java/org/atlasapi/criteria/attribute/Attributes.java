@@ -209,8 +209,7 @@ public class Attributes {
             "title",
             "parentFlattenedTitle",
             Content.class
-    )
-            .withAlias("parentFlattenedTitle");
+    );
 
     public static final Attribute<String> GENRE = StringAttribute.list(
             "genre",
@@ -221,8 +220,7 @@ public class Attributes {
             "contentGroups",
             "contentGroups",
             Content.class
-    )
-            .withAlias("contentGroups");
+    );
 
     public static final Attribute<Specialization> SPECIALIZATION = EnumAttribute.single(
             "specialization",
