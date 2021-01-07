@@ -3,6 +3,7 @@ package org.atlasapi.elasticsearch.content;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.sherlock.client.parameter.BoolParameter;
 import com.metabroadcast.sherlock.client.parameter.SingleClauseBoolParameter;
 import com.metabroadcast.sherlock.client.parameter.TermParameter;
@@ -17,6 +18,7 @@ import com.metabroadcast.sherlock.common.SherlockIndex;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import org.atlasapi.content.ContentTitleSearcher;
 import org.atlasapi.elasticsearch.util.FiltersBuilder;
+import org.atlasapi.media.entity.Publisher;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
 import org.elasticsearch.search.sort.SortOrder;
@@ -55,7 +57,16 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
                     contentMapping.getSource().getKey(),
                     search.getIncludedPublishers()
             ));
+            searchQueryBuilder.withIndex(
+                    SherlockIndex.CONTENT,
+                    search.getIncludedPublishers().stream()
+                            .map(Publisher::key)
+                            .collect(MoreCollectors.toImmutableSet())
+            );
+        } else {
+            searchQueryBuilder.withIndex(SherlockIndex.CONTENT);
         }
+
         if (search.getIncludedSpecializations() != null
             && !search.getIncludedSpecializations().isEmpty()) {
             searchQueryBuilder.addFilter(
@@ -90,7 +101,6 @@ public class SherlockContentTitleSearcher implements ContentTitleSearcher {
                 .addScoreSort(SortOrder.DESC)
                 .withLimit(search.getSelection().limitOrDefaultValue(10))
                 .withOffset(search.getSelection().getOffset())
-                .withIndex(SherlockIndex.CONTENT)
                 .build();
 
         return searcher.searchForIds(searchQuery);

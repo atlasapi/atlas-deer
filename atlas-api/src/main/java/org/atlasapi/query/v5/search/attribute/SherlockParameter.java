@@ -69,6 +69,7 @@ public enum SherlockParameter {
     LOCATIONS_SOURCE(Type.FILTER, Group.LOCATIONS, "source"),
     LOCATIONS_SOURCE_COUNTRY(Type.FILTER, Group.LOCATIONS, "source.country"),
     LOCATIONS_DISTRIBUTOR(Type.FILTER, Group.LOCATIONS, "distributor"),
+    LOCATIONS_PROVIDER_NAME(Type.FILTER, Group.LOCATIONS, "provider_name"),
 
     // Data
     DATA_BIT_RATE(Type.FILTER, Group.DATA, "bit_rate"),

@@ -145,7 +145,12 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
                                 contentMapping.getSource().getKey(),
                                 publishers)
                 )
-                .withIndex(SherlockIndex.CONTENT)
+                .withIndex(
+                        SherlockIndex.CONTENT,
+                        MoreStreams.stream(publishers)
+                                .map(Publisher::key)
+                                .collect(MoreCollectors.toImmutableSet())
+                )
                 .withOffset(selection.getOffset())
                 .withLimit(selection.getLimit() == null ? DEFAULT_LIMIT : selection.getLimit());
 
