@@ -4,6 +4,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.sherlock.client.parameter.Parameter;
 import com.metabroadcast.sherlock.client.parameter.SearchParameter;
 import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
@@ -120,13 +121,6 @@ public class SearchController {
                     request
             );
 
-            Set<String> enabledReadSourcesKeys = queryContext.getApplication()
-                    .getConfiguration()
-                    .getEnabledReadSources()
-                    .stream()
-                    .map(Publisher::key)
-                    .collect(Collectors.toSet());
-
             SearchQuery.Builder queryBuilder;
             if (Strings.isNullOrEmpty(query)) {
                 queryBuilder = SearchQuery.builder();
@@ -138,14 +132,7 @@ public class SearchController {
                 }
             }
 
-            List<? extends Parameter> parameters = parseSherlockParameters(request, enabledReadSourcesKeys);
-            for (Parameter parameter : parameters) {
-                if (parameter instanceof SearchParameter) {
-                    queryBuilder.addSearcher((SearchParameter)parameter);
-                } else {
-                    queryBuilder.addFilter(parameter);
-                }
-            }
+            parseSherlockParameters(request, queryContext, queryBuilder);
 
             Selection selection = selectionBuilder.build(request);
 
@@ -153,7 +140,6 @@ public class SearchController {
                     .withQueryWeighting(parseQueryWeighting(request))
                     .withLimit(selection.getLimit())
                     .withOffset(selection.getOffset())
-                    .withIndex(SherlockIndex.CONTENT, enabledReadSourcesKeys)
                     .build();
 
             QueryResult<Content> contentResult = searcher.search(searchQuery, queryContext);
@@ -165,10 +151,18 @@ public class SearchController {
         }
     }
 
-    private List<? extends Parameter> parseSherlockParameters(
+    private void parseSherlockParameters(
             HttpServletRequest request,
-            Set<String> enabledReadSourcesKeys
+            QueryContext queryContext,
+            SearchQuery.Builder queryBuilder
     ) throws InvalidAttributeValueException {
+
+        Set<String> enabledReadSourcesKeys = queryContext.getApplication()
+                .getConfiguration()
+                .getEnabledReadSources()
+                .stream()
+                .map(Publisher::key)
+                .collect(Collectors.toSet());
 
         List<Parameter> sherlockParameters = new ArrayList<>();
         Map<String, String[]> parameterMap = (Map<String, String[]>) request.getParameterMap();
@@ -208,6 +202,10 @@ public class SearchController {
                                         parsedPublisher.getValue()));
                             }
                         }
+                        Set<String> sources = parsedPublishers.stream()
+                                .map(SingleValueParameter::getValue)
+                                .collect(MoreCollectors.toImmutableSet());
+                        queryBuilder.withIndex(SherlockIndex.CONTENT, sources);
                     }
 
                     sherlockParameters.addAll(coercedValues);
@@ -227,10 +225,17 @@ public class SearchController {
                             CONTENT.getSource().getKey(),
                             enabledReadSourceKey));
                 }
+                queryBuilder.withIndex(SherlockIndex.CONTENT, enabledReadSourcesKeys);
             }
         }
 
-        return sherlockParameters;
+        for (Parameter parameter : sherlockParameters) {
+            if (parameter instanceof SearchParameter) {
+                queryBuilder.addSearcher((SearchParameter)parameter);
+            } else {
+                queryBuilder.addFilter(parameter);
+            }
+        }
     }
 
     private QueryWeighting parseQueryWeighting(HttpServletRequest request) {

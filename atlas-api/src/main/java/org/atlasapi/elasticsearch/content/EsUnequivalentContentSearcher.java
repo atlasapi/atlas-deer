@@ -1,5 +1,7 @@
 package org.atlasapi.elasticsearch.content;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.query.Selection;
@@ -20,6 +22,8 @@ import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.FuzzyQueryParams;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.StringAttributeQuery;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.legacy.LegacyContentFieldTranslator;
 import org.atlasapi.criteria.legacy.LegacyTranslation;
 import org.atlasapi.elasticsearch.query.EsQueryParser;
@@ -36,8 +40,10 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -139,6 +145,18 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
             Iterable<Publisher> publishers,
             Selection selection
     ) {
+
+        Set<String> sources = MoreStreams.stream(publishers)
+                .map(Publisher::key)
+                .collect(MoreCollectors.toImmutableSet());
+
+        for (AttributeQuery<?> attributeQuery : query) {
+            if (Attributes.SOURCE.equals(attributeQuery.getAttribute())) {
+                List<String> sourcesFromAttribute = ((StringAttributeQuery) attributeQuery).getValue();
+                sources = Sets.intersection(ImmutableSet.copyOf(sourcesFromAttribute), sources);
+            }
+        }
+
         SearchQuery.Builder searchQueryBuilder = SearchQuery.builder()
                 .addFilter(
                         FiltersBuilder.buildForPublishers(
@@ -147,9 +165,7 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
                 )
                 .withIndex(
                         SherlockIndex.CONTENT,
-                        MoreStreams.stream(publishers)
-                                .map(Publisher::key)
-                                .collect(MoreCollectors.toImmutableSet())
+                        sources
                 )
                 .withOffset(selection.getOffset())
                 .withLimit(selection.getLimit() == null ? DEFAULT_LIMIT : selection.getLimit());
