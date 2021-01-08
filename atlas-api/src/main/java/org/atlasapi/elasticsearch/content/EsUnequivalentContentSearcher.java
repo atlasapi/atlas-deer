@@ -1,6 +1,5 @@
 package org.atlasapi.elasticsearch.content;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -22,7 +21,7 @@ import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.FuzzyQueryParams;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.StringAttributeQuery;
+import org.atlasapi.criteria.EnumAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.legacy.LegacyContentFieldTranslator;
 import org.atlasapi.criteria.legacy.LegacyTranslation;
@@ -152,8 +151,13 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
 
         for (AttributeQuery<?> attributeQuery : query) {
             if (Attributes.SOURCE.equals(attributeQuery.getAttribute())) {
-                List<String> sourcesFromAttribute = ((StringAttributeQuery) attributeQuery).getValue();
-                sources = Sets.intersection(ImmutableSet.copyOf(sourcesFromAttribute), sources);
+                List<Publisher> sourcesFromAttribute = ((EnumAttributeQuery<Publisher>) attributeQuery).getValue();
+                sources = Sets.intersection(
+                        sourcesFromAttribute.stream()
+                                .map(Publisher::key)
+                                .collect(MoreCollectors.toImmutableSet()),
+                        sources
+                );
             }
         }
 
