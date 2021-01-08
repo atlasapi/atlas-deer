@@ -1,7 +1,5 @@
 package org.atlasapi.elasticsearch.content;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.query.Selection;
@@ -40,7 +38,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -150,22 +148,19 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
                 .map(Publisher::key)
                 .collect(MoreCollectors.toImmutableSet());
 
-        AttributeQuery<?> sourceAttributeQuery = Iterables.getOnlyElement(
-                Iterables.filter(
-                        query,
-                        q -> Attributes.SOURCE.equals(q.getAttribute())
-                ),
-                null
-        );
+        Set<AttributeQuery<?>> sourceAttributeQueries = MoreStreams.stream(query)
+                .filter(attributeQuery -> Attributes.SOURCE.equals(attributeQuery.getAttribute()))
+                .collect(MoreCollectors.toImmutableSet());
 
-        if (sourceAttributeQuery != null) {
-            List<Publisher> sourcesFromAttribute = ((EnumAttributeQuery<Publisher>) sourceAttributeQuery).getValue();
-            sources = Sets.intersection(
-                    sourcesFromAttribute.stream()
-                            .map(Publisher::key)
-                            .collect(MoreCollectors.toImmutableSet()),
-                    sources
-            );
+        if (!sourceAttributeQueries.isEmpty()) {
+            sources = sourceAttributeQueries.stream()
+                    .map(EnumAttributeQuery.class::cast)
+                    .map(EnumAttributeQuery::getValue)
+                    .flatMap(Collection::stream)
+                    .map(Publisher.class::cast)
+                    .map(Publisher::key)
+                    .filter(sources::contains)
+                    .collect(MoreCollectors.toImmutableSet());
         }
 
         SearchQuery.Builder searchQueryBuilder = SearchQuery.builder()
