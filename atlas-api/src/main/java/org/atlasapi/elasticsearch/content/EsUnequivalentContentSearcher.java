@@ -1,5 +1,6 @@
 package org.atlasapi.elasticsearch.content;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -149,16 +150,22 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
                 .map(Publisher::key)
                 .collect(MoreCollectors.toImmutableSet());
 
-        for (AttributeQuery<?> attributeQuery : query) {
-            if (Attributes.SOURCE.equals(attributeQuery.getAttribute())) {
-                List<Publisher> sourcesFromAttribute = ((EnumAttributeQuery<Publisher>) attributeQuery).getValue();
-                sources = Sets.intersection(
-                        sourcesFromAttribute.stream()
-                                .map(Publisher::key)
-                                .collect(MoreCollectors.toImmutableSet()),
-                        sources
-                );
-            }
+        AttributeQuery<?> sourceAttributeQuery = Iterables.getOnlyElement(
+                Iterables.filter(
+                        query,
+                        q -> Attributes.SOURCE.equals(q.getAttribute())
+                ),
+                null
+        );
+
+        if (sourceAttributeQuery != null) {
+            List<Publisher> sourcesFromAttribute = ((EnumAttributeQuery<Publisher>) sourceAttributeQuery).getValue();
+            sources = Sets.intersection(
+                    sourcesFromAttribute.stream()
+                            .map(Publisher::key)
+                            .collect(MoreCollectors.toImmutableSet()),
+                    sources
+            );
         }
 
         SearchQuery.Builder searchQueryBuilder = SearchQuery.builder()
