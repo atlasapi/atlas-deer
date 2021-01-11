@@ -333,6 +333,11 @@ public class SherlockAttributes {
                         SherlockParameter.LOCATIONS_DISTRIBUTOR,
                         content.getLocations().getDistributor(),
                         StringCoercer.create()
+                ),
+                new KeywordAttribute<>(
+                        SherlockParameter.LOCATIONS_PROVIDER_NAME,
+                        content.getLocations().getProvider().getName(),
+                        StringCoercer.create()
                 )
         );
     }

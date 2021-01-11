@@ -20,6 +20,8 @@ import org.atlasapi.content.ContentSearcher;
 import org.atlasapi.content.FuzzyQueryParams;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.EnumAttributeQuery;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.legacy.LegacyContentFieldTranslator;
 import org.atlasapi.criteria.legacy.LegacyTranslation;
 import org.atlasapi.elasticsearch.query.EsQueryParser;
@@ -36,8 +38,10 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -139,13 +143,36 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
             Iterable<Publisher> publishers,
             Selection selection
     ) {
+
+        Set<String> sources = MoreStreams.stream(publishers)
+                .map(Publisher::key)
+                .collect(MoreCollectors.toImmutableSet());
+
+        Set<AttributeQuery<?>> sourceAttributeQueries = MoreStreams.stream(query)
+                .filter(attributeQuery -> Attributes.SOURCE.equals(attributeQuery.getAttribute()))
+                .collect(MoreCollectors.toImmutableSet());
+
+        if (!sourceAttributeQueries.isEmpty()) {
+            sources = sourceAttributeQueries.stream()
+                    .map(EnumAttributeQuery.class::cast)
+                    .map(EnumAttributeQuery::getValue)
+                    .flatMap(Collection::stream)
+                    .map(Publisher.class::cast)
+                    .map(Publisher::key)
+                    .filter(sources::contains)
+                    .collect(MoreCollectors.toImmutableSet());
+        }
+
         SearchQuery.Builder searchQueryBuilder = SearchQuery.builder()
                 .addFilter(
                         FiltersBuilder.buildForPublishers(
                                 contentMapping.getSource().getKey(),
                                 publishers)
                 )
-                .withIndex(SherlockIndex.CONTENT)
+                .withIndex(
+                        SherlockIndex.CONTENT,
+                        sources
+                )
                 .withOffset(selection.getOffset())
                 .withLimit(selection.getLimit() == null ? DEFAULT_LIMIT : selection.getLimit());
 

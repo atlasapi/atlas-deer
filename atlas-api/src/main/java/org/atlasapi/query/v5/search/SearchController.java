@@ -1,17 +1,19 @@
 package org.atlasapi.query.v5.search;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.sherlock.client.parameter.Parameter;
+import com.metabroadcast.sherlock.client.parameter.SearchParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.parameter.TermParameter;
+import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
+import com.metabroadcast.sherlock.common.SherlockIndex;
+import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
@@ -34,26 +36,22 @@ import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v5.search.attribute.SherlockAttribute;
 import org.atlasapi.query.v5.search.attribute.SherlockParameter;
 import org.atlasapi.query.v5.search.attribute.SherlockSingleMappingAttribute;
-
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.sherlock.client.parameter.Parameter;
-import com.metabroadcast.sherlock.client.parameter.SearchParameter;
-import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
-import com.metabroadcast.sherlock.client.parameter.TermParameter;
-import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
-import com.metabroadcast.sherlock.client.search.SearchQuery;
-import com.metabroadcast.sherlock.common.SherlockIndex;
-import com.metabroadcast.sherlock.common.mapping.ContentMapping;
-import com.metabroadcast.sherlock.common.mapping.IndexMapping;
-
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @ProducesType(type = Content.class)
 @Controller
@@ -134,14 +132,7 @@ public class SearchController {
                 }
             }
 
-            List<? extends Parameter> parameters = parseSherlockParameters(request, queryContext);
-            for (Parameter parameter : parameters) {
-                if (parameter instanceof SearchParameter) {
-                    queryBuilder.addSearcher((SearchParameter)parameter);
-                } else {
-                    queryBuilder.addFilter(parameter);
-                }
-            }
+            parseSherlockParameters(request, queryContext, queryBuilder);
 
             Selection selection = selectionBuilder.build(request);
 
@@ -149,7 +140,6 @@ public class SearchController {
                     .withQueryWeighting(parseQueryWeighting(request))
                     .withLimit(selection.getLimit())
                     .withOffset(selection.getOffset())
-                    .withIndex(SherlockIndex.CONTENT)
                     .build();
 
             QueryResult<Content> contentResult = searcher.search(searchQuery, queryContext);
@@ -161,9 +151,10 @@ public class SearchController {
         }
     }
 
-    private List<? extends Parameter> parseSherlockParameters(
+    private void parseSherlockParameters(
             HttpServletRequest request,
-            QueryContext queryContext
+            QueryContext queryContext,
+            SearchQuery.Builder queryBuilder
     ) throws InvalidAttributeValueException {
 
         Set<String> enabledReadSourcesKeys = queryContext.getApplication()
@@ -211,6 +202,10 @@ public class SearchController {
                                         parsedPublisher.getValue()));
                             }
                         }
+                        Set<String> sources = parsedPublishers.stream()
+                                .map(SingleValueParameter::getValue)
+                                .collect(MoreCollectors.toImmutableSet());
+                        queryBuilder.withIndex(SherlockIndex.CONTENT, sources);
                     }
 
                     sherlockParameters.addAll(coercedValues);
@@ -230,10 +225,17 @@ public class SearchController {
                             CONTENT.getSource().getKey(),
                             enabledReadSourceKey));
                 }
+                queryBuilder.withIndex(SherlockIndex.CONTENT, enabledReadSourcesKeys);
             }
         }
 
-        return sherlockParameters;
+        for (Parameter parameter : sherlockParameters) {
+            if (parameter instanceof SearchParameter) {
+                queryBuilder.addSearcher((SearchParameter)parameter);
+            } else {
+                queryBuilder.addFilter(parameter);
+            }
+        }
     }
 
     private QueryWeighting parseQueryWeighting(HttpServletRequest request) {
