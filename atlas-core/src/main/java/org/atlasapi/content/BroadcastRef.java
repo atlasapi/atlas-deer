@@ -1,10 +1,9 @@
 package org.atlasapi.content;
 
+import com.google.common.base.MoreObjects;
 import org.atlasapi.entity.Id;
 import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.base.Objects;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
@@ -63,7 +62,7 @@ public final class BroadcastRef implements Hashable {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .add("id", sourceId)
                 .add("channel", channelId)
                 .add("interval", transmissionInterval)

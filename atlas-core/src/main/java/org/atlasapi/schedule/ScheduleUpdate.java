@@ -1,12 +1,11 @@
 package org.atlasapi.schedule;
 
-import java.util.Set;
-
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableSet;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.media.entity.Publisher;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableSet;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -59,7 +58,7 @@ public final class ScheduleUpdate {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .add("source", source)
                 .add("schedule", schedule)
                 .add("stale", staleBroadcasts)

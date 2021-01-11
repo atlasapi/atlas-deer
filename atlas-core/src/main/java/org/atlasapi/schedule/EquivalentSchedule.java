@@ -1,13 +1,13 @@
 package org.atlasapi.schedule;
 
-import java.util.List;
-
 import com.google.common.base.Function;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
+
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -48,7 +48,7 @@ public class EquivalentSchedule {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .addValue(channelSchedules)
                 .toString();
     }

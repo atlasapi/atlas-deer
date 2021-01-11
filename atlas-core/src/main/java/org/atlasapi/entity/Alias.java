@@ -1,9 +1,8 @@
 package org.atlasapi.entity;
 
+import com.google.common.base.MoreObjects;
 import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -49,7 +48,7 @@ public class Alias implements Hashable {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .add("namespace", namespace)
                 .add("value", value)
                 .toString();

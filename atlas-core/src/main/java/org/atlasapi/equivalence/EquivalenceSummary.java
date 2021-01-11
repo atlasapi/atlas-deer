@@ -1,9 +1,11 @@
 package org.atlasapi.equivalence;
 
-import java.util.Map;
-
-import javax.annotation.Nullable;
-
+import com.google.common.base.Function;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Item;
@@ -13,11 +15,8 @@ import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
 
-import com.google.common.base.Function;
-import com.google.common.base.Objects;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import javax.annotation.Nullable;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -103,7 +102,7 @@ public class EquivalenceSummary {
 
         @Override
         public String toString() {
-            return Objects.toStringHelper(getClass())
+            return MoreObjects.toStringHelper(getClass())
                     .add("id", id)
                     .add("publisher", publisher)
                     .add("parent", parentId)

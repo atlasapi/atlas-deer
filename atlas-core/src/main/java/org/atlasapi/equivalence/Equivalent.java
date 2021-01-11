@@ -1,12 +1,11 @@
 package org.atlasapi.equivalence;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.Sourced;
-
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -35,7 +34,7 @@ public final class Equivalent<T extends Identifiable & Sourced> {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .add("resources", Iterables.transform(resources, Identifiables.toId()))
                 .toString();
     }

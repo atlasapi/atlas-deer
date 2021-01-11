@@ -1,13 +1,13 @@
 package org.atlasapi.entity;
 
-import org.atlasapi.hashing.Hashable;
-import org.atlasapi.media.entity.Publisher;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.base.Objects;
-import com.google.common.base.Objects.ToStringHelper;
+import org.atlasapi.hashing.Hashable;
+import org.atlasapi.media.entity.Publisher;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -56,7 +56,7 @@ public abstract class ResourceRef implements Identifiable, Sourced, Hashable {
     }
 
     protected ToStringHelper toStringHelper() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .omitNullValues()
                 .add("id", id)
                 .add("source", source);

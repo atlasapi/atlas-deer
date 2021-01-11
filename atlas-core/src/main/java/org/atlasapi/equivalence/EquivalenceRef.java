@@ -1,14 +1,13 @@
 package org.atlasapi.equivalence;
 
+import com.google.common.base.Function;
+import com.google.common.base.MoreObjects;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.base.Function;
-import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -66,7 +65,7 @@ public class EquivalenceRef implements Identifiable, Sourced, Hashable {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add(source.toString(), id)
                 .toString();
     }

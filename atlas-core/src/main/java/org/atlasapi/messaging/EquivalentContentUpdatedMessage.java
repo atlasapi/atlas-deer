@@ -1,13 +1,11 @@
 package org.atlasapi.messaging;
 
-import org.atlasapi.content.ContentRef;
-
-import com.metabroadcast.common.queue.AbstractMessage;
-import com.metabroadcast.common.time.Timestamp;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
+import com.metabroadcast.common.queue.AbstractMessage;
+import com.metabroadcast.common.time.Timestamp;
+import org.atlasapi.content.ContentRef;
 
 public class EquivalentContentUpdatedMessage extends AbstractMessage {
 
@@ -38,7 +36,7 @@ public class EquivalentContentUpdatedMessage extends AbstractMessage {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("messageId", getMessageId())
                 .add("timestamp", getTimestamp())
                 .add("equivalentSetId", equivalentSetId)

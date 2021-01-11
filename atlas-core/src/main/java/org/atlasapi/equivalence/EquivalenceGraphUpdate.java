@@ -1,14 +1,13 @@
 package org.atlasapi.equivalence;
 
-import java.util.Objects;
-
-import javax.annotation.Nullable;
-
-import org.atlasapi.entity.Id;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
+import org.atlasapi.entity.Id;
+
+import javax.annotation.Nullable;
+import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -136,7 +135,7 @@ public class EquivalenceGraphUpdate {
 
     @Override
     public String toString() {
-        return com.google.common.base.Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("updated", updated)
                 .add("created", created)
                 .add("deleted", deleted)

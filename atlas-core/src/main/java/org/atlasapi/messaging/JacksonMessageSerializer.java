@@ -1,8 +1,22 @@
 package org.atlasapi.messaging;
 
-import java.io.IOException;
-import java.util.TimeZone;
-
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleDeserializers;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.google.common.base.MoreObjects;
+import com.metabroadcast.common.queue.Message;
+import com.metabroadcast.common.queue.MessageDeserializationException;
+import com.metabroadcast.common.queue.MessageSerializationException;
+import com.metabroadcast.common.queue.MessageSerializer;
+import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.ClipRef;
@@ -12,7 +26,6 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.content.SongRef;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
@@ -21,30 +34,7 @@ import org.atlasapi.schedule.ScheduleUpdate;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
 import org.atlasapi.topic.TopicRef;
 
-import com.metabroadcast.common.queue.Message;
-import com.metabroadcast.common.queue.MessageDeserializationException;
-import com.metabroadcast.common.queue.MessageSerializationException;
-import com.metabroadcast.common.queue.MessageSerializer;
-import com.metabroadcast.common.time.Timestamp;
-
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleDeserializers;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.FilterProvider;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
-import com.google.common.base.Objects;
+import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -220,7 +210,7 @@ public class JacksonMessageSerializer<M extends Message> implements MessageSeria
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .addValue(cls.getSimpleName())
                 .toString();
     }

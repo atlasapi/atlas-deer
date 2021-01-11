@@ -1,14 +1,14 @@
 package org.atlasapi.entity.util;
 
-import javax.annotation.Nullable;
-
-import com.metabroadcast.common.time.DateTimeZones;
-
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ComparisonChain;
+import com.metabroadcast.common.time.DateTimeZones;
 import org.joda.time.DateTime;
+
+import javax.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -149,7 +149,7 @@ public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteRe
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("resource", resource.toString())
                 .add("written", written)
                 .add("at", writeTime)

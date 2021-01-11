@@ -1,5 +1,8 @@
 package org.atlasapi.event;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
@@ -7,9 +10,6 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.organisation.OrganisationRef;
 import org.atlasapi.topic.Topic;
-
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -78,7 +78,7 @@ public class Event extends Identified implements Sourced {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(Event.class)
+        return MoreObjects.toStringHelper(Event.class)
                 .add("title", title)
                 .add("source", source)
                 .add("venue", venue)

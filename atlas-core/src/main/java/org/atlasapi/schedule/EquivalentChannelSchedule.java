@@ -1,11 +1,10 @@
 package org.atlasapi.schedule;
 
-import org.atlasapi.channel.Channel;
-
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
+import org.atlasapi.channel.Channel;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
@@ -57,7 +56,7 @@ public class EquivalentChannelSchedule {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .add("channel", channel)
                 .add("interval", interval)
                 .add("entries", entries)
