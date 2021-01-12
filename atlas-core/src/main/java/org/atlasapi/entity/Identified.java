@@ -1,6 +1,6 @@
 package org.atlasapi.entity;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
@@ -270,7 +270,7 @@ public class Identified implements Identifiable, Aliased {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass().getSimpleName().toLowerCase())
+        return MoreObjects.toStringHelper(getClass().getSimpleName().toLowerCase())
                 .addValue(id != null ? id : "no-id")
                 .toString();
     }

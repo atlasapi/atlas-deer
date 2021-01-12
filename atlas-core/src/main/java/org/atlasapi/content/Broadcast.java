@@ -1,25 +1,23 @@
 package org.atlasapi.content;
 
-import javax.annotation.Nullable;
-
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Ordering;
+import com.metabroadcast.common.time.IntervalOrdering;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.schedule.ScheduleBroadcastFilter;
-
-import com.metabroadcast.common.time.IntervalOrdering;
-
-import com.google.common.base.Objects;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Ordering;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
+
+import javax.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -366,7 +364,7 @@ public class Broadcast extends Identified implements Hashable {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .omitNullValues()
                 .addValue(sourceId)
                 .add("channel", channelId)

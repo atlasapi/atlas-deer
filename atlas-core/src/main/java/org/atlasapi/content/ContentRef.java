@@ -1,12 +1,11 @@
 package org.atlasapi.content;
 
+import com.google.common.base.MoreObjects.ToStringHelper;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.ResourceType;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.base.Objects.ToStringHelper;
 
 public abstract class ContentRef extends ResourceRef {
 

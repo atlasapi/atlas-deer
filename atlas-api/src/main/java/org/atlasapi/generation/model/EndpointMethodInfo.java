@@ -1,6 +1,6 @@
 package org.atlasapi.generation.model;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -25,7 +25,7 @@ public class EndpointMethodInfo implements MethodInfo {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .add("path", path)
                 .add("method", method)
                 .toString();

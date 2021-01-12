@@ -1,12 +1,11 @@
 package org.atlasapi.organisation;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.Described;
 import org.atlasapi.entity.Person;
-
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 
 public class Organisation extends ContentGroup {
 
@@ -40,7 +39,7 @@ public class Organisation extends ContentGroup {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(Organisation.class)
+        return MoreObjects.toStringHelper(Organisation.class)
                 .add("title", getTitle())
                 .add("members", members)
                 .add("uri", getCanonicalUri())

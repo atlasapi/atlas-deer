@@ -1,7 +1,7 @@
 package org.atlasapi.channel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.ResourceType;
@@ -33,7 +33,7 @@ public class ChannelEquivRef extends ResourceRef {
     }
 
     @Override
-    protected Objects.ToStringHelper toStringHelper() {
+    protected MoreObjects.ToStringHelper toStringHelper() {
         return super.toStringHelper().add("uri", uri);
     }
 

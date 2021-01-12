@@ -1,10 +1,10 @@
 package org.atlasapi.content;
 
-import org.atlasapi.meta.annotations.FieldName;
-
 import com.google.common.base.Function;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
+import org.atlasapi.meta.annotations.FieldName;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -71,7 +71,7 @@ public class ItemAndBroadcast implements Comparable<ItemAndBroadcast> {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .add("item", item)
                 .add("broadcast", broadcast)
                 .toString();

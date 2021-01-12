@@ -1,15 +1,14 @@
 package org.atlasapi.schedule;
 
-import org.atlasapi.content.BroadcastRef;
-import org.atlasapi.entity.Id;
-
-import com.metabroadcast.common.time.IntervalOrdering;
-
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
+import com.metabroadcast.common.time.IntervalOrdering;
+import org.atlasapi.content.BroadcastRef;
+import org.atlasapi.entity.Id;
 import org.joda.time.Interval;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -93,7 +92,7 @@ public final class ScheduleRef {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("channel", channel)
                 .add("entries", entries)
                 .toString();
@@ -148,7 +147,7 @@ public final class ScheduleRef {
 
         @Override
         public String toString() {
-            return Objects.toStringHelper(this)
+            return MoreObjects.toStringHelper(this)
                     .omitNullValues()
                     .add("item", item)
                     .add("channel", broadcast)

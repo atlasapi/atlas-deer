@@ -1,9 +1,8 @@
 package org.atlasapi.schedule;
 
-import java.util.List;
-
-import javax.annotation.Nullable;
-
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
@@ -15,9 +14,8 @@ import org.atlasapi.content.Series;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
 
-import com.google.common.base.Objects;
-import com.google.common.base.Optional;
-import com.google.common.collect.Lists;
+import javax.annotation.Nullable;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -132,7 +130,7 @@ public class ScheduleHierarchy {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass()).omitNullValues()
+        return MoreObjects.toStringHelper(getClass()).omitNullValues()
                 .add("item", itemAndBroadcast)
                 .add("primary", primaryContainer.orNull())
                 .add("secondary", possibleSeries.orNull())

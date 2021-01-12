@@ -1,17 +1,16 @@
 package org.atlasapi.schedule;
 
-import java.util.List;
-
+import com.google.common.base.Function;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Ordering;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.base.Function;
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
 import org.joda.time.Interval;
+
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -100,7 +99,7 @@ public class ChannelSchedule {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(ChannelSchedule.class)
+        return MoreObjects.toStringHelper(ChannelSchedule.class)
                 .add("channel", channel)
                 .add("interval", interval)
                 .add("entries", entries)

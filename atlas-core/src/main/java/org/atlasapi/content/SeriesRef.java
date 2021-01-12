@@ -1,15 +1,14 @@
 package org.atlasapi.content;
 
-import java.util.List;
-
+import com.google.common.base.MoreObjects.ToStringHelper;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Ordering;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.base.Objects.ToStringHelper;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Ordering;
 import org.joda.time.DateTime;
+
+import java.util.List;
 
 public class SeriesRef extends ContainerRef implements Comparable<SeriesRef> {
 

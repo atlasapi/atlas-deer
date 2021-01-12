@@ -1,11 +1,10 @@
 package org.atlasapi.elasticsearch.query;
 
-import java.util.List;
-
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.stream.MoreCollectors;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -67,7 +66,7 @@ public class QueryOrdering {
 
         @Override
         public String toString() {
-            return Objects.toStringHelper(this)
+            return MoreObjects.toStringHelper(this)
                     .add("path", path)
                     .add("direction", direction)
                     .toString();
