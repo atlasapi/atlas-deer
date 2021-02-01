@@ -1,7 +1,6 @@
 package org.atlasapi.output.annotation;
 
-import java.io.IOException;
-
+import com.google.common.primitives.Ints;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Item;
 import org.atlasapi.media.entity.Publisher;
@@ -10,6 +9,8 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.SourceWriter;
 import org.atlasapi.topic.Topic;
+
+import java.io.IOException;
 
 public class DescriptionAnnotation<T extends Described> extends
         OutputAnnotation<T> {
@@ -27,9 +28,14 @@ public class DescriptionAnnotation<T extends Described> extends
         writer.writeField("description", entity.getDescription());
         writer.writeField("image", entity.getImage());
         writer.writeField("thumbnail", entity.getThumbnail());
-        if(entity instanceof Item) {
+        if (entity instanceof Item) {
             Item item = (Item) entity;
-            writer.writeField("duration", item.getDuration());
+            writer.writeField(
+                    "duration",
+                    item.getDuration() == null
+                            ? null
+                            : Ints.saturatedCast(item.getDuration().getStandardSeconds())
+            );
         }
     }
 
