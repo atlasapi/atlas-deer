@@ -1,7 +1,14 @@
 package org.atlasapi.query;
 
-import javax.servlet.http.HttpServletRequest;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.time.SystemClock;
+import com.metabroadcast.representative.client.RepIdClient;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -157,37 +164,28 @@ import org.atlasapi.query.v4.schedule.ScheduleEntryListWriter;
 import org.atlasapi.query.v4.schedule.ScheduleListWriter;
 import org.atlasapi.query.v4.schedule.ScheduleQueryResultWriter;
 import org.atlasapi.query.v4.search.ContentQueryResultWriter;
+import org.atlasapi.query.v4.search.ContentResolvingSearcher;
 import org.atlasapi.query.v4.search.SearchController;
+import org.atlasapi.query.v4.search.SherlockContentQueryResultWriter;
+import org.atlasapi.query.v4.search.attribute.SherlockAttributes;
 import org.atlasapi.query.v4.topic.PopularTopicController;
 import org.atlasapi.query.v4.topic.TopicContentController;
 import org.atlasapi.query.v4.topic.TopicContentResultWriter;
 import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.query.v4.topic.TopicListWriter;
 import org.atlasapi.query.v4.topic.TopicQueryResultWriter;
-import org.atlasapi.query.v5.search.ContentResolvingSearcher;
-import org.atlasapi.query.v5.search.attribute.SherlockAttributes;
-import org.atlasapi.search.SearchResolver;
 import org.atlasapi.source.Sources;
 import org.atlasapi.topic.PopularTopicSearcher;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
-
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.query.Selection.SelectionBuilder;
-import com.metabroadcast.common.time.SystemClock;
-import com.metabroadcast.representative.client.RepIdClient;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+
+import javax.servlet.http.HttpServletRequest;
 
 import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
@@ -282,11 +280,7 @@ public class QueryWebModule {
 
     private
     @Autowired
-    SearchResolver v4SearchResolver;
-
-    private
-    @Autowired
-    ContentResolvingSearcher v5SearchResolver;
+    ContentResolvingSearcher searchResolver;
 
     private
     @Autowired
@@ -943,27 +937,12 @@ public class QueryWebModule {
     @Bean
     SearchController searchController() {
         return new SearchController(
-                v4SearchResolver,
-                configFetcher,
-                new ContentQueryResultWriter(
-                        contentListWriter(),
-                        licenseWriter,
-                        requestWriter(),
-                        channelGroupResolver,
-                        idCodec()
-                )
-        );
-    }
-
-    @Bean
-    org.atlasapi.query.v5.search.SearchController v5SearchController() {
-        return new org.atlasapi.query.v5.search.SearchController(
-                v5SearchResolver,
+                searchResolver,
                 configFetcher,
                 new SherlockAttributes(idCodec(), channelGroupResolver).getAttributes(),
                 new IndexAnnotationsExtractor(searchAnnotationIndex()),
                 selectionBuilder(),
-                new org.atlasapi.query.v5.search.ContentQueryResultWriter(
+                new SherlockContentQueryResultWriter(
                         contentListWriter(),
                         licenseWriter,
                         requestWriter(),
