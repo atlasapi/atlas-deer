@@ -20,8 +20,8 @@ public enum SherlockParameter {
     COUNTRIES_OF_ORIGIN(Type.FILTER, "country_of_origin"),
     YEAR(Type.FILTER, "year"),
     TOP_LEVEL(Type.FILTER, "top_level"),
-    PUBLISHER(Type.FILTER, "publisher"),
-    PUBLISHER_COUNTRY(Type.FILTER, "publisher.country"),
+    SOURCE(Type.FILTER, "source"),
+    SOURCE_COUNTRY(Type.FILTER, "source.country"),
     LANGUAGES_CODE(Type.FILTER, "language"),
 
     // Alias

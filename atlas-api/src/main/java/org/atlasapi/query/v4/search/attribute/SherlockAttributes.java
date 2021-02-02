@@ -116,12 +116,12 @@ public class SherlockAttributes {
                         content.getTopLevel()
                 ),
                 new EnumAttribute<>(
-                        SherlockParameter.PUBLISHER,
+                        SherlockParameter.SOURCE,
                         content.getSource().getKey(),
                         EnumCoercer.create(Sources.fromKey())
                 ),
                 new KeywordAttribute<>(
-                        SherlockParameter.PUBLISHER_COUNTRY,
+                        SherlockParameter.SOURCE_COUNTRY,
                         content.getSource().getCountry(),
                         StringCoercer.create()
                 )

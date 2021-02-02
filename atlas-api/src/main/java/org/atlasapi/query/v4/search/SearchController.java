@@ -14,7 +14,6 @@ import com.metabroadcast.sherlock.client.search.SearchQuery;
 import com.metabroadcast.sherlock.common.SherlockIndex;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
-import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.application.DefaultApplication;
@@ -66,6 +65,7 @@ public class SearchController {
 
     private static final String ANNOTATIONS_PARAM = "annotations";
     private static final String QUERY_PARAM = "q";
+    private static final String SMART_SEARCH_PARAM = "smart_search";
 
     private static final ParameterChecker PARAM_CHECKER = new ParameterChecker(
             ImmutableSet.<String>builder()
@@ -106,7 +106,7 @@ public class SearchController {
     @RequestMapping({"\\.[a-z]+", ""})
     public void search(
             @RequestParam(value = QUERY_PARAM, required = false) String query,
-            @RequestParam(value = ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER) String apiKey,
+            @RequestParam(value = SMART_SEARCH_PARAM, defaultValue = "true") boolean smartSearch,
             HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
@@ -126,11 +126,7 @@ public class SearchController {
             if (Strings.isNullOrEmpty(query)) {
                 queryBuilder = SearchQuery.builder();
             } else {
-                if (queryContext.getAnnotations().values().contains(Annotation.NO_SMART_SEARCH)) {
-                    queryBuilder = SearchQuery.getDefaultContentQuerySearcher(query, false);
-                } else {
-                    queryBuilder = SearchQuery.getDefaultContentQuerySearcher(query, true);
-                }
+                queryBuilder = SearchQuery.getDefaultContentQuerySearcher(query, smartSearch);
             }
 
             parseSherlockParameters(request, queryContext, queryBuilder);
@@ -190,17 +186,17 @@ public class SearchController {
                 try {
                     List<? extends Parameter> coercedValues = attribute.coerce(values);
 
-                    if (parameter == SherlockParameter.PUBLISHER) {
-                        List<SingleValueParameter<String>> parsedPublishers =
+                    if (parameter == SherlockParameter.SOURCE) {
+                        List<SingleValueParameter<String>> parsedSources =
                                 (List<SingleValueParameter<String>>) coercedValues;
-                        for (SingleValueParameter<String> parsedPublisher : parsedPublishers) {
-                            if (!enabledReadSourcesKeys.contains(parsedPublisher.getValue())) {
+                        for (SingleValueParameter<String> parsedSource : parsedSources) {
+                            if (!enabledReadSourcesKeys.contains(parsedSource.getValue())) {
                                 throw new InvalidAttributeValueException(String.format(
                                         "The source %s is not within the scope of the provided api key",
-                                        parsedPublisher.getValue()));
+                                        parsedSource.getValue()));
                             }
                         }
-                        Set<String> sources = parsedPublishers.stream()
+                        Set<String> sources = parsedSources.stream()
                                 .map(SingleValueParameter::getValue)
                                 .collect(MoreCollectors.toImmutableSet());
                         queryBuilder.withIndex(SherlockIndex.CONTENT, sources);
@@ -217,7 +213,7 @@ public class SearchController {
                 }
 
                 // if no values provided for publisher, add all keys from the application key set
-            } else if (parameter == SherlockParameter.PUBLISHER) {
+            } else if (parameter == SherlockParameter.SOURCE) {
                 for (String enabledReadSourceKey : enabledReadSourcesKeys) {
                     sherlockParameters.add(TermParameter.of(
                             CONTENT.getSource().getKey(),
