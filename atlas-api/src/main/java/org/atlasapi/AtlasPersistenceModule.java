@@ -21,7 +21,6 @@ import com.metabroadcast.common.properties.Parameter;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
 import com.metabroadcast.common.time.SystemClock;
-import com.metabroadcast.sherlock.client.search.SherlockSearcher;
 import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
@@ -81,6 +80,7 @@ import org.atlasapi.persistence.player.CachingPlayerResolver;
 import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.CachingServiceResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
+import org.atlasapi.query.v4.search.PseudoEsEquivalentContentSearcher;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleResolver;
 import org.atlasapi.schedule.ScheduleStore;
@@ -414,8 +414,8 @@ public class AtlasPersistenceModule {
 
     @Bean
     @Primary
-    public SherlockSearcher sherlockSearcher() {
-        return sherlockSearchModule().getSherlockSearcher();
+    public PseudoEsEquivalentContentSearcher sherlockSearcher() {
+        return sherlockSearchModule().getPseudoEquivContentSearcher();
     }
 
     @Bean

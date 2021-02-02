@@ -21,6 +21,7 @@ import org.atlasapi.util.SecondaryIndex;
 public class SherlockSearchModule implements SearchModule {
 
     private final SherlockSearcher sherlockSearcher;
+    private final PseudoEsEquivalentContentSearcher pseudoEquivContentSearcher;
     private final ContentSearcher equivContentSearcher;
     private final SherlockTopicSearcher topicSearcher;
     private final SherlockPopularTopicSearcher popularTopicsSearcher;
@@ -41,7 +42,7 @@ public class SherlockSearchModule implements SearchModule {
                 )
         );
 
-        PseudoEsEquivalentContentSearcher pseudoEquivContentSearcher = PseudoEsEquivalentContentSearcher.create(
+        pseudoEquivContentSearcher = PseudoEsEquivalentContentSearcher.create(
                 sherlockSearcher
         );
 
@@ -58,8 +59,8 @@ public class SherlockSearchModule implements SearchModule {
         this.sherlockProbe = ElasticsearchProbe.create("sherlock", elasticSearchConfig.getElasticSearchClient());
     }
 
-    public SherlockSearcher getSherlockSearcher() {
-        return sherlockSearcher;
+    public PseudoEsEquivalentContentSearcher getPseudoEquivContentSearcher() {
+        return pseudoEquivContentSearcher;
     }
 
     public ContentSearcher equivContentSearcher() {

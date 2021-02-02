@@ -137,13 +137,10 @@ public class SearchController {
 
             Selection selection = selectionBuilder.build(request);
 
-            SearchQuery searchQuery = queryBuilder
-                    .withQueryWeighting(parseQueryWeighting(request))
-                    .withLimit(selection.getLimit())
-                    .withOffset(selection.getOffset())
-                    .build();
+            SearchQuery.Builder searchQuery = queryBuilder
+                    .withQueryWeighting(parseQueryWeighting(request));
 
-            QueryResult<Content> contentResult = searcher.search(searchQuery, queryContext);
+            QueryResult<Content> contentResult = searcher.search(searchQuery, selection, queryContext);
             resultWriter.write(contentResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
