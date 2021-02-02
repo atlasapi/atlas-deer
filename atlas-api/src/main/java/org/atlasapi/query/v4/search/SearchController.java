@@ -75,6 +75,7 @@ public class SearchController {
                     .add(JsonResponseWriter.CALLBACK)
                     .add(ANNOTATIONS_PARAM)
                     .add(QUERY_PARAM)
+                    .add(SMART_SEARCH_PARAM)
                     .addAll(SherlockParameter.getAllNames())
                     .build()
     );
