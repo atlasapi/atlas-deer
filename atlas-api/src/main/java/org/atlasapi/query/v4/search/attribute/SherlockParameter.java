@@ -43,12 +43,12 @@ public enum SherlockParameter {
     RELEASE_DATES_TYPE(Type.FILTER, Group.RELEASE_DATES, "type"),
 
     // Broadcast / Schedule
-    SCHEDULE_UPCOMING(Type.FILTER, Group.SCHEDULE, "upcoming"),
-    SCHEDULE_START_TIME(Type.FILTER, Group.SCHEDULE, "start_time"),
-    SCHEDULE_END_TIME(Type.FILTER, Group.SCHEDULE, "end_time"),
-    SCHEDULE_DURATION(Type.FILTER, Group.SCHEDULE, "duration"),
-    SCHEDULE_CHANNEL(Type.FILTER, Group.SCHEDULE, "channel"),
-    SCHEDULE_CHANNEL_GROUP(Type.FILTER, Group.SCHEDULE, "channel_group"),
+    BROADCASTS_UPCOMING(Type.FILTER, Group.BROADCASTS, "upcoming"),
+    BROADCASTS_START_TIME(Type.FILTER, Group.BROADCASTS, "start_time"),
+    BROADCASTS_END_TIME(Type.FILTER, Group.BROADCASTS, "end_time"),
+    BROADCASTS_DURATION(Type.FILTER, Group.BROADCASTS, "duration"),
+    BROADCASTS_CHANNEL(Type.FILTER, Group.BROADCASTS, "channel"),
+    BROADCASTS_CHANNEL_GROUP(Type.FILTER, Group.BROADCASTS, "channel_group"),
 
     // People
     PEOPLE_URI(Type.FILTER, Group.PEOPLE, "uri"),
@@ -194,7 +194,7 @@ public enum SherlockParameter {
         RESTRICTIONS,
         CERTIFICATES,
         RELEASE_DATES,
-        SCHEDULE,
+        BROADCASTS,
         PEOPLE,
         LOCATIONS,
         DATA,

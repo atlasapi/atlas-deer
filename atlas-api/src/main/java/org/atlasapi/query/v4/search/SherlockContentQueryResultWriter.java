@@ -70,7 +70,7 @@ public class SherlockContentQueryResultWriter extends QueryResultWriter<Content>
     private OutputContext outputContext(QueryContext queryContext) {
 
         String channelGroupParam = queryContext.getRequest()
-                .getParameter(SherlockParameter.SCHEDULE_CHANNEL_GROUP.getParameterName());
+                .getParameter(SherlockParameter.BROADCASTS_CHANNEL_GROUP.getParameterName());
 
         OutputContext.Builder builder = OutputContext.builder(queryContext);
 

@@ -211,31 +211,31 @@ public class SherlockAttributes {
     private List<SherlockAttribute<?, ?, ?, ?>> getScheduleAttributes() {
         return ImmutableList.of(
                 new BeforeAfterAttribute(
-                        SherlockParameter.SCHEDULE_UPCOMING,
+                        SherlockParameter.BROADCASTS_UPCOMING,
                         content.getBroadcasts().getTransmissionStartTime()
                 ),
                 new RangeAttribute<>(
-                        SherlockParameter.SCHEDULE_START_TIME,
+                        SherlockParameter.BROADCASTS_START_TIME,
                         content.getBroadcasts().getTransmissionStartTime(),
                         InstantRangeCoercer.create()
                 ),
                 new RangeAttribute<>(
-                        SherlockParameter.SCHEDULE_END_TIME,
+                        SherlockParameter.BROADCASTS_END_TIME,
                         content.getBroadcasts().getTransmissionEndTime(),
                         InstantRangeCoercer.create()
                 ),
                 new RangeAttribute<>(
-                        SherlockParameter.SCHEDULE_DURATION,
+                        SherlockParameter.BROADCASTS_DURATION,
                         content.getBroadcasts().getBroadcastDuration(),
                         NumberRangeCoercer.createIntegerCoercer()
                 ),
                 new IdAttribute(
-                        SherlockParameter.SCHEDULE_CHANNEL,
+                        SherlockParameter.BROADCASTS_CHANNEL,
                         content.getBroadcasts().getBroadcastOn(),
                         IdCoercer.create(idCodec)
                 ),
                 new ChannelGroupAttribute(
-                        SherlockParameter.SCHEDULE_CHANNEL_GROUP,
+                        SherlockParameter.BROADCASTS_CHANNEL_GROUP,
                         content.getBroadcasts().getBroadcastOn(),
                         IdCoercer.create(idCodec),
                         channelGroupResolver
