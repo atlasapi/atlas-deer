@@ -1,16 +1,17 @@
-package org.atlasapi.elasticsearch.content;
+package org.atlasapi.query.v4.search;
 
-import com.google.common.base.Throwables;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
-import org.atlasapi.content.ContentSearcher;
+import com.metabroadcast.sherlock.client.response.ContentResult;
+import com.metabroadcast.sherlock.client.response.ContentSearchQueryResponse;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
+import com.metabroadcast.sherlock.client.search.SherlockSearcher;
 import org.atlasapi.content.IndexQueryResult;
-import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.slf4j.Logger;
@@ -18,62 +19,65 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.atlasapi.criteria.attribute.Attributes.Q;
+public class PseudoEsEquivalentContentSearcher {
 
-public class PseudoEquivalentContentSearcher implements ContentSearcher {
+    private static final Logger log = LoggerFactory.getLogger(PseudoEsEquivalentContentSearcher.class);
 
-    private static final Logger LOG = LoggerFactory.getLogger(PseudoEquivalentContentSearcher.class);
+    private final SherlockSearcher sherlockSearcher;
 
-    private final EsUnequivalentContentSearcher delegate;
-
-    private PseudoEquivalentContentSearcher(EsUnequivalentContentSearcher delegate) {
-        this.delegate = checkNotNull(delegate);
+    private PseudoEsEquivalentContentSearcher(SherlockSearcher sherlockSearcher) {
+        this.sherlockSearcher = sherlockSearcher;
     }
 
-    public static PseudoEquivalentContentSearcher create(EsUnequivalentContentSearcher delegate) {
-        return new PseudoEquivalentContentSearcher(delegate);
+    public static PseudoEsEquivalentContentSearcher create(SherlockSearcher sherlockSearcher) {
+        return new PseudoEsEquivalentContentSearcher(sherlockSearcher);
     }
 
-    @Override
-    public ListenableFuture<IndexQueryResult> query(
-            Iterable<AttributeQuery<?>> query,
-            Iterable<Publisher> publishers,
+    public ListenableFuture<IndexQueryResult> searchForContent(
+            SearchQuery.Builder searchQueryBuilder,
+            Iterable<Publisher> precedentOrderedPublishers,
             Selection selection
     ) {
-        try {
+        List<String> precedentOrderedSources = MoreStreams.stream(precedentOrderedPublishers)
+                .map(Publisher::key)
+                .collect(MoreCollectors.toImmutableList());
 
-            Selection selectionForDelegate = getSelectionForDelegate(publishers, selection);
 
-            DelegateIndexQueryResult result = Futures.get(
-                    delegate.delegateQuery(query, publishers, selectionForDelegate),
-                    Exception.class
-            );
+        Selection selectionForDelegate = getSelectionForDelegate(
+                precedentOrderedSources,
+                selection
+        );
 
-            boolean isFuzzyQuery = MoreStreams.stream(query)
-                    .anyMatch(attribute ->
-                            attribute.getAttribute().externalName().equals(Q.externalName())
-                    );
+        SearchQuery searchQuery = searchQueryBuilder
+                .withLimit(selectionForDelegate.getLimit())
+                .withOffset(selectionForDelegate.getOffset())
+                .build();
 
-            ImmutableList<Id> dedupedIds = dedupeIds(result, publishers, isFuzzyQuery);
-            ImmutableList<Id> paginatedIds = paginateIds(dedupedIds, selection);
+        boolean isFuzzyQuery = !searchQuery.getSearchers().isEmpty();
 
-            return Futures.immediateFuture(
-                    IndexQueryResult.withIds(paginatedIds, result.getTotalCount())
-            );
+        ListenableFuture<ContentSearchQueryResponse> responseFuture = sherlockSearcher.searchForContent(searchQuery);
 
-        } catch (Exception e) {
-            throw Throwables.propagate(e);
-        }
+        return Futures.transform(
+                responseFuture,
+                (Function<ContentSearchQueryResponse, IndexQueryResult>) response -> {
+                    ImmutableList<Id> dedupedIds = dedupeIds(response, precedentOrderedSources, isFuzzyQuery);
+                    ImmutableList<Id> paginatedIds = paginateIds(dedupedIds, selection);
+                    return IndexQueryResult.withIds(paginatedIds, response.getTotalResults());
+                }
+        );
     }
 
-    private Selection getSelectionForDelegate(Iterable<Publisher> publishers, Selection selection) {
-        int numberOfSources = Iterables.size(publishers);
+    private Selection getSelectionForDelegate(
+            List<String> sources,
+            Selection selection
+    ) {
+        int numberOfSources = sources.size();
         int delegateLimit = selection.limitOrDefaultValue(100) * numberOfSources;
 
         if (selection.hasNonZeroOffset()) {
@@ -88,45 +92,45 @@ public class PseudoEquivalentContentSearcher implements ContentSearcher {
     }
 
     private ImmutableList<Id> dedupeIds(
-            DelegateIndexQueryResult result,
-            Iterable<Publisher> publishers,
+            ContentSearchQueryResponse response,
+            Iterable<String> sources,
             boolean isFuzzyQuery
     ) {
-        LinkedHashMap<Id, DelegateIndexQueryResult.Result> dedupedEntries = new LinkedHashMap<>();
+        LinkedHashMap<Id, ContentResult> dedupedEntries = new LinkedHashMap<>();
 
-        for (DelegateIndexQueryResult.Result entry : result.getResults()) {
-            addToDedupedResults(entry, dedupedEntries, publishers, isFuzzyQuery);
+        for (ContentResult result : response.getResults()) {
+            addToDedupedResults(result, dedupedEntries, sources, isFuzzyQuery);
         }
 
-        Stream<Map.Entry<Id, DelegateIndexQueryResult.Result>> dedupedEntriesStream =
-                dedupedEntries.entrySet().stream();
+        Stream<Map.Entry<Id, ContentResult>> dedupedEntriesStream = dedupedEntries.entrySet().stream();
 
         if (isFuzzyQuery) {
             dedupedEntriesStream = dedupedEntriesStream.sorted(
-                    Comparator.<Map.Entry<Id, DelegateIndexQueryResult.Result>, Float>comparing(
+                    Comparator.<Map.Entry<Id, ContentResult>, Float>comparing(
                             entry -> entry.getValue().getScore()
                     ).reversed()
             );
         }
         return dedupedEntriesStream.map(entry -> entry.getValue().getId())
+                .map(Id::valueOf)
                 .collect(MoreCollectors.toImmutableList());
     }
 
     private void addToDedupedResults(
-            DelegateIndexQueryResult.Result entry,
-            LinkedHashMap<Id, DelegateIndexQueryResult.Result> dedupedEntries,
-            Iterable<Publisher> publishers,
+            ContentResult entry,
+            LinkedHashMap<Id, ContentResult> dedupedEntries,
+            Iterable<String> sources,
             boolean isFuzzyQuery
     ) {
-        Id canonicalId = entry.getCanonicalId();
+        Id canonicalId = Id.valueOf(entry.getCanonicalId());
 
         if (!dedupedEntries.containsKey(canonicalId)) {
             dedupedEntries.put(canonicalId, entry);
             return;
         }
 
-        DelegateIndexQueryResult.Result existingEntry = dedupedEntries.get(canonicalId);
-        if (hasHigherPrecedence(entry, existingEntry, publishers)) {
+        ContentResult existingEntry = dedupedEntries.get(canonicalId);
+        if (hasHigherPrecedence(entry, existingEntry, sources)) {
             if (isFuzzyQuery) {
                 // The order of entries in the map will not matter since we'll sort on score when getting the ids
                 if (!Objects.equals(entry.getTitle(), existingEntry.getTitle())) {
@@ -139,11 +143,11 @@ public class PseudoEquivalentContentSearcher implements ContentSearcher {
                     // and opt for taking an average of the two for now.
                     dedupedEntries.put(
                             canonicalId,
-                            DelegateIndexQueryResult.Result.of(
+                            new ContentResult(
                                     entry.getId(),
                                     (entry.getScore() + existingEntry.getScore()) / 2f,
                                     entry.getCanonicalId(),
-                                    entry.getPublisher(),
+                                    entry.getSource(),
                                     entry.getTitle()
                             )
                     );
@@ -151,11 +155,11 @@ public class PseudoEquivalentContentSearcher implements ContentSearcher {
                     // Replace the existing entry with the new entry but keeping the original score
                     dedupedEntries.put(
                             canonicalId,
-                            DelegateIndexQueryResult.Result.of(
+                            new ContentResult(
                                     entry.getId(),
                                     existingEntry.getScore(),
                                     entry.getCanonicalId(),
-                                    entry.getPublisher(),
+                                    entry.getSource(),
                                     entry.getTitle()
                             )
                     );
@@ -172,27 +176,39 @@ public class PseudoEquivalentContentSearcher implements ContentSearcher {
         }
     }
 
-    private boolean hasHigherPrecedence(DelegateIndexQueryResult.Result currentEntry,
-            DelegateIndexQueryResult.Result existingEntry, Iterable<Publisher> publishers) {
+    private boolean hasHigherPrecedence(
+            ContentResult currentEntry,
+            ContentResult existingEntry,
+            Iterable<String> sources
+    ) {
         return hasHigherPrecedence(
-                currentEntry.getPublisher(), existingEntry.getPublisher(), publishers
+                currentEntry.getSource(),
+                existingEntry.getSource(),
+                sources
         );
     }
 
-    private boolean hasHigherPrecedence(Publisher currentPublisher, Publisher existingPublisher,
-            Iterable<Publisher> publisherPrecedence) {
-        for (Publisher publisher : publisherPrecedence) {
-            if (publisher == existingPublisher) {
+    private boolean hasHigherPrecedence(
+            String currentSource,
+            String existingSource,
+            Iterable<String> sourcePrecedence
+    ) {
+        for (String source : sourcePrecedence) {
+            if (source.equals(existingSource)) {
                 return false;
             }
-            if (publisher == currentPublisher) {
+            if (source.equals(currentSource)) {
                 return true;
             }
         }
 
         // This should never happen as the delegate uses the same publishers for the query
-        LOG.error("Delegate content index returned publisher {} that was not asked for."
-                + " Requested publishers: {}", currentPublisher, publisherPrecedence);
+        log.error(
+                "Delegate content index returned source {} that was not asked for."
+                        + " Requested sources: {}",
+                currentSource,
+                sourcePrecedence
+        );
         return false;
     }
 
@@ -202,4 +218,5 @@ public class PseudoEquivalentContentSearcher implements ContentSearcher {
                 .limit(selection.limitOrDefaultValue(100))
                 .collect(MoreCollectors.toImmutableList());
     }
+
 }

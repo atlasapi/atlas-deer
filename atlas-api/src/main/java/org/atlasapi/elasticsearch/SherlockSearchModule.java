@@ -11,11 +11,11 @@ import com.metabroadcast.sherlock.common.mapping.TopicMapping;
 import org.atlasapi.SearchModule;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.ContentSearcher;
-import org.atlasapi.elasticsearch.content.EsUnequivalentContentSearcher;
+import org.atlasapi.elasticsearch.content.EsEquivalentContentSearcher;
 import org.atlasapi.elasticsearch.content.InstrumentedContentSearcher;
-import org.atlasapi.elasticsearch.content.PseudoEquivalentContentSearcher;
 import org.atlasapi.elasticsearch.topic.SherlockPopularTopicSearcher;
 import org.atlasapi.elasticsearch.topic.SherlockTopicSearcher;
+import org.atlasapi.query.v4.search.PseudoEsEquivalentContentSearcher;
 import org.atlasapi.util.SecondaryIndex;
 
 public class SherlockSearchModule implements SearchModule {
@@ -30,26 +30,29 @@ public class SherlockSearchModule implements SearchModule {
             ElasticSearchConfig elasticSearchConfig,
             MetricRegistry metrics,
             ChannelGroupResolver channelGroupResolver,
-            SecondaryIndex equivContentSearcher
+            SecondaryIndex secondaryIndex
     ) {
         ContentMapping contentMapping = IndexMapping.getContentMapping();
         TopicMapping topicMapping = IndexMapping.getTopicMapping();
 
-        sherlockSearcher = new SherlockSearcher(new ElasticSearchProcessor(
-                elasticSearchConfig.getElasticSearchClient()
-        ));
-
-        EsUnequivalentContentSearcher unequivSearcher = EsUnequivalentContentSearcher.create(
-                sherlockSearcher,
-                contentMapping,
-                channelGroupResolver,
-                equivContentSearcher
+        sherlockSearcher = new SherlockSearcher(
+                new ElasticSearchProcessor(
+                        elasticSearchConfig.getElasticSearchClient()
+                )
         );
 
-        PseudoEquivalentContentSearcher equivalentContentSearcher =
-                PseudoEquivalentContentSearcher.create(unequivSearcher);
+        PseudoEsEquivalentContentSearcher pseudoEquivContentSearcher = PseudoEsEquivalentContentSearcher.create(
+                sherlockSearcher
+        );
 
-        this.equivContentSearcher = InstrumentedContentSearcher.create(equivalentContentSearcher, metrics);
+        EsEquivalentContentSearcher equivContentSearcher = EsEquivalentContentSearcher.create(
+                pseudoEquivContentSearcher,
+                contentMapping,
+                channelGroupResolver,
+                secondaryIndex
+        );
+
+        this.equivContentSearcher = InstrumentedContentSearcher.create(equivContentSearcher, metrics);
         this.popularTopicsSearcher = new SherlockPopularTopicSearcher(sherlockSearcher, contentMapping);
         this.topicSearcher = new SherlockTopicSearcher(sherlockSearcher, topicMapping);
         this.sherlockProbe = ElasticsearchProbe.create("sherlock", elasticSearchConfig.getElasticSearchClient());

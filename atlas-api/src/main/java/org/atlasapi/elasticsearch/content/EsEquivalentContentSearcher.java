@@ -1,17 +1,14 @@
 package org.atlasapi.elasticsearch.content;
 
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
 import com.metabroadcast.sherlock.client.parameter.BoolParameter;
-import com.metabroadcast.sherlock.client.response.ContentSearchQueryResponse;
 import com.metabroadcast.sherlock.client.scoring.ConstantValueWeighting;
 import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
 import com.metabroadcast.sherlock.client.scoring.Weightings;
 import com.metabroadcast.sherlock.client.search.SearchQuery;
-import com.metabroadcast.sherlock.client.search.SherlockSearcher;
 import com.metabroadcast.sherlock.common.SherlockIndex;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.type.ChildTypeMapping;
@@ -29,8 +26,8 @@ import org.atlasapi.elasticsearch.query.IndexQueryParams;
 import org.atlasapi.elasticsearch.query.QueryOrdering;
 import org.atlasapi.elasticsearch.util.EsQueryBuilder;
 import org.atlasapi.elasticsearch.util.FiltersBuilder;
-import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.query.v4.search.PseudoEsEquivalentContentSearcher;
 import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
@@ -39,19 +36,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateContentSearcher {
+public class EsEquivalentContentSearcher implements ContentSearcher{
 
     private static final int DEFAULT_LIMIT = 50;
 
-    private final Logger log = LoggerFactory.getLogger(EsUnequivalentContentSearcher.class);
+    private final Logger log = LoggerFactory.getLogger(EsEquivalentContentSearcher.class);
 
-    private final SherlockSearcher contentSearcher;
+    private final PseudoEsEquivalentContentSearcher contentSearcher;
     private final ContentMapping contentMapping;
     private final ChannelGroupResolver channelGroupResolver;
     private final SecondaryIndex equivIdIndex;
@@ -59,8 +55,8 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
     private final EsQueryParser esQueryParser;
     private final EsQueryBuilder queryBuilderFactory;
 
-    private EsUnequivalentContentSearcher(
-            SherlockSearcher contentSearcher,
+    private EsEquivalentContentSearcher(
+            PseudoEsEquivalentContentSearcher contentSearcher,
             ContentMapping contentMapping,
             ChannelGroupResolver channelGroupResolver,
             SecondaryIndex equivIdIndex
@@ -73,13 +69,13 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
         this.queryBuilderFactory = EsQueryBuilder.create(LegacyContentFieldTranslator::translate);
     }
 
-    public static EsUnequivalentContentSearcher create(
-            SherlockSearcher contentSearcher,
+    public static EsEquivalentContentSearcher create(
+            PseudoEsEquivalentContentSearcher contentSearcher,
             ContentMapping contentMapping,
             ChannelGroupResolver channelGroupResolver,
             SecondaryIndex equivIdIndex
     ) {
-        return new EsUnequivalentContentSearcher(
+        return new EsEquivalentContentSearcher(
                 contentSearcher,
                 contentMapping,
                 channelGroupResolver,
@@ -93,56 +89,10 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
             Iterable<Publisher> publishers,
             Selection selection
     ) {
-        ListenableFuture<ContentSearchQueryResponse> response = queryInternal(
-                query, publishers, selection
-        );
 
-        return Futures.transform(
-                response,
-                (ContentSearchQueryResponse input) ->
-                        IndexQueryResult.withIds(
-                                MoreStreams.stream(input.getIds())
-                                        .map(Id::valueOf)
-                                        .collect(MoreCollectors.toImmutableList()),
-                                input.getTotalResults()
-                        )
-        );
-    }
-
-    @Override
-    public ListenableFuture<DelegateIndexQueryResult> delegateQuery(
-            Iterable<AttributeQuery<?>> query,
-            Iterable<Publisher> publishers,
-            Selection selection
-    ) {
-        ListenableFuture<ContentSearchQueryResponse> response = queryInternal(
-                query, publishers, selection
-        );
-
-        return Futures.transform(response, (ContentSearchQueryResponse input) -> {
-            DelegateIndexQueryResult.Builder resultBuilder = DelegateIndexQueryResult.builder(
-                    input.getTotalResults()
-            );
-
-            input.getResults().stream()
-                    .filter(Objects::nonNull)
-                    .forEach(hit -> resultBuilder.add(
-                            Id.valueOf(hit.getId()),
-                            hit.getScore(),
-                            Id.valueOf(hit.getCanonicalId()),
-                            Publisher.fromKey(hit.getSource()).requireValue(),
-                            hit.getTitle()
-                    ));
-
-            return resultBuilder.build();
-        });
-    }
-
-    private ListenableFuture<ContentSearchQueryResponse> queryInternal(
-            Iterable<AttributeQuery<?>> query,
-            Iterable<Publisher> publishers,
-            Selection selection
-    ) {
+        Selection selectionWithLimit = selection.getLimit() != null
+                ? selection
+                : selection.withLimit(DEFAULT_LIMIT);
 
         Set<String> sources = MoreStreams.stream(publishers)
                 .map(Publisher::key)
@@ -173,8 +123,8 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
                         SherlockIndex.CONTENT,
                         sources
                 )
-                .withOffset(selection.getOffset())
-                .withLimit(selection.getLimit() == null ? DEFAULT_LIMIT : selection.getLimit());
+                .withOffset(selectionWithLimit.getOffset())
+                .withLimit(selectionWithLimit.getLimit());
 
         EsQueryParser.EsQuery esQuery = esQueryParser.parse(query);
         addOrdering(esQuery.getIndexQueryParams(), searchQueryBuilder);
@@ -203,7 +153,11 @@ public class EsUnequivalentContentSearcher implements ContentSearcher, DelegateC
 
         searchQueryBuilder.addSort(contentMapping.getId(), SortOrder.ASC);
 
-        return contentSearcher.searchForContent(searchQueryBuilder.build());
+        return contentSearcher.searchForContent(
+                searchQueryBuilder,
+                publishers,
+                selectionWithLimit
+        );
     }
 
     private void addOrdering(
