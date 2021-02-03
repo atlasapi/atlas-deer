@@ -288,11 +288,11 @@ public class SherlockAttributes {
 
     private List<SherlockAttribute<?, ?, ?, ?>> getLocationsAttributes() {
         return ImmutableList.of(
-                new BetweenRangeAttribute<>(
+                new BetweenRangeAttribute<Instant>(
                         SherlockParameter.LOCATIONS_AVAILABLE,
                         content.getLocations().getAvailabilityStart(),
                         content.getLocations().getAvailabilityEnd(),
-                        Instant.now()
+                        Instant::now
                 ),
                 new RangeAttribute<>(
                         SherlockParameter.LOCATIONS_AVAILABILITY_START,

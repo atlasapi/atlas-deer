@@ -7,9 +7,21 @@ import com.metabroadcast.sherlock.client.parameter.SingleClauseBoolParameter;
 import com.metabroadcast.sherlock.common.type.RangeTypeMapping;
 import org.atlasapi.query.common.coercers.BooleanCoercer;
 
+import java.util.function.Supplier;
+
 public class BetweenRangeAttribute<T> extends SherlockBoolAttribute<Boolean, T, RangeTypeMapping<T>> {
 
-    private final T valueToBeWithinRange;
+    private final Supplier<T> valueToBeWithinRangeSupplier;
+
+    public BetweenRangeAttribute(
+            SherlockParameter parameter,
+            RangeTypeMapping<T> lowerBoundMapping,
+            RangeTypeMapping<T> upperBoundMapping,
+            Supplier<T> valueToBeWithinRangeSupplier
+    ) {
+        super(parameter, BooleanCoercer.create(), lowerBoundMapping, upperBoundMapping);
+        this.valueToBeWithinRangeSupplier = valueToBeWithinRangeSupplier;
+    }
 
     public BetweenRangeAttribute(
             SherlockParameter parameter,
@@ -17,31 +29,38 @@ public class BetweenRangeAttribute<T> extends SherlockBoolAttribute<Boolean, T, 
             RangeTypeMapping<T> mappingFrom,
             T valueToBeWithinRange
     ) {
-        super(parameter, BooleanCoercer.create(), mappingTo, mappingFrom);
-        this.valueToBeWithinRange = valueToBeWithinRange;
+        this(
+                parameter,
+                mappingTo,
+                mappingFrom,
+                () -> valueToBeWithinRange
+        );
     }
 
     @Override
     protected BoolParameter createParameter(RangeTypeMapping<T>[] mappings, Boolean value) {
+        final T valueToBeWithinRange = valueToBeWithinRangeSupplier.get();
 
-        RangeTypeMapping<T> toMapping = mappings[0];
-        RangeTypeMapping<T> fromMapping = mappings[1];
+        RangeTypeMapping<T> lowerBoundMapping = mappings[0];
+        RangeTypeMapping<T> upperBoundMapping = mappings[1];
 
-        RangeParameter<T> from = RangeParameter.to(toMapping, valueToBeWithinRange);
-        RangeParameter<T> to = RangeParameter.from(fromMapping, valueToBeWithinRange);
+        RangeParameter<T> lowerBound = RangeParameter.to(lowerBoundMapping, valueToBeWithinRange);
+        RangeParameter<T> upperBound = RangeParameter.from(upperBoundMapping, valueToBeWithinRange);
 
-        SingleClauseBoolParameter both = SingleClauseBoolParameter.must(from, to);
+        ExistParameter<T> nullLowerBound = ExistParameter.notExists(lowerBoundMapping);
+        SingleClauseBoolParameter nullLowerWithUpper = SingleClauseBoolParameter.must(nullLowerBound, upperBound);
 
-        ExistParameter<T> nullFrom = ExistParameter.notExists(fromMapping);
-        SingleClauseBoolParameter toAndNullFrom = SingleClauseBoolParameter.must(nullFrom, to);
+        ExistParameter<T> nullUpperBound = ExistParameter.notExists(upperBoundMapping);
+        SingleClauseBoolParameter lowerWithNullUpper = SingleClauseBoolParameter.must(lowerBound, nullUpperBound);
 
-        ExistParameter<T> nullTo = ExistParameter.notExists(toMapping);
-        SingleClauseBoolParameter fromAndNullTo = SingleClauseBoolParameter.must(nullTo, to);
+        SingleClauseBoolParameter both = SingleClauseBoolParameter.must(lowerBound, upperBound);
+        SingleClauseBoolParameter neither = SingleClauseBoolParameter.must(nullLowerBound, nullUpperBound);
 
         SingleClauseBoolParameter inRange = SingleClauseBoolParameter.should(
                 both,
-                toAndNullFrom,
-                fromAndNullTo
+                nullLowerWithUpper,
+                lowerWithNullUpper,
+                neither
         );
 
         if (value) {
