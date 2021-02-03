@@ -34,6 +34,7 @@ public class RepIdAnnotation extends OutputAnnotation<Content> {
     private final SubstitutionTableNumberCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
     RepIdClient repIdClient;
     LoadingCache<Long, String> appIdCache;
+    private final static String REP_ID = "rep_id";;
 
     /**
      * Adds the RepId to the result of the call by calling the RepId Service. Do not include this
@@ -65,6 +66,11 @@ public class RepIdAnnotation extends OutputAnnotation<Content> {
                     + "Please ask MB about enabling access to the service.");
         }
 
+        if(!entity.isActivelyPublished()){
+            writer.writeField(REP_ID, null);
+            return;
+        }
+
         String appId;
         try {
             appId = appIdCache.get(ctxt.getApplication().getId());
@@ -75,6 +81,7 @@ public class RepIdAnnotation extends OutputAnnotation<Content> {
                     .map(EquivalenceRef::getId)
                     .map(Id::longValue)
                     .collect(MoreCollectors.toImmutableSet());
+            //this will elect a repId, and will not check the given equivalence again.
             repIdResponse = repIdClient.getRepId(
                     RepIdQuery.create()
                             .withAppId(appId)
@@ -92,6 +99,6 @@ public class RepIdAnnotation extends OutputAnnotation<Content> {
             );
         }
 
-        writer.writeField("rep_id", repId);
+        writer.writeField(REP_ID, repId);
     }
 }
