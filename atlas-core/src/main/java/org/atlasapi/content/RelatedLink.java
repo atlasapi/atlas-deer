@@ -110,6 +110,7 @@ public class RelatedLink implements Hashable {
         SIMULCAST,
         ARTICLE,
         VOD,
+        LIVESTREAM,
         UNKNOWN,;
     }
 
