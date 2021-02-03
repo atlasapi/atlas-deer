@@ -127,7 +127,7 @@ public enum SherlockParameter {
     // Ratings
     RATINGS_VALUE(Type.FILTER, Group.RATINGS, "value"),
     RATINGS_TYPE(Type.FILTER, Group.RATINGS, "type"),
-    RATINGS_SOURCE_KEY(Type.FILTER, Group.RATINGS, "source.key"),
+    RATINGS_SOURCE(Type.FILTER, Group.RATINGS, "source"),
     RATINGS_SOURCE_COUNTRY(Type.FILTER, Group.RATINGS, "source.country"),
 
     // Reviews
@@ -139,7 +139,7 @@ public enum SherlockParameter {
     REVIEWS_RATING(Type.FILTER, Group.REVIEWS, "rating"),
     REVIEWS_DATE(Type.FILTER, Group.REVIEWS, "date"),
     REVIEWS_REVIEW_TYPE(Type.FILTER, Group.REVIEWS, "review_type"),
-    REVIEWS_SOURCE_KEY(Type.FILTER, Group.REVIEWS, "source.key"),
+    REVIEWS_SOURCE(Type.FILTER, Group.REVIEWS, "source"),
     REVIEWS_SOURCE_COUNTRY(Type.FILTER, Group.REVIEWS, "source.country"),
     ;
 

@@ -566,7 +566,7 @@ public class SherlockAttributes {
                         StringCoercer.create()
                 ),
                 new KeywordAttribute<>(
-                        SherlockParameter.RATINGS_SOURCE_KEY,
+                        SherlockParameter.RATINGS_SOURCE,
                         content.getRatings().getSource().getKey(),
                         StringCoercer.create()
                 ),
@@ -619,7 +619,7 @@ public class SherlockAttributes {
                         StringCoercer.create()
                 ),
                 new KeywordAttribute<>(
-                        SherlockParameter.REVIEWS_SOURCE_KEY,
+                        SherlockParameter.REVIEWS_SOURCE,
                         content.getReviews().getSource().getKey(),
                         StringCoercer.create()
                 ),
