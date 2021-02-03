@@ -59,11 +59,7 @@ public class PseudoEsEquivalentContentSearcher {
                 .withOffset(selectionForDelegate.getOffset())
                 .build();
 
-        boolean isFuzzyQuery = !(
-                searchQuery.getQueriers().isEmpty()
-                        && searchQuery.getSearchers().isEmpty()
-                        && searchQuery.getInfluencers().isEmpty()
-        );
+        boolean isFuzzyQuery = !searchQuery.getQueriers().isEmpty();
 
         ListenableFuture<ContentSearchQueryResponse> responseFuture = sherlockSearcher.searchForContent(searchQuery);
 
