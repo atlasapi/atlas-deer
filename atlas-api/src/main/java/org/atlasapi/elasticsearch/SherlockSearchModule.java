@@ -1,16 +1,6 @@
 package org.atlasapi.elasticsearch;
 
-import org.atlasapi.SearchModule;
-import org.atlasapi.channel.ChannelGroupResolver;
-import org.atlasapi.content.ContentSearcher;
-import org.atlasapi.elasticsearch.content.EsUnequivalentContentSearcher;
-import org.atlasapi.elasticsearch.content.InstrumentedContentSearcher;
-import org.atlasapi.elasticsearch.content.PseudoEquivalentContentSearcher;
-import org.atlasapi.elasticsearch.content.SherlockContentTitleSearcher;
-import org.atlasapi.elasticsearch.topic.SherlockPopularTopicSearcher;
-import org.atlasapi.elasticsearch.topic.SherlockTopicSearcher;
-import org.atlasapi.util.SecondaryIndex;
-
+import com.codahale.metrics.MetricRegistry;
 import com.metabroadcast.sherlock.client.search.SherlockSearcher;
 import com.metabroadcast.sherlock.common.client.ElasticSearchProcessor;
 import com.metabroadcast.sherlock.common.config.ElasticSearchConfig;
@@ -18,50 +8,59 @@ import com.metabroadcast.sherlock.common.health.ElasticsearchProbe;
 import com.metabroadcast.sherlock.common.mapping.ContentMapping;
 import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 import com.metabroadcast.sherlock.common.mapping.TopicMapping;
-
-import com.codahale.metrics.MetricRegistry;
+import org.atlasapi.SearchModule;
+import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.content.ContentSearcher;
+import org.atlasapi.elasticsearch.content.EsEquivalentContentSearcher;
+import org.atlasapi.elasticsearch.content.InstrumentedContentSearcher;
+import org.atlasapi.elasticsearch.topic.SherlockPopularTopicSearcher;
+import org.atlasapi.elasticsearch.topic.SherlockTopicSearcher;
+import org.atlasapi.query.v4.search.PseudoEsEquivalentContentSearcher;
+import org.atlasapi.util.SecondaryIndex;
 
 public class SherlockSearchModule implements SearchModule {
 
     private final SherlockSearcher sherlockSearcher;
+    private final PseudoEsEquivalentContentSearcher pseudoEquivContentSearcher;
     private final ContentSearcher equivContentSearcher;
     private final SherlockTopicSearcher topicSearcher;
     private final SherlockPopularTopicSearcher popularTopicsSearcher;
-    private final SherlockContentTitleSearcher contentSearcher;
     private final ElasticsearchProbe sherlockProbe;
 
     public SherlockSearchModule(
             ElasticSearchConfig elasticSearchConfig,
             MetricRegistry metrics,
             ChannelGroupResolver channelGroupResolver,
-            SecondaryIndex equivContentSearcher
+            SecondaryIndex secondaryIndex
     ) {
         ContentMapping contentMapping = IndexMapping.getContentMapping();
         TopicMapping topicMapping = IndexMapping.getTopicMapping();
 
-        sherlockSearcher = new SherlockSearcher(new ElasticSearchProcessor(
-                elasticSearchConfig.getElasticSearchClient()
-        ));
-
-        EsUnequivalentContentSearcher unequivSearcher = EsUnequivalentContentSearcher.create(
-                sherlockSearcher,
-                contentMapping,
-                channelGroupResolver,
-                equivContentSearcher
+        sherlockSearcher = new SherlockSearcher(
+                new ElasticSearchProcessor(
+                        elasticSearchConfig.getElasticSearchClient()
+                )
         );
 
-        PseudoEquivalentContentSearcher equivalentContentSearcher =
-                PseudoEquivalentContentSearcher.create(unequivSearcher);
+        pseudoEquivContentSearcher = PseudoEsEquivalentContentSearcher.create(
+                sherlockSearcher
+        );
 
-        this.equivContentSearcher = InstrumentedContentSearcher.create(equivalentContentSearcher, metrics);
+        EsEquivalentContentSearcher equivContentSearcher = EsEquivalentContentSearcher.create(
+                pseudoEquivContentSearcher,
+                contentMapping,
+                channelGroupResolver,
+                secondaryIndex
+        );
+
+        this.equivContentSearcher = InstrumentedContentSearcher.create(equivContentSearcher, metrics);
         this.popularTopicsSearcher = new SherlockPopularTopicSearcher(sherlockSearcher, contentMapping);
         this.topicSearcher = new SherlockTopicSearcher(sherlockSearcher, topicMapping);
-        this.contentSearcher = new SherlockContentTitleSearcher(sherlockSearcher, contentMapping);
         this.sherlockProbe = ElasticsearchProbe.create("sherlock", elasticSearchConfig.getElasticSearchClient());
     }
 
-    public SherlockSearcher getSherlockSearcher() {
-        return sherlockSearcher;
+    public PseudoEsEquivalentContentSearcher getPseudoEquivContentSearcher() {
+        return pseudoEquivContentSearcher;
     }
 
     public ContentSearcher equivContentSearcher() {
@@ -74,10 +73,6 @@ public class SherlockSearchModule implements SearchModule {
 
     public SherlockPopularTopicSearcher popularTopicSearcher() {
         return popularTopicsSearcher;
-    }
-
-    public SherlockContentTitleSearcher contentTitleSearcher() {
-        return contentSearcher;
     }
 
     public ElasticsearchProbe getSherlockProbe() {

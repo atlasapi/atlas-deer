@@ -1,148 +1,149 @@
 package org.atlasapi.query.v4.search;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.metabroadcast.applications.client.model.internal.Application;
-import org.atlasapi.application.DefaultApplication;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.sherlock.client.parameter.Parameter;
+import com.metabroadcast.sherlock.client.parameter.SearchParameter;
+import com.metabroadcast.sherlock.client.parameter.SingleValueParameter;
+import com.metabroadcast.sherlock.client.parameter.TermParameter;
+import com.metabroadcast.sherlock.client.scoring.QueryWeighting;
+import com.metabroadcast.sherlock.client.search.SearchQuery;
+import com.metabroadcast.sherlock.common.SherlockIndex;
+import com.metabroadcast.sherlock.common.mapping.ContentMapping;
+import com.metabroadcast.sherlock.common.mapping.IndexMapping;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.Specialization;
-import org.atlasapi.entity.Identified;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
+import org.atlasapi.query.annotation.AnnotationsExtractor;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.common.exceptions.InvalidAttributeValueException;
 import org.atlasapi.query.v2.ParameterChecker;
-import org.atlasapi.query.v4.topic.TopicController;
-import org.atlasapi.search.SearchQuery;
-import org.atlasapi.search.SearchResolver;
-
-import com.metabroadcast.common.base.Maybe;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.text.MoreStrings;
-
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
+import org.atlasapi.query.v4.search.attribute.SherlockAttribute;
+import org.atlasapi.query.v4.search.attribute.SherlockParameter;
+import org.atlasapi.query.v4.search.attribute.SherlockSingleMappingAttribute;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@ProducesType(type = Content.class)
 @Controller
+@RequestMapping("/4/search/content")
 public class SearchController {
 
-    private static Logger log = LoggerFactory.getLogger(TopicController.class);
+    private static final Logger log = LoggerFactory.getLogger(SearchController.class);
 
-    private static final String QUERY_PARAM = "q";
-    private static final String SPECIALIZATION_PARAM = "specialization";
-    private static final String PUBLISHER_PARAM = "publisher";
-    private static final String TITLE_WEIGHTING_PARAM = "titleWeighting";
-    private static final String BROADCAST_WEIGHTING_PARAM = "broadcastWeighting";
-    private static final String CATCHUP_WEIGHTING_PARAM = "catchupWeighting";
-    private static final String TYPE_PARAM = "type";
+    private static final Splitter SPLITTER = Splitter.on(',').omitEmptyStrings().trimResults();
+    private static final String EXISTS_KEYWORD = "nonNull";
+    private static final String NON_EXISTS_KEYWORD = "null";
+    private static final ContentMapping CONTENT = IndexMapping.getContentMapping();
+
     private static final String ANNOTATIONS_PARAM = "annotations";
+    private static final String QUERY_PARAM = "q";
+    private static final String SMART_SEARCH_PARAM = "smart_search";
 
-    private static final float DEFAULT_TITLE_WEIGHTING = 1.0f;
-    private static final float DEFAULT_BROADCAST_WEIGHTING = 0.2f;
-    private static final float DEFAULT_CATCHUP_WEIGHTING = 0.15f;
+    private static final ParameterChecker PARAM_CHECKER = new ParameterChecker(
+            ImmutableSet.<String>builder()
+                    .add(ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER)
+                    .add(Selection.LIMIT_REQUEST_PARAM)
+                    .add(Selection.START_INDEX_REQUEST_PARAM)
+                    .add(JsonResponseWriter.CALLBACK)
+                    .add(ANNOTATIONS_PARAM)
+                    .add(QUERY_PARAM)
+                    .add(SMART_SEARCH_PARAM)
+                    .addAll(SherlockParameter.getAllNames())
+                    .build()
+    );
 
-    private final SearchResolver searcher;
+    private final ContentResolvingSearcher searcher;
     private final ApplicationFetcher applicationFetcher;
+    private final AnnotationsExtractor annotationsExtractor;
+    private final Selection.SelectionBuilder selectionBuilder;
     private final QueryResultWriter<Content> resultWriter;
-
+    private final List<SherlockAttribute<?, ?, ?, ?>> sherlockAttributes;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
-    private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.of(
-            ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER,
-            Selection.LIMIT_REQUEST_PARAM,
-            Selection.START_INDEX_REQUEST_PARAM,
-            QUERY_PARAM,
-            SPECIALIZATION_PARAM,
-            PUBLISHER_PARAM,
-            TITLE_WEIGHTING_PARAM,
-            BROADCAST_WEIGHTING_PARAM,
-            CATCHUP_WEIGHTING_PARAM,
-            JsonResponseWriter.CALLBACK,
-            ANNOTATIONS_PARAM,
-            TYPE_PARAM
-    ));
-
-    public SearchController(SearchResolver searcher, ApplicationFetcher applicationFetcher,
-            QueryResultWriter<Content> resultWriter) {
+    public SearchController(
+            ContentResolvingSearcher searcher,
+            ApplicationFetcher applicationFetcher,
+            List<SherlockAttribute<?, ?, ?, ?>> sherlockAttributes,
+            AnnotationsExtractor annotationsExtractor,
+            Selection.SelectionBuilder selectionBuilder,
+            QueryResultWriter<Content> resultWriter
+    ) {
         this.searcher = searcher;
         this.applicationFetcher = applicationFetcher;
+        this.sherlockAttributes = sherlockAttributes;
+        this.annotationsExtractor = annotationsExtractor;
+        this.selectionBuilder = selectionBuilder;
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "/4/search\\.[a-z]+", "/4/search" })
-    public void search(@RequestParam(QUERY_PARAM) String q,
-            @RequestParam(value = SPECIALIZATION_PARAM, required = false) String specialization,
-            @RequestParam(value = PUBLISHER_PARAM, required = false) String publisher,
-            @RequestParam(value = TITLE_WEIGHTING_PARAM,
-                    required = false) String titleWeightingParam,
-            @RequestParam(value = BROADCAST_WEIGHTING_PARAM,
-                    required = false) String broadcastWeightingParam,
-            @RequestParam(value = CATCHUP_WEIGHTING_PARAM,
-                    required = false) String catchupWeightingParam,
-            @RequestParam(value = TYPE_PARAM, required = false) String type,
-            HttpServletRequest request, HttpServletResponse response) throws IOException {
+    @RequestMapping({"\\.[a-z]+", ""})
+    public void search(
+            @RequestParam(value = QUERY_PARAM, required = false) String query,
+            @RequestParam(value = SMART_SEARCH_PARAM, defaultValue = "true") boolean smartSearch,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws IOException {
+
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            paramChecker.checkParameters(request);
+            PARAM_CHECKER.checkParameters(request);
 
-            if (Strings.isNullOrEmpty(q)) {
-                throw new IllegalArgumentException("You must specify a query parameter");
-            }
-
-            Selection selection = Selection.builder().build(request);
-            if (!selection.hasLimit()) {
-                throw new IllegalArgumentException("You must specify a limit parameter");
-            }
-
-            float titleWeighting = getFloatParam(titleWeightingParam, DEFAULT_TITLE_WEIGHTING);
-            float broadcastWeighting = getFloatParam(
-                    broadcastWeightingParam,
-                    DEFAULT_BROADCAST_WEIGHTING
-            );
-            float catchupWeighting = getFloatParam(
-                    catchupWeightingParam,
-                    DEFAULT_CATCHUP_WEIGHTING
+            QueryContext queryContext = QueryContext.create(
+                    applicationFetcher.applicationFor(request).orElse(DefaultApplication.create()),
+                    annotationsExtractor.extractFromSingleRequest(request),
+                    request
             );
 
-            Application application = applicationFetcher.applicationFor(request)
-                    .orElse(DefaultApplication.create());
-            Set<Specialization> specializations = specializations(specialization);
-            Set<Publisher> publishers = publishers(publisher, application);
-            List<Identified> content = searcher.search(SearchQuery.builder(q)
-                    .withSelection(selection)
-                    .withSpecializations(specializations)
-                    .withPublishers(publishers)
-                    .withTitleWeighting(titleWeighting)
-                    .withBroadcastWeighting(broadcastWeighting)
-                    .withCatchupWeighting(catchupWeighting)
-                    .withType(type)
-                    .build(), application);
-            resultWriter.write(QueryResult.listResult(
-                    Iterables.filter(content, Content.class),
-                    QueryContext.standard(request),
-                    Long.valueOf(content.size())
-            ), writer);
+            SearchQuery.Builder queryBuilder;
+            if (Strings.isNullOrEmpty(query)) {
+                queryBuilder = SearchQuery.builder();
+            } else {
+                queryBuilder = SearchQuery.getDefaultContentQuerySearcher(query, smartSearch);
+            }
+
+            parseSherlockParameters(request, queryContext, queryBuilder);
+
+            Selection selection = selectionBuilder.build(request);
+
+            SearchQuery.Builder searchQuery = queryBuilder
+                    .withQueryWeighting(parseQueryWeighting(request));
+
+            QueryResult<Content> contentResult = searcher.search(
+                    searchQuery,
+                    selection,
+                    queryContext,
+                    !Strings.isNullOrEmpty(query)
+            );
+            resultWriter.write(contentResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
             ErrorSummary summary = ErrorSummary.forException(e);
@@ -150,37 +151,94 @@ public class SearchController {
         }
     }
 
-    private Set<Publisher> publishers(String publisher, Application application) {
-        return Sets.intersection(
-                ImmutableSet.copyOf(Publisher.fromCsv(publisher)),
-                application.getConfiguration().getEnabledReadSources()
-        );
-    }
+    private void parseSherlockParameters(
+            HttpServletRequest request,
+            QueryContext queryContext,
+            SearchQuery.Builder queryBuilder
+    ) throws InvalidAttributeValueException {
 
-    private float getFloatParam(String stringValue, float defaultValue) {
-        if (!Strings.isNullOrEmpty(stringValue)) {
-            if (MoreStrings.containsOnlyDecimalCharacters(stringValue)) {
-                return Float.parseFloat(stringValue);
-            }
-        }
-        return defaultValue;
-    }
+        Set<String> enabledReadSourcesKeys = queryContext.getApplication()
+                .getConfiguration()
+                .getEnabledReadSources()
+                .stream()
+                .map(Publisher::key)
+                .collect(Collectors.toSet());
 
-    protected Set<Specialization> specializations(String specializationString) {
-        if (specializationString != null) {
-            ImmutableSet.Builder<Specialization> specializations = ImmutableSet.builder();
-            for (String s : Splitter.on(",")
-                    .omitEmptyStrings()
-                    .trimResults()
-                    .split(specializationString)) {
-                Maybe<Specialization> specialization = Specialization.fromKey(s);
-                if (specialization.hasValue()) {
-                    specializations.add(specialization.requireValue());
+        List<Parameter> sherlockParameters = new ArrayList<>();
+        Map<String, String[]> parameterMap = (Map<String, String[]>) request.getParameterMap();
+        for (SherlockAttribute<?, ?, ?, ?> attribute : sherlockAttributes) {
+
+            SherlockParameter parameter = attribute.getParameter();
+            if (parameterMap.containsKey(parameter.getParameterName())) {
+
+                List<String> values = Arrays.stream(parameterMap.get(parameter.getParameterName()))
+                        .map(SPLITTER::splitToList)
+                        .flatMap(Collection::stream)
+                        .distinct()
+                        .collect(Collectors.toList());
+
+                if (attribute instanceof SherlockSingleMappingAttribute) {
+                    SherlockSingleMappingAttribute<?, ?, ?> singleMappingAttribute =
+                            (SherlockSingleMappingAttribute<?, ?, ?>) attribute;
+                    if (values.contains(EXISTS_KEYWORD)) {
+                        sherlockParameters.add(singleMappingAttribute.getExistsParameter(true));
+                        values.remove(EXISTS_KEYWORD);
+                    } else if (values.contains(NON_EXISTS_KEYWORD)) {
+                        sherlockParameters.add(singleMappingAttribute.getExistsParameter(false));
+                        values.remove(NON_EXISTS_KEYWORD);
+                    }
                 }
+
+                try {
+                    List<? extends Parameter> coercedValues = attribute.coerce(values);
+
+                    if (parameter == SherlockParameter.SOURCE) {
+                        List<SingleValueParameter<String>> parsedSources =
+                                (List<SingleValueParameter<String>>) coercedValues;
+                        for (SingleValueParameter<String> parsedSource : parsedSources) {
+                            if (!enabledReadSourcesKeys.contains(parsedSource.getValue())) {
+                                throw new InvalidAttributeValueException(String.format(
+                                        "The source %s is not within the scope of the provided api key",
+                                        parsedSource.getValue()));
+                            }
+                        }
+                        Set<String> sources = parsedSources.stream()
+                                .map(SingleValueParameter::getValue)
+                                .collect(MoreCollectors.toImmutableSet());
+                        queryBuilder.withIndex(SherlockIndex.CONTENT, sources);
+                    }
+
+                    sherlockParameters.addAll(coercedValues);
+
+                } catch (InvalidAttributeValueException e) {
+                    throw new InvalidAttributeValueException(String.format(
+                            "Invalid value(s) for %s: %s.",
+                            parameter.getParameterName(),
+                            e.getMessage()
+                    ), e);
+                }
+
+                // if no values provided for publisher, add all keys from the application key set
+            } else if (parameter == SherlockParameter.SOURCE) {
+                for (String enabledReadSourceKey : enabledReadSourcesKeys) {
+                    sherlockParameters.add(TermParameter.of(
+                            CONTENT.getSource().getKey(),
+                            enabledReadSourceKey));
+                }
+                queryBuilder.withIndex(SherlockIndex.CONTENT, enabledReadSourcesKeys);
             }
-            return specializations.build();
-        } else {
-            return Sets.newHashSet();
         }
+
+        for (Parameter parameter : sherlockParameters) {
+            if (parameter instanceof SearchParameter) {
+                queryBuilder.addSearcher((SearchParameter) parameter);
+            } else {
+                queryBuilder.addFilter(parameter);
+            }
+        }
+    }
+
+    private QueryWeighting parseQueryWeighting(HttpServletRequest request) {
+        return QueryWeighting.defaultContentQueryWeighting();
     }
 }

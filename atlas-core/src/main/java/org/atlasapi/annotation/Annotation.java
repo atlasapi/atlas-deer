@@ -88,7 +88,6 @@ public enum Annotation {
     FUTURE_CHANNELS,
     CUSTOM_FIELDS,
     LOCATION_PROVIDERS,
-    NO_SMART_SEARCH,
     LCN_SHARING,    // enables fetching more than one channel per lcn (within a channel group)
     ;
 

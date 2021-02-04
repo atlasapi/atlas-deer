@@ -37,13 +37,11 @@ import org.atlasapi.query.v4.event.EventQueryExecutor;
 import org.atlasapi.query.v4.organisation.OrganisationQueryExecutor;
 import org.atlasapi.query.v4.schedule.EquivalentScheduleQueryExecutor;
 import org.atlasapi.query.v4.schedule.ScheduleQueryExecutor;
-import org.atlasapi.query.v4.search.support.ContentResolvingSearcher;
+import org.atlasapi.query.v4.search.ContentResolvingSearcher;
 import org.atlasapi.query.v4.topic.IndexBackedTopicQueryExecutor;
 import org.atlasapi.query.v4.topic.TopicContentQueryExecutor;
 import org.atlasapi.schedule.FlexibleBroadcastMatcher;
-import org.atlasapi.search.SearchResolver;
 import org.atlasapi.topic.Topic;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -67,7 +65,7 @@ public class QueryModule {
     public ContextualQueryExecutor<Topic, Content> topicContentQueryExecutor() {
         return TopicContentQueryExecutor.create(
                 persistenceModule.topicStore(),
-                persistenceModule.contentSearcher(),
+                persistenceModule.equivContentSearcher(),
                 mergingContentResolver()
         );
     }
@@ -85,7 +83,7 @@ public class QueryModule {
     @Bean
     public QueryExecutor<Content> contentQueryExecutor() {
         return IndexBackedEquivalentContentQueryExecutor.create(
-                persistenceModule.contentSearcher(),
+                persistenceModule.equivContentSearcher(),
                 mergingContentResolver()
         );
     }
@@ -132,19 +130,9 @@ public class QueryModule {
     }
 
     @Bean
-    public SearchResolver v4SearchResolver() {
-        // FIXME externalize timeout
+    public ContentResolvingSearcher searchResolver() {
         return new ContentResolvingSearcher(
-                persistenceModule.contentTitleSearcher(),
-                persistenceModule.contentStore(),
-                60000
-        );
-    }
-
-    @Bean
-    public org.atlasapi.query.v5.search.ContentResolvingSearcher v5SearchResolver() {
-        return new org.atlasapi.query.v5.search.ContentResolvingSearcher(
-                persistenceModule.contentSearcherV5(),
+                persistenceModule.sherlockSearcher(),
                 mergingContentResolver(),
                 60000
         );
