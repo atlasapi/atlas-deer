@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 
 @ProducesType(type = Content.class)
 @Controller
-@RequestMapping("/4/content_search")
+@RequestMapping("/4/search/content")
 public class SearchController {
 
     private static final Logger log = LoggerFactory.getLogger(SearchController.class);
