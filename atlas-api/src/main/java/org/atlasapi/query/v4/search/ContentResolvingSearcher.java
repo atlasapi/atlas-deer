@@ -37,7 +37,8 @@ public class ContentResolvingSearcher {
     public QueryResult<Content> search(
             SearchQuery.Builder searchQuery,
             Selection selection,
-            QueryContext queryContext
+            QueryContext queryContext,
+            boolean isFuzzyQuery
     ) {
         try {
             AtomicLong totalResults = new AtomicLong();
@@ -48,7 +49,8 @@ public class ContentResolvingSearcher {
                                     queryContext.getApplication()
                                             .getConfiguration()
                                             .getEnabledReadSources(),
-                                    selection
+                                    selection,
+                                    isFuzzyQuery
                             ),
                             input -> {
                                 totalResults.set(input.getTotalCount());

@@ -42,7 +42,8 @@ public class PseudoEsEquivalentContentSearcher {
     public ListenableFuture<IndexQueryResult> searchForContent(
             SearchQuery.Builder searchQueryBuilder,
             Iterable<Publisher> precedentOrderedPublishers,
-            Selection selection
+            Selection selection,
+            boolean isFuzzyQuery
     ) {
         List<String> precedentOrderedSources = MoreStreams.stream(precedentOrderedPublishers)
                 .map(Publisher::key)
@@ -58,8 +59,6 @@ public class PseudoEsEquivalentContentSearcher {
                 .withLimit(selectionForDelegate.getLimit())
                 .withOffset(selectionForDelegate.getOffset())
                 .build();
-
-        boolean isFuzzyQuery = !searchQuery.getQueriers().isEmpty();
 
         ListenableFuture<ContentSearchQueryResponse> responseFuture = sherlockSearcher.searchForContent(searchQuery);
 

@@ -59,7 +59,7 @@ public class PseudoEsEquivalentContentSearcherTest {
         setupMocks(response);
 
         IndexQueryResult queryResult = pseudoEsEquivalentContentSearcher.searchForContent(
-                query, publishers, Selection.ALL
+                query, publishers, Selection.ALL, false
         ).get();
 
         assertThat(queryResult.getTotalCount(), is(10L));
@@ -87,7 +87,7 @@ public class PseudoEsEquivalentContentSearcherTest {
         setupMocks(response);
 
         IndexQueryResult queryResult = pseudoEsEquivalentContentSearcher.searchForContent(
-                query, publishers, new Selection(2, 2)
+                query, publishers, new Selection(2, 2), false
         ).get();
 
         assertThat(queryResult.getIds().size(), is(2));
@@ -121,7 +121,7 @@ public class PseudoEsEquivalentContentSearcherTest {
         setupMocks(response);
 
         IndexQueryResult queryResult = pseudoEsEquivalentContentSearcher.searchForContent(
-                query, publishers, Selection.ALL
+                query, publishers, Selection.ALL, false
         ).get();
 
         assertThat(queryResult.getIds().size(), is(3));

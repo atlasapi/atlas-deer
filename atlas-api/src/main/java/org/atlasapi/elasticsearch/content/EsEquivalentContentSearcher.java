@@ -156,7 +156,8 @@ public class EsEquivalentContentSearcher implements ContentSearcher{
         return contentSearcher.searchForContent(
                 searchQueryBuilder,
                 publishers,
-                selectionWithLimit
+                selectionWithLimit,
+                esQuery.getIndexQueryParams().getFuzzyQueryParams().isPresent()
         );
     }
 
