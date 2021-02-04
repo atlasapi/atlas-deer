@@ -43,8 +43,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EsEquivalentContentSearcher implements ContentSearcher{
 
-    private static final int DEFAULT_LIMIT = 50;
-
     private final Logger log = LoggerFactory.getLogger(EsEquivalentContentSearcher.class);
 
     private final PseudoEsEquivalentContentSearcher contentSearcher;
@@ -90,10 +88,6 @@ public class EsEquivalentContentSearcher implements ContentSearcher{
             Selection selection
     ) {
 
-        Selection selectionWithLimit = selection.getLimit() != null
-                ? selection
-                : selection.withLimit(DEFAULT_LIMIT);
-
         Set<String> sources = MoreStreams.stream(publishers)
                 .map(Publisher::key)
                 .collect(MoreCollectors.toImmutableSet());
@@ -122,9 +116,7 @@ public class EsEquivalentContentSearcher implements ContentSearcher{
                 .withIndex(
                         SherlockIndex.CONTENT,
                         sources
-                )
-                .withOffset(selectionWithLimit.getOffset())
-                .withLimit(selectionWithLimit.getLimit());
+                );
 
         EsQueryParser.EsQuery esQuery = esQueryParser.parse(query);
         addOrdering(esQuery.getIndexQueryParams(), searchQueryBuilder);
@@ -156,7 +148,7 @@ public class EsEquivalentContentSearcher implements ContentSearcher{
         return contentSearcher.searchForContent(
                 searchQueryBuilder,
                 publishers,
-                selectionWithLimit,
+                selection,
                 esQuery.getIndexQueryParams().getFuzzyQueryParams().isPresent()
         );
     }
