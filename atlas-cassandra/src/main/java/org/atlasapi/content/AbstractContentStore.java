@@ -211,12 +211,10 @@ public abstract class AbstractContentStore implements ContentStore {
         public WriteResult<Episode, Content> visit(Episode episode) {
             metricRegistry.meter(visitMeterPrefix + "Episode." + METER_CALLED).mark();
             try {
-                checkArgument(
-                        episode.getContainerRef() != null,
-                        "can't write episode with null container"
-                );
 
-                episode.setContainerSummary(getSummary(episode.getContainerRef()));
+                if (episode.getContainerRef() != null) {
+                    episode.setContainerSummary(getSummary(episode.getContainerRef()));
+                }
                 if (episode.getSeriesRef() != null) {
                     getSummary(episode.getSeriesRef());
                 }

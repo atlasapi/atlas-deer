@@ -15,12 +15,12 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.util.Optional.ofNullable;
 
@@ -143,6 +143,11 @@ public class Episode extends Item {
         to.special = ofNullable(from.special).orElse(to.special);
         to.seriesRef = ofNullable(from.seriesRef).orElse(to.seriesRef);
         return to;
+    }
+
+    @Override
+    public boolean isChild() {
+        return this.seriesRef != null || super.isChild();
     }
 
     @Override public Episode copy() {

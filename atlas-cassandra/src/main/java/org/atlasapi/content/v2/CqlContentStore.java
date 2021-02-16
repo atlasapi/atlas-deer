@@ -158,10 +158,6 @@ public class CqlContentStore implements ContentStore {
     public WriteResult<Content, Content> writeContent(Content content) throws WriteException {
         metricRegistry.meter(writeContent + METER_CALLED).mark();
         try {
-            checkArgument(
-                    !(content instanceof Episode) || ((Episode) content).getContainerRef() != null,
-                    "Can't write episode without brand"
-            );
 
             org.atlasapi.content.v2.model.Content previousSerialized
                     = resolvePreviousSerialized(content);

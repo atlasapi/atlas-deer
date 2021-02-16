@@ -336,19 +336,6 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolved.getAliases(), is(series.getAliases()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testWritingEpisodeWithoutBrandRefFails() throws Exception {
-        try {
-
-            Episode episode = create(new Episode());
-
-            store.writeContent(episode);
-
-        } finally {
-            verify(idGenerator, never()).generateRaw();
-        }
-    }
-
     @Test(expected = WriteException.class)
     public void testWritingEpisodeWithoutBrandWrittenFails() throws Exception {
         try {
