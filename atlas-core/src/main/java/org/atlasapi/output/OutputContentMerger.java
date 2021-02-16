@@ -17,7 +17,6 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
-import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
