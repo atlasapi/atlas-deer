@@ -17,6 +17,7 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
+import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
@@ -387,7 +388,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Set<Annotation> activeAnnotations) {
         mergeContent(application, chosen, orderedContent);
         mergeVersions(application, chosen, orderedContent, activeAnnotations);
-        mergeItemParents(chosen, orderedContent);
+        mergeParentsOfItem(chosen, orderedContent);
 
         if (chosen instanceof Film) {
             mergeFilmProperties(application, (Film) chosen, Iterables.filter(orderedContent, Film.class));
@@ -395,13 +396,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     /**
-     * Finds the first piece item with any hierarchy. Uses the entire hierarchy (both container and series) of an
+     * Finds the first item with any hierarchy. Uses the entire hierarchy (both container and series) of an
      * episode if one is found even if not all are present (e.g. container exists but not series). This is to avoid the
      * case where the first source lists the episode as a special of a brand and thus under no series, whilst another
      * lists it as a series of a brand, since the merged result would not respect the hierarchy of the higher precedent
      * source.
      */
-    private <T extends Item> void mergeItemParents(T chosen, Iterable<T> orderedContent) {
+    private <T extends Item> void mergeParentsOfItem(T chosen, Iterable<T> orderedContent) {
         if (chosen.getContainerRef() != null) {
             return;
         }
@@ -825,19 +826,22 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             ((Brand) chosen).setSeriesRefs(ImmutableList.of());
         }
 
-        if (chosen instanceof Series && ((Series) chosen).getSeriesNumber() == null) {
+        if (chosen instanceof Series) {
             Series chosenSeries = (Series) chosen;
-            StreamSupport.stream(orderedContent.spliterator(), false)
-                    .filter(Series.class::isInstance)
-                    .map(Series.class::cast)
-                    .filter(s -> s.getSeriesNumber() != null)
-                    .findFirst()
-                    .ifPresent(s -> {
-                        chosenSeries.withSeriesNumber(s.getSeriesNumber());
-                        if(s.getTotalEpisodes() != null) {
-                            chosenSeries.setTotalEpisodes(s.getTotalEpisodes());
-                        }
-                    });
+            mergeParentOfSeries(chosenSeries, orderedContent);
+            if (chosenSeries.getSeriesNumber() == null) {
+                StreamSupport.stream(orderedContent.spliterator(), false)
+                        .filter(Series.class::isInstance)
+                        .map(Series.class::cast)
+                        .filter(s -> s.getSeriesNumber() != null)
+                        .findFirst()
+                        .ifPresent(s -> {
+                            chosenSeries.withSeriesNumber(s.getSeriesNumber());
+                            if (s.getTotalEpisodes() != null) {
+                                chosenSeries.setTotalEpisodes(s.getTotalEpisodes());
+                            }
+                        });
+            }
         }
 
         Map<ItemRef, Iterable<LocationSummary>> availableContent = Maps.newHashMap();
@@ -859,6 +863,28 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
 
         chosen.setAvailableContent(availableContent);
+    }
+
+    /**
+     * Takes the brandRef of the first series where it is present. This is done to support override-style content
+     * which is designed not to require hierarchy if only other fields need to be overridden; such content would
+     * appear like top-level series but would still need to expose the container field of its underlying series if
+     * it exists.
+     *
+     * We used to not merge this field but have since agreed that top-level series should behave more like series than
+     * brands; the null brand parent should be viewed more as 'unknown' than 'none' and thus be merged.
+     */
+    private <T extends Container> void mergeParentOfSeries(Series chosen, Iterable<T> orderedContent) {
+        if (chosen.getBrandRef() != null) {
+            return;
+        }
+        for (T container : orderedContent) {
+            BrandRef brandRef = container instanceof Series ? ((Series) container).getBrandRef() : null;
+            if (brandRef != null) {
+                chosen.setBrandRef(brandRef);
+                return;
+            }
+        }
     }
 
     private final static class TagPublisherSetter implements Function<Tag, Tag> {
