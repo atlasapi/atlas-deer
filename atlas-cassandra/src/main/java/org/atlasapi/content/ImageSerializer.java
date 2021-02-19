@@ -62,7 +62,7 @@ public class ImageSerializer {
         if (msg.hasAvailabilityStart()) {
             builder.withAvailabilityStart(dateTimeSerializer.deserialize(msg.getAvailabilityStart()));
         }
-        if (msg.hasAvailabilityStart()) {
+        if (msg.hasAvailabilityEnd()) {
             builder.withAvailabilityEnd(dateTimeSerializer.deserialize(msg.getAvailabilityEnd()));
         }
         if (msg.hasColor()) {
