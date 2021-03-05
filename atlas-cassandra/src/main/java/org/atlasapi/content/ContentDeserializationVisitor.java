@@ -76,7 +76,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     );
     private static final Annotation SUB_ITEMS_ANNOTATIONS = SUB_ITEMS;
     private static final Annotation SUB_ITEM_SUMMARIES_ANNOTATION = SUB_ITEM_SUMMARIES;
-    private static final Set<Annotation> LOCATIONS_ANNOTATIONS = ImmutableSet.of(LOCATIONS, AVAILABLE_LOCATIONS);
+    private static final Set<Annotation> LOCATIONS_ANNOTATIONS = ImmutableSet.of(LOCATIONS, AVAILABLE_LOCATIONS, CONTENT_DETAIL);
     private static final Annotation UPCOMING_CONTENT_DETAIL = Annotation.UPCOMING_CONTENT_DETAIL;
     private static final Set<Annotation> AVAILABLE_CONTENT_ANNOTATIONS =
             ImmutableSet.of(AVAILABLE_CONTENT, AVAILABLE_CONTENT_DETAIL);
