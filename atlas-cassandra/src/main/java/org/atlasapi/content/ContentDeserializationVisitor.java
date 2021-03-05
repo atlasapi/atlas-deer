@@ -37,22 +37,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import org.joda.time.Duration;
 
-import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.ALL_AGGREGATED_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.ALL_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.ALL_MERGED_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
-import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
-import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
-import static org.atlasapi.annotation.Annotation.BROADCASTS;
-import static org.atlasapi.annotation.Annotation.CURRENT_AND_FUTURE_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.EXTENDED_DESCRIPTION;
-import static org.atlasapi.annotation.Annotation.FIRST_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.LOCATIONS;
-import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
-import static org.atlasapi.annotation.Annotation.SUB_ITEM_SUMMARIES;
-import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.*;
 
 final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
@@ -86,7 +71,8 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             ALL_AGGREGATED_BROADCASTS,
             AGGREGATED_BROADCASTS,
             ALL_MERGED_BROADCASTS,
-            ALL_BROADCASTS
+            ALL_BROADCASTS,
+            CONTENT_DETAIL
     );
     private static final Annotation SUB_ITEMS_ANNOTATIONS = SUB_ITEMS;
     private static final Annotation SUB_ITEM_SUMMARIES_ANNOTATION = SUB_ITEM_SUMMARIES;
