@@ -1,17 +1,23 @@
 package org.atlasapi.output;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import javax.annotation.Nullable;
-
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.stream.MoreStreams;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
+import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
@@ -31,6 +37,7 @@ import org.atlasapi.content.LocalizedTitle;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Series;
+import org.atlasapi.content.SeriesRef;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Award;
@@ -40,26 +47,18 @@ import org.atlasapi.entity.Review;
 import org.atlasapi.entity.Sourceds;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
-
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.stream.MoreStreams;
-
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -389,15 +388,38 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Set<Annotation> activeAnnotations) {
         mergeContent(application, chosen, orderedContent);
         mergeVersions(application, chosen, orderedContent, activeAnnotations);
+        mergeParentsOfItem(chosen, orderedContent);
 
         if (chosen instanceof Film) {
             mergeFilmProperties(application, (Film) chosen, Iterables.filter(orderedContent, Film.class));
         }
-        if (chosen.getContainerRef() == null) {
-            chosen.setContainerRef(first(orderedContent, TO_CONTAINER_REF));
+    }
+
+    /**
+     * Finds the first item with any hierarchy. Uses the entire hierarchy (both container and series) of an
+     * episode if one is found even if not all are present (e.g. container exists but not series). This is to avoid the
+     * case where the first source lists the episode as a special of a brand and thus under no series, whilst another
+     * lists it as a series of a brand, since the merged result would not respect the hierarchy of the higher precedent
+     * source.
+     */
+    private <T extends Item> void mergeParentsOfItem(T chosen, Iterable<T> orderedContent) {
+        if (chosen.getContainerRef() != null) {
+            return;
         }
-        if (chosen.getContainerSummary() == null) {
-            chosen.setContainerSummary(first(orderedContent, TO_CONTAINER_SUMMARY));
+        boolean chosenIsEpisode = chosen instanceof Episode;
+        for (T item : orderedContent) {
+            ContainerRef containerRef = item.getContainerRef();
+            SeriesRef seriesRef = chosenIsEpisode && item instanceof Episode
+                    ? ((Episode) item).getSeriesRef()
+                    : null;
+            if (containerRef != null || seriesRef != null) {
+                chosen.setContainerRef(containerRef);
+                chosen.setContainerSummary(item.getContainerSummary());
+                if (chosenIsEpisode) {
+                    ((Episode) chosen).setSeriesRef(seriesRef);
+                }
+                return;
+            }
         }
     }
 
@@ -804,19 +826,22 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             ((Brand) chosen).setSeriesRefs(ImmutableList.of());
         }
 
-        if (chosen instanceof Series && ((Series) chosen).getSeriesNumber() == null) {
+        if (chosen instanceof Series) {
             Series chosenSeries = (Series) chosen;
-            StreamSupport.stream(orderedContent.spliterator(), false)
-                    .filter(Series.class::isInstance)
-                    .map(Series.class::cast)
-                    .filter(s -> s.getSeriesNumber() != null)
-                    .findFirst()
-                    .ifPresent(s -> {
-                        chosenSeries.withSeriesNumber(s.getSeriesNumber());
-                        if(s.getTotalEpisodes() != null) {
-                            chosenSeries.setTotalEpisodes(s.getTotalEpisodes());
-                        }
-                    });
+            mergeParentOfSeries(chosenSeries, orderedContent);
+            if (chosenSeries.getSeriesNumber() == null) {
+                StreamSupport.stream(orderedContent.spliterator(), false)
+                        .filter(Series.class::isInstance)
+                        .map(Series.class::cast)
+                        .filter(s -> s.getSeriesNumber() != null)
+                        .findFirst()
+                        .ifPresent(s -> {
+                            chosenSeries.withSeriesNumber(s.getSeriesNumber());
+                            if (s.getTotalEpisodes() != null) {
+                                chosenSeries.setTotalEpisodes(s.getTotalEpisodes());
+                            }
+                        });
+            }
         }
 
         Map<ItemRef, Iterable<LocationSummary>> availableContent = Maps.newHashMap();
@@ -838,6 +863,28 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
 
         chosen.setAvailableContent(availableContent);
+    }
+
+    /**
+     * Takes the brandRef of the first series where it is present. This is done to support override-style content
+     * which is designed not to require hierarchy if only other fields need to be overridden; such content would
+     * appear like top-level series but would still need to expose the container field of its underlying series if
+     * it exists.
+     *
+     * We used to not merge this field but have since agreed that top-level series should behave more like series than
+     * brands; the null brand parent should be viewed more as 'unknown' than 'none' and thus be merged.
+     */
+    private <T extends Container> void mergeParentOfSeries(Series chosen, Iterable<T> orderedContent) {
+        if (chosen.getBrandRef() != null) {
+            return;
+        }
+        for (T container : orderedContent) {
+            BrandRef brandRef = container instanceof Series ? ((Series) container).getBrandRef() : null;
+            if (brandRef != null) {
+                chosen.setBrandRef(brandRef);
+                return;
+            }
+        }
     }
 
     private final static class TagPublisherSetter implements Function<Tag, Tag> {
