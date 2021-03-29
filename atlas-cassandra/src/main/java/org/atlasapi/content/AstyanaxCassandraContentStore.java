@@ -13,6 +13,8 @@ import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.CassandraPersistenceException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.entity.util.WriteException;
+import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;

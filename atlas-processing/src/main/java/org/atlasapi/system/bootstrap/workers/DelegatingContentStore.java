@@ -38,6 +38,12 @@ public final class DelegatingContentStore implements ContentStore {
     }
 
     @Override
+    public <C extends Content> WriteResult<C, Content> forceWriteContent(C content)
+            throws WriteException {
+        return writer.forceWriteContent(content);
+    }
+
+    @Override
     public void writeBroadcast(
             ItemRef item,
             Optional<ContainerRef> containerRef,

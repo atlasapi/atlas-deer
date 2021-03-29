@@ -164,45 +164,9 @@ public class CqlContentStore implements ContentStore {
             Content previous = deserializeIfFull(previousSerialized);
 
             BatchStatement batch = new BatchStatement();
-
-            Container container = resolveContainer(content);
-            ensureContentSummary(content, container);
-            ensureId(content);
-            filterUnpublishedBroadcasts(content);
-
             ImmutableList.Builder<ResourceUpdatedMessage> messages = ImmutableList.builder();
 
-            DateTime now = clock.now();
-
-            batch.addAll(updateWriteDates(content, now));
-            batch.addAll(deleteContainerSummary(previous, content, messages));
-            try {
-                batch.addAll(updateContainerDenormalizedInfo(content, previous, messages));
-            } catch (Exception e) {
-                String contentInfo = String.format(
-                        "Content - {title: %s, id: %d, type: %s}",
-                        content.getTitle(),
-                        content.getId().longValue(),
-                        content.getClass().getSimpleName()
-                );
-                String previousInfo = previous != null ? String.format(
-                        "Previous - {title: %s, id: %d, type: %s}",
-                        previous.getTitle(),
-                        previous.getId().longValue(),
-                        previous.getClass().getSimpleName()
-                )
-                                                       : "null";
-                log.error(
-                        "Error with updateContainerDenormalizedInfo: {} {}",
-                        contentInfo,
-                        previousInfo,
-                        e
-                );
-                throw new RuntimeException(e); //rethrow to be caught by metrics
-            }
-            batch.addAll(updateChildrenSummaries(content, previous, messages));
-
-            setExistingItemRefs(content, previous);
+            prepareWriteBatchAndMessages(content, previous, batch, messages);
 
             org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
 
@@ -214,24 +178,99 @@ public class CqlContentStore implements ContentStore {
                         .build();
             }
 
-            batch.add(mapper.saveQuery(serialized));
-
-            session.execute(batch);
-
-            messages.add(new ResourceUpdatedMessage(
-                    UUID.randomUUID().toString(),
-                    Timestamp.of(DateTime.now()),
-                    content.toRef()
-            ));
-
-            sendMessages(messages.build());
-
+            executeBatchAndMessages(content, batch, messages, serialized);
 
             return new WriteResult<>(content, true, DateTime.now(), previous);
         } catch (WriteException | RuntimeException e) {
             metricRegistry.meter(writeContent + METER_FAILURE).mark();
             throw e;
         }
+    }
+
+    @Override
+    public WriteResult<Content, Content> forceWriteContent(Content content) throws WriteException {
+        metricRegistry.meter(writeContent + METER_CALLED).mark();
+        try {
+
+            org.atlasapi.content.v2.model.Content previousSerialized
+                    = resolvePreviousSerialized(content);
+            Content previous = deserializeIfFull(previousSerialized);
+
+            BatchStatement batch = new BatchStatement();
+            ImmutableList.Builder<ResourceUpdatedMessage> messages = ImmutableList.builder();
+
+            prepareWriteBatchAndMessages(content, previous, batch, messages);
+
+            org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
+            executeBatchAndMessages(content, batch, messages, serialized);
+
+            return new WriteResult<>(content, true, DateTime.now(), previous);
+        } catch (WriteException | RuntimeException e) {
+            metricRegistry.meter(writeContent + METER_FAILURE).mark();
+            throw e;
+        }
+    }
+
+    private void executeBatchAndMessages(
+            Content content,
+            BatchStatement batch,
+            ImmutableList.Builder<ResourceUpdatedMessage> messages,
+            org.atlasapi.content.v2.model.Content serialized) {
+
+        batch.add(mapper.saveQuery(serialized));
+        session.execute(batch);
+
+        messages.add(new ResourceUpdatedMessage(
+                UUID.randomUUID().toString(),
+                Timestamp.of(DateTime.now()),
+                content.toRef()
+        ));
+
+        sendMessages(messages.build());
+    }
+
+    private void prepareWriteBatchAndMessages(
+            Content content,
+            Content previous,
+            BatchStatement batch,
+            ImmutableList.Builder<ResourceUpdatedMessage> messages) throws WriteException {
+
+        Container container = resolveContainer(content);
+        ensureContentSummary(content, container);
+        ensureId(content);
+        filterUnpublishedBroadcasts(content);
+
+        DateTime now = clock.now();
+
+        batch.addAll(updateWriteDates(content, now));
+        batch.addAll(deleteContainerSummary(previous, content, messages));
+        try {
+            batch.addAll(updateContainerDenormalizedInfo(content, previous, messages));
+        } catch (Exception e) {
+            String contentInfo = String.format(
+                    "Content - {title: %s, id: %d, type: %s}",
+                    content.getTitle(),
+                    content.getId().longValue(),
+                    content.getClass().getSimpleName()
+            );
+            String previousInfo = previous != null ? String.format(
+                    "Previous - {title: %s, id: %d, type: %s}",
+                    previous.getTitle(),
+                    previous.getId().longValue(),
+                    previous.getClass().getSimpleName()
+            )
+                                                   : "null";
+            log.error(
+                    "Error with updateContainerDenormalizedInfo: {} {}",
+                    contentInfo,
+                    previousInfo,
+                    e
+            );
+            throw new RuntimeException(e); //rethrow to be caught by metrics
+        }
+        batch.addAll(updateChildrenSummaries(content, previous, messages));
+
+        setExistingItemRefs(content, previous);
     }
 
     private void filterUnpublishedBroadcasts(Content content) {

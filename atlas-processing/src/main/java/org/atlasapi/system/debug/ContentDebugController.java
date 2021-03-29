@@ -89,6 +89,7 @@ public class ContentDebugController {
     private final ContentBootstrapListener nullMessageSendingContentAndEquivBootstrapListener;
     private final ContentBootstrapListener contentEquivAndHierarchyBootstrapListener;
     private final ContentBootstrapListener nullMessageSendingContentEquivAndHierarchyBootstrapListener;
+    private final ContentBootstrapListener forceWriteBootstrapListener;
     private final ContentNeo4jMigrator contentNeo4jMigrator;
 
     private ContentDebugController(Builder builder) {
@@ -167,6 +168,13 @@ public class ContentDebugController {
                 .withEquivalentContentStore(equivalentContentStore)
                 .withMigrateHierarchies(builder.legacySegmentMigrator, legacyContentResolver)
                 .withMigrateEquivalents(builder.persistence.nullMessageSendingEquivalenceGraphStore())
+                .build();
+
+        forceWriteBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(contentStore)
+                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(equivalentContentStore)
+                .withForceWrite(true)
                 .build();
 
         nullMessageSendingContentEquivAndHierarchyBootstrapListener = ContentBootstrapListener.builder()
@@ -413,6 +421,31 @@ public class ContentDebugController {
         }
     }
 
+    @RequestMapping("/system/debug/content/force/migrate")
+    public void forceListEquivUpdate(
+            @RequestParam(name = "ids", defaultValue = "") String ids,
+            @RequestParam(name = "uris", defaultValue = "") String uris,
+            final HttpServletResponse response
+    ) throws IOException {
+        if (Strings.isNullOrEmpty(ids) && Strings.isNullOrEmpty(uris)) {
+            throw new IllegalArgumentException("Must specify at least one content ID or URI to "
+                                               + "migrate (parameters \"ids\" or \"uris\", can be "
+                                               + "comma separated lists)");
+        }
+
+        Iterable<String> requestedIds = commaSplitter.split(ids);
+        for (String id : requestedIds) {
+            Content content = getContentById(id);
+            forceMigrateContent(response, content);
+        }
+
+        Iterable<String> requestedUris = commaSplitter.split(uris);
+        for (String uri : requestedUris) {
+            Content content = getContentByUri(uri);
+            forceMigrateContent(response, content);
+        }
+    }
+
     private void migrateContent(
             boolean migrateEquivalents,
             boolean migrateHierarchy,
@@ -442,6 +475,22 @@ public class ContentDebugController {
             }
 
             ContentBootstrapListener.Result result = content.accept(listener);
+
+            response.setStatus(HttpStatus.OK.value());
+            response.getWriter().println(result.toString());
+            response.flushBuffer();
+        } catch (Throwable t) {
+            t.printStackTrace(response.getWriter());
+        }
+    }
+
+    private void forceMigrateContent(
+            HttpServletResponse response,
+            Content content
+    ) throws IOException {
+        try {
+
+            ContentBootstrapListener.Result result = content.accept(forceWriteBootstrapListener);
 
             response.setStatus(HttpStatus.OK.value());
             response.getWriter().println(result.toString());

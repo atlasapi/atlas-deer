@@ -61,6 +61,8 @@ public class ContentBootstrapListener
     private final boolean migrateEquivalents;
     private final EquivalenceGraphStore equivalenceGraphStore;
 
+    private final boolean forceWrite;
+
     private ContentBootstrapListener(
             ContentWriter contentWriter,
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
@@ -69,8 +71,8 @@ public class ContentBootstrapListener
             LegacySegmentMigrator legacySegmentMigrator,
             ContentResolver legacyContentResolver,
             boolean migrateEquivalents,
-            @Nullable EquivalenceGraphStore equivalenceGraphStore
-    ) {
+            @Nullable EquivalenceGraphStore equivalenceGraphStore,
+            boolean forceWrite) {
         this.contentWriter = checkNotNull(contentWriter);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
@@ -84,7 +86,7 @@ public class ContentBootstrapListener
             this.legacyContentResolver = legacyContentResolver;
         }
 
-        this.migrateEquivalents = checkNotNull(migrateEquivalents);
+        this.migrateEquivalents = migrateEquivalents;
         checkArgument(!migrateEquivalents || equivalenceGraphStore != null);
 
         if (equivalenceGraphStore != null) {
@@ -92,6 +94,8 @@ public class ContentBootstrapListener
         } else {
             this.equivalenceGraphStore = null;
         }
+
+        this.forceWrite = forceWrite;
     }
 
     public static Builder builder() {
@@ -230,7 +234,7 @@ public class ContentBootstrapListener
 
         try {
             stringBuilder.append("Content store: ");
-            WriteResult<Content, Content> writeResult = contentWriter.writeContent(content);
+            WriteResult<Content, Content> writeResult = writeContent(content);
             stringBuilder.append(writeResult.written() ? "DONE, " : "UNCHANGED, ");
 
             stringBuilder.append("Equivalence Graph: ");
@@ -248,6 +252,15 @@ public class ContentBootstrapListener
         } catch (Exception e) {
             log.error(String.format("Bootstrapping failure: %s %s", content.getId(), content), e);
             result.failure("Failed to bootstrap content " + content.getId() + " with error " + e.getMessage());
+        }
+    }
+
+    private WriteResult<Content, Content> writeContent(Content content)
+            throws org.atlasapi.entity.util.WriteException {
+        if(forceWrite) {
+            return contentWriter.forceWriteContent(content);
+        } else {
+            return contentWriter.writeContent(content);
         }
     }
 
@@ -383,6 +396,7 @@ public class ContentBootstrapListener
 
         private boolean migrateEquivalents = false;
         private EquivalenceGraphStore equivalenceGraphStore = null;
+        private boolean forceWrite = false;
 
         private Builder() {
         }
@@ -427,6 +441,11 @@ public class ContentBootstrapListener
             return this;
         }
 
+        public Builder withForceWrite(boolean forceWrite) {
+            this.forceWrite = forceWrite;
+            return this;
+        }
+
         public ContentBootstrapListener build() {
             return new ContentBootstrapListener(
                     contentWriter,
@@ -436,8 +455,8 @@ public class ContentBootstrapListener
                     legacySegmentMigrator,
                     legacyContentResolver,
                     migrateEquivalents,
-                    equivalenceGraphStore
-            );
+                    equivalenceGraphStore,
+                    forceWrite);
         }
     }
 

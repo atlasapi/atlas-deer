@@ -25,4 +25,10 @@ public abstract class ForwardingContentStore implements ContentStore {
         return delegate().writeContent(content);
     }
 
+    @Override
+    public <C extends Content> WriteResult<C, Content> forceWriteContent(C content)
+            throws WriteException {
+        return delegate().forceWriteContent(content);
+    }
+
 }

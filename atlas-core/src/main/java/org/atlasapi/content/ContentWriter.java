@@ -9,11 +9,14 @@ public interface ContentWriter {
 
     <C extends Content> WriteResult<C, Content> writeContent(C content) throws WriteException;
 
+    <C extends Content> WriteResult<C, Content> forceWriteContent(C content) throws WriteException;
+
     void writeBroadcast(
             ItemRef item,
             Optional<ContainerRef> containerRef,
             Optional<SeriesRef> seriesRef,
             Broadcast broadcast
     );
+
 
 }
