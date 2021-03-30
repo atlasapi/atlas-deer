@@ -389,6 +389,16 @@ public abstract class AbstractContentStore implements ContentStore {
         }
     }
 
+
+    @Override
+    /**
+     * Not implemented as it is not used.
+     */
+    public <C extends Content> WriteResult<C, Content> forceWriteContent(C content)
+            throws WriteException {
+        return writeContent(content);
+    }
+
     @Override
     public void writeBroadcast(
             ItemRef itemRef,
