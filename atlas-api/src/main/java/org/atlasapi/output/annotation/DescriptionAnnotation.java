@@ -31,10 +31,10 @@ public class DescriptionAnnotation<T extends Described> extends
         writer.writeField("title", entity.getTitle());
         writer.writeField("description", entity.getDescription());
         boolean shouldWriteImage = contextHasAnnotation(ctxt, Annotation.UNAVAILABLE_IMAGES) ||
-                Image.isAvailableAndNotGenericImageContentPlayer(
+                (entity.getImage() != null && Image.isAvailableAndNotGenericImageContentPlayer(
                         entity.getImage(),
                         entity.getImages()
-                );
+                ));
         writer.writeField("image", shouldWriteImage ? entity.getImage() : null);
         writer.writeField("thumbnail", shouldWriteImage ? entity.getThumbnail() : null);
         if (entity instanceof Item) {
