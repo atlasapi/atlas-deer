@@ -12,6 +12,9 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
+import javax.annotation.Nullable;
+import java.util.Set;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Image implements Sourced, Hashable {
@@ -388,15 +391,37 @@ public class Image implements Sourced, Hashable {
         return uri.hashCode();
     }
 
-    public static final Predicate<Image> IS_AVAILABLE = new Predicate<Image>() {
+    public static final Predicate<Image> IS_AVAILABLE = image ->
+            (image.getAvailabilityStart() == null
+                    || !(new DateTime(image.getAvailabilityStart()).isAfterNow()))
+                    && (image.getAvailabilityEnd() == null
+                    || new DateTime(image.getAvailabilityEnd()).isAfterNow());
 
-        @Override
-        public boolean apply(Image input) {
-            return (input.getAvailabilityStart() == null
-                    || !(new DateTime(input.getAvailabilityStart()).isAfterNow()))
-                    && (input.getAvailabilityEnd() == null
-                    || new DateTime(input.getAvailabilityEnd()).isAfterNow());
+    public static final Predicate<Image> IS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER = image ->
+            IS_AVAILABLE.apply(image)
+                    && !Type.GENERIC_IMAGE_CONTENT_PLAYER.equals(image.getType());
+
+    // N.B. an adapted version of this is also used in OutputContentMerger
+    public static boolean isAvailableAndNotGenericImageContentPlayer(
+            @Nullable String imageUri,
+            Set<Image> images
+    ) {
+        // Image URIs differ between the image attribute and the canonical URI on Images.
+        // See PaProgrammeProcessor for why.
+        String rewrittenUri = imageUri.replace(
+                "http://images.atlasapi.org/pa/",
+                "http://images.atlas.metabroadcast.com/pressassociation.com/"
+        );
+
+        // If there is a corresponding Image object for this URI, we check its availability and
+        // whether it is generic.
+        for (Image image : images) {
+            if (image.getCanonicalUri().equals(rewrittenUri)) {
+                return IS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER.apply(image);
+            }
         }
-    };
+        // Otherwise, we can only assume the image is available as we know no better
+        return true;
+    }
 
 }

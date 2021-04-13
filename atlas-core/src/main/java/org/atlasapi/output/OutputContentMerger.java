@@ -69,13 +69,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private static final long BROADCAST_START_TIME_TOLERANCE_IN_MS = Duration.standardMinutes(5)
             .getMillis();
 
-    private static final Predicate<Described> HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET
-            = content -> content.getImage()!= null &&
-                    isImageAvailableAndNotGenericImageContentPlayer(
-                            content.getImage(),
-                            content.getImages()
-                    );
-
     private static final Predicate<Item> HAS_BROADCASTS = input -> input.getBroadcasts()!= null && !input.getBroadcasts().isEmpty();
 
     private static final Predicate<Film> HAS_PEOPLE =
@@ -163,7 +156,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
             @Override
             protected T visitContainer(Container container) {
-                mergeIn(application, container, filterEquivs(sortedEquivalents, Container.class));
+                mergeIn(application, container, filterEquivs(sortedEquivalents, Container.class), activeAnnotations);
                 return uncheckedCast(container);
             }
 
@@ -198,10 +191,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         return builder.build();
     }
 
-    private <T extends Described> void mergeDescribed(Application application, T chosen,
-            Iterable<T> orderedContent) {
+    private <T extends Described> void mergeDescribed(
+            Application application,
+            T chosen,
+            Iterable<T> orderedContent,
+            Set<Annotation> activeAnnotations
+    ) {
         mergeCustomFields(chosen, orderedContent);
-        applyImagePrefs(application, chosen, orderedContent);
+        mergeImages(application, chosen, orderedContent, activeAnnotations);
         chosen.setRelatedLinks(projectFieldFromEquivalents(
                 orderedContent,
                 Described::getRelatedLinks
@@ -277,9 +274,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         return first(is, transform, null);
     }
 
-    private <T extends Content> void mergeContent(Application application, T chosen,
-            Iterable<T> orderedContent) {
-        mergeDescribed(application, chosen, orderedContent);
+    private <T extends Content> void mergeContent(
+            Application application,
+            T chosen,
+            Iterable<T> orderedContent,
+            Set<Annotation> activeAnnotations
+    ) {
+        mergeDescribed(application, chosen, orderedContent, activeAnnotations);
         for (T content : orderedContent) {
             for (Clip clip : content.getClips()) {
                 chosen.addClip(clip);
@@ -383,10 +384,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         chosen.setAwards(combinedAwards);
     }
 
-    private <T extends Item> void mergeIn(Application application, T chosen,
+    private <T extends Item> void mergeIn(
+            Application application,
+            T chosen,
             Iterable<T> orderedContent,
-            Set<Annotation> activeAnnotations) {
-        mergeContent(application, chosen, orderedContent);
+            Set<Annotation> activeAnnotations
+    ) {
+        mergeContent(application, chosen, orderedContent, activeAnnotations);
         mergeVersions(application, chosen, orderedContent, activeAnnotations);
         mergeParentsOfItem(chosen, orderedContent);
 
@@ -467,45 +471,91 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
     }
 
-    private <T extends Described> void applyImagePrefs(Application application, T chosen,
-            Iterable<T> orderedContent) {
-        if (application.getConfiguration().isImagePrecedenceEnabled()) {
+    private <T extends Described> void mergeImages(
+            Application application,
+            T chosen,
+            Iterable<T> orderedContent,
+            Set<Annotation> activeAnnotations
+    ) {
+        Iterable<T> orderedContentForImages = application.getConfiguration().isImagePrecedenceEnabled() ?
+                application.getConfiguration()
+                        .getImageReadPrecedenceOrdering()
+                        .onResultOf(Sourceds.toPublisher())
+                        .immutableSortedCopy(orderedContent) :
+                orderedContent;
 
-            List<T> topImageMatches = application.getConfiguration()
-                    .getImageReadPrecedenceOrdering()
-                    .onResultOf(Sourceds.toPublisher())
-                    .leastOf(
-                            Iterables.filter(
-                                    orderedContent,
-                                    HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET
-                            ),
-                            1
-                    );
+        String chosenImage = null;
+        String chosenThumbnail = null;
+        ImmutableSet.Builder<Image> chosenImages = ImmutableSet.builder();
 
-            if (!topImageMatches.isEmpty()) {
-                T top = topImageMatches.get(0);
-                top.getImages().forEach(img -> img.setSource(top.getSource()));
-                chosen.setImages(top.getImages());
-                chosen.setImage(top.getImage());
-                chosen.setThumbnail(top.getThumbnail());
+        String fallbackImageIfAllUnavailable = null;
+        String fallbackThumbnailIfAllUnavailable = null;
 
-            } else {
-                chosen.setImages(Iterables.filter(
-                        chosen.getImages(),
-                        img -> isImageAvailableAndNotGenericImageContentPlayer(img)
-                ));
-                chosen.getImages().forEach(img -> img.setSource(chosen.getSource()));
-                chosen.setImage(null);
+        for (T content : orderedContentForImages) {
+            // Image URIs can differ between the image attribute and the canonical URI on Images.
+            // See PaProgrammeProcessor for why.
+            // N.B. This is an adapted version of Image#isAvailableAndNotGenericImageContentPlayer
+            String rewrittenImageUri = content.getImage() == null
+                    ? null
+                    : content.getImage().replace(
+                    "http://images.atlasapi.org/pa/",
+                    "http://images.atlas.metabroadcast.com/pressassociation.com/"
+            );
+
+            if (fallbackImageIfAllUnavailable == null && content.getImage() != null) {
+                fallbackImageIfAllUnavailable = content.getImage();
+                fallbackThumbnailIfAllUnavailable = content.getThumbnail();
             }
-        } else {
-            chosen.setImages(projectFieldFromEquivalents(
-                    orderedContent,
-                    input -> {
-                        input.getImages().forEach(img -> img.setSource(input.getSource()));
-                        return input.getImages();
+
+            boolean canUseMainImage = false;
+            boolean foundMainImageInSet = false;
+            Image firstAvailableImageFromSet = null;
+
+            for (Image image : content.getImages()) {
+                image.setSource(content.getSource());
+                chosenImages.add(image);
+
+                boolean isMainImage = image.getCanonicalUri().equals(rewrittenImageUri);
+
+                if (isMainImage) {
+                    foundMainImageInSet = true;
+                }
+
+                if (Image.IS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER.apply(image)) {
+                    if (isMainImage) {
+                        canUseMainImage = true;
                     }
-            ));
+                    if (firstAvailableImageFromSet == null) {
+                        firstAvailableImageFromSet = image;
+                    }
+                }
+
+                if (fallbackImageIfAllUnavailable == null) {
+                    fallbackImageIfAllUnavailable = image.getCanonicalUri();
+                    fallbackThumbnailIfAllUnavailable = null;
+                }
+            }
+
+            if (chosenImage == null) {
+                // assume image can be used if we do not have its availability
+                if (canUseMainImage || !foundMainImageInSet) {
+                    chosenImage = content.getImage();
+                    chosenThumbnail = content.getThumbnail();
+                } else if (firstAvailableImageFromSet != null) {
+                    chosenImage = firstAvailableImageFromSet.getCanonicalUri();
+                    chosenThumbnail = null;
+                }
+            }
         }
+
+        if (chosenImage == null && activeAnnotations.contains(Annotation.UNAVAILABLE_IMAGES)) {
+            chosenImage = fallbackImageIfAllUnavailable;
+            chosenThumbnail = fallbackThumbnailIfAllUnavailable;
+        }
+
+        chosen.setImage(chosenImage);
+        chosen.setThumbnail(chosenThumbnail);
+        chosen.setImages(chosenImages.build());
     }
 
     private <T extends Item> void mergeVersions(Application application, T chosen,
@@ -738,39 +788,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         return toMerge.getBlackoutRestriction().isPresent() && !chosenBlackedOut;
     }
 
-    private static boolean isImageAvailableAndNotGenericImageContentPlayer(
-            String imageUri,
-            Iterable<Image> images
-    ) {
-
-        // Fneh. Image URIs differ between the image attribute and the canonical URI on Images.
-        // See PaProgrammeProcessor for why.
-        String rewrittenUri = imageUri.replace(
-                "http://images.atlasapi.org/pa/",
-                "http://images.atlas.metabroadcast.com/pressassociation.com/"
-        );
-
-        // If there is a corresponding Image object for this URI, we check its availability and
-        // whether it is generic.
-        for (Image image : images) {
-            if (image.getCanonicalUri().equals(rewrittenUri)) {
-                return isImageAvailableAndNotGenericImageContentPlayer(image);
-            }
-        }
-        // Otherwise, we can only assume the image is available as we know no better
-        return true;
-    }
-    private static boolean isImageAvailableAndNotGenericImageContentPlayer(Image image) {
-        return Image.IS_AVAILABLE.apply(image)
-                && !Image.Type.GENERIC_IMAGE_CONTENT_PLAYER.equals(image.getType());
-    }
-
     private void mergeIn(
             Application application,
             Container chosen,
-            Iterable<Container> orderedContent
+            Iterable<Container> orderedContent,
+            Set<Annotation> activeAnnotations
     ) {
-        mergeContent(application, chosen, orderedContent);
+        mergeContent(application, chosen, orderedContent, activeAnnotations);
         mergeContainer(chosen, orderedContent);
     }
 
