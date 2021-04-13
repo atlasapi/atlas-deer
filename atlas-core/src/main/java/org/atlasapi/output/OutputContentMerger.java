@@ -538,7 +538,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
             if (chosenImage == null) {
                 // assume image can be used if we do not have its availability
-                if (canUseMainImage || !foundMainImageInSet) {
+                if (content.getImage() != null && (canUseMainImage || !foundMainImageInSet)) {
                     chosenImage = content.getImage();
                     chosenThumbnail = content.getThumbnail();
                 } else if (firstAvailableImageFromSet != null) {
