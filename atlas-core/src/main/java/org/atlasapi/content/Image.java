@@ -406,7 +406,7 @@ public class Image implements Sourced, Hashable {
             @Nullable String imageUri,
             Set<Image> images
     ) {
-        // Image URIs differ between the image attribute and the canonical URI on Images.
+        // Image URIs can differ between the image attribute and the canonical URI on Images.
         // See PaProgrammeProcessor for why.
         String rewrittenUri = imageUri.replace(
                 "http://images.atlasapi.org/pa/",
