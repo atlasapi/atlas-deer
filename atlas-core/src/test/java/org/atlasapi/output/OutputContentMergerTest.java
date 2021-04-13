@@ -1,15 +1,17 @@
 package org.atlasapi.output;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Actor;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
@@ -37,19 +39,6 @@ import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
-
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
@@ -57,7 +46,15 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.empty;
+import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -186,12 +183,18 @@ public class OutputContentMergerTest {
                 Collections.emptySet()
         );
 
-        ImmutableSet<Image> images = merged.getImages().stream()
-                .filter(img -> img.getSource() != null)
+        ImmutableSet<Image> imagesFromOne = merged.getImages().stream()
+                .filter(img -> img.getSource().equals(Publisher.METABROADCAST))
                 .collect(MoreCollectors.toImmutableSet());
 
-        assertThat(images.size(), is(2));
+        assertThat(imagesFromOne.size(), is(2));
 
+
+        ImmutableSet<Image> imagesFromTwo = merged.getImages().stream()
+                .filter(img -> img.getSource().equals(Publisher.BBC))
+                .collect(MoreCollectors.toImmutableSet());
+
+        assertThat(imagesFromTwo.size(), is(3));
     }
 
     @Test
@@ -534,7 +537,7 @@ public class OutputContentMergerTest {
         Content merged = merger.merge(ImmutableList.of(item1, item2), application, Collections.emptySet());
 
         assertThat(merged.getImage(), is("http://image2.org/"));
-        assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image2.org/"));
+        assertThat(merged.getImages(), is(ImmutableSet.of(image1, image2)));
     }
 
     @Test
@@ -568,7 +571,7 @@ public class OutputContentMergerTest {
                 Collections.emptySet()
         );
         assertThat(merged.getImage(), is("http://image1.org/"));
-        assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image1.org/"));
+        assertThat(merged.getImages(), is(ImmutableSet.of(image1, image2)));
     }
 
     @Test
@@ -602,7 +605,43 @@ public class OutputContentMergerTest {
                 Collections.emptySet()
         );
         assertNull(merged.getImage());
-        assertThat(merged.getImages().size(), is(0));
+        assertThat(merged.getImages().size(), is(2));
+    }
+
+    @Test
+    public void testImageWithMergingNoMatchWithUnavailableImagesAllowed() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(2));
+        image1.setAvailabilityEnd(DateTime.now().minusDays(1));
+
+        item1.setImage(image1.getCanonicalUri());
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+        image2.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
+
+        item2.setImage(image2.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image2));
+
+        Content merged = merger.merge(
+                ImmutableList.of(item1, item2),
+                application,
+                ImmutableSet.of(Annotation.UNAVAILABLE_IMAGES)
+        );
+        assertThat(merged.getImage(), is("http://image1.org/"));
+        assertThat(merged.getImages().size(), is(2));
     }
 
     @Test
@@ -987,7 +1026,7 @@ public class OutputContentMergerTest {
 
         Item merged = merger.merge(orderedContent, application, Collections.emptySet());
 
-        assertThat(Iterables.getOnlyElement(merged.getImages()), is(image1));
+        assertThat(merged.getImages(), is(ImmutableSet.of(image1, image2)));
     }
 
     @Test
