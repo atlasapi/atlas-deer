@@ -12,7 +12,6 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
-import javax.annotation.Nullable;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -403,7 +402,7 @@ public class Image implements Sourced, Hashable {
 
     // N.B. an adapted version of this is also used in OutputContentMerger
     public static boolean isAvailableAndNotGenericImageContentPlayer(
-            @Nullable String imageUri,
+            String imageUri,
             Set<Image> images
     ) {
         // Image URIs can differ between the image attribute and the canonical URI on Images.
@@ -413,15 +412,20 @@ public class Image implements Sourced, Hashable {
                 "http://images.atlas.metabroadcast.com/pressassociation.com/"
         );
 
+        boolean knownToBeAvailableAndNotGeneric = false;
+        boolean found = false;
+
         // If there is a corresponding Image object for this URI, we check its availability and
         // whether it is generic.
         for (Image image : images) {
             if (image.getCanonicalUri().equals(rewrittenUri)) {
-                return IS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER.apply(image);
+                found = true;
+                knownToBeAvailableAndNotGeneric = knownToBeAvailableAndNotGeneric
+                        || IS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER.apply(image);
             }
         }
         // Otherwise, we can only assume the image is available as we know no better
-        return true;
+        return knownToBeAvailableAndNotGeneric || !found;
     }
 
 }
