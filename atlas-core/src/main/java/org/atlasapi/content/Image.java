@@ -412,20 +412,20 @@ public class Image implements Sourced, Hashable {
                 "http://images.atlas.metabroadcast.com/pressassociation.com/"
         );
 
-        boolean knownToBeAvailableAndNotGeneric = false;
         boolean found = false;
 
         // If there is a corresponding Image object for this URI, we check its availability and
         // whether it is generic.
         for (Image image : images) {
             if (image.getCanonicalUri().equals(rewrittenUri)) {
+                if (IS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER.apply(image)) {
+                    return true;
+                }
                 found = true;
-                knownToBeAvailableAndNotGeneric = knownToBeAvailableAndNotGeneric
-                        || IS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER.apply(image);
             }
         }
-        // Otherwise, we can only assume the image is available as we know no better
-        return knownToBeAvailableAndNotGeneric || !found;
+        // If not found we can only assume the image is available as we know no better
+        return !found;
     }
 
 }
