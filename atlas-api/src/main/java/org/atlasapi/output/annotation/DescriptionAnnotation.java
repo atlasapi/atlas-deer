@@ -30,7 +30,7 @@ public class DescriptionAnnotation<T extends Described> extends
         }
         writer.writeField("title", entity.getTitle());
         writer.writeField("description", entity.getDescription());
-        boolean shouldWriteImage = contextHasAnnotation(ctxt, Annotation.UNAVAILABLE_IMAGES) ||
+        boolean shouldWriteImage = contextHasAnnotation(ctxt, Annotation.ALL_IMAGES) ||
                 (entity.getImage() != null && Image.isAvailableAndNotGenericImageContentPlayer(
                         entity.getImage(),
                         entity.getImages()

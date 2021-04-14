@@ -21,7 +21,7 @@ public class ImagesAnnotation extends OutputAnnotation<Described> {
 
     @Override
     public void write(Described entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        Set<Image> images = contextHasAnnotation(ctxt, Annotation.UNAVAILABLE_IMAGES) ?
+        Set<Image> images = contextHasAnnotation(ctxt, Annotation.ALL_IMAGES) ?
                 entity.getImages() :
                 entity.getImages().stream()
                         .filter(Image.IS_AVAILABLE::apply)

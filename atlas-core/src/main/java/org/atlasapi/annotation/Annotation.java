@@ -89,7 +89,7 @@ public enum Annotation {
     CUSTOM_FIELDS,
     LOCATION_PROVIDERS,
     LCN_SHARING,    // enables fetching more than one channel per lcn (within a channel group)
-    UNAVAILABLE_IMAGES,
+    ALL_IMAGES,
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());

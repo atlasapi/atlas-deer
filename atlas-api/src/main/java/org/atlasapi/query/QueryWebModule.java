@@ -191,6 +191,7 @@ import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
 import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.ALL_AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.ALL_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.ALL_IMAGES;
 import static org.atlasapi.annotation.Annotation.ALL_MERGED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
@@ -1149,6 +1150,7 @@ public class QueryWebModule {
                         commonImplied
                 )
                 .register(IMAGES, new ImagesAnnotation(), commonImplied)
+                .register(ALL_IMAGES, NullWriter.create(Content.class), ImmutableSet.of(IMAGES))
                 .register(CHANNELS, new ChannelsAnnotation(), commonImplied)
                 .register(
                         CONTENT_SUMMARY,

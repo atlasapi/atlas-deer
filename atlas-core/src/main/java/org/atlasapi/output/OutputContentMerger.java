@@ -548,7 +548,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             }
         }
 
-        if (chosenImage == null && activeAnnotations.contains(Annotation.UNAVAILABLE_IMAGES)) {
+        if (chosenImage == null && activeAnnotations.contains(Annotation.ALL_IMAGES)) {
             chosenImage = fallbackImageIfAllUnavailable;
             chosenThumbnail = fallbackThumbnailIfAllUnavailable;
         }
