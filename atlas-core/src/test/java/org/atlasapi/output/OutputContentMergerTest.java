@@ -1,15 +1,17 @@
 package org.atlasapi.output;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Actor;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
@@ -37,19 +39,6 @@ import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
-
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
@@ -57,7 +46,15 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.empty;
+import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -186,49 +183,18 @@ public class OutputContentMergerTest {
                 Collections.emptySet()
         );
 
-        ImmutableSet<Image> images = merged.getImages().stream()
-                .filter(img -> img.getSource() != null)
+        ImmutableSet<Image> imagesFromOne = merged.getImages().stream()
+                .filter(img -> img.getSource().equals(Publisher.METABROADCAST))
                 .collect(MoreCollectors.toImmutableSet());
 
-        assertThat(images.size(), is(2));
+        assertThat(imagesFromOne.size(), is(2));
 
-    }
 
-    @Test
-    public void testSourceSetOnImagesWhenImagePrecedenceDisabled() throws Exception {
-        Item one = item(1l, "o", Publisher.METABROADCAST);
-        Item two = item(2l, "k", Publisher.BBC);
-        Item three = item(3l, "D", Publisher.PA);
-        setEquivalent(one, two, three);
-        setEquivalent(two, one, three);
-        setEquivalent(three, two, one);
-
-        one.setImages(ImmutableList.of(
-                Image.builder("test1").build(),
-                Image.builder("test2").build()
-        ));
-        two.setImages(ImmutableList.of(
-                Image.builder("test3").build(),
-                Image.builder("test4").build(),
-                Image.builder("test5").build()
-        ));
-
-        Application application = getApplicationWithPrecedence(
-                false,
-                Publisher.METABROADCAST,
-                Publisher.BBC,
-                Publisher.PA
-        );
-
-        Item merged = merger.merge(ImmutableList.of(one, two, three), application,
-                Collections.emptySet()
-        );
-
-        ImmutableSet<Image> images = merged.getImages().stream()
-                .filter(img -> img.getSource() != null)
+        ImmutableSet<Image> imagesFromTwo = merged.getImages().stream()
+                .filter(img -> img.getSource().equals(Publisher.BBC))
                 .collect(MoreCollectors.toImmutableSet());
 
-        assertThat(images.size(), is(5));
+        assertThat(imagesFromTwo.size(), is(3));
     }
 
     @Test
@@ -487,25 +453,7 @@ public class OutputContentMergerTest {
     }
 
     @Test
-    public void testImageWithoutMerging() {
-        Application application = getApplicationWithPrecedence(
-                false,
-                Publisher.BBC,
-                Publisher.PA
-        );
-        Item item1 = item(4L, "item1", Publisher.BBC);
-        item1.setImages(ImmutableSet.of(new Image("http://image1.org/")));
-        Item item2 = item(5L, "item2", Publisher.PA);
-        item2.setImages(ImmutableSet.of(new Image("http://image2.org/")));
-
-        Content merged = merger.merge(ImmutableList.of(item1, item2), application,
-                Collections.emptySet()
-        );
-        assertThat(merged.getImages().size(), is(2));
-    }
-
-    @Test
-    public void testImageWithMergingAndFilteringOutGenericImages() {
+    public void testImageMergingFiltersOutGenericImage() {
         Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.BBC,
@@ -534,45 +482,11 @@ public class OutputContentMergerTest {
         Content merged = merger.merge(ImmutableList.of(item1, item2), application, Collections.emptySet());
 
         assertThat(merged.getImage(), is("http://image2.org/"));
-        assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image2.org/"));
+        assertThat(merged.getImages(), is(ImmutableSet.of(image1, image2)));
     }
 
     @Test
-    public void testImageWithMergingReversed() {
-        Application application = getApplicationWithPrecedence(
-                true,
-                Publisher.BBC,
-                Publisher.PA
-        );
-
-        Item item1 = item(4L, "item1", Publisher.BBC);
-        Image image1 = new Image("http://image1.org/");
-
-        image1.setAvailabilityStart(DateTime.now().minusDays(1));
-        image1.setAvailabilityEnd(DateTime.now().plusDays(1));
-
-        item1.setImage(image1.getCanonicalUri());
-        item1.setImages(ImmutableSet.of(image1));
-
-        Item item2 = item(5L, "item2", Publisher.PA);
-        Image image2 = new Image("http://image2.org/");
-
-        image2.setAvailabilityStart(DateTime.now().minusDays(1));
-        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
-        image2.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
-
-        item2.setImage(image2.getCanonicalUri());
-        item2.setImages(ImmutableSet.of(image2));
-
-        Content merged = merger.merge(ImmutableList.of(item1, item2), application,
-                Collections.emptySet()
-        );
-        assertThat(merged.getImage(), is("http://image1.org/"));
-        assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image1.org/"));
-    }
-
-    @Test
-    public void testImageWithMergingNoMatch() {
+    public void testImageMergingNoMatch() {
         Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.BBC,
@@ -602,7 +516,265 @@ public class OutputContentMergerTest {
                 Collections.emptySet()
         );
         assertNull(merged.getImage());
-        assertThat(merged.getImages().size(), is(0));
+        assertThat(merged.getImages().size(), is(2));
+    }
+
+    @Test
+    public void testImageMergingNoMatchWithUnavailableImagesAllowed() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(2));
+        image1.setAvailabilityEnd(DateTime.now().minusDays(1));
+
+        item1.setImage(image1.getCanonicalUri());
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+        image2.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
+
+        item2.setImage(image2.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image2));
+
+        Content merged = merger.merge(
+                ImmutableList.of(item1, item2),
+                application,
+                ImmutableSet.of(Annotation.ALL_IMAGES)
+        );
+        assertThat(merged.getImage(), is("http://image1.org/"));
+        assertThat(merged.getImages().size(), is(2));
+    }
+
+    @Test
+    public void testImageMergingTreatsImageAsAvailableIfNotInImagesSet() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        String image1 = "http://image1.org/";
+
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item1.setImage(image1);
+        item1.setImages(ImmutableSet.of(image2));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image3 = new Image("http://image3.org/");
+
+        image3.setAvailabilityStart(DateTime.now().minusDays(1));
+        image3.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item2.setImage(image3.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image3));
+
+        Content merged = merger.merge(
+                ImmutableList.of(item1, item2),
+                application,
+                ImmutableSet.of()
+        );
+        assertThat(merged.getImage(), is("http://image1.org/"));
+        assertThat(merged.getImages().size(), is(2));
+    }
+
+    @Test
+    public void testImageMergingChoosesImageFromImagesSetIfMainImageNotAvailable() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().plusDays(1));
+        image1.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item1.setImage(image1.getCanonicalUri());
+        item1.setImages(ImmutableSet.of(image1, image2));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image3 = new Image("http://image3.org/");
+
+        image3.setAvailabilityStart(DateTime.now().minusDays(1));
+        image3.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item2.setImage(image3.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image3));
+
+        Content merged = merger.merge(
+                ImmutableList.of(item1, item2),
+                application,
+                ImmutableSet.of()
+        );
+        assertThat(merged.getImage(), is("http://image2.org/"));
+        assertThat(merged.getImages().size(), is(3));
+    }
+
+    @Test
+    public void testImageMergingChoosesImageFromImagesSetIfMainImageGeneric() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(1));
+        image1.setAvailabilityEnd(DateTime.now().plusDays(1));
+        image1.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
+
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item1.setImage(image1.getCanonicalUri());
+        item1.setImages(ImmutableSet.of(image1, image2));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image3 = new Image("http://image3.org/");
+
+        image3.setAvailabilityStart(DateTime.now().minusDays(1));
+        image3.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item2.setImage(image3.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image3));
+
+        Content merged = merger.merge(
+                ImmutableList.of(item1, item2),
+                application,
+                ImmutableSet.of()
+        );
+        assertThat(merged.getImage(), is("http://image2.org/"));
+        assertThat(merged.getImages().size(), is(3));
+    }
+
+    @Test
+    public void testImageMergingChoosesImageFromImagesSetIfNoMainImage() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(1));
+        image1.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+
+        item2.setImage(image2.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image2));
+
+        Content merged = merger.merge(
+                ImmutableList.of(item1, item2),
+                application,
+                ImmutableSet.of()
+        );
+        assertThat(merged.getImage(), is("http://image1.org/"));
+        assertThat(merged.getImages().size(), is(2));
+    }
+
+    @Test
+    public void testImageMergingDoesNotChooseUnavailableImageFromImagesSetIfNoMainImage() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(2));
+        image1.setAvailabilityEnd(DateTime.now().minusDays(1));
+
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(2));
+        image2.setAvailabilityEnd(DateTime.now().minusDays(1));
+
+        item2.setImage(image2.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image2));
+
+        Content merged = merger.merge(
+                ImmutableList.of(item1, item2),
+                application,
+                ImmutableSet.of()
+        );
+        assertNull(merged.getImage());
+        assertThat(merged.getImages().size(), is(2));
+    }
+
+    @Test
+    public void testImageMergingDoesNotChooseGenericImageFromImagesSetIfNoMainImage() {
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Image image1 = new Image("http://image1.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(1));
+        image1.setAvailabilityEnd(DateTime.now().plusDays(1));
+        image1.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
+
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Image image2 = new Image("http://image2.org/");
+
+        image2.setAvailabilityStart(DateTime.now().minusDays(1));
+        image2.setAvailabilityEnd(DateTime.now().plusDays(1));
+        image2.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
+
+        item2.setImage(image2.getCanonicalUri());
+        item2.setImages(ImmutableSet.of(image2));
+
+        Content merged = merger.merge(
+                ImmutableList.of(item1, item2),
+                application,
+                ImmutableSet.of()
+        );
+        assertNull(merged.getImage());
+        assertThat(merged.getImages().size(), is(2));
     }
 
     @Test
@@ -977,6 +1149,10 @@ public class OutputContentMergerTest {
         anotherHighestPrecedence.setImages(ImmutableSet.of(image2));
 
         Item lowerPrecedence = item(1, "also not relevant", Publisher.YOUVIEW);
+        Image image3 = new Image("http://image3.org/");
+        image3.setSource(anotherHighestPrecedence.getSource());
+        lowerPrecedence.setImage(image3.getCanonicalUri());
+        lowerPrecedence.setImages(ImmutableSet.of(image3));
         Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.PA,
@@ -987,7 +1163,8 @@ public class OutputContentMergerTest {
 
         Item merged = merger.merge(orderedContent, application, Collections.emptySet());
 
-        assertThat(Iterables.getOnlyElement(merged.getImages()), is(image1));
+        assertThat(merged.getImage(), is("http://image1.org/"));
+        assertThat(merged.getImages(), is(ImmutableSet.of(image1, image2, image3)));
     }
 
     @Test
