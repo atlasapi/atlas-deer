@@ -405,19 +405,11 @@ public class Image implements Sourced, Hashable {
             String imageUri,
             Set<Image> images
     ) {
-        // Image URIs can differ between the image attribute and the canonical URI on Images.
-        // See PaProgrammeProcessor for why.
-        String rewrittenUri = imageUri.replace(
-                "http://images.atlasapi.org/pa/",
-                "http://images.atlas.metabroadcast.com/pressassociation.com/"
-        );
-
-        boolean found = false;
-
         // If there is a corresponding Image object for this URI, we check its availability and
         // whether it is generic.
+        boolean found = false;
         for (Image image : images) {
-            if (image.getCanonicalUri().equals(rewrittenUri)) {
+            if (image.getCanonicalUri().equals(imageUri)) {
                 if (IS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER.apply(image)) {
                     return true;
                 }

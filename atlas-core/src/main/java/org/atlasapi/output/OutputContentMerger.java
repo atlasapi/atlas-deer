@@ -492,15 +492,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         String fallbackThumbnailIfAllUnavailable = null;
 
         for (T content : orderedContentForImages) {
-            // Image URIs can differ between the image attribute and the canonical URI on Images.
-            // See PaProgrammeProcessor for why.
-            // N.B. This is an adapted version of Image#isAvailableAndNotGenericImageContentPlayer
-            String rewrittenImageUri = content.getImage() == null
-                    ? null
-                    : content.getImage().replace(
-                    "http://images.atlasapi.org/pa/",
-                    "http://images.atlas.metabroadcast.com/pressassociation.com/"
-            );
 
             if (fallbackImageIfAllUnavailable == null && content.getImage() != null) {
                 fallbackImageIfAllUnavailable = content.getImage();
@@ -515,7 +506,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 image.setSource(content.getSource());
                 chosenImages.add(image);
 
-                boolean isMainImage = image.getCanonicalUri().equals(rewrittenImageUri);
+                boolean isMainImage = image.getCanonicalUri().equals(content.getImage());
 
                 if (isMainImage) {
                     foundMainImageInSet = true;
