@@ -1,7 +1,5 @@
 package org.atlasapi.messaging;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.entity.ResourceRef;
@@ -68,40 +66,10 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         );
     }
 
-    private static final ArrayList<Long> BAD_DOGS =
-            new ArrayList<>(Arrays.asList(
-                    95116171L,
-                    111452500L,
-                    111647766L,
-                    109125367L,
-                    95212972L,
-                    95126530L,
-                    95187770L,
-                    94973539L,
-                    95507473L,
-                    95436469L,
-                    109546816L,
-                    124058646L,
-                    124132921L,
-                    130668126L,
-                    109536940L,
-                    130647967L,
-                    131563936L,
-                    124124570L,
-                    124133377L,
-                    124101253L,
-                    124124662L,
-                    124132364L,
-                    124131284L,
-                    124058738L,
-                    128050993L));
     @Override
     public void process(EquivalenceAssertionMessage message) throws RecoverableException {
         messageReceivedMeter.mark();
 
-        if(BAD_DOGS.contains(message.getSubject().getId().longValue()){
-            return;
-        }
         metricRegistry.meter(
                 String.format(
                         publisherMeterName,
