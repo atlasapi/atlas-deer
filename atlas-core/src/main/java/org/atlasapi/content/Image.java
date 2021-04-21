@@ -84,6 +84,7 @@ public class Image implements Sourced, Hashable {
         BOX_ART("box_art"),
         POSTER("poster"),
         LOGO("logo"),
+        BACKGROUND("background"),
         GENERIC_IMAGE_CONTENT_PLAYER("generic_image_content_player"),
         GENERIC_IMAGE_CONTENT_ORIGINATOR("generic_image_content_originator");
 
