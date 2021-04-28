@@ -56,7 +56,6 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
             public Void visit(Series series) {
                 writeField("series_number", series.getSeriesNumber());
                 writeField("total_episodes", series.getTotalEpisodes());
-                writeField("year", series.getYear());
                 return null;
             }
 
@@ -88,7 +87,6 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
 
             @Override
             public Void visit(Item item) {
-                writeField("year", item.getYear());
                 writeObject(displayTitleWriter, item, ctxt);
                 return null;
             }
@@ -99,6 +97,7 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
             }
         });
 
+        writer.writeField("year", content.getYear());
         writer.writeField("media_type", content.getMediaType());
         writer.writeField("specialization", content.getSpecialization());
 
