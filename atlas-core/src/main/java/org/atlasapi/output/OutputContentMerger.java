@@ -1,20 +1,15 @@
 package org.atlasapi.output;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.stream.MoreStreams;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nullable;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
@@ -47,18 +42,26 @@ import org.atlasapi.entity.Review;
 import org.atlasapi.entity.Sourceds;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
+
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.stream.MoreStreams;
+
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -68,6 +71,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private static final long BROADCAST_START_TIME_TOLERANCE_IN_MS = Duration.standardMinutes(5)
             .getMillis();
+    private static final String DO_NOT_FILL_IN_FILM_HIERARCHY = "do-not-fill-in-film-hierarchy";
 
     private static final Predicate<Item> HAS_BROADCASTS = input -> input.getBroadcasts()!= null && !input.getBroadcasts().isEmpty();
 
@@ -392,9 +396,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     ) {
         mergeContent(application, chosen, orderedContent, activeAnnotations);
         mergeVersions(application, chosen, orderedContent, activeAnnotations);
-        mergeParentsOfItem(chosen, orderedContent);
+        boolean chosenIsFilm = chosen instanceof Film;
+        mergeParentsOfItem(application, chosen, orderedContent, chosenIsFilm);
 
-        if (chosen instanceof Film) {
+        if (chosenIsFilm) {
             mergeFilmProperties(application, (Film) chosen, Iterables.filter(orderedContent, Film.class));
         }
     }
@@ -406,12 +411,24 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
      * lists it as a series of a brand, since the merged result would not respect the hierarchy of the higher precedent
      * source.
      */
-    private <T extends Item> void mergeParentsOfItem(T chosen, Iterable<T> orderedContent) {
+    private <T extends Item> void mergeParentsOfItem(
+            Application application,
+            T chosen,
+            Iterable<T> orderedContent,
+            boolean chosenIsFilm
+    ) {
         if (chosen.getContainerRef() != null) {
             return;
         }
         boolean chosenIsEpisode = chosen instanceof Episode;
+        boolean ignoreEpisodeHierarchies = chosenIsFilm
+                && application.getAccessRoles().hasRole(DO_NOT_FILL_IN_FILM_HIERARCHY);
         for (T item : orderedContent) {
+            // ENG-1051: Films come as episodes from C4, and RT does not want their hierarchy to mess content pages
+            // of these films, so we avoid returning filling it in from episodes in the merged result
+            if (ignoreEpisodeHierarchies && item instanceof Episode) {
+                continue;
+            }
             ContainerRef containerRef = item.getContainerRef();
             SeriesRef seriesRef = chosenIsEpisode && item instanceof Episode
                     ? ((Episode) item).getSeriesRef()
