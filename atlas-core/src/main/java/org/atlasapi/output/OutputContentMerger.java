@@ -71,7 +71,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private static final long BROADCAST_START_TIME_TOLERANCE_IN_MS = Duration.standardMinutes(5)
             .getMillis();
-    private static final String DO_NOT_FILL_IN_FILM_HIERARCHY_FROM_EPISODES = "do-not-fill-in-film-hierarchy-from-episodes";
+    private static final String DO_NOT_MERGE_FILM_HIERARCHY_FROM_EPISODES = "do-not-merge-film-hierarchy-from-episodes";
 
     private static final Predicate<Item> HAS_BROADCASTS = input -> input.getBroadcasts()!= null && !input.getBroadcasts().isEmpty();
 
@@ -422,7 +422,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         boolean chosenIsEpisode = chosen instanceof Episode;
         boolean ignoreEpisodeHierarchies = chosenIsFilm
-                && application.getAccessRoles().hasRole(DO_NOT_FILL_IN_FILM_HIERARCHY_FROM_EPISODES);
+                && application.getAccessRoles().hasRole(DO_NOT_MERGE_FILM_HIERARCHY_FROM_EPISODES);
         for (T item : orderedContent) {
             // ENG-1051: Films come as episodes from C4, and RT does not want their hierarchy to mess content pages
             // of these films, so we avoid returning filling it in from episodes in the merged result
