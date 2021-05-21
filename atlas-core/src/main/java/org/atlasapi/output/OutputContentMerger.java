@@ -397,7 +397,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         mergeContent(application, chosen, orderedContent, activeAnnotations);
         mergeVersions(application, chosen, orderedContent, activeAnnotations);
         boolean chosenIsFilm = chosen instanceof Film;
-        mergeParentsOfItem(application, chosen, orderedContent, chosenIsFilm);
+        boolean ignoreEpisodeHierarchies = chosenIsFilm
+                && application.getAccessRoles().hasRole(DO_NOT_MERGE_FILM_HIERARCHY_FROM_EPISODES);
+        mergeParentsOfItem(chosen, orderedContent, ignoreEpisodeHierarchies);
 
         if (chosenIsFilm) {
             mergeFilmProperties(application, (Film) chosen, Iterables.filter(orderedContent, Film.class));
@@ -411,18 +413,11 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
      * lists it as a series of a brand, since the merged result would not respect the hierarchy of the higher precedent
      * source.
      */
-    private <T extends Item> void mergeParentsOfItem(
-            Application application,
-            T chosen,
-            Iterable<T> orderedContent,
-            boolean chosenIsFilm
-    ) {
+    private <T extends Item> void mergeParentsOfItem(T chosen, Iterable<T> orderedContent, boolean ignoreEpisodeHierarchies) {
         if (chosen.getContainerRef() != null) {
             return;
         }
         boolean chosenIsEpisode = chosen instanceof Episode;
-        boolean ignoreEpisodeHierarchies = chosenIsFilm
-                && application.getAccessRoles().hasRole(DO_NOT_MERGE_FILM_HIERARCHY_FROM_EPISODES);
         for (T item : orderedContent) {
             // ENG-1051: Films come as episodes from C4, and RT does not want their hierarchy to mess content pages
             // of these films, so we avoid returning filling it in from episodes in the merged result
