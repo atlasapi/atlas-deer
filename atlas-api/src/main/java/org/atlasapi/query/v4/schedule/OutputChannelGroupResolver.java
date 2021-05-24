@@ -84,22 +84,21 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
                     .filter(id -> !channelGroupById.containsKey(id))
                     .collect(MoreCollectors.toImmutableSet());
 
-            if (additionalChannelGroupsToResolve.isEmpty()) {
-                return Futures.immediateFuture(Resolved.valueOf(channelGroups));
-            }
-            ListenableFuture<Resolved<ChannelGroup<?>>> additionalChannelGroupsFuture
-                    = delegate.resolveIds(additionalChannelGroupsToResolve, refreshCache);
+            ListenableFuture<Resolved<ChannelGroup<?>>> additionalChannelGroupsFuture =
+                    additionalChannelGroupsToResolve.isEmpty()
+                            ? Futures.immediateFuture(Resolved.empty())
+                            : delegate.resolveIds(additionalChannelGroupsToResolve, refreshCache);
 
             return Futures.transform(additionalChannelGroupsFuture,
                     (Function<Resolved<ChannelGroup<?>>, Resolved<ChannelGroup<?>>>) additionalChannelGroups -> {
-                        ImmutableMap.Builder<Id, ChannelGroup<?>> additionalChannelGroupByIdMapBuilder
-                                = ImmutableMap.builder();
+                        ImmutableMap.Builder<Id, ChannelGroup<?>> additionalChannelGroupByIdMapBuilder =
+                                ImmutableMap.builder();
                         additionalChannelGroupByIdMapBuilder.putAll(channelGroupById);
                         for (ChannelGroup<?> channelGroup : additionalChannelGroups.getResources()) {
                             additionalChannelGroupByIdMapBuilder.put(channelGroup.getId(), channelGroup);
                         }
-                        ImmutableMap<Id, ChannelGroup<?>> additionalChannelGroupByIdMap
-                                = additionalChannelGroupByIdMapBuilder.build();
+                        ImmutableMap<Id, ChannelGroup<?>> additionalChannelGroupByIdMap =
+                                additionalChannelGroupByIdMapBuilder.build();
 
                         LocalDate now = LocalDate.now();
                         for (NumberedChannelGroup channelGroupToFillChannelNumbers : channelGroupsToFillChannelNumbers) {
