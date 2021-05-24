@@ -18,8 +18,10 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.joda.time.LocalDate;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -125,27 +127,34 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
         }
         NumberedChannelGroup baseNumberedChannelGroup = (NumberedChannelGroup) baseChannelGroup;
         ImmutableSet.Builder<ChannelNumbering> newChannelNumberings = ImmutableSet.builder();
-        ImmutableMap<Id, ChannelNumbering> baseChannelNumberingsById =
-                MoreStreams.stream(baseNumberedChannelGroup.getChannels())
-                        .filter(channelGroupMembership -> channelGroupMembership.isAvailable(now))
-                        .collect(
-                                MoreCollectors.toImmutableMap(
-                                        channelGroupMembership -> channelGroupMembership.getChannel().getId(),
-                                        channelGroupMembership -> channelGroupMembership
-                                )
-                        );
+        ImmutableMap<Id, ChannelNumbering> baseChannelNumberingsById = MoreStreams.stream(
+                baseNumberedChannelGroup.getChannels()
+        )
+                .filter(channelGroupMembership -> channelGroupMembership.isAvailable(now))
+                .collect(
+                        MoreCollectors.toImmutableMap(
+                                channelGroupMembership -> channelGroupMembership.getChannel().getId(),
+                                channelGroupMembership -> channelGroupMembership
+                        )
+                );
+        Set<Id> includedChannelIds = new HashSet<>();
         for (ChannelNumbering channelNumbering : channelGroup.getChannels()) {
-            ChannelNumbering baseChannelNumbering =
-                    baseChannelNumberingsById.get(channelNumbering.getChannel().getId());
-            if (baseChannelNumbering == null) {
-                newChannelNumberings.add(channelNumbering);
-            } else {
-                ChannelGroupMembership.Builder newChannelNumbering = ChannelGroupMembership.builder(
-                        channelNumbering.getChannelGroup().getSource()
-                )
-                        .withChannelGroupId(channelNumbering.getChannelGroup().getId().longValue())
-                        .withChannelId(channelNumbering.getChannel().getId().longValue());
+            if (includedChannelIds.contains(channelNumbering.getChannel().getId())) {
+                // Since we're only adding the channel numbers which are currently available this prevents outputting
+                // the same channel with the same number.
+                continue;
+            }
+            ChannelNumbering baseChannelNumbering = baseChannelNumberingsById.get(
+                    channelNumbering.getChannel().getId()
+            );
 
+            ChannelGroupMembership.Builder newChannelNumbering = ChannelGroupMembership.builder(
+                    channelNumbering.getChannelGroup().getSource()
+            )
+                    .withChannelGroupId(channelNumbering.getChannelGroup().getId().longValue())
+                    .withChannelId(channelNumbering.getChannel().getId().longValue());
+
+            if (baseChannelNumbering != null) {
                 if (baseChannelNumbering.getChannelNumber().isPresent()) {
                     newChannelNumbering.withChannelNumber(baseChannelNumbering.getChannelNumber().get());
                 }
@@ -155,8 +164,9 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
                 if (baseChannelNumbering.getEndDate().isPresent()) {
                     newChannelNumbering.withEndDate(baseChannelNumbering.getEndDate().get());
                 }
-                newChannelNumberings.add(newChannelNumbering.buildChannelNumbering());
             }
+            newChannelNumberings.add(newChannelNumbering.buildChannelNumbering());
+            includedChannelIds.add(channelNumbering.getChannel().getId());
         }
         channelGroup.setChannels(newChannelNumberings.build());
     }
