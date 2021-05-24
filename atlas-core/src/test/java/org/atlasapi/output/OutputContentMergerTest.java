@@ -1,33 +1,37 @@
 package org.atlasapi.output;
 
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.stream.MoreCollectors;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Actor;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
+import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Container;
+import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Encoding;
+import org.atlasapi.content.Episode;
 import org.atlasapi.content.EpisodeRef;
+import org.atlasapi.content.Film;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.LocationSummary;
+import org.atlasapi.content.Series;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
@@ -39,6 +43,22 @@ import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
+
+import com.metabroadcast.applications.client.metric.Metrics;
+import com.metabroadcast.applications.client.model.internal.AccessRoles;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
+
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
@@ -46,19 +66,12 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.junit.Test;
 
-import javax.annotation.Nullable;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import static org.atlasapi.output.OutputContentMerger.DO_NOT_MERGE_FILM_HIERARCHY_FROM_EPISODES;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -1218,6 +1231,65 @@ public class OutputContentMergerTest {
     }
 
     @Test
+    public void testMergeFilmHierarchyFromEpisode() {
+        Film film = film(1l, "film", Publisher.PA);
+        Episode episode = episode(2l, "episode", Publisher.C4_PMLSD);
+        Series series = series(3l, "series", Publisher.C4_PMLSD);
+        Brand brand = brand(4l, "brand", Publisher.C4_PMLSD);
+        series.setBrandRef(new BrandRef(
+                Id.valueOf(4),
+                Publisher.C4_PMLSD
+        ));
+        episode.setContainerSummary(ContainerSummary.from(series));
+        episode.setContainerRef(brand.toRef());
+
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.RADIO_TIMES,
+                Publisher.PA,
+                Publisher.C4_PMLSD
+        );
+
+        Item merged = merger.merge(ImmutableList.of(film, episode), application, Collections.emptySet());
+        assertTrue(merged instanceof Film);
+        Film mergedFilm = (Film) merged;
+
+        assertEquals(episode.getContainerRef(), mergedFilm.getContainerRef());
+    }
+
+    @Test
+    public void testNoMergeFilmHierarchyFromEpisodeIfAppRoleSet() {
+        Film film = film(1l, "film", Publisher.PA);
+        Episode episode = episode(2l, "episode", Publisher.C4_PMLSD);
+        Series series = series(3l, "series", Publisher.C4_PMLSD);
+        Brand brand = brand(4l, "brand", Publisher.C4_PMLSD);
+        series.setBrandRef(new BrandRef(
+                Id.valueOf(4),
+                Publisher.C4_PMLSD
+        ));
+        episode.setContainerSummary(ContainerSummary.from(series));
+        episode.setContainerRef(brand.toRef());
+
+        Application application = getApplicationWithPrecedence(
+                true,
+                AccessRoles.create(
+                        ImmutableList.of(DO_NOT_MERGE_FILM_HIERARCHY_FROM_EPISODES),
+                        Metrics.create(new MetricRegistry())
+                ),
+                Publisher.RADIO_TIMES,
+                Publisher.PA,
+                Publisher.C4_PMLSD
+        );
+
+
+        Item merged = merger.merge(ImmutableList.of(film, episode), application, Collections.emptySet());
+        assertTrue(merged instanceof Film);
+        Film mergedFilm = (Film) merged;
+
+        assertEquals(film.getContainerRef(), mergedFilm.getContainerRef());
+    }
+
+    @Test
     public void testSorting() {
         Application application = getApplicationWithPrecedence(
                 true,
@@ -1256,8 +1328,26 @@ public class OutputContentMergerTest {
         return one;
     }
 
+    private Series series(long id, String uri, Publisher source) {
+        Series one = new Series(uri, uri, source);
+        one.setId(id);
+        return one;
+    }
+
     private Item item(long id, String uri, Publisher source) {
         Item one = new Item(uri, uri, source);
+        one.setId(id);
+        return one;
+    }
+
+    private org.atlasapi.content.Film film(long id, String uri, Publisher source) {
+        Film one = new Film(uri, uri, source);
+        one.setId(id);
+        return one;
+    }
+
+    private Episode episode(long id, String uri, Publisher source) {
+        Episode one = new Episode(uri, uri, source);
         one.setId(id);
         return one;
     }
@@ -1320,6 +1410,14 @@ public class OutputContentMergerTest {
     }
 
     private Application getApplicationWithPrecedence(boolean imagePrecedence, Publisher... publishers) {
+        return getApplicationWithPrecedence(imagePrecedence, null, publishers);
+    }
+
+    private Application getApplicationWithPrecedence(
+            boolean imagePrecedence,
+            @Nullable AccessRoles accessRoles,
+            Publisher... publishers
+    ) {
 
         ApplicationConfiguration testConfig = ApplicationConfiguration.builder()
                 .withPrecedence(Lists.newArrayList(publishers))
@@ -1336,6 +1434,7 @@ public class OutputContentMergerTest {
         when(configuration.getImageReadPrecedenceOrdering()).thenReturn(testConfig.getImageReadPrecedenceOrdering());
 
         when(application.getConfiguration()).thenReturn(configuration);
+        when(application.getAccessRoles()).thenReturn(accessRoles);
 
         return application;
     }
