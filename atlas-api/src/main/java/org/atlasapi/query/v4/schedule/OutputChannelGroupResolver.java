@@ -10,6 +10,7 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.NumberedChannelGroup;
@@ -18,6 +19,7 @@ import org.atlasapi.entity.util.Resolved;
 import org.joda.time.LocalDate;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -73,7 +75,10 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
                     channelGroupsToFillChannelNumbersBuilder.build();
 
             ImmutableSet<Id> additionalChannelGroupsToResolve = channelGroupsToFillChannelNumbers.stream()
-                    .map(ChannelGroup::getId)
+                    .map(NumberedChannelGroup::getChannelNumbersFrom)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(ChannelGroupRef::getId)
                     .filter(id -> !channelGroupById.containsKey(id))
                     .collect(MoreCollectors.toImmutableSet());
             ListenableFuture<Resolved<ChannelGroup<?>>> additionalChannelGroupsFuture
