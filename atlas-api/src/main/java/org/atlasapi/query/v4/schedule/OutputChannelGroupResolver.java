@@ -83,6 +83,10 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
                     .map(ChannelGroupRef::getId)
                     .filter(id -> !channelGroupById.containsKey(id))
                     .collect(MoreCollectors.toImmutableSet());
+
+            if (additionalChannelGroupsToResolve.isEmpty()) {
+                return Futures.immediateFuture(Resolved.valueOf(channelGroups));
+            }
             ListenableFuture<Resolved<ChannelGroup<?>>> additionalChannelGroupsFuture
                     = delegate.resolveIds(additionalChannelGroupsToResolve, refreshCache);
 
