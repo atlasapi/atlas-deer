@@ -90,6 +90,7 @@ public enum Annotation {
     LOCATION_PROVIDERS,
     LCN_SHARING,    // enables fetching more than one channel per lcn (within a channel group)
     ALL_IMAGES,
+    BASE_CHANNEL_GROUPS,
     ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());

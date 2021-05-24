@@ -1,17 +1,15 @@
 package org.atlasapi.channel;
 
-import java.util.Set;
-
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import com.metabroadcast.common.intl.Country;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 
-import com.metabroadcast.common.intl.Country;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -26,9 +24,10 @@ public class Region extends NumberedChannelGroup {
             Set<ChannelNumbering> channels,
             Set<Country> availableCountries,
             Set<TemporalField<String>> titles,
-            ChannelGroupRef platform
+            ChannelGroupRef platform,
+            ChannelGroupRef channelNumbersFrom
     ) {
-        super(id, canonicalUri, publisher, channels, availableCountries, titles);
+        super(id, canonicalUri, publisher, channels, availableCountries, titles, channelNumbersFrom);
         this.platform = platform;
     }
 
@@ -55,6 +54,7 @@ public class Region extends NumberedChannelGroup {
         private Set<TemporalField<String>> titles = Sets.newHashSet();
         private ChannelGroupRef platformRef;
         private Set<Alias> aliases = Sets.newHashSet();
+        private ChannelGroupRef channelNumbersFromRef;
 
         public Builder(Publisher publisher) {
             this.publisher = checkNotNull(publisher);
@@ -100,6 +100,16 @@ public class Region extends NumberedChannelGroup {
             return this;
         }
 
+        public Builder withChannelNumbersFromId(Long channelNumbersFromId) {
+            if (channelNumbersFromId != null) {
+                this.channelNumbersFromRef = new ChannelGroupRef(
+                        Id.valueOf(channelNumbersFromId),
+                        publisher
+                );
+            }
+            return this;
+        }
+
         public Region build() {
             Region region = new Region(
                     id,
@@ -108,7 +118,8 @@ public class Region extends NumberedChannelGroup {
                     channels,
                     availableCountries,
                     titles,
-                    platformRef
+                    platformRef,
+                    channelNumbersFromRef
             );
             region.setAliases(ImmutableSet.copyOf(aliases));
             return region;

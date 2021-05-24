@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
@@ -36,7 +35,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.longThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -286,7 +284,8 @@ public class BroadcastAggregatorTest {
                 ),
                 ImmutableSet.of(),
                 ImmutableSet.of(),
-                ImmutableSet.of()
+                ImmutableSet.of(),
+                null
         );
 
         Set<Broadcast> filteredBroadcasts = broadcastAggregator.removeBroadcastsNotOnPlatform(

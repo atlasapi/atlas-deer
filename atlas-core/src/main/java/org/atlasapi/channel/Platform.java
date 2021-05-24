@@ -1,20 +1,17 @@
 package org.atlasapi.channel;
 
-import java.util.HashSet;
-import java.util.Set;
-
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import com.metabroadcast.common.intl.Country;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 
-import com.metabroadcast.common.intl.Country;
-
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -28,9 +25,10 @@ public class Platform extends NumberedChannelGroup {
             Set<ChannelNumbering> channels,
             Set<Country> availableCountries,
             Set<TemporalField<String>> titles,
-            Set<ChannelGroupRef> regions
+            Set<ChannelGroupRef> regions,
+            ChannelGroupRef channelNumbersFrom
     ) {
-        super(id, publisher, channels, availableCountries, titles);
+        super(id, publisher, channels, availableCountries, titles, channelNumbersFrom);
         this.regions = ImmutableSet.copyOf(regions);
     }
 
@@ -41,9 +39,10 @@ public class Platform extends NumberedChannelGroup {
             Set<ChannelNumbering> channels,
             Set<Country> availableCountries,
             Set<TemporalField<String>> titles,
-            Set<ChannelGroupRef> regions
+            Set<ChannelGroupRef> regions,
+            ChannelGroupRef channelNumbersFrom
     ) {
-        super(id, canonicalUri, publisher, channels, availableCountries, titles);
+        super(id, canonicalUri, publisher, channels, availableCountries, titles, channelNumbersFrom);
         this.regions = ImmutableSet.copyOf(regions);
     }
 
@@ -70,6 +69,7 @@ public class Platform extends NumberedChannelGroup {
         private Set<TemporalField<String>> titles = Sets.newHashSet();
         private Set<Long> regionIds = Sets.newHashSet();
         private Set<Alias> aliases = Sets.newHashSet();
+        private ChannelGroupRef channelNumbersFromRef;
 
         public Builder(Publisher publisher) {
             this.publisher = checkNotNull(publisher);
@@ -110,6 +110,16 @@ public class Platform extends NumberedChannelGroup {
             return this;
         }
 
+        public Builder withChannelNumbersFromId(Long channelNumbersFromId) {
+            if (channelNumbersFromId != null) {
+                this.channelNumbersFromRef = new ChannelGroupRef(
+                        Id.valueOf(channelNumbersFromId),
+                        publisher
+                );
+            }
+            return this;
+        }
+
         public Platform build() {
             HashSet<ChannelGroupRef> regions = Sets.newHashSet(
                     Collections2.transform(
@@ -127,7 +137,8 @@ public class Platform extends NumberedChannelGroup {
                     channels,
                     availableCountries,
                     titles,
-                    regions
+                    regions,
+                    channelNumbersFromRef
             );
             platform.setAliases(ImmutableSet.copyOf(aliases));
 

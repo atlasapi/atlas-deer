@@ -80,6 +80,7 @@ import org.atlasapi.persistence.player.CachingPlayerResolver;
 import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.CachingServiceResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
+import org.atlasapi.query.v4.schedule.OutputChannelGroupResolver;
 import org.atlasapi.query.v4.search.PseudoEsEquivalentContentSearcher;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleResolver;
@@ -345,7 +346,7 @@ public class AtlasPersistenceModule {
         return new SherlockSearchModule(
                 sherlockElasticSearchConfig(),
                 metricsModule.metrics(),
-                channelGroupResolver(),
+                outputChannelGroupResolver(),
                 new CassandraSecondaryIndex(
                         persistenceModule().getSession(),
                         CassandraEquivalentContentStore.EQUIVALENT_CONTENT_INDEX,
@@ -461,6 +462,11 @@ public class AtlasPersistenceModule {
                 channelGroupStore(),
                 new LegacyChannelGroupTransformer()
         );
+    }
+
+    @Bean
+    public OutputChannelGroupResolver outputChannelGroupResolver() {
+        return new OutputChannelGroupResolver(channelGroupResolver());
     }
 
     @Bean

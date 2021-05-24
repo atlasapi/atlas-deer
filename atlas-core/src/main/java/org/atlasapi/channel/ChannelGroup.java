@@ -1,19 +1,17 @@
 package org.atlasapi.channel;
 
-import java.util.Set;
-
+import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.intl.Country;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-
-import com.metabroadcast.common.intl.Country;
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.collect.ImmutableSet;
 import org.joda.time.LocalDate;
+
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
