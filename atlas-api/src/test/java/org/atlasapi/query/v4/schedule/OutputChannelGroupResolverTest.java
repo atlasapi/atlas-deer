@@ -25,6 +25,9 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class OutputChannelGroupResolverTest {
@@ -441,5 +444,59 @@ public class OutputChannelGroupResolverTest {
         Platform expected = platform(groupId, expectedGroupNumberings, baseGroupId);
 
         assertChannelGroupEquals(expected, resolvedGroup);
+    }
+
+    @Test
+    public void testChannelNumbersFromGroupIsNotResolvedTwiceIfAlsoRequested() {
+        long groupId = 1;
+        long baseGroupId = 2;
+        long channel1Id = 11;
+        long channel2Id = 12;
+        long channel3Id = 13;
+        long channel4Id = 14;
+        String channel1Number = "1";
+        String channel2Number = "2";
+        String channel3Number = "3";
+
+        List<ChannelNumbering> groupNumberings = ImmutableList.of(
+                channelNumbering(channel1Id, groupId, null),
+                channelNumbering(channel2Id, groupId, null),
+                channelNumbering(channel4Id, groupId, null)
+        );
+
+        List<ChannelNumbering> baseGroupNumberings = ImmutableList.of(
+                channelNumbering(channel1Id, baseGroupId, channel1Number),
+                channelNumbering(channel2Id, baseGroupId, channel2Number),
+                channelNumbering(channel3Id, baseGroupId, channel3Number)
+        );
+
+        Platform platform = platform(groupId, groupNumberings, baseGroupId);
+        Platform basePlatform = platform(baseGroupId, baseGroupNumberings, null);
+
+        setUpResolving(platform, basePlatform);
+
+        Resolved<ChannelGroup<?>> resolved = Futures.getUnchecked(
+                resolver.resolveIds(ImmutableSet.of(Id.valueOf(groupId), Id.valueOf(baseGroupId)))
+        );
+
+        verify(delegateResolver, times(1))
+                .resolveIds(ImmutableSet.of(Id.valueOf(groupId), Id.valueOf(baseGroupId)));
+        verifyNoMoreInteractions(delegateResolver);
+
+        assertEquals(2, Iterables.size(resolved.getResources()));
+
+        ChannelGroup<?> resolvedGroup = resolved.getResources().first().get();
+        ChannelGroup<?> resolvedBaseGroup = resolved.getResources().last().get();
+
+        List<ChannelNumbering> expectedGroupNumberings = ImmutableList.of(
+                channelNumbering(channel1Id, groupId, channel1Number),
+                channelNumbering(channel2Id, groupId, channel2Number),
+                channelNumbering(channel4Id, groupId, null)
+        );
+
+        Platform expected = platform(groupId, expectedGroupNumberings, baseGroupId);
+
+        assertChannelGroupEquals(expected, resolvedGroup);
+        assertChannelGroupEquals(basePlatform, resolvedBaseGroup);
     }
 }
