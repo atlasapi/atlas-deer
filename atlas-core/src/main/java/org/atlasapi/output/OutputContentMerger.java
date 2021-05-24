@@ -47,6 +47,7 @@ import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
@@ -71,7 +72,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private static final long BROADCAST_START_TIME_TOLERANCE_IN_MS = Duration.standardMinutes(5)
             .getMillis();
-    private static final String DO_NOT_MERGE_FILM_HIERARCHY_FROM_EPISODES = "do-not-merge-film-hierarchy-from-episodes";
+    @VisibleForTesting
+    public static final String DO_NOT_MERGE_FILM_HIERARCHY_FROM_EPISODES = "do-not-merge-film-hierarchy-from-episodes";
 
     private static final Predicate<Item> HAS_BROADCASTS = input -> input.getBroadcasts()!= null && !input.getBroadcasts().isEmpty();
 
@@ -396,9 +398,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     ) {
         mergeContent(application, chosen, orderedContent, activeAnnotations);
         mergeVersions(application, chosen, orderedContent, activeAnnotations);
+
         boolean chosenIsFilm = chosen instanceof Film;
-        boolean ignoreEpisodeHierarchies = chosenIsFilm
-                && application.getAccessRoles().hasRole(DO_NOT_MERGE_FILM_HIERARCHY_FROM_EPISODES);
+        boolean ignoreEpisodeHierarchies = false;
+        if (application.getAccessRoles() != null) {
+            ignoreEpisodeHierarchies = chosenIsFilm
+                    && application.getAccessRoles().hasRole(DO_NOT_MERGE_FILM_HIERARCHY_FROM_EPISODES);
+        }
         mergeParentsOfItem(chosen, orderedContent, ignoreEpisodeHierarchies);
 
         if (chosenIsFilm) {
@@ -419,8 +425,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         boolean chosenIsEpisode = chosen instanceof Episode;
         for (T item : orderedContent) {
-            // ENG-1051: Films come as episodes from C4, and RT does not want their hierarchy to mess content pages
-            // of these films, so we avoid returning filling it in from episodes in the merged result
+            // ENG-1051: Films come as episodes from C4, and RT does not want the hierarchy of those to mess
+            // content pages of these films, so we avoid filling it in from episodes in the merged result
             if (ignoreEpisodeHierarchies && item instanceof Episode) {
                 continue;
             }
