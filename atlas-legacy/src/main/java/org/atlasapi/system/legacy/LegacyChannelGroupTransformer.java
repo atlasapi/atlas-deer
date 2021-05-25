@@ -1,7 +1,6 @@
 package org.atlasapi.system.legacy;
 
-import java.util.Set;
-
+import com.google.common.collect.Iterables;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelNumbering;
@@ -9,7 +8,7 @@ import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.media.entity.Publisher;
 
-import com.google.common.collect.Iterables;
+import java.util.Set;
 
 public class LegacyChannelGroupTransformer extends
         BaseLegacyResourceTransformer<org.atlasapi.media.channel.ChannelGroup, ChannelGroup<?>> {
@@ -33,13 +32,13 @@ public class LegacyChannelGroupTransformer extends
     @Override
     public ChannelGroup apply(org.atlasapi.media.channel.ChannelGroup input) {
         if (input instanceof org.atlasapi.media.channel.Platform) {
-            return transformService((org.atlasapi.media.channel.Platform) input);
+            return transformPlatform((org.atlasapi.media.channel.Platform) input);
         } else {
             return transformRegion((org.atlasapi.media.channel.Region) input);
         }
     }
 
-    private Platform transformService(org.atlasapi.media.channel.Platform input) {
+    private Platform transformPlatform(org.atlasapi.media.channel.Platform input) {
         return Platform.builder(input.getPublisher())
                 .withId(input.getId())
                 .withCanonicalUri(input.getCanonicalUri())
@@ -51,6 +50,7 @@ public class LegacyChannelGroupTransformer extends
                         input.getPublisher()
                 ))
                 .withAliases(transformAliases(input))
+                .withChannelNumbersFromId(input.getChannelNumbersFrom())
                 .build();
     }
 
@@ -66,6 +66,7 @@ public class LegacyChannelGroupTransformer extends
                         input.getPublisher()
                 ))
                 .withAliases(transformAliases(input))
+                .withChannelNumbersFromId(input.getChannelNumbersFrom())
                 .build();
     }
 }

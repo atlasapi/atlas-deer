@@ -1,7 +1,9 @@
 package org.atlasapi.system.legacy;
 
-import java.util.Set;
-
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.metabroadcast.common.intl.Country;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelNumbering;
@@ -9,15 +11,11 @@ import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.media.entity.Publisher;
-
-import com.metabroadcast.common.intl.Country;
-
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import org.hamcrest.core.Is;
 import org.joda.time.LocalDate;
 import org.junit.Test;
+
+import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -43,6 +41,8 @@ public class LegacyChannelGroupTransformerTest {
         final Long channel2Id = 2L;
         final LocalDate startDate2 = new LocalDate("2014-01-03");
         final LocalDate endDate2 = new LocalDate("2014-01-04");
+
+        final Long channelNumbersFromId = 4L;
 
         Set<org.atlasapi.media.channel.ChannelNumbering> channelNumberings = ImmutableSet.of(
                 org.atlasapi.media.channel.ChannelNumbering.builder()
@@ -76,6 +76,7 @@ public class LegacyChannelGroupTransformerTest {
                         new org.atlasapi.media.entity.Alias("namespace2", "value2")
                 )
         );
+        legacyPlatform.setChannelNumbersFrom(channelNumbersFromId);
         ChannelGroup transformed = this.objectUnderTest.apply(legacyPlatform);
 
         assertThat(transformed.getId().longValue(), is(id));
@@ -151,6 +152,10 @@ public class LegacyChannelGroupTransformerTest {
                         )
                 )
         );
+        assertThat(
+                ((Platform) transformed).getChannelNumbersFrom().get().getId().longValue(),
+                is(channelNumbersFromId)
+        );
     }
 
     @Test
@@ -168,6 +173,8 @@ public class LegacyChannelGroupTransformerTest {
         final Long channel2Id = 2L;
         final LocalDate startDate2 = new LocalDate("2014-01-03");
         final LocalDate endDate2 = new LocalDate("2014-01-04");
+
+        final Long channelNumbersFromId = 4L;
 
         Set<org.atlasapi.media.channel.ChannelNumbering> channelNumberings = ImmutableSet.of(
                 org.atlasapi.media.channel.ChannelNumbering.builder()
@@ -200,6 +207,7 @@ public class LegacyChannelGroupTransformerTest {
                         new org.atlasapi.media.entity.Alias("namespace2", "value2")
                 )
         );
+        legacyRegion.setChannelNumbersFrom(channelNumbersFromId);
         ChannelGroup transformed = this.objectUnderTest.apply(legacyRegion);
 
         assertThat(transformed.getId().longValue(), is(id));
@@ -253,6 +261,10 @@ public class LegacyChannelGroupTransformerTest {
                                 new Alias("namespace2", "value2")
                         )
                 )
+        );
+        assertThat(
+                ((Region) transformed).getChannelNumbersFrom().get().getId().longValue(),
+                is(channelNumbersFromId)
         );
     }
 }

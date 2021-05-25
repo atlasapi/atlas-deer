@@ -45,6 +45,7 @@ import org.atlasapi.output.annotation.AvailableContentAnnotation;
 import org.atlasapi.output.annotation.AvailableContentDetailAnnotation;
 import org.atlasapi.output.annotation.AvailableLocationsAnnotation;
 import org.atlasapi.output.annotation.AwardsAnnotation;
+import org.atlasapi.output.annotation.BaseChannelGroupsAnnotation;
 import org.atlasapi.output.annotation.BrandReferenceAnnotation;
 import org.atlasapi.output.annotation.BroadcastsAnnotation;
 import org.atlasapi.output.annotation.ChannelAnnotation;
@@ -197,6 +198,7 @@ import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
 import static org.atlasapi.annotation.Annotation.AWARDS;
+import static org.atlasapi.annotation.Annotation.BASE_CHANNEL_GROUPS;
 import static org.atlasapi.annotation.Annotation.BRAND_REFERENCE;
 import static org.atlasapi.annotation.Annotation.BRAND_SUMMARY;
 import static org.atlasapi.annotation.Annotation.BROADCASTS;
@@ -716,6 +718,7 @@ public class QueryWebModule {
                                 )
                         )
                 )
+                .register(BASE_CHANNEL_GROUPS, new BaseChannelGroupsAnnotation(), CHANNEL_GROUP)
                 .build());
     }
 

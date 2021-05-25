@@ -99,7 +99,7 @@ public class QueryModule {
     @Bean
     public QueryExecutor<ResolvedChannelGroup> channelGroupQueryExecutor() {
         return new ChannelGroupQueryExecutor(
-                persistenceModule.channelGroupResolver(),
+                persistenceModule.outputChannelGroupResolver(),
                 persistenceModule.channelResolver());
     }
 

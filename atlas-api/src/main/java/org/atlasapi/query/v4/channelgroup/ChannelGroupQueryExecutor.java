@@ -1,15 +1,19 @@
 package org.atlasapi.query.v4.channelgroup;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.promise.Promise;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
@@ -19,6 +23,7 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelGroupSummary;
 import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.channel.NumberedChannelGroup;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.channel.ResolvedChannel;
@@ -35,23 +40,16 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.query.common.exceptions.UncheckedQueryExecutionException;
-
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.promise.Promise;
-
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
-import com.google.common.util.concurrent.Futures;
 import org.joda.time.LocalDate;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -285,6 +283,14 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                     Optional.empty()
         );
 
+        if (contextHasAnnotation(ctxt, Annotation.BASE_CHANNEL_GROUPS)) {
+            resolvedChannelGroupBuilder.withChannelNumbersFromGroup(
+                    resolveChannelNumbersFromChannelGroup(channelGroup)
+            );
+        } else {
+            resolvedChannelGroupBuilder.withChannelNumbersFromGroup(Optional.empty());
+        }
+
         if (contextHasAnnotation(ctxt, Annotation.FUTURE_CHANNELS)) {
             resolvedChannelGroupBuilder.withAdvertisedChannels(
                     resolveChannelsWithChannelGroups(
@@ -358,6 +364,23 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         Id platformId = ((Region) entity).getPlatform().getId();
 
         return Optional.ofNullable(Promise.wrap(channelGroupResolver.resolveIds(ImmutableSet.of(platformId)))
+                .then(Resolved::getResources)
+                .get(1, TimeUnit.MINUTES)
+                .first().orNull()
+        );
+    }
+
+    private Optional<ChannelGroup<?>> resolveChannelNumbersFromChannelGroup(ChannelGroup<?> entity) {
+        if (!(entity instanceof NumberedChannelGroup)) {
+            return Optional.empty();
+        }
+        NumberedChannelGroup numberedChannelGroup = (NumberedChannelGroup) entity;
+        if (!numberedChannelGroup.getChannelNumbersFrom().isPresent()) {
+            return Optional.empty();
+        }
+        Id channelNumbersFromId = numberedChannelGroup.getChannelNumbersFrom().get().getId();
+
+        return Optional.ofNullable(Promise.wrap(channelGroupResolver.resolveIds(ImmutableSet.of(channelNumbersFromId)))
                 .then(Resolved::getResources)
                 .get(1, TimeUnit.MINUTES)
                 .first().orNull()

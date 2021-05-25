@@ -1,18 +1,18 @@
 package org.atlasapi.channel;
 
+import com.metabroadcast.common.intl.Country;
+import com.metabroadcast.common.stream.MoreCollectors;
+import org.atlasapi.entity.Id;
+import org.atlasapi.media.channel.TemporalField;
+import org.atlasapi.media.entity.Publisher;
+import org.joda.time.LocalDate;
+
+import javax.annotation.Nullable;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
-import org.atlasapi.entity.Id;
-import org.atlasapi.media.channel.TemporalField;
-import org.atlasapi.media.entity.Publisher;
-
-import com.metabroadcast.common.intl.Country;
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import org.joda.time.LocalDate;
 
 public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering> {
 
@@ -20,14 +20,35 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
 
     private static final LocalDate EARLIEST_POSSIBLE_DATE = new LocalDate(0, 1, 1);
 
-    protected NumberedChannelGroup(Id id, Publisher publisher, Set<ChannelNumbering> channels,
-            Set<Country> availableCountries, Set<TemporalField<String>> titles) {
+    private final ChannelGroupRef channelNumbersFrom;
+
+    protected NumberedChannelGroup(
+            Id id,
+            Publisher publisher,
+            Set<ChannelNumbering> channels,
+            Set<Country> availableCountries,
+            Set<TemporalField<String>> titles,
+            @Nullable ChannelGroupRef channelNumbersFrom
+    ) {
         super(id, publisher, channels, availableCountries, titles);
+        this.channelNumbersFrom = channelNumbersFrom;
     }
 
-    protected NumberedChannelGroup(Id id, String canonicalUri, Publisher publisher, Set<ChannelNumbering> channels,
-            Set<Country> availableCountries, Set<TemporalField<String>> titles) {
+    protected NumberedChannelGroup(
+            Id id,
+            String canonicalUri,
+            Publisher publisher,
+            Set<ChannelNumbering> channels,
+            Set<Country> availableCountries,
+            Set<TemporalField<String>> titles,
+            @Nullable ChannelGroupRef channelNumbersFrom
+    ) {
         super(id, canonicalUri, publisher, channels, availableCountries, titles);
+        this.channelNumbersFrom = channelNumbersFrom;
+    }
+
+    public Optional<ChannelGroupRef> getChannelNumbersFrom() {
+        return Optional.ofNullable(channelNumbersFrom);
     }
 
     @Override

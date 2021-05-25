@@ -1,17 +1,15 @@
 package org.atlasapi.channel;
 
-import java.util.Set;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.intl.Country;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
-
-import com.metabroadcast.common.intl.Country;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import org.joda.time.LocalDate;
 import org.junit.Test;
+
+import java.util.Set;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
@@ -24,7 +22,7 @@ public class NumberedChannelGroupTest {
         protected TestNumberedChannelGroup(Id id, Publisher publisher,
                 Set<ChannelNumbering> channels, Set<Country> availableCountries,
                 Set<TemporalField<String>> titles) {
-            super(id, publisher, channels, availableCountries, titles);
+            super(id, publisher, channels, availableCountries, titles, null);
         }
     }
 
