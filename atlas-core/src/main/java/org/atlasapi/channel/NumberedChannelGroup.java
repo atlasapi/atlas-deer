@@ -13,6 +13,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -139,8 +140,7 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
                 super.getChannelsAvailable(date, lcnSharing).spliterator(), false
         )
                 .filter(cn -> cn.getChannelNumber().isPresent())
-                .collect(MoreCollectors.toImmutableListMultiMap(cn -> cn.getChannelNumber().get(), cn -> cn))
-                .asMap()
+                .collect(Collectors.groupingBy(channelNumbering -> channelNumbering.getChannelNumber().get()))
                 .values()
                 .stream()
                 .map(numberingsForChannelNumber -> numberingsForChannelNumber.stream()
