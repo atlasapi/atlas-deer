@@ -23,11 +23,12 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
 
     private static final LocalDate EARLIEST_POSSIBLE_DATE = new LocalDate(0, 1, 1);
 
-    private static final Comparator<ChannelNumbering> MOST_RECENT_START_DATE_COMPARATOR = (numbering1, numbering2) ->
-            -numbering1.getStartDate().orElse(EARLIEST_POSSIBLE_DATE)
-                    .compareTo(
-                            numbering2.getStartDate().orElse(EARLIEST_POSSIBLE_DATE)
-                    );
+    private static final Comparator<ChannelNumbering> MOST_RECENT_START_DATE_COMPARATOR =
+            (channelNumbering1, channelNumbering2) ->
+                    -channelNumbering1.getStartDate().orElse(EARLIEST_POSSIBLE_DATE)
+                            .compareTo(
+                                    channelNumbering2.getStartDate().orElse(EARLIEST_POSSIBLE_DATE)
+                            );
 
     private final ChannelGroupRef channelNumbersFrom;
 
@@ -139,16 +140,16 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
         Set<ChannelNumbering> deduplicatedChannelNumberingsWithChannelNumber = StreamSupport.stream(
                 super.getChannelsAvailable(date, lcnSharing).spliterator(), false
         )
-                .filter(cn -> cn.getChannelNumber().isPresent())
+                .filter(channelNumbering -> channelNumbering.getChannelNumber().isPresent())
                 .collect(Collectors.groupingBy(channelNumbering -> channelNumbering.getChannelNumber().get()))
                 .values()
                 .stream()
-                .map(numberingsForChannelNumber -> numberingsForChannelNumber.stream()
+                .map(channelNumberingsForChannelNumber -> channelNumberingsForChannelNumber.stream()
                         .min(MOST_RECENT_START_DATE_COMPARATOR).get()
                 )
                 .collect(MoreCollectors.toImmutableSet());
 
-        Stream<ChannelNumbering> deduplicatedNumberings = StreamSupport.stream(
+        Stream<ChannelNumbering> deduplicatedChannelNumberings = StreamSupport.stream(
                 super.getChannelsAvailable(date, lcnSharing).spliterator(), false
         )
                 .filter(channelNumbering -> !channelNumbering.getChannelNumber().isPresent()
@@ -160,9 +161,9 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
             case SPECIFIED:
                 // N.B. we couldn't just return super.getChannelsAvailable(date, lcnSharing) here since that does not
                 // actually deduplicate the channel numbers
-                return deduplicatedNumberings.collect(MoreCollectors.toImmutableSet());
+                return deduplicatedChannelNumberings.collect(MoreCollectors.toImmutableSet());
             case CHANNEL_NUMBER:
-                return deduplicatedNumberings.sorted(CHANNEL_NUMBERING_ORDERING)
+                return deduplicatedChannelNumberings.sorted(CHANNEL_NUMBERING_ORDERING)
                         .collect(MoreCollectors.toImmutableSet());
             default:
                 throw new IllegalArgumentException("Unsupported channel ordering: " + ordering);
