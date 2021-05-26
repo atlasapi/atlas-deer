@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
@@ -125,9 +126,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         for (AttributeQuery<?> attributeQuery : attributeQueries) {
             String attributeName = attributeQuery.getAttributeName();
             if (attributeName.equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
-                dttIds = ImmutableSet.copyOf((List<Id>) attributeQuery.getValue());
+                Set<Id> newDttIds = ImmutableSet.copyOf((List<Id>) attributeQuery.getValue());
+                dttIds = dttIds == null ? newDttIds : Sets.union(dttIds, newDttIds);
             } else if (attributeName.equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
-                ipIds = ImmutableSet.copyOf((List<Id>) attributeQuery.getValue());
+                Set<Id> newIpIds = ImmutableSet.copyOf((List<Id>) attributeQuery.getValue());
+                ipIds = ipIds == null ? newIpIds : Sets.union(ipIds, newIpIds);
             } else if (attributeName.equals(Attributes.CHANNEL_ORDERING.externalName())) {
                 String orderingName = attributeQuery.getValue().get(0).toString();
                 ordering = NumberedChannelGroup.ChannelOrdering.forName(orderingName);
