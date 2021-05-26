@@ -13,8 +13,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering> {
@@ -135,32 +134,36 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
             }
         }
 
-        Set<ChannelNumbering> deduplicatedNumberings = StreamSupport.stream(
+
+        Set<ChannelNumbering> deduplicatedChannelNumberingsWithChannelNumber = StreamSupport.stream(
                 super.getChannelsAvailable(date, lcnSharing).spliterator(), false
         )
-                //we need to use randomUUID in order to avoid deduplicating chanels which have no numbering
-                .collect(Collectors.groupingBy(cn -> cn.getChannelNumber()
-                        .orElse(UUID.randomUUID().toString())))
+                .filter(cn -> cn.getChannelNumber().isPresent())
+                .collect(MoreCollectors.toImmutableListMultiMap(cn -> cn.getChannelNumber().get(), cn -> cn))
+                .asMap()
                 .values()
                 .stream()
-                .map(
-                        channelNumberings ->
-                                channelNumberings.stream()
-                                        .min(MOST_RECENT_START_DATE_COMPARATOR)
-                                        .get()
-                ).sorted(CHANNEL_NUMBERING_ORDERING).collect(MoreCollectors.toImmutableSet());
+                .map(numberingsForChannelNumber -> numberingsForChannelNumber.stream()
+                        .min(MOST_RECENT_START_DATE_COMPARATOR).get()
+                )
+                .collect(MoreCollectors.toImmutableSet());
+
+        Stream<ChannelNumbering> deduplicatedNumberings = StreamSupport.stream(
+                super.getChannelsAvailable(date, lcnSharing).spliterator(), false
+        )
+                .filter(channelNumbering -> !channelNumbering.getChannelNumber().isPresent()
+                        // this is using reference equality to work
+                        || deduplicatedChannelNumberingsWithChannelNumber.contains(channelNumbering)
+                );
 
         switch (ordering) {
             case SPECIFIED:
                 // N.B. we couldn't just return super.getChannelsAvailable(date, lcnSharing) here since that does not
                 // actually deduplicate the channel numbers
-                return StreamSupport.stream(
-                        super.getChannelsAvailable(date, lcnSharing).spliterator(), false
-                )
-                        .filter(deduplicatedNumberings::contains) // this is using reference equality to work
-                        .collect(MoreCollectors.toImmutableSet());
+                return deduplicatedNumberings.collect(MoreCollectors.toImmutableSet());
             case CHANNEL_NUMBER:
-                return deduplicatedNumberings;
+                return deduplicatedNumberings.sorted(CHANNEL_NUMBERING_ORDERING)
+                        .collect(MoreCollectors.toImmutableSet());
             default:
                 throw new IllegalArgumentException("Unsupported channel ordering: " + ordering);
         }
