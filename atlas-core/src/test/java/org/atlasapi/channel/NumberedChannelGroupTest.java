@@ -88,7 +88,7 @@ public class NumberedChannelGroupTest {
         assertThat(
                 objectUnderTest.getChannelsAvailable(today),
                 is(
-                        ImmutableList.of(channelNumbering1, channelNumbering2)
+                        ImmutableSet.of(channelNumbering1, channelNumbering2)
                 )
         );
 

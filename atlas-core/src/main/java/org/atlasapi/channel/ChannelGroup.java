@@ -30,7 +30,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
             Set<TemporalField<String>> titles
     ) {
         super(id);
-        this.channels = channels;
+        this.channels = ImmutableSet.copyOf(channels);
         this.availableCountries = ImmutableSet.copyOf(availableCountries);
         this.titles = ImmutableSet.copyOf(titles);
         this.publisher = checkNotNull(publisher);
@@ -45,7 +45,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
             Set<TemporalField<String>> titles
     ) {
         super(Identified.builder().withId(id).withCanonicalUri(canonicalUri));
-        this.channels = channels;
+        this.channels = ImmutableSet.copyOf(channels);
         this.availableCountries = ImmutableSet.copyOf(availableCountries);
         this.titles = ImmutableSet.copyOf(titles);
         this.publisher = checkNotNull(publisher);

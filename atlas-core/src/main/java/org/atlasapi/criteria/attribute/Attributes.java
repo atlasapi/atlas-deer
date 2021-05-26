@@ -124,6 +124,10 @@ public class Attributes {
             "ids",
             ChannelGroup.class
     );
+    public static final Attribute<String> CHANNEL_ORDERING = StringAttribute.single(
+            "channel_ordering",
+            ChannelGroup.class
+    );
     public static final Attribute<String> Q = StringAttribute.single(
             "q",
             Identified.class
