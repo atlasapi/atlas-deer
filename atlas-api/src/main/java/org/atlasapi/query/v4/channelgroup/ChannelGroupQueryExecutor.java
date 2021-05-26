@@ -163,6 +163,9 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) > 300)
                 .collect(MoreCollectors.toImmutableSet());
 
+        //TODO since the underlying resolver caches the channel groups we're potentially mutating a cached object
+        // which could return incorrect data for subsequent queries if they are not doing this filtering.
+        // A clone of the object should be used instead.
         channelGroup.setChannels(ipChannels);
     }
 
@@ -176,6 +179,9 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) <= 300)
                 .collect(MoreCollectors.toImmutableSet());
 
+        //TODO since the underlying resolver caches the channel groups we're potentially mutating a cached object
+        // which could return incorrect data for subsequent queries if they are not doing this filtering.
+        // A clone of the object should be used instead.
         channelGroup.setChannels(dttChannels);
     }
 

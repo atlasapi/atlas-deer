@@ -1,6 +1,5 @@
 package org.atlasapi.channel;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.intl.Country;
 import org.atlasapi.entity.Id;
@@ -11,9 +10,7 @@ import org.junit.Test;
 
 import java.util.Set;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class NumberedChannelGroupTest {
 
@@ -27,7 +24,7 @@ public class NumberedChannelGroupTest {
     }
 
     @Test
-    public void testGetChannelsAvailableOn() throws Exception {
+    public void testGetChannelsAvailableOn() {
 
         LocalDate today = LocalDate.now();
         ChannelGroupRef channelGroup = new ChannelGroupRef(Id.valueOf(1), Publisher.METABROADCAST);
@@ -85,17 +82,15 @@ public class NumberedChannelGroupTest {
                 ImmutableSet.of()
         );
 
-        assertThat(
-                objectUnderTest.getChannelsAvailable(today),
-                is(
-                        ImmutableSet.of(channelNumbering1, channelNumbering2)
-                )
+        assertEquals(
+                ImmutableSet.of(channelNumbering1, channelNumbering2),
+                objectUnderTest.getChannelsAvailable(today)
         );
 
     }
 
     @Test
-    public void testGetChannelsAvailableOnIfChannelHasNullNumbering() throws Exception {
+    public void testGetChannelsAvailableOnIfChannelHasNullNumbering() {
 
         LocalDate today = LocalDate.now();
         ChannelGroupRef channelGroup = new ChannelGroupRef(Id.valueOf(1), Publisher.METABROADCAST);
@@ -180,19 +175,187 @@ public class NumberedChannelGroupTest {
                 ImmutableSet.of()
         );
 
-        ImmutableList<ChannelNumbering> channels = ImmutableList.copyOf(objectUnderTest.getChannelsAvailable(
-                today));
-        assertThat(
-                channels.subList(0, 2),
-                is(
-                        ImmutableList.of(channelNumbering1, channelNumbering2)
-                )
+        assertEquals(
+                ImmutableSet.of(channelNumbering1, channelNumbering2, channelNumbering6, channelNumbering7),
+                objectUnderTest.getChannelsAvailable(today)
         );
 
-        assertThat(
-                channels.subList(2, 4),
-                containsInAnyOrder(channelNumbering6, channelNumbering7)
+    }
+
+    @Test
+    public void testGetChannelsWithOrdering() {
+        ChannelGroupRef channelGroup = new ChannelGroupRef(Id.valueOf(1), Publisher.METABROADCAST);
+        ChannelNumbering channelNumbering1 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(1), Publisher.METABROADCAST),
+                null,
+                null,
+                "1"
         );
 
+        ChannelNumbering channelNumbering2 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(2), Publisher.METABROADCAST),
+                null,
+                null,
+                "2"
+        );
+
+        ChannelNumbering channelNumbering3 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(3), Publisher.METABROADCAST),
+                null,
+                null,
+                "3"
+        );
+
+        TestNumberedChannelGroup objectUnderTest = new TestNumberedChannelGroup(
+                channelGroup.getId(),
+                channelGroup.getSource(),
+                ImmutableSet.of(
+                        channelNumbering3,
+                        channelNumbering2,
+                        channelNumbering1
+                ),
+                ImmutableSet.of(),
+                ImmutableSet.of()
+        );
+        assertEquals(
+                ImmutableSet.of(channelNumbering3, channelNumbering2, channelNumbering1),
+                objectUnderTest.getChannels(NumberedChannelGroup.ChannelOrdering.SPECIFIED)
+        );
+        assertEquals(
+                ImmutableSet.of(channelNumbering1, channelNumbering2, channelNumbering3),
+                objectUnderTest.getChannels(NumberedChannelGroup.ChannelOrdering.CHANNEL_NUMBER)
+        );
+        assertEquals(
+                ImmutableSet.of(channelNumbering1, channelNumbering2, channelNumbering3),
+                objectUnderTest.getChannels()
+        );
+    }
+
+    @Test
+    public void testGetChannelsAvailableOnWithOrdering() {
+        LocalDate today = LocalDate.now();
+        ChannelGroupRef channelGroup = new ChannelGroupRef(Id.valueOf(1), Publisher.METABROADCAST);
+        ChannelNumbering channelNumbering1 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(1), Publisher.METABROADCAST),
+                null,
+                null,
+                "1"
+        );
+
+        ChannelNumbering channelNumbering2 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(2), Publisher.METABROADCAST),
+                today.minusDays(1),
+                null,
+                "2"
+        );
+
+        ChannelNumbering channelNumbering3 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(3), Publisher.METABROADCAST),
+                today.minusDays(2),
+                null,
+                "2"
+        );
+
+        ChannelNumbering channelNumbering4 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(4), Publisher.METABROADCAST),
+                null,
+                today.minusDays(1),
+                "4"
+        );
+
+        ChannelNumbering channelNumbering5 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(5), Publisher.METABROADCAST),
+                today.plusDays(1),
+                null,
+                "5"
+        );
+
+        TestNumberedChannelGroup objectUnderTest = new TestNumberedChannelGroup(
+                channelGroup.getId(),
+                channelGroup.getSource(),
+                ImmutableSet.of(
+                        channelNumbering3,
+                        channelNumbering5,
+                        channelNumbering2,
+                        channelNumbering4,
+                        channelNumbering1
+                ),
+                ImmutableSet.of(),
+                ImmutableSet.of()
+        );
+        assertEquals(
+                ImmutableSet.of(channelNumbering2, channelNumbering1),
+                objectUnderTest.getChannelsAvailable(today, NumberedChannelGroup.ChannelOrdering.SPECIFIED)
+        );
+        assertEquals(
+                ImmutableSet.of(channelNumbering1, channelNumbering2),
+                objectUnderTest.getChannelsAvailable(today, NumberedChannelGroup.ChannelOrdering.CHANNEL_NUMBER)
+        );
+        assertEquals(
+                ImmutableSet.of(channelNumbering1, channelNumbering2),
+                objectUnderTest.getChannelsAvailable(today)
+        );
+    }
+
+
+    @Test
+    public void testGetChannelsWithChannelNumberOrderingPreservesSpecifiedOrderWhenNoChannelNumber() {
+        ChannelGroupRef channelGroup = new ChannelGroupRef(Id.valueOf(1), Publisher.METABROADCAST);
+        ChannelNumbering channelNumbering1 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(1), Publisher.METABROADCAST),
+                null,
+                null,
+                "1"
+        );
+
+        ChannelNumbering channelNumbering2 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(2), Publisher.METABROADCAST),
+                null,
+                null,
+                null
+        );
+
+        ChannelNumbering channelNumbering3 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(3), Publisher.METABROADCAST),
+                null,
+                null,
+                "3"
+        );
+
+        ChannelNumbering channelNumbering4 = new ChannelNumbering(
+                channelGroup,
+                new ChannelRef(Id.valueOf(4), Publisher.METABROADCAST),
+                null,
+                null,
+                null
+        );
+
+        TestNumberedChannelGroup objectUnderTest = new TestNumberedChannelGroup(
+                channelGroup.getId(),
+                channelGroup.getSource(),
+                ImmutableSet.of(
+                        channelNumbering4,
+                        channelNumbering3,
+                        channelNumbering2,
+                        channelNumbering1
+                ),
+                ImmutableSet.of(),
+                ImmutableSet.of()
+        );
+        assertEquals(
+                ImmutableSet.of(channelNumbering1, channelNumbering3, channelNumbering4, channelNumbering2),
+                objectUnderTest.getChannels(NumberedChannelGroup.ChannelOrdering.CHANNEL_NUMBER)
+        );
     }
 }

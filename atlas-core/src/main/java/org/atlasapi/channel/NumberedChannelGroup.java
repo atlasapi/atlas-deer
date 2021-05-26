@@ -111,6 +111,10 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
         }
     }
 
+    public Iterable<ChannelNumbering> getChannelsAvailable(LocalDate date, ChannelOrdering ordering) {
+        return getChannelsAvailable(date, ordering, false);
+    }
+
     @Override
     public Iterable<ChannelNumbering> getChannelsAvailable(LocalDate date, boolean lcnSharing) {
         return getChannelsAvailable(date, ChannelOrdering.CHANNEL_NUMBER, lcnSharing);
