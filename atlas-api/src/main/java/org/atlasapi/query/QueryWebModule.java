@@ -776,6 +776,10 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_IDS,
                                 IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.CHANNEL_ORDERING,
+                                StringCoercer.create()
                         )
                 )
         );

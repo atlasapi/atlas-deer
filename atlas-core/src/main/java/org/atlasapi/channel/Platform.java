@@ -64,7 +64,7 @@ public class Platform extends NumberedChannelGroup {
         private Id id;
         private String canonicalUri;
         private Publisher publisher;
-        private Set<ChannelNumbering> channels = Sets.newHashSet();
+        private Set<ChannelNumbering> channels = ImmutableSet.of();
         private Set<Country> availableCountries = Sets.newHashSet();
         private Set<TemporalField<String>> titles = Sets.newHashSet();
         private Set<Long> regionIds = Sets.newHashSet();
@@ -86,7 +86,11 @@ public class Platform extends NumberedChannelGroup {
         }
 
         public Builder withChannels(Iterable<ChannelNumbering> channels) {
-            Iterables.addAll(this.channels, channels);
+            // original order needs to be preserved since it is a supported feature
+            this.channels = ImmutableSet.<ChannelNumbering>builder()
+                    .addAll(this.channels)
+                    .addAll(channels)
+                    .build();
             return this;
         }
 

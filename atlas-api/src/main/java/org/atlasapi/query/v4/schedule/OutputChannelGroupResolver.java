@@ -141,7 +141,9 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
                         )
                 );
         Set<Id> includedChannelIds = new HashSet<>();
-        for (ChannelNumbering channelNumbering : channelGroup.getChannels()) {
+        for (ChannelNumbering channelNumbering :
+                channelGroup.getChannels(NumberedChannelGroup.ChannelOrdering.SPECIFIED)
+        ) {
             if (includedChannelIds.contains(channelNumbering.getChannel().getId())) {
                 // Since we're only adding the channel numbers which are currently available this prevents outputting
                 // the same channel with the same number.
