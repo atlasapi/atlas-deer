@@ -212,7 +212,7 @@ public class LegacyChannelGroupTransformerTest {
 
         assertThat(transformed.getId().longValue(), is(id));
         assertThat(transformed.getSource(), is(publisher));
-        assertThat(((Region) transformed).getPlatform().getId().longValue(), is(platformId));
+        assertThat(((Region) transformed).getPlatform().get().getId().longValue(), is(platformId));
 
         assertThat(
                 Iterables.any(

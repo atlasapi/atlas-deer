@@ -1,8 +1,5 @@
 package org.atlasapi.output.annotation;
 
-import java.io.IOException;
-import java.util.Optional;
-
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.ResolvedChannelGroup;
@@ -11,11 +8,14 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ChannelGroupWriter;
 import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
 
+import java.io.IOException;
+import java.util.Optional;
+
 public class PlatformAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
 
     private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter(
-            "regions",
-            "region"
+            "platforms",
+            "platform"
     );
 
     @Override

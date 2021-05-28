@@ -9,6 +9,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 
+import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -31,8 +32,8 @@ public class Region extends NumberedChannelGroup {
         this.platform = platform;
     }
 
-    public ChannelGroupRef getPlatform() {
-        return platform;
+    public Optional<ChannelGroupRef> getPlatform() {
+        return Optional.ofNullable(platform);
     }
 
     public static Builder builder(Publisher publisher) {
