@@ -690,8 +690,8 @@ public class QueryWebModule {
                         CHANNEL_GROUP
                 )
                 .register(ID_SUMMARY, ChannelGroupIdSummaryAnnotation.create(idSummaryWriter))
-                .register(REGIONS, new PlatformAnnotation(), CHANNEL_GROUP)
-                .register(PLATFORM, new RegionsAnnotation(), CHANNEL_GROUP)
+                .register(PLATFORM, new PlatformAnnotation(), CHANNEL_GROUP)
+                .register(REGIONS, new RegionsAnnotation(), CHANNEL_GROUP)
                 .register(
                         CHANNEL_GROUPS_SUMMARY,
                         NullWriter.create(ResolvedChannelGroup.class),

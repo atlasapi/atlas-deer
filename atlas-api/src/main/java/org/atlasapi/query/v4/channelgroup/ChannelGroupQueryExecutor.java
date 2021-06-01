@@ -385,7 +385,13 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             return Optional.empty();
         }
 
-        Id platformId = ((Region) entity).getPlatform().getId();
+        Region region = (Region) entity;
+
+        if (!region.getPlatform().isPresent()) {
+            return Optional.empty();
+        }
+
+        Id platformId = region.getPlatform().get().getId();
 
         return Optional.ofNullable(Promise.wrap(channelGroupResolver.resolveIds(ImmutableSet.of(platformId)))
                 .then(Resolved::getResources)
