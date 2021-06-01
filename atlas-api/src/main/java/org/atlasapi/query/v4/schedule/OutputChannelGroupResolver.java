@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.stream.MoreStreams;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelGroupRef;
@@ -130,16 +129,16 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
         }
         NumberedChannelGroup baseNumberedChannelGroup = (NumberedChannelGroup) baseChannelGroup;
         ImmutableSet.Builder<ChannelNumbering> newChannelNumberings = ImmutableSet.builder();
-        ImmutableMap<Id, ChannelNumbering> baseChannelNumberingsById = MoreStreams.stream(
-                baseNumberedChannelGroup.getChannels()
-        )
-                .filter(channelGroupMembership -> channelGroupMembership.isAvailable(now))
-                .collect(
-                        MoreCollectors.toImmutableMap(
-                                channelGroupMembership -> channelGroupMembership.getChannel().getId(),
-                                channelGroupMembership -> channelGroupMembership
-                        )
-                );
+        ImmutableMap.Builder<Id, ChannelNumbering> baseChannelNumberingsByIdBuilder = ImmutableMap.builder();
+        Set<Id> baseChannelIdsAdded = new HashSet<>();
+        for (ChannelNumbering channelNumbering : baseNumberedChannelGroup.getChannels()) {
+            Id channelId = channelNumbering.getChannel().getId();
+            if (channelNumbering.isAvailable(now) && !baseChannelIdsAdded.contains(channelId)) {
+                baseChannelNumberingsByIdBuilder.put(channelId, channelNumbering);
+                baseChannelIdsAdded.add(channelId);
+            }
+        }
+        ImmutableMap<Id, ChannelNumbering> baseChannelNumberingsById = baseChannelNumberingsByIdBuilder.build();
         Set<Id> includedChannelIds = new HashSet<>();
         for (ChannelNumbering channelNumbering :
                 channelGroup.getChannels(NumberedChannelGroup.ChannelOrdering.SPECIFIED)
