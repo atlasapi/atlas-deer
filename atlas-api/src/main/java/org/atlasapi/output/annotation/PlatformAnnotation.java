@@ -29,7 +29,11 @@ public class PlatformAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
         if (channelGroup.isPresent()) {
             writer.writeObject(CHANNEL_GROUP_WRITER, channelGroup.get(), ctxt);
         } else {
-            throw new MissingResolvedDataException(CHANNEL_GROUP_WRITER.fieldName(entity.getChannelGroup()));
+            if (!((Region) entity.getChannelGroup()).getPlatform().isPresent()) {
+                writer.writeObject(CHANNEL_GROUP_WRITER, null, ctxt);
+            } else {
+                throw new MissingResolvedDataException(CHANNEL_GROUP_WRITER.fieldName(entity.getChannelGroup()));
+            }
         }
     }
 }
