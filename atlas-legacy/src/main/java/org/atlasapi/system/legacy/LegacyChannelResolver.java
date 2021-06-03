@@ -1,16 +1,13 @@
 package org.atlasapi.system.legacy;
 
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.channel.ChannelQuery;
-
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-
-import javax.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -37,8 +34,8 @@ public class LegacyChannelResolver implements ChannelResolver {
     }
 
     @Override
-    public ListenableFuture<Resolved<Channel>> resolveIds(Iterable<Id> ids, @Nullable Boolean refreshCache) {
-        if (refreshCache != null && refreshCache) {
+    public ListenableFuture<Resolved<Channel>> resolveIds(Iterable<Id> ids, boolean refreshCache) {
+        if (refreshCache) {
             legacyResolver.refreshCache();
         }
         return resolveIds(ids);

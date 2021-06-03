@@ -22,14 +22,28 @@ public class Region extends NumberedChannelGroup {
             Id id,
             String canonicalUri,
             Publisher publisher,
-            Set<ChannelNumbering> channels,
-            Set<Country> availableCountries,
-            Set<TemporalField<String>> titles,
+            Iterable<ChannelNumbering> channels,
+            Iterable<Country> availableCountries,
+            Iterable<TemporalField<String>> titles,
             ChannelGroupRef platform,
             ChannelGroupRef channelNumbersFrom
     ) {
         super(id, canonicalUri, publisher, channels, availableCountries, titles, channelNumbersFrom);
         this.platform = platform;
+    }
+
+    @Override
+    public ChannelGroup<ChannelNumbering> copyWithChannels(Iterable<ChannelNumbering> channels) {
+        return new Region(
+                getId(),
+                getCanonicalUri(),
+                this.publisher,
+                channels,
+                this.availableCountries,
+                this.titles,
+                this.platform,
+                this.channelNumbersFrom
+        );
     }
 
     public Optional<ChannelGroupRef> getPlatform() {

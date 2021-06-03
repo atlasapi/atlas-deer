@@ -1,12 +1,14 @@
 package org.atlasapi.output.annotation;
 
-import java.io.IOException;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.NumberedChannelGroup;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.attribute.Attributes;
@@ -16,14 +18,13 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.ResolvedChannelWithChannelGroupMembership;
 import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
-
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import org.joda.time.LocalDate;
+
+import java.io.IOException;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -69,8 +70,12 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ResolvedCha
             }
         } else {
             boolean lcnSharing = ctxt.getActiveAnnotations().contains(Annotation.LCN_SHARING);
-            for (ChannelGroupMembership channelGroupMembership :
-                    entity.getChannelGroup().getChannelsAvailable(LocalDate.now(), lcnSharing)) {
+            Set<? extends ChannelGroupMembership> availableChannels =
+                    entity.getChannelGroup() instanceof NumberedChannelGroup ?
+                            ((NumberedChannelGroup) entity.getChannelGroup())
+                                    .getChannelsAvailable(LocalDate.now(), lcnSharing) :
+                            entity.getChannelGroup().getChannelsAvailable(LocalDate.now());
+            for (ChannelGroupMembership channelGroupMembership : availableChannels) {
                 builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
             }
         }

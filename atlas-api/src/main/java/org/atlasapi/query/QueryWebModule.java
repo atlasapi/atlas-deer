@@ -813,6 +813,10 @@ public class QueryWebModule {
                                 EnumCoercer.create(Sources.fromKey())
                         ),
                         QueryAtomParser.create(
+                                Attributes.SOURCE,
+                                EnumCoercer.create(Sources.fromKey())
+                        ),
+                        QueryAtomParser.create(
                                 Attributes.BROADCASTER,
                                 EnumCoercer.create(Sources.fromKey())
                         ),

@@ -6,14 +6,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.stream.MoreStreams;
 import com.metabroadcast.promise.Promise;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
@@ -34,6 +33,8 @@ import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.channel.ChannelGroupQuery;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryExecutor;
@@ -57,7 +58,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelGroup> {
 
-    private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final ChannelGroupResolver channelGroupResolver;
     private final ChannelResolver channelResolver;
 
@@ -82,8 +82,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 Futures.transform(
                         channelGroupResolver.resolveIds(
                                 ImmutableSet.of(query.getOnlyId()),
-                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(
-                                        Attributes.REFRESH_CACHE_PARAM))
+                                Boolean.parseBoolean(
+                                        query.getContext().getRequest().getParameter(
+                                                Attributes.CHANNEL_GROUP_REFRESH_CACHE.externalName()
+                                        )
+                                )
                         ),
                         (Resolved<ChannelGroup<?>> resolved) -> {
                             if (resolved.getResources().isEmpty()) {
@@ -96,15 +99,20 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     .first()
                                     .get();
 
-                            NumberedChannelGroup.ChannelOrdering channelOrdering = filterChannelsAndGetOrdering(
-                                    ImmutableList.of(channelGroup),
-                                    query.getOperands()
+                            FilteredChannelGroupsAndOrdering filteredChannelGroupsAndOrdering =
+                                    getFilteredChannelGroupsAndOrdering(
+                                            ImmutableList.of(channelGroup),
+                                            query.getOperands()
+                                    );
+
+                            channelGroup = Iterables.getOnlyElement(
+                                    filteredChannelGroupsAndOrdering.getChannelGroups()
                             );
 
                             ResolvedChannelGroup resolvedChannelGroup = resolveAnnotationData(
                                     query.getContext(),
                                     channelGroup,
-                                    channelOrdering
+                                    filteredChannelGroupsAndOrdering.getChannelOrdering()
                             );
 
                             return QueryResult.singleResult(
@@ -116,7 +124,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         );
     }
 
-    private NumberedChannelGroup.ChannelOrdering filterChannelsAndGetOrdering(
+    private FilteredChannelGroupsAndOrdering getFilteredChannelGroupsAndOrdering(
             Iterable<ChannelGroup<?>> channelGroups,
             Iterable<AttributeQuery<?>> attributeQueries
     ) {
@@ -142,146 +150,157 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 }
             }
         }
+
+        ImmutableList.Builder<ChannelGroup<?>> filteredChannelGroups = ImmutableList.builder();
         for (ChannelGroup<?> channelGroup : channelGroups) {
+            boolean changed = false;
             if (channelGroup instanceof NumberedChannelGroup) {
                 NumberedChannelGroup numberedChannelGroup = (NumberedChannelGroup) channelGroup;
-                if (dttIds != null && !dttIds.isEmpty() && dttIds.contains(channelGroup.getId())) {
-                    filterDttChannels(numberedChannelGroup);
-                }
-                if (ipIds != null && !ipIds.isEmpty() && ipIds.contains(channelGroup.getId())) {
-                    filterIpChannels(numberedChannelGroup);
+                boolean filterToDttChannels = dttIds != null && !dttIds.isEmpty() &&
+                        dttIds.contains(channelGroup.getId());
+                boolean filterToIpChannels = ipIds != null && !ipIds.isEmpty() &&
+                        ipIds.contains(channelGroup.getId());
+                if (filterToDttChannels || filterToIpChannels) {
+                    changed = true;
+                    ChannelGroup<?> filteredChannelGroup = filterChannelGroupChannels(
+                            numberedChannelGroup,
+                            filterToDttChannels,
+                            filterToIpChannels
+                    );
+                    filteredChannelGroups.add(filteredChannelGroup);
                 }
             }
+            if (!changed) {
+                filteredChannelGroups.add(channelGroup);
+            }
         }
-        return ordering;
+        return new FilteredChannelGroupsAndOrdering(
+                filteredChannelGroups.build(),
+                ordering
+        );
     }
 
-    private void filterIpChannels(NumberedChannelGroup channelGroup) {
-        ImmutableSet<ChannelNumbering> ipChannels = StreamSupport.stream(
-                channelGroup.getChannels(NumberedChannelGroup.ChannelOrdering.SPECIFIED).spliterator(),
-                false
+    private ChannelGroup<?> filterChannelGroupChannels(
+            NumberedChannelGroup channelGroup,
+            boolean filterToDttChannels,
+            boolean filterToIpChannels
+    ) {
+        Iterable<ChannelNumbering> filteredChannels = channelGroup.getChannels(
+                NumberedChannelGroup.ChannelOrdering.SPECIFIED
         )
+                .stream()
                 .filter(channel -> channel.getChannelNumber().isPresent())
                 .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))
-                .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) > 300)
+                .filter(channel -> {
+                    int channelNumber = Integer.parseInt(channel.getChannelNumber().get());
+                    // Is this really what we want? If the same channel group is passed in both query
+                    // parameters we will not include any channels. The logic has been preserved during
+                    // a refactor of the code but this might just be unintentional.
+                    boolean include = true;
+                    if (filterToDttChannels) {
+                        include = channelNumber <= 300;
+                    }
+                    if (filterToIpChannels) {
+                        include &= channelNumber > 300;
+                    }
+                    return include;
+                })
                 .collect(MoreCollectors.toImmutableSet());
-
-        //TODO since the underlying resolver caches the channel groups we're potentially mutating a cached object
-        // which could return incorrect data for subsequent queries if they are not doing this filtering.
-        // A clone of the object should be used instead.
-        channelGroup.setChannels(ipChannels);
+        return channelGroup.copyWithChannels(filteredChannels);
     }
 
-    private void filterDttChannels(NumberedChannelGroup channelGroup) {
-        ImmutableSet<ChannelNumbering> dttChannels = StreamSupport.stream(
-                channelGroup.getChannels(NumberedChannelGroup.ChannelOrdering.SPECIFIED).spliterator(),
-                false
-        )
-                .filter(channel -> channel.getChannelNumber().isPresent())
-                .filter(channel -> !Strings.isNullOrEmpty(channel.getChannelNumber().get()))
-                .filter(channel -> Integer.parseInt(channel.getChannelNumber().get()) <= 300)
-                .collect(MoreCollectors.toImmutableSet());
+    private QueryResult<ResolvedChannelGroup> executeListQuery(
+            Query<ResolvedChannelGroup> query
+    ) throws QueryExecutionException {
 
-        //TODO since the underlying resolver caches the channel groups we're potentially mutating a cached object
-        // which could return incorrect data for subsequent queries if they are not doing this filtering.
-        // A clone of the object should be used instead.
-        channelGroup.setChannels(dttChannels);
-    }
-
-    private QueryResult<ResolvedChannelGroup> executeListQuery(Query<ResolvedChannelGroup> query)
-            throws QueryExecutionException {
-        Iterable<ChannelGroup<?>> resolvedChannelGroups;
-        List<Id> lids = Lists.newArrayList();
+        ChannelGroupQuery.Builder channelGroupQueryBuilder = ChannelGroupQuery.builder();
+        boolean simpleIdsQuery = true;
+        boolean refreshCache = false;
+        Set<Id> channelGroupIds = null;
 
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
-            if (attributeQuery.getAttributeName()
-                    .equals(Attributes.CHANNEL_GROUP_IDS.externalName())) {
-                lids = (List<Id>) attributeQuery.getValue();
-            }
-        }
+            String attributeName = attributeQuery.getAttributeName();
+            Object attributeValue = attributeQuery.getValue();
 
-        if (lids.isEmpty()) {
-            resolvedChannelGroups = Futures.get(
-                    Futures.transform(
-                            channelGroupResolver.allChannels(),
-                            (Resolved<ChannelGroup<?>> input) -> input.getResources()
-                    ),
-                    1, TimeUnit.MINUTES,
-                    QueryExecutionException.class
-            );
-        } else {
-            resolvedChannelGroups = Futures.get(
-                    Futures.transform(
-                            channelGroupResolver.resolveIds(
-                                    lids,
-                                    Boolean.parseBoolean(query.getContext()
-                                            .getRequest()
-                                            .getParameter(Attributes.REFRESH_CACHE_PARAM)
-                                    )
-                            ),
-                            (Resolved<ChannelGroup<?>> input) -> input.getResources()
-                    ),
-                    1, TimeUnit.MINUTES,
-                    QueryExecutionException.class
-            );
-        }
-
-        List<ChannelGroup<?>> channelGroups = Lists.newArrayList(resolvedChannelGroups);
-
-        for (AttributeQuery<?> attributeQuery : query.getOperands()) {
-            if (attributeQuery.getAttributeName()
-                    .equals(Attributes.CHANNEL_GROUP_TYPE.externalName())) {
-                final String channelGroupType = attributeQuery.getValue().get(0).toString();
-                channelGroups = channelGroups.stream()
-                        .filter(channelGroup -> channelGroupType.equals(channelGroup.getType()))
-                        .collect(Collectors.toList());
-            }
-
-            if (attributeQuery.getAttributeName()
-                    .equals(Attributes.SOURCE.externalName())) {
-                channelGroups = channelGroups.stream()
-                        .filter(channelGroup -> channelGroup.getSource()
-                                .key()
-                                .equals(attributeQuery.getValue().get(0).toString())
+            if (Attributes.CHANNEL_GROUP_IDS.externalName().equals(attributeName)) {
+                channelGroupIds = ((List<Id>) attributeValue).stream()
+                        .collect(MoreCollectors.toImmutableSet());
+                channelGroupQueryBuilder.withChannelGroupIds(
+                        channelGroupIds.stream()
+                                .map(Id::longValue)
+                                .collect(MoreCollectors.toImmutableSet())
+                );
+            } else if (Attributes.SOURCE.externalName().equals(attributeName)) {
+                simpleIdsQuery = false;
+                channelGroupQueryBuilder.withPublishers((List<Publisher>) attributeValue);
+            } else if (Attributes.CHANNEL_GROUP_TYPE.externalName().equals(attributeName)) {
+                simpleIdsQuery = false;
+                channelGroupQueryBuilder.withTypes((List<String>) attributeValue);
+            } else if (Attributes.CHANNEL_GROUP_REFRESH_CACHE.externalName().equals(attributeName)) {
+                refreshCache = Boolean.parseBoolean(attributeValue.toString());
+            } else {
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Incorrect query string parameter: %s",
+                                attributeQuery.getAttributeName()
                         )
-                        .collect(Collectors.toList());
+                );
             }
         }
 
-        channelGroups = query.getContext()
-                .getSelection()
-                .get()
-                .applyTo(channelGroups);
+        ChannelGroupQuery channelGroupQuery = channelGroupQueryBuilder.build();
+        ListenableFuture<Resolved<ChannelGroup<?>>> resolvedChannelGroupsFuture;
 
-        channelGroups = channelGroups.stream()
+        if (channelGroupIds != null && simpleIdsQuery) {
+            resolvedChannelGroupsFuture = channelGroupResolver.resolveIds(channelGroupIds, refreshCache);
+        } else {
+            resolvedChannelGroupsFuture = channelGroupResolver.resolveChannelGroups(channelGroupQuery);
+        }
+
+        Iterable<ChannelGroup<?>> resolvedChannelGroups = Futures.getChecked(
+                Futures.transform(
+                        resolvedChannelGroupsFuture,
+                        (Resolved<ChannelGroup<?>> input) -> input.getResources()
+                ),
+                QueryExecutionException.class,
+                1, TimeUnit.MINUTES
+        );
+
+        List<ChannelGroup<?>> filteredChannelGroups = MoreStreams.stream(resolvedChannelGroups)
                 .filter(input -> query.getContext()
                         .getApplication()
                         .getConfiguration()
                         .isReadEnabled(input.getSource())
                 )
-                .collect(Collectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
-        NumberedChannelGroup.ChannelOrdering channelOrdering = filterChannelsAndGetOrdering(
-                channelGroups,
+        ImmutableList<ChannelGroup<?>> selectedChannelGroups = query.getContext()
+                .getSelection()
+                .get()
+                .applyTo(filteredChannelGroups);
+
+        FilteredChannelGroupsAndOrdering filteredChannelGroupsAndOrdering = getFilteredChannelGroupsAndOrdering(
+                selectedChannelGroups,
                 query.getOperands()
         );
 
-        ImmutableList<ResolvedChannelGroup> channelGroupsResults = channelGroups.stream()
-                        .map(channelGroup -> resolveAnnotationData(query.getContext(), channelGroup, channelOrdering))
-                        .collect(MoreCollectors.toImmutableList());
+        ImmutableList<ResolvedChannelGroup> channelGroupsResults = MoreStreams.stream(
+                filteredChannelGroupsAndOrdering.getChannelGroups()
+        )
+                .map(channelGroup ->
+                        resolveAnnotationData(
+                                query.getContext(),
+                                channelGroup,
+                                filteredChannelGroupsAndOrdering.getChannelOrdering()
+                        )
+                )
+                .collect(MoreCollectors.toImmutableList());
 
         return QueryResult.listResult(
                 channelGroupsResults,
                 query.getContext(),
                 channelGroupsResults.size()
         );
-    }
-
-    private List<String> getIdsListFromAttribute(AttributeQuery<?> attributeQuery) {
-        return attributeQuery.getValue()
-                .stream()
-                .map(Object::toString)
-                .collect(Collectors.toList());
     }
 
     private ResolvedChannelGroup resolveAnnotationData(
@@ -502,13 +521,14 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     ) {
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
 
-        Iterable<? extends ChannelGroupMembership> availableChannels;
+        Set<? extends ChannelGroupMembership> availableChannels;
 
         if (entity instanceof NumberedChannelGroup) {
             NumberedChannelGroup numberedChannelGroup = (NumberedChannelGroup) entity;
             if (withFutureChannels) {
                 // N.B. futureChannels should effectively always allow lcnSharing, since future channel
-                // might have same LCN as existing, to-be-deprecated channel
+                // might have same LCN as existing, to-be-deprecated channel.
+                // This fetches future AND old, expired channels?
                 availableChannels = numberedChannelGroup.getChannels(channelOrdering);
             } else {
                 availableChannels = numberedChannelGroup.getChannelsAvailable(
@@ -519,17 +539,15 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             }
         } else {
             if (withFutureChannels) {
-                // N.B. futureChannels should effectively always allow lcnSharing, since future channel
-                // might have same LCN as existing, to-be-deprecated channel
-                availableChannels = entity.getChannels();   // this fetches future AND old, expired channels?
+                availableChannels = entity.getChannels(); // This fetches future AND old, expired channels?
             } else {
-                availableChannels = entity.getChannelsAvailable(LocalDate.now(), lcnSharing);
+                availableChannels = entity.getChannelsAvailable(LocalDate.now());
             }
         }
 
 
 
-        List<Id> orderedIds = StreamSupport.stream(availableChannels.spliterator(), false)
+        List<Id> orderedIds = availableChannels.stream()
                 //TODO fix channel appearing twice in ordering blowing this thing up
                 .map(cm -> cm.getChannel().getId())
                 .distinct()
@@ -585,5 +603,26 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     private boolean isChannelGroupMembership(ChannelGroupMembership channelGroupMembership) {
         return !(channelGroupMembership instanceof ChannelNumbering);
+    }
+
+    private static class FilteredChannelGroupsAndOrdering {
+        private final Iterable<ChannelGroup<?>> channelGroups;
+        private final NumberedChannelGroup.ChannelOrdering channelOrdering;
+
+        public FilteredChannelGroupsAndOrdering(
+                Iterable<ChannelGroup<?>> channelGroups,
+                NumberedChannelGroup.ChannelOrdering channelOrdering
+        ) {
+            this.channelGroups = channelGroups;
+            this.channelOrdering = channelOrdering;
+        }
+
+        public Iterable<ChannelGroup<?>> getChannelGroups() {
+            return channelGroups;
+        }
+
+        public NumberedChannelGroup.ChannelOrdering getChannelOrdering() {
+            return channelOrdering;
+        }
     }
 }

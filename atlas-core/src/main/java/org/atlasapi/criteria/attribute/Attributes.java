@@ -165,46 +165,36 @@ public class Attributes {
             Identified.class
     );
 
-    // For Channels
-    public static final String BROADCASTER_PARAM = "broadcaster";
-    public static final String AVAILABLE_FROM_PARAM = "available_from";
-    public static final String MEDIA_TYPE_PARAM = "media_type";
-    public static final String ORDER_BY_PARAM = "order_by";
-    public static final String ADVERTISED_FROM_PARAM = "advertised";
-    public static final String ALIASES_NAMESPACE_PARAM = "aliases.namespace";
-    public static final String ALIASES_VALUE_PARAM = "aliases.value";
-    public static final String REFRESH_CACHE_PARAM = "refresh_cache";
-
     public static final Attribute<Boolean> ADVERTISED_ON = BooleanAttribute.single(
-            ADVERTISED_FROM_PARAM,
+            "advertised",
             Identified.class
     );
     public static final Attribute<Publisher> BROADCASTER = EnumAttribute.list(
-            BROADCASTER_PARAM,
+            "broadcaster",
             Publisher.class,
             Identified.class
     );
     public static final Attribute<Publisher> AVAILABLE_FROM = EnumAttribute.list(
-            AVAILABLE_FROM_PARAM,
+            "available_from",
             Publisher.class,
             Identified.class
     );
     public static final Attribute<MediaType> MEDIA_TYPE = EnumAttribute.single(
-            MEDIA_TYPE_PARAM,
+            "media_type",
             MediaType.class,
             Identified.class
     );
     public static final Attribute<String> ORDER_BY_CHANNEL = StringAttribute.single(
-            ORDER_BY_PARAM,
+            "order_by",
             Channel.class
     );
 
     public static final Attribute<String> REFRESH_CACHE = StringAttribute.single(
-            REFRESH_CACHE_PARAM,
+            "refresh_cache",
             Channel.class
     );
     public static final Attribute<String> CHANNEL_GROUP_REFRESH_CACHE = StringAttribute.single(
-            REFRESH_CACHE_PARAM,
+            "refresh_cache",
             ChannelGroup.class
     );
 
