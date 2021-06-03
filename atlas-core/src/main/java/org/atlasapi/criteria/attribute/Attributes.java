@@ -193,10 +193,6 @@ public class Attributes {
             "refresh_cache",
             Channel.class
     );
-    public static final Attribute<String> CHANNEL_GROUP_REFRESH_CACHE = StringAttribute.single(
-            "refresh_cache",
-            ChannelGroup.class
-    );
 
     // For filtering
     public static final Attribute<String> CONTENT_TITLE_PREFIX = StringAttribute.single(

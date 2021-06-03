@@ -84,7 +84,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                 ImmutableSet.of(query.getOnlyId()),
                                 Boolean.parseBoolean(
                                         query.getContext().getRequest().getParameter(
-                                                Attributes.CHANNEL_GROUP_REFRESH_CACHE.externalName()
+                                                Attributes.REFRESH_CACHE.externalName()
                                         )
                                 )
                         ),
@@ -99,20 +99,45 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     .first()
                                     .get();
 
-                            FilteredChannelGroupsAndOrdering filteredChannelGroupsAndOrdering =
-                                    getFilteredChannelGroupsAndOrdering(
-                                            ImmutableList.of(channelGroup),
-                                            query.getOperands()
-                                    );
+                            NumberedChannelGroup.ChannelOrdering channelOrdering =
+                                    NumberedChannelGroup.ChannelOrdering.CHANNEL_NUMBER;
+                            Set<Id> dttIds = null;
+                            Set<Id> ipIds = null;
 
-                            channelGroup = Iterables.getOnlyElement(
-                                    filteredChannelGroupsAndOrdering.getChannelGroups()
+                            for (AttributeQuery<?> attributeQuery : query.getOperands()) {
+                                String attributeName = attributeQuery.getAttributeName();
+                                List<?> attributeValue = attributeQuery.getValue();
+
+                                if (attributeName.equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
+                                    Set<Id> newDttIds = ImmutableSet.copyOf((List<Id>) attributeValue);
+                                    dttIds = dttIds == null ? newDttIds : Sets.union(dttIds, newDttIds);
+                                } else if (attributeName.equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
+                                    Set<Id> newIpIds = ImmutableSet.copyOf((List<Id>) attributeValue);
+                                    ipIds = ipIds == null ? newIpIds : Sets.union(ipIds, newIpIds);
+                                } else if (attributeName.equals(Attributes.CHANNEL_ORDERING.externalName())) {
+                                    String orderingName = attributeValue.get(0).toString();
+                                    channelOrdering = NumberedChannelGroup.ChannelOrdering.forName(orderingName);
+                                    if (channelOrdering == null) {
+                                        throw new IllegalArgumentException(
+                                                "Invalid channel ordering: " + orderingName + " (possible values: " +
+                                                        NumberedChannelGroup.ChannelOrdering.names() + ")"
+                                        );
+                                    }
+                                }
+                            }
+
+                            ChannelGroup<?> channelFilteredChannelGroup = Iterables.getOnlyElement(
+                                    getChannelFilteredChannelGroups(
+                                            ImmutableList.of(channelGroup),
+                                            dttIds,
+                                            ipIds
+                                    )
                             );
 
                             ResolvedChannelGroup resolvedChannelGroup = resolveAnnotationData(
                                     query.getContext(),
-                                    channelGroup,
-                                    filteredChannelGroupsAndOrdering.getChannelOrdering()
+                                    channelFilteredChannelGroup,
+                                    channelOrdering
                             );
 
                             return QueryResult.singleResult(
@@ -124,33 +149,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         );
     }
 
-    private FilteredChannelGroupsAndOrdering getFilteredChannelGroupsAndOrdering(
+    private Iterable<ChannelGroup<?>> getChannelFilteredChannelGroups(
             Iterable<ChannelGroup<?>> channelGroups,
-            Iterable<AttributeQuery<?>> attributeQueries
+            @Nullable Set<Id> dttIds,
+            @Nullable Set<Id> ipIds
     ) {
-        NumberedChannelGroup.ChannelOrdering ordering = NumberedChannelGroup.ChannelOrdering.CHANNEL_NUMBER;
-        Set<Id> dttIds = null;
-        Set<Id> ipIds = null;
-        for (AttributeQuery<?> attributeQuery : attributeQueries) {
-            String attributeName = attributeQuery.getAttributeName();
-            if (attributeName.equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
-                Set<Id> newDttIds = ImmutableSet.copyOf((List<Id>) attributeQuery.getValue());
-                dttIds = dttIds == null ? newDttIds : Sets.union(dttIds, newDttIds);
-            } else if (attributeName.equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
-                Set<Id> newIpIds = ImmutableSet.copyOf((List<Id>) attributeQuery.getValue());
-                ipIds = ipIds == null ? newIpIds : Sets.union(ipIds, newIpIds);
-            } else if (attributeName.equals(Attributes.CHANNEL_ORDERING.externalName())) {
-                String orderingName = attributeQuery.getValue().get(0).toString();
-                ordering = NumberedChannelGroup.ChannelOrdering.forName(orderingName);
-                if (ordering == null) {
-                    throw new IllegalArgumentException(
-                            "Invalid channel ordering: " + orderingName + " (possible values: " +
-                                    NumberedChannelGroup.ChannelOrdering.names() + ")"
-                    );
-                }
-            }
-        }
-
         ImmutableList.Builder<ChannelGroup<?>> filteredChannelGroups = ImmutableList.builder();
         for (ChannelGroup<?> channelGroup : channelGroups) {
             boolean changed = false;
@@ -174,10 +177,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 filteredChannelGroups.add(channelGroup);
             }
         }
-        return new FilteredChannelGroupsAndOrdering(
-                filteredChannelGroups.build(),
-                ordering
-        );
+        return filteredChannelGroups.build();
     }
 
     private ChannelGroup<?> filterChannelGroupChannels(
@@ -217,10 +217,13 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         boolean simpleIdsQuery = true;
         boolean refreshCache = false;
         Set<Id> channelGroupIds = null;
+        NumberedChannelGroup.ChannelOrdering channelOrdering = NumberedChannelGroup.ChannelOrdering.CHANNEL_NUMBER;
+        Set<Id> dttIds = null;
+        Set<Id> ipIds = null;
 
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             String attributeName = attributeQuery.getAttributeName();
-            Object attributeValue = attributeQuery.getValue();
+            List<?> attributeValue = attributeQuery.getValue();
 
             if (Attributes.CHANNEL_GROUP_IDS.externalName().equals(attributeName)) {
                 channelGroupIds = ((List<Id>) attributeValue).stream()
@@ -236,8 +239,23 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             } else if (Attributes.CHANNEL_GROUP_TYPE.externalName().equals(attributeName)) {
                 simpleIdsQuery = false;
                 channelGroupQueryBuilder.withTypes((List<String>) attributeValue);
-            } else if (Attributes.CHANNEL_GROUP_REFRESH_CACHE.externalName().equals(attributeName)) {
+            } else if (Attributes.REFRESH_CACHE.externalName().equals(attributeName)) {
                 refreshCache = Boolean.parseBoolean(attributeValue.toString());
+            } else if (attributeName.equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
+                Set<Id> newDttIds = ImmutableSet.copyOf((List<Id>) attributeValue);
+                dttIds = dttIds == null ? newDttIds : Sets.union(dttIds, newDttIds);
+            } else if (attributeName.equals(Attributes.CHANNEL_GROUP_IP_CHANNELS.externalName())) {
+                Set<Id> newIpIds = ImmutableSet.copyOf((List<Id>) attributeValue);
+                ipIds = ipIds == null ? newIpIds : Sets.union(ipIds, newIpIds);
+            } else if (attributeName.equals(Attributes.CHANNEL_ORDERING.externalName())) {
+                String orderingName = attributeValue.get(0).toString();
+                channelOrdering = NumberedChannelGroup.ChannelOrdering.forName(orderingName);
+                if (channelOrdering == null) {
+                    throw new IllegalArgumentException(
+                            "Invalid channel ordering: " + orderingName + " (possible values: " +
+                                    NumberedChannelGroup.ChannelOrdering.names() + ")"
+                    );
+                }
             } else {
                 throw new IllegalArgumentException(
                         String.format(
@@ -279,19 +297,22 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .get()
                 .applyTo(filteredChannelGroups);
 
-        FilteredChannelGroupsAndOrdering filteredChannelGroupsAndOrdering = getFilteredChannelGroupsAndOrdering(
+
+        Iterable<ChannelGroup<?>> channelFilteredChannelGroups = getChannelFilteredChannelGroups(
                 selectedChannelGroups,
-                query.getOperands()
+                dttIds,
+                ipIds
         );
 
+        NumberedChannelGroup.ChannelOrdering finalChannelOrdering = channelOrdering;
         ImmutableList<ResolvedChannelGroup> channelGroupsResults = MoreStreams.stream(
-                filteredChannelGroupsAndOrdering.getChannelGroups()
+                channelFilteredChannelGroups
         )
                 .map(channelGroup ->
                         resolveAnnotationData(
                                 query.getContext(),
                                 channelGroup,
-                                filteredChannelGroupsAndOrdering.getChannelOrdering()
+                                finalChannelOrdering
                         )
                 )
                 .collect(MoreCollectors.toImmutableList());
