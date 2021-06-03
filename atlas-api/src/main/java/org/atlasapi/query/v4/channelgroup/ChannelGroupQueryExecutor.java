@@ -299,7 +299,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         return QueryResult.listResult(
                 channelGroupsResults,
                 query.getContext(),
-                channelGroupsResults.size()
+                filteredChannelGroups.size()
         );
     }
 
