@@ -128,14 +128,16 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
             ChannelOrdering ordering,
             boolean lcnSharing
     ) {
+        Set<ChannelNumbering> availableChannels = super.getChannelsAvailable(date);
+
         // normally within a channel group, we expect/want only channel per channel number AKA lcn.
         // with lcnSharing = true (via annotation), we allow more than one to be served.
         if (lcnSharing) {
             switch (ordering) {
                 case SPECIFIED:
-                    return super.getChannelsAvailable(date);
+                    return availableChannels;
                 case CHANNEL_NUMBER:
-                    return super.getChannelsAvailable(date).stream()
+                    return availableChannels.stream()
                             .sorted(CHANNEL_NUMBERING_ORDERING)
                             .collect(MoreCollectors.toImmutableSet());
                 default:
@@ -143,8 +145,7 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
             }
         }
 
-
-        Set<ChannelNumbering> deduplicatedChannelNumberingsWithChannelNumber = super.getChannelsAvailable(date).stream()
+        Set<ChannelNumbering> deduplicatedChannelNumberingsWithChannelNumber = availableChannels.stream()
                 .filter(channelNumbering -> channelNumbering.getChannelNumber().isPresent())
                 .collect(Collectors.groupingBy(channelNumbering -> channelNumbering.getChannelNumber().get()))
                 .values()
@@ -154,7 +155,7 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
                 )
                 .collect(MoreCollectors.toImmutableSet());
 
-        Stream<ChannelNumbering> deduplicatedChannelNumberings = super.getChannelsAvailable(date).stream()
+        Stream<ChannelNumbering> deduplicatedChannelNumberings = availableChannels.stream()
                 .filter(channelNumbering -> !channelNumbering.getChannelNumber().isPresent()
                         // this is using reference equality to work
                         || deduplicatedChannelNumberingsWithChannelNumber.contains(channelNumbering)
