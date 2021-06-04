@@ -619,24 +619,4 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         return !(channelGroupMembership instanceof ChannelNumbering);
     }
 
-    private static class FilteredChannelGroupsAndOrdering {
-        private final Iterable<ChannelGroup<?>> channelGroups;
-        private final NumberedChannelGroup.ChannelOrdering channelOrdering;
-
-        public FilteredChannelGroupsAndOrdering(
-                Iterable<ChannelGroup<?>> channelGroups,
-                NumberedChannelGroup.ChannelOrdering channelOrdering
-        ) {
-            this.channelGroups = channelGroups;
-            this.channelOrdering = channelOrdering;
-        }
-
-        public Iterable<ChannelGroup<?>> getChannelGroups() {
-            return channelGroups;
-        }
-
-        public NumberedChannelGroup.ChannelOrdering getChannelOrdering() {
-            return channelOrdering;
-        }
-    }
 }
