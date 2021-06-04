@@ -48,7 +48,7 @@ public class Platform extends NumberedChannelGroup {
 
     @Override
     public ChannelGroup<ChannelNumbering> copyWithChannels(Iterable<ChannelNumbering> channels) {
-        return new Platform(
+        Platform copy = new Platform(
                 getId(),
                 getCanonicalUri(),
                 this.publisher,
@@ -58,6 +58,8 @@ public class Platform extends NumberedChannelGroup {
                 this.regions,
                 this.channelNumbersFrom
         );
+        copy.setAliases(getAliases());
+        return copy;
     }
 
     public Set<ChannelGroupRef> getRegions() {

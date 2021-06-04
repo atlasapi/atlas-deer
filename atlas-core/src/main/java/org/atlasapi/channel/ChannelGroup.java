@@ -53,7 +53,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
 
 
     public ChannelGroup<T> copyWithChannels(Iterable<T> channels) {
-        return new ChannelGroup<>(
+        ChannelGroup<T> copy = new ChannelGroup<>(
                 getId(),
                 getCanonicalUri(),
                 this.publisher,
@@ -61,6 +61,8 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
                 this.availableCountries,
                 this.titles
         );
+        copy.setAliases(getAliases());
+        return copy;
     }
 
     @Override

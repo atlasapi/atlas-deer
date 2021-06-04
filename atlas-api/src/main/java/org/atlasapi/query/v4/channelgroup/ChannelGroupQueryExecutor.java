@@ -99,6 +99,16 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     .first()
                                     .get();
 
+                            if (!query.getContext()
+                                    .getApplication()
+                                    .getConfiguration()
+                                    .isReadEnabled(channelGroup.getSource())
+                            ) {
+                                throw new UncheckedQueryExecutionException(
+                                        new NotFoundException(query.getOnlyId())
+                                );
+                            }
+
                             NumberedChannelGroup.ChannelOrdering channelOrdering =
                                     NumberedChannelGroup.ChannelOrdering.CHANNEL_NUMBER;
                             Set<Id> dttIds = null;

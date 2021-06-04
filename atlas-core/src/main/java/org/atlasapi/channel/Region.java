@@ -34,7 +34,7 @@ public class Region extends NumberedChannelGroup {
 
     @Override
     public ChannelGroup<ChannelNumbering> copyWithChannels(Iterable<ChannelNumbering> channels) {
-        return new Region(
+        Region copy = new Region(
                 getId(),
                 getCanonicalUri(),
                 this.publisher,
@@ -44,6 +44,8 @@ public class Region extends NumberedChannelGroup {
                 this.platform,
                 this.channelNumbersFrom
         );
+        copy.setAliases(getAliases());
+        return copy;
     }
 
     public Optional<ChannelGroupRef> getPlatform() {

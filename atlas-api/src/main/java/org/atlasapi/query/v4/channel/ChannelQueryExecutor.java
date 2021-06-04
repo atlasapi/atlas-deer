@@ -97,10 +97,22 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                                 );
                             }
 
+                            Channel channel = input.getResources().first().get();
+
+                            if (!query.getContext()
+                                    .getApplication()
+                                    .getConfiguration()
+                                    .isReadEnabled(channel.getSource())
+                            ) {
+                                throw new UncheckedQueryExecutionException(
+                                        new NotFoundException(query.getOnlyId())
+                                );
+                            }
+
                             ResolvedChannel resolvedChannel =
                                     resolveAnnotationData(
                                             query.getContext(),
-                                            input.getResources().first().get()
+                                            channel
                                     );
 
                             return QueryResult.singleResult(
