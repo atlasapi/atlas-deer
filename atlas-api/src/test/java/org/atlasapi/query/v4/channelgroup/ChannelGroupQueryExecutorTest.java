@@ -71,9 +71,12 @@ public class ChannelGroupQueryExecutorTest {
         Query<ResolvedChannelGroup> channelQuery = mock(Query.class);
         HttpServletRequest request = mock(HttpServletRequest.class);
         Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
 
         when(request.getParameter("annotations")).thenReturn("banana");
 
+        when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(application.getConfiguration()).thenReturn(configuration);
         when(context.getRequest()).thenReturn(request);
         when(context.getApplication()).thenReturn(application);
         when(context.getApplication().getTitle()).thenReturn("");
@@ -170,11 +173,15 @@ public class ChannelGroupQueryExecutorTest {
         Query<ResolvedChannelGroup> channelQuery = mock(Query.class);
         ChannelGroupRef regionChannelGroupRef = mock(ChannelGroupRef.class);
         Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
+
         Set<ChannelGroupRef> regionChannelGroupRefSet = new HashSet<>();
         Id channelGroupId = Id.valueOf(1L);
         Id regionChannelGroupId = Id.valueOf(2L);
 
         when(request.getParameter("annotations")).thenReturn("regions");
+        when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(application.getConfiguration()).thenReturn(configuration);
         when(context.getRequest()).thenReturn(request);
         when(context.getApplication()).thenReturn(application);
         when(context.getApplication().getTitle()).thenReturn("");

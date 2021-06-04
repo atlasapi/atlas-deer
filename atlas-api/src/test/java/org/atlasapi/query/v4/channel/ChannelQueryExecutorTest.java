@@ -1,7 +1,14 @@
 package org.atlasapi.query.v4.channel;
 
-import javax.servlet.http.HttpServletRequest;
-
+import com.google.api.client.util.Sets;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
@@ -25,17 +32,6 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
-
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.api.client.util.Sets;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
 import org.bouncycastle.util.Iterable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +39,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import javax.servlet.http.HttpServletRequest;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -65,14 +63,6 @@ public class ChannelQueryExecutorTest {
     @InjectMocks
     private ChannelQueryExecutor objectUnderTest;
 
-    @Mock
-    private Application application = mock(Application.class);
-
-    private ApplicationConfiguration appConf = ApplicationConfiguration.builder()
-            .withNoPrecedence(ImmutableList.of())
-            .withEnabledWriteSources(ImmutableList.of())
-            .build();
-
     @Test
     public void testExecuteSingle() throws Exception {
         Id channelId = Id.valueOf(1L);
@@ -80,10 +70,14 @@ public class ChannelQueryExecutorTest {
         QueryContext context = mock(QueryContext.class);
         Query<ResolvedChannel> channelQuery = mock(Query.class);
         HttpServletRequest request = mock(HttpServletRequest.class);
+        Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
         when(request.getParameter("annotations")).thenReturn("banana");
         when(context.getRequest()).thenReturn(request);
+        when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(configuration.isPrecedenceEnabled()).thenReturn(false);
+        when(application.getConfiguration()).thenReturn(configuration);
         when(context.getApplication()).thenReturn(application);
-        when(application.getConfiguration()).thenReturn(appConf);
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelId);
         when(channelQuery.getContext()).thenReturn(context);
@@ -150,14 +144,18 @@ public class ChannelQueryExecutorTest {
         QueryContext context = mock(QueryContext.class);
         Query<ResolvedChannel> channelQuery = mock(Query.class);
         HttpServletRequest request = mock(HttpServletRequest.class);
+        Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
 
         Id channelId = Id.valueOf(1L);
         Id parentId = Id.valueOf(2L);
 
         when(request.getParameter("annotations")).thenReturn("parent");
+        when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(configuration.isPrecedenceEnabled()).thenReturn(false);
+        when(application.getConfiguration()).thenReturn(configuration);
         when(context.getRequest()).thenReturn(request);
         when(context.getApplication()).thenReturn(application);
-        when(application.getConfiguration()).thenReturn(appConf);
 
         when(parentRef.getId()).thenReturn(parentId);
         when(result.getParent()).thenReturn(parentRef);
