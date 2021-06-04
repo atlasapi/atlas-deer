@@ -2,6 +2,7 @@ package org.atlasapi.query.v4.channelgroup;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -10,6 +11,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.stream.MoreStreams;
@@ -71,9 +73,25 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     @Nonnull
     @Override
-    public QueryResult<ResolvedChannelGroup> execute(Query<ResolvedChannelGroup> query)
-            throws QueryExecutionException {
-        return query.isListQuery() ? executeListQuery(query) : executeSingleQuery(query);
+    public QueryResult<ResolvedChannelGroup> execute(
+            Query<ResolvedChannelGroup> query
+    ) throws QueryExecutionException {
+        try {
+            return query.isListQuery()
+                    ? executeListQuery(query)
+                    : executeSingleQuery(query);
+        } catch (UncheckedExecutionException | UncheckedQueryExecutionException ee) {
+            for (Throwable throwable : Throwables.getCausalChain(ee)) {
+                if (throwable instanceof NotFoundException) {
+                    throw (NotFoundException) throwable;
+                }
+            }
+            Throwables.propagateIfInstanceOf(
+                    Throwables.getRootCause(ee),
+                    QueryExecutionException.class
+            );
+            throw Throwables.propagate(ee);
+        }
     }
 
     private QueryResult<ResolvedChannelGroup> executeSingleQuery(Query<ResolvedChannelGroup> query)

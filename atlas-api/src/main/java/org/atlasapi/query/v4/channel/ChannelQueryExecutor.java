@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.channel;
 import com.google.common.base.Function;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -10,6 +11,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.common.base.MoreOrderings;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -71,11 +73,25 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
     }
 
     @Override
-    public QueryResult<ResolvedChannel> execute(Query<ResolvedChannel> query)
-            throws QueryExecutionException {
-        return query.isListQuery()
-               ? executeListQuery(query)
-               : executeSingleQuery(query);
+    public QueryResult<ResolvedChannel> execute(
+            Query<ResolvedChannel> query
+    ) throws QueryExecutionException {
+        try {
+            return query.isListQuery()
+                    ? executeListQuery(query)
+                    : executeSingleQuery(query);
+        } catch (UncheckedExecutionException | UncheckedQueryExecutionException ee) {
+            for (Throwable throwable : Throwables.getCausalChain(ee)) {
+                if (throwable instanceof NotFoundException) {
+                    throw (NotFoundException) throwable;
+                }
+            }
+            Throwables.propagateIfInstanceOf(
+                    Throwables.getRootCause(ee),
+                    QueryExecutionException.class
+            );
+            throw Throwables.propagate(ee);
+        }
     }
 
     private QueryResult<ResolvedChannel> executeSingleQuery(Query<ResolvedChannel> query)
