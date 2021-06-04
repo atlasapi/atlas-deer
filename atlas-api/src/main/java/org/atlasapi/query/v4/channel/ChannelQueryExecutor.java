@@ -141,7 +141,6 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                                 attributeValue.toString().toUpperCase()
                         )
                 );
-                ordering = ordering(attributeValue.toString());
             } else if (Attributes.ORDER_BY.externalName().equals(attributeName)) {
                 ordering = ordering(attributeValue.toString());
             } else if (Attributes.ADVERTISED_ON.externalName().equals(attributeName)) {
