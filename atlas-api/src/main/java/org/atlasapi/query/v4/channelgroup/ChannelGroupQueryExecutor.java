@@ -84,7 +84,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                 ImmutableSet.of(query.getOnlyId()),
                                 Boolean.parseBoolean(
                                         query.getContext().getRequest().getParameter(
-                                                Attributes.REFRESH_CACHE.externalName()
+                                                Attributes.CHANNEL_GROUP_REFRESH_CACHE.externalName()
                                         )
                                 )
                         ),
@@ -239,7 +239,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             } else if (Attributes.CHANNEL_GROUP_TYPE.externalName().equals(attributeName)) {
                 complexQuery = true;
                 channelGroupQueryBuilder.withTypes((List<String>) attributeValue);
-            } else if (Attributes.REFRESH_CACHE.externalName().equals(attributeName)) {
+            } else if (Attributes.CHANNEL_GROUP_REFRESH_CACHE.externalName().equals(attributeName)) {
                 refreshCache = Boolean.parseBoolean(attributeValue.toString());
             } else if (attributeName.equals(Attributes.CHANNEL_GROUP_DTT_CHANNELS.externalName())) {
                 Set<Id> newDttIds = ImmutableSet.copyOf((List<Id>) attributeValue);

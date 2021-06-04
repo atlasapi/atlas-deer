@@ -770,7 +770,7 @@ public class QueryWebModule {
                                 EnumCoercer.create(Sources.fromKey())
                         ),
                         QueryAtomParser.create(
-                                Attributes.REFRESH_CACHE,
+                                Attributes.CHANNEL_GROUP_REFRESH_CACHE,
                                 StringCoercer.create()
                         ),
                         QueryAtomParser.create(
