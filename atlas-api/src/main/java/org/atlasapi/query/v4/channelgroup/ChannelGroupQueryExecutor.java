@@ -256,13 +256,6 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     NumberedChannelGroup.ChannelOrdering.names() + ")"
                     );
                 }
-            } else {
-                throw new IllegalArgumentException(
-                        String.format(
-                                "Incorrect query string parameter: %s",
-                                attributeQuery.getAttributeName()
-                        )
-                );
             }
         }
 

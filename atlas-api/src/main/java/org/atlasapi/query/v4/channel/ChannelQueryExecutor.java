@@ -146,13 +146,6 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                 ordering = ordering(attributeValue.toString());
             } else if (Attributes.ADVERTISED_ON.externalName().equals(attributeName)) {
                 channelQueryBuilder.withAdvertisedOn(DateTime.now(DateTimeZone.UTC));
-            } else {
-                throw new IllegalArgumentException(
-                        String.format(
-                                "Incorrect query string parameter: %s",
-                                attributeQuery.getAttributeName()
-                        )
-                );
             }
         }
 
