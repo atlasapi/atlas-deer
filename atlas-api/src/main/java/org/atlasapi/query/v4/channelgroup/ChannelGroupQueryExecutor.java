@@ -214,7 +214,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     ) throws QueryExecutionException {
 
         ChannelGroupQuery.Builder channelGroupQueryBuilder = ChannelGroupQuery.builder();
-        boolean simpleIdsQuery = true;
+        boolean complexQuery = false; // Anything that doesn't require just querying for ids
         boolean refreshCache = false;
         Set<Id> channelGroupIds = null;
         NumberedChannelGroup.ChannelOrdering channelOrdering = NumberedChannelGroup.ChannelOrdering.CHANNEL_NUMBER;
@@ -234,10 +234,10 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                 .collect(MoreCollectors.toImmutableSet())
                 );
             } else if (Attributes.SOURCE.externalName().equals(attributeName)) {
-                simpleIdsQuery = false;
+                complexQuery = true;
                 channelGroupQueryBuilder.withPublishers((List<Publisher>) attributeValue);
             } else if (Attributes.CHANNEL_GROUP_TYPE.externalName().equals(attributeName)) {
-                simpleIdsQuery = false;
+                complexQuery = true;
                 channelGroupQueryBuilder.withTypes((List<String>) attributeValue);
             } else if (Attributes.REFRESH_CACHE.externalName().equals(attributeName)) {
                 refreshCache = Boolean.parseBoolean(attributeValue.toString());
@@ -262,7 +262,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         ChannelGroupQuery channelGroupQuery = channelGroupQueryBuilder.build();
         ListenableFuture<Resolved<ChannelGroup<?>>> resolvedChannelGroupsFuture;
 
-        if (channelGroupIds != null && simpleIdsQuery) {
+        if (channelGroupIds != null && !complexQuery) {
             resolvedChannelGroupsFuture = channelGroupResolver.resolveIds(channelGroupIds, refreshCache);
         } else {
             resolvedChannelGroupsFuture = channelGroupResolver.resolveChannelGroups(channelGroupQuery);
