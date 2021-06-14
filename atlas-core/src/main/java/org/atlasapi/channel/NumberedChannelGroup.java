@@ -15,7 +15,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering> {
 
@@ -30,7 +29,7 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
                                     channelNumbering2.getStartDate().orElse(EARLIEST_POSSIBLE_DATE)
                             );
 
-    private final ChannelGroupRef channelNumbersFrom;
+    protected final ChannelGroupRef channelNumbersFrom;
 
     public enum ChannelOrdering {
         SPECIFIED("specified"),
@@ -67,9 +66,9 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
     protected NumberedChannelGroup(
             Id id,
             Publisher publisher,
-            Set<ChannelNumbering> channels,
-            Set<Country> availableCountries,
-            Set<TemporalField<String>> titles,
+            Iterable<ChannelNumbering> channels,
+            Iterable<Country> availableCountries,
+            Iterable<TemporalField<String>> titles,
             @Nullable ChannelGroupRef channelNumbersFrom
     ) {
         super(id, publisher, channels, availableCountries, titles);
@@ -80,9 +79,9 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
             Id id,
             String canonicalUri,
             Publisher publisher,
-            Set<ChannelNumbering> channels,
-            Set<Country> availableCountries,
-            Set<TemporalField<String>> titles,
+            Iterable<ChannelNumbering> channels,
+            Iterable<Country> availableCountries,
+            Iterable<TemporalField<String>> titles,
             @Nullable ChannelGroupRef channelNumbersFrom
     ) {
         super(id, canonicalUri, publisher, channels, availableCountries, titles);
@@ -94,16 +93,16 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
     }
 
     @Override
-    public Iterable<ChannelNumbering> getChannels() {
+    public Set<ChannelNumbering> getChannels() {
         return getChannels(ChannelOrdering.CHANNEL_NUMBER);
     }
 
-    public Iterable<ChannelNumbering> getChannels(ChannelOrdering ordering) {
+    public Set<ChannelNumbering> getChannels(ChannelOrdering ordering) {
         switch (ordering) {
             case SPECIFIED:
                 return super.getChannels();
             case CHANNEL_NUMBER:
-                return StreamSupport.stream(super.getChannels().spliterator(), false)
+                return super.getChannels().stream()
                         .sorted(CHANNEL_NUMBERING_ORDERING)
                         .collect(MoreCollectors.toImmutableSet());
             default:
@@ -111,28 +110,34 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
         }
     }
 
-    public Iterable<ChannelNumbering> getChannelsAvailable(LocalDate date, ChannelOrdering ordering) {
+    @Override
+    public Set<ChannelNumbering> getChannelsAvailable(LocalDate date) {
+        return getChannelsAvailable(date, ChannelOrdering.CHANNEL_NUMBER, false);
+    }
+
+    public Set<ChannelNumbering> getChannelsAvailable(LocalDate date, ChannelOrdering ordering) {
         return getChannelsAvailable(date, ordering, false);
     }
 
-    @Override
-    public Iterable<ChannelNumbering> getChannelsAvailable(LocalDate date, boolean lcnSharing) {
+    public Set<ChannelNumbering> getChannelsAvailable(LocalDate date, boolean lcnSharing) {
         return getChannelsAvailable(date, ChannelOrdering.CHANNEL_NUMBER, lcnSharing);
     }
 
-    public Iterable<ChannelNumbering> getChannelsAvailable(
+    public Set<ChannelNumbering> getChannelsAvailable(
             LocalDate date,
             ChannelOrdering ordering,
             boolean lcnSharing
     ) {
+        Set<ChannelNumbering> availableChannels = super.getChannelsAvailable(date);
+
         // normally within a channel group, we expect/want only channel per channel number AKA lcn.
         // with lcnSharing = true (via annotation), we allow more than one to be served.
         if (lcnSharing) {
             switch (ordering) {
                 case SPECIFIED:
-                    return super.getChannelsAvailable(date, lcnSharing);
+                    return availableChannels;
                 case CHANNEL_NUMBER:
-                    return StreamSupport.stream(super.getChannelsAvailable(date, lcnSharing).spliterator(), false)
+                    return availableChannels.stream()
                             .sorted(CHANNEL_NUMBERING_ORDERING)
                             .collect(MoreCollectors.toImmutableSet());
                 default:
@@ -140,10 +145,7 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
             }
         }
 
-
-        Set<ChannelNumbering> deduplicatedChannelNumberingsWithChannelNumber = StreamSupport.stream(
-                super.getChannelsAvailable(date, lcnSharing).spliterator(), false
-        )
+        Set<ChannelNumbering> deduplicatedChannelNumberingsWithChannelNumber = availableChannels.stream()
                 .filter(channelNumbering -> channelNumbering.getChannelNumber().isPresent())
                 .collect(Collectors.groupingBy(channelNumbering -> channelNumbering.getChannelNumber().get()))
                 .values()
@@ -153,9 +155,7 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
                 )
                 .collect(MoreCollectors.toImmutableSet());
 
-        Stream<ChannelNumbering> deduplicatedChannelNumberings = StreamSupport.stream(
-                super.getChannelsAvailable(date, lcnSharing).spliterator(), false
-        )
+        Stream<ChannelNumbering> deduplicatedChannelNumberings = availableChannels.stream()
                 .filter(channelNumbering -> !channelNumbering.getChannelNumber().isPresent()
                         // this is using reference equality to work
                         || deduplicatedChannelNumberingsWithChannelNumber.contains(channelNumbering)

@@ -1,31 +1,5 @@
 package org.atlasapi.content;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import javax.annotation.Nullable;
-
-import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelGroupMembership;
-import org.atlasapi.channel.ChannelRef;
-import org.atlasapi.channel.ChannelResolver;
-import org.atlasapi.channel.Platform;
-import org.atlasapi.channel.ResolvedChannel;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
-
-import com.metabroadcast.common.stream.MoreCollectors;
-
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -39,11 +13,34 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.stream.MoreCollectors;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.ChannelRef;
+import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.channel.Platform;
+import org.atlasapi.channel.ResolvedChannel;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeComparator;
 import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class BroadcastAggregator {
 
@@ -350,12 +347,12 @@ public class BroadcastAggregator {
 
         List<Id> platformsIds = Lists.newArrayList();
         platformsOptional.ifPresent(platforms -> platforms.forEach(
-                platform -> platformsIds.addAll(StreamSupport.stream(
-                        platform.getChannels().spliterator(),
-                        false
+                platform -> platformsIds.addAll(
+                        platform.getChannels()
+                                .stream()
+                                .map(channelNumbering -> channelNumbering.getChannel().getId())
+                                .collect(MoreCollectors.toImmutableList())
                 )
-                        .map(channelNumbering -> channelNumbering.getChannel().getId())
-                        .collect(MoreCollectors.toImmutableList()))
         ));
 
         return parent.getVariations().stream()

@@ -129,8 +129,6 @@ public class OutputChannelGroupResolverTest {
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(channelGroupList)));
         when(delegateResolver.resolveIds(ids, true))
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(channelGroupList)));
-        when(delegateResolver.resolveIds(ids, null))
-                .thenReturn(Futures.immediateFuture(Resolved.valueOf(channelGroupList)));
     }
 
     private void assertChannelGroupEquals(ChannelGroup<?> expected, ChannelGroup<?> actual) {

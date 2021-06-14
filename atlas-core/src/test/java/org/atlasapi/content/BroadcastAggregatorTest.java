@@ -360,7 +360,7 @@ public class BroadcastAggregatorTest {
         ChannelRef channelRef = new ChannelRef(Id.valueOf(444L), Publisher.METABROADCAST);
 
         when(channelNumbering.getChannel()).thenReturn(channelRef);
-        when(platform.getChannels()).thenReturn(ImmutableList.of(channelNumbering));
+        when(platform.getChannels()).thenReturn(ImmutableSet.of(channelNumbering));
 
         List<ChannelVariantRef> excludedRefs = broadcastAggregator.resolveExcludedVariantRefs(
                 variantRefParent,

@@ -22,10 +22,10 @@ public class Platform extends NumberedChannelGroup {
     public Platform(
             Id id,
             Publisher publisher,
-            Set<ChannelNumbering> channels,
-            Set<Country> availableCountries,
-            Set<TemporalField<String>> titles,
-            Set<ChannelGroupRef> regions,
+            Iterable<ChannelNumbering> channels,
+            Iterable<Country> availableCountries,
+            Iterable<TemporalField<String>> titles,
+            Iterable<ChannelGroupRef> regions,
             ChannelGroupRef channelNumbersFrom
     ) {
         super(id, publisher, channels, availableCountries, titles, channelNumbersFrom);
@@ -36,14 +36,30 @@ public class Platform extends NumberedChannelGroup {
             Id id,
             String canonicalUri,
             Publisher publisher,
-            Set<ChannelNumbering> channels,
-            Set<Country> availableCountries,
-            Set<TemporalField<String>> titles,
-            Set<ChannelGroupRef> regions,
+            Iterable<ChannelNumbering> channels,
+            Iterable<Country> availableCountries,
+            Iterable<TemporalField<String>> titles,
+            Iterable<ChannelGroupRef> regions,
             ChannelGroupRef channelNumbersFrom
     ) {
         super(id, canonicalUri, publisher, channels, availableCountries, titles, channelNumbersFrom);
         this.regions = ImmutableSet.copyOf(regions);
+    }
+
+    @Override
+    public ChannelGroup<ChannelNumbering> copyWithChannels(Iterable<ChannelNumbering> channels) {
+        Platform copy = new Platform(
+                getId(),
+                getCanonicalUri(),
+                this.publisher,
+                channels,
+                this.availableCountries,
+                this.titles,
+                this.regions,
+                this.channelNumbersFrom
+        );
+        copy.setAliases(getAliases());
+        return copy;
     }
 
     public Set<ChannelGroupRef> getRegions() {

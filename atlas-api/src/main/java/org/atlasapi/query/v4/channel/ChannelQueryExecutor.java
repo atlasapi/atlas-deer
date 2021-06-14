@@ -1,11 +1,21 @@
 package org.atlasapi.query.v4.channel;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
+import com.google.common.base.Function;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Ordering;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.common.base.MoreOrderings;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.promise.Promise;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelEquivRef;
@@ -20,6 +30,7 @@ import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.channel.ChannelQuery;
+import org.atlasapi.media.entity.MediaType;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
@@ -28,23 +39,13 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.query.common.exceptions.UncheckedQueryExecutionException;
-
-import com.metabroadcast.common.base.MoreOrderings;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.promise.Promise;
-
-import com.google.common.base.Function;
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Ordering;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -72,11 +73,25 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
     }
 
     @Override
-    public QueryResult<ResolvedChannel> execute(Query<ResolvedChannel> query)
-            throws QueryExecutionException {
-        return query.isListQuery()
-               ? executeListQuery(query)
-               : executeSingleQuery(query);
+    public QueryResult<ResolvedChannel> execute(
+            Query<ResolvedChannel> query
+    ) throws QueryExecutionException {
+        try {
+            return query.isListQuery()
+                    ? executeListQuery(query)
+                    : executeSingleQuery(query);
+        } catch (UncheckedExecutionException | UncheckedQueryExecutionException ee) {
+            for (Throwable throwable : Throwables.getCausalChain(ee)) {
+                if (throwable instanceof NotFoundException) {
+                    throw (NotFoundException) throwable;
+                }
+            }
+            Throwables.propagateIfInstanceOf(
+                    Throwables.getRootCause(ee),
+                    QueryExecutionException.class
+            );
+            throw Throwables.propagate(ee);
+        }
     }
 
     private QueryResult<ResolvedChannel> executeSingleQuery(Query<ResolvedChannel> query)
@@ -85,8 +100,11 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                 Futures.transform(
                         channelResolver.resolveIds(
                                 ImmutableSet.of(query.getOnlyId()),
-                                Boolean.parseBoolean(query.getContext().getRequest().getParameter(
-                                        Attributes.REFRESH_CACHE_PARAM))
+                                Boolean.parseBoolean(
+                                        query.getContext().getRequest().getParameter(
+                                                Attributes.REFRESH_CACHE.externalName()
+                                        )
+                                )
                         ),
                         (Function<Resolved<Channel>, QueryResult<ResolvedChannel>>) input -> {
                             if (input.getResources().isEmpty()) {
@@ -95,10 +113,22 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                                 );
                             }
 
+                            Channel channel = input.getResources().first().get();
+
+                            if (!query.getContext()
+                                    .getApplication()
+                                    .getConfiguration()
+                                    .isReadEnabled(channel.getSource())
+                            ) {
+                                throw new UncheckedQueryExecutionException(
+                                        new NotFoundException(query.getOnlyId())
+                                );
+                            }
+
                             ResolvedChannel resolvedChannel =
                                     resolveAnnotationData(
                                             query.getContext(),
-                                            input.getResources().first().get()
+                                            channel
                                     );
 
                             return QueryResult.singleResult(
@@ -120,40 +150,29 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         Ordering<? super Channel> ordering = Ordering.allEqual();
 
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
+            String attributeName = attributeQuery.getAttributeName();
             Object attributeValue = attributeQuery.getValue().get(0);
 
-            switch (attributeQuery.getAttributeName()) {
-            case Attributes.ALIASES_NAMESPACE_PARAM:
+            if (Attributes.ALIASES_NAMESPACE.externalName().equals(attributeName)) {
                 channelQueryBuilder.withAliasNamespace((String) attributeValue);
-                break;
-            case Attributes.ALIASES_VALUE_PARAM:
+            } else if (Attributes.ALIASES_VALUE.externalName().equals(attributeName)) {
                 channelQueryBuilder.withAliasValue((String) attributeValue);
-                break;
-            case Attributes.AVAILABLE_FROM_PARAM:
+            } else if (Attributes.AVAILABLE_FROM.externalName().equals(attributeName)) {
                 channelQueryBuilder.withAvailableFrom((Publisher) attributeValue);
-                break;
-            case Attributes.BROADCASTER_PARAM:
+            } else if (Attributes.SOURCE.externalName().equals(attributeName)) {
+                channelQueryBuilder.withPublisher((Publisher) attributeValue);
+            } else if (Attributes.BROADCASTER.externalName().equals(attributeName)) {
                 channelQueryBuilder.withBroadcaster((Publisher) attributeValue);
-                break;
-            case Attributes.MEDIA_TYPE_PARAM:
+            } else if (Attributes.MEDIA_TYPE.externalName().equals(attributeName)) {
                 channelQueryBuilder.withMediaType(
-                        org.atlasapi.media.entity.MediaType.valueOf(
+                        MediaType.valueOf(
                                 attributeValue.toString().toUpperCase()
                         )
                 );
-            case Attributes.ORDER_BY_PARAM:
+            } else if (Attributes.ORDER_BY.externalName().equals(attributeName)) {
                 ordering = ordering(attributeValue.toString());
-                break;
-            case Attributes.ADVERTISED_FROM_PARAM:
+            } else if (Attributes.ADVERTISED_ON.externalName().equals(attributeName)) {
                 channelQueryBuilder.withAdvertisedOn(DateTime.now(DateTimeZone.UTC));
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        String.format(
-                                "Incorrect query string parameter: %s",
-                                attributeQuery.getAttributeName()
-                        )
-                );
             }
         }
 

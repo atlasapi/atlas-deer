@@ -1,18 +1,19 @@
 package org.atlasapi.content;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import org.atlasapi.channel.ChannelGroup;
-import org.atlasapi.entity.Id;
-
-import com.metabroadcast.common.stream.MoreCollectors;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
+import com.metabroadcast.common.stream.MoreCollectors;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.NumberedChannelGroup;
+import org.atlasapi.entity.Id;
 import org.joda.time.LocalDate;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class ChannelsBroadcastFilter {
 
@@ -32,10 +33,11 @@ public class ChannelsBroadcastFilter {
             return ImmutableList.of();
         }
 
-        ImmutableList<Id> channelIds = StreamSupport.stream(
-                channelGroup.getChannelsAvailable(LocalDate.now(), lcnSharing).spliterator(),
-                false
-        )
+        Set<? extends ChannelGroupMembership> availableChannels = channelGroup instanceof NumberedChannelGroup
+                ? ((NumberedChannelGroup) channelGroup).getChannelsAvailable(LocalDate.now(), lcnSharing)
+                : channelGroup.getChannelsAvailable(LocalDate.now());
+
+        ImmutableList<Id> channelIds = availableChannels.stream()
                 .map(channel -> channel.getChannel().getId())
                 .distinct()
                 .collect(MoreCollectors.toImmutableList());

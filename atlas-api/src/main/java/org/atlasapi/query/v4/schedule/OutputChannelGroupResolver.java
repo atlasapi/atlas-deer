@@ -15,6 +15,7 @@ import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.NumberedChannelGroup;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.channel.ChannelGroupQuery;
 import org.joda.time.LocalDate;
 
 import java.util.HashSet;
@@ -37,8 +38,9 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
     }
 
     @Override
-    public ListenableFuture<Resolved<ChannelGroup<?>>> allChannels() {
-        return handleResult(delegate.allChannels(), false);
+    public ListenableFuture<Resolved<ChannelGroup<?>>> allChannelGroups() {
+        // Refresh the cache since there's otherwise no way to bypass the cache
+        return handleResult(delegate.allChannelGroups(), true);
     }
 
     @Override
@@ -47,13 +49,19 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
     }
 
     @Override
-    public ListenableFuture<Resolved<ChannelGroup<?>>> resolveIds(Iterable<Id> ids, Boolean refreshCache) {
+    public ListenableFuture<Resolved<ChannelGroup<?>>> resolveIds(Iterable<Id> ids, boolean refreshCache) {
         return handleResult(delegate.resolveIds(ids, refreshCache), refreshCache);
+    }
+
+    @Override
+    public ListenableFuture<Resolved<ChannelGroup<?>>> resolveChannelGroups(ChannelGroupQuery channelGroupQuery) {
+        // Refresh the cache since there's otherwise no way to bypass the cache
+        return handleResult(delegate.resolveChannelGroups(channelGroupQuery), true);
     }
 
     private ListenableFuture<Resolved<ChannelGroup<?>>> handleResult(
             ListenableFuture<Resolved<ChannelGroup<?>>> delegateResult,
-            Boolean refreshCache
+            boolean refreshCacheForAdditionalIds
     ) {
         return Futures.transformAsync(delegateResult, result -> {
             ImmutableMap.Builder<Id, ChannelGroup<?>> channelGroupByIdBuilder = ImmutableMap.builder();
@@ -86,7 +94,7 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
             ListenableFuture<Resolved<ChannelGroup<?>>> additionalChannelGroupsFuture =
                     additionalChannelGroupsToResolve.isEmpty()
                             ? Futures.immediateFuture(Resolved.empty())
-                            : delegate.resolveIds(additionalChannelGroupsToResolve, refreshCache);
+                            : delegate.resolveIds(additionalChannelGroupsToResolve, refreshCacheForAdditionalIds);
 
             return Futures.transform(additionalChannelGroupsFuture,
                     (Function<Resolved<ChannelGroup<?>>, Resolved<ChannelGroup<?>>>) additionalChannelGroups -> {
@@ -100,32 +108,53 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
                                 additionalChannelGroupByIdMapBuilder.build();
 
                         LocalDate now = LocalDate.now();
+
+                        ImmutableMap.Builder<Id, ChannelGroup<ChannelNumbering>>
+                                channelGroupWithAddedNumbersByIdMapBuilder = ImmutableMap.builder();
+
                         for (NumberedChannelGroup channelGroupToFillChannelNumbers : channelGroupsToFillChannelNumbers) {
-                            addChannelNumbersToChannelGroup(
-                                    channelGroupToFillChannelNumbers,
-                                    additionalChannelGroupByIdMap,
-                                    now
+                            ChannelGroup<ChannelNumbering> channelGroupWithAddedNumbers =
+                                    addChannelNumbersToChannelGroup(
+                                            channelGroupToFillChannelNumbers,
+                                            additionalChannelGroupByIdMap,
+                                            now
+                                    );
+                            channelGroupWithAddedNumbersByIdMapBuilder.put(
+                                    channelGroupToFillChannelNumbers.getId(),
+                                    channelGroupWithAddedNumbers
                             );
                         }
-                        return Resolved.valueOf(channelGroups);
+                        ImmutableMap<Id, ChannelGroup<ChannelNumbering>> channelGroupWithAddedNumbersByIdMap =
+                                channelGroupWithAddedNumbersByIdMapBuilder.build();
 
+                        return Resolved.valueOf(
+                                channelGroups.stream()
+                                        .map(channelGroup -> {
+                                            ChannelGroup<ChannelNumbering> channelGroupWithAddedNumbers =
+                                                    channelGroupWithAddedNumbersByIdMap.get(channelGroup.getId());
+                                            return channelGroupWithAddedNumbers != null
+                                                    ? channelGroupWithAddedNumbers
+                                                    : channelGroup;
+                                        })
+                                        .collect(MoreCollectors.toImmutableList())
+                        );
                     });
         });
     }
 
-    private void addChannelNumbersToChannelGroup(
+    private ChannelGroup<ChannelNumbering> addChannelNumbersToChannelGroup(
             NumberedChannelGroup channelGroup,
             Map<Id, ChannelGroup<?>> resolvedChannelGroups,
             LocalDate now
     ) {
         if (!channelGroup.getChannelNumbersFrom().isPresent()) {
-            return;
+            return channelGroup;
         }
         ChannelGroup<?> baseChannelGroup = resolvedChannelGroups.get(
                 channelGroup.getChannelNumbersFrom().get().getId()
         );
         if (!(baseChannelGroup instanceof NumberedChannelGroup)) {
-            return;
+            return channelGroup;
         }
         NumberedChannelGroup baseNumberedChannelGroup = (NumberedChannelGroup) baseChannelGroup;
         ImmutableSet.Builder<ChannelNumbering> newChannelNumberings = ImmutableSet.builder();
@@ -172,7 +201,7 @@ public class OutputChannelGroupResolver implements ChannelGroupResolver {
             newChannelNumberings.add(newChannelNumbering.buildChannelNumbering());
             includedChannelIds.add(channelNumbering.getChannel().getId());
         }
-        channelGroup.setChannels(newChannelNumberings.build());
+        return channelGroup.copyWithChannels(newChannelNumberings.build());
     }
 
 
