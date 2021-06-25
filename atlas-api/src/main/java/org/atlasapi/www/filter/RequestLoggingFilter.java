@@ -27,13 +27,13 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         } finally {
             Instant finish = Instant.now();
             long time = Duration.between(start, finish).toMillis();
-            String fullRequestURL = fullRequestURL(req);
-            log.info("{} {}ms", fullRequestURL, time);
+            String fullRequestURI = fullRequestURI(req);
+            log.info("{} {}ms", fullRequestURI, time);
         }
     }
 
-    private String fullRequestURL(HttpServletRequest request) {
-        StringBuilder requestURL = new StringBuilder(request.getRequestURL().toString());
+    private String fullRequestURI(HttpServletRequest request) {
+        StringBuilder requestURL = new StringBuilder(request.getRequestURI());
         String queryString = request.getQueryString();
 
         if (queryString == null) {

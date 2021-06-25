@@ -49,7 +49,7 @@
   </filter>
   <filter-mapping>
     <filter-name>request-logging</filter-name>
-    <url-pattern>/*</url-pattern>
+    <url-pattern>/4/*</url-pattern>
   </filter-mapping>
   <filter>
      <filter-name>cors</filter-name>
