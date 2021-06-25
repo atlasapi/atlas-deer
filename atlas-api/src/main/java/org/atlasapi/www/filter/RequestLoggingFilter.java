@@ -32,7 +32,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             Instant finish = Instant.now();
             long time = Duration.between(start, finish).toMillis();
             String fullRequestURI = fullRequestURI(req);
-            log.info("{} {} {}ms", fullRequestURI, statusExposingServletResponse.getStatus(), time);
+            log.info("{} {} {} {}ms", req.getMethod(), fullRequestURI, statusExposingServletResponse.getStatus(), time);
         }
     }
 
