@@ -42,7 +42,15 @@
     <servlet-name>atlas-api</servlet-name>
     <url-pattern>/</url-pattern>
   </servlet-mapping>
-  
+
+  <filter>
+    <filter-name>request-logging</filter-name>
+    <filter-class>org.atlasapi.www.filter.RequestLoggingFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>request-logging</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
   <filter>
      <filter-name>cors</filter-name>
      <filter-class>org.atlasapi.www.filter.CorsFilter</filter-class>
