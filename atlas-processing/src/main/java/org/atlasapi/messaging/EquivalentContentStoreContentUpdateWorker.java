@@ -51,7 +51,7 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
         this.publisherExecutionTimerName = metricPrefix + "source.%s.timer.execution";
         this.publisherLatencyTimerName = metricPrefix + "source.%s.timer.latency";
-        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
+        String defaultRateLimit = System.getenv("EQUIVALENT_CONTENT_STORE_CONTENT_CONSUMER_MAX_MESSAGES_PER_SECOND");
         int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
                 ? 1000 :
                 Integer.parseInt(checkNotNull(defaultRateLimit));
