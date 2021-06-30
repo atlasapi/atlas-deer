@@ -4,6 +4,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -73,7 +74,10 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
         this.publisherExecutionTimerName = metricPrefix + "source.%s.timer.execution";
         this.publisherLatencyTimerName = metricPrefix + "source.%s.timer.latency";
-        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
+        int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
+                ? 1000 :
+                Integer.parseInt(checkNotNull(defaultRateLimit));
         this.rateLimiter = RateLimiter.create(rateLimit);
     }
 

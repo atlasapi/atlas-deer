@@ -3,6 +3,7 @@ package org.atlasapi.system.bootstrap.workers;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -46,7 +47,10 @@ public class TopicReadWriteWorker implements Worker<ResourceUpdatedMessage> {
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
-        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
+        int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
+                ? 1000 :
+                Integer.parseInt(checkNotNull(defaultRateLimit));
         this.rateLimiter = RateLimiter.create(rateLimit);
     }
 

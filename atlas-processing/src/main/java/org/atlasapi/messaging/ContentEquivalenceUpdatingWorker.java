@@ -12,6 +12,7 @@ import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.elasticsearch.common.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,10 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
 
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
-        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
+        int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
+                ? 1000 :
+                Integer.parseInt(checkNotNull(defaultRateLimit));
         this.rateLimiter = RateLimiter.create(rateLimit);
     }
 
