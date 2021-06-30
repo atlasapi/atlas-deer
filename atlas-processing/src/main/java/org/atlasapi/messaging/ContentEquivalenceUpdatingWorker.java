@@ -1,22 +1,21 @@
 package org.atlasapi.messaging;
 
-import java.util.concurrent.TimeUnit;
-
-import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.time.Timestamp;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.RateLimiter;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.Timestamp;
+import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -35,6 +34,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
     private final Meter failureMeter;
     private final Timer latencyTimer;
     private final String publisherMeterName;
+    private final RateLimiter rateLimiter;
 
     private ContentEquivalenceUpdatingWorker(
             EquivalenceGraphStore graphStore,
@@ -53,6 +53,8 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
 
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
+        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        this.rateLimiter = RateLimiter.create(rateLimit);
     }
 
     public static ContentEquivalenceUpdatingWorker create(
@@ -68,6 +70,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
 
     @Override
     public void process(EquivalenceAssertionMessage message) throws RecoverableException {
+        rateLimiter.acquire();
         messageReceivedMeter.mark();
 
         metricRegistry.meter(

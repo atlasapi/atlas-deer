@@ -1,18 +1,5 @@
 package org.atlasapi.messaging;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentResolver;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.neo4j.service.Neo4jContentStore;
-
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.time.Timestamp;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -21,8 +8,20 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.RateLimiter;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.Timestamp;
+import org.atlasapi.content.Content;
+import org.atlasapi.content.ContentResolver;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -39,6 +38,7 @@ public class Neo4jContentStoreContentUpdateWorker
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
+    private final RateLimiter rateLimiter;
 
     private Neo4jContentStoreContentUpdateWorker(
             ContentResolver contentResolver,
@@ -53,6 +53,8 @@ public class Neo4jContentStoreContentUpdateWorker
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
+        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        this.rateLimiter = RateLimiter.create(rateLimit);
     }
 
     public static Neo4jContentStoreContentUpdateWorker create(
@@ -68,6 +70,7 @@ public class Neo4jContentStoreContentUpdateWorker
 
     @Override
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
+        rateLimiter.acquire();
         messageReceivedMeter.mark();
 
         Id contentId = message.getContentRef().getId();

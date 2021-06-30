@@ -1,24 +1,23 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import java.util.concurrent.TimeUnit;
-
-import org.atlasapi.event.Event;
-import org.atlasapi.event.EventResolver;
-import org.atlasapi.event.EventWriter;
-import org.atlasapi.messaging.ResourceUpdatedMessage;
-
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.time.Timestamp;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.RateLimiter;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.Timestamp;
+import org.atlasapi.event.Event;
+import org.atlasapi.event.EventResolver;
+import org.atlasapi.event.EventWriter;
+import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -33,6 +32,7 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
+    private final RateLimiter rateLimiter;
 
     private SeparatingEventReadWriteWorker(
             EventResolver resolver,
@@ -47,6 +47,8 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
+        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        this.rateLimiter = RateLimiter.create(rateLimit);
     }
 
     public static SeparatingEventReadWriteWorker create(
@@ -61,6 +63,7 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
     @Override
     public void process(ResourceUpdatedMessage message)
             throws RecoverableException {
+        rateLimiter.acquire();
         messageReceivedMeter.mark();
 
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",

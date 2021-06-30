@@ -1,26 +1,25 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.messaging.ResourceUpdatedMessage;
-import org.atlasapi.organisation.Organisation;
-import org.atlasapi.organisation.OrganisationResolver;
-import org.atlasapi.organisation.OrganisationWriter;
-
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.time.Timestamp;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.RateLimiter;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.Timestamp;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.organisation.Organisation;
+import org.atlasapi.organisation.OrganisationResolver;
+import org.atlasapi.organisation.OrganisationWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -35,6 +34,7 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
+    private final RateLimiter rateLimiter;
 
     private OrganisationBootstrapWorker(
             OrganisationResolver resolver,
@@ -49,6 +49,8 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
+        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        this.rateLimiter = RateLimiter.create(rateLimit);
     }
 
     public static OrganisationBootstrapWorker create(
@@ -62,6 +64,7 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
 
     @Override
     public void process(ResourceUpdatedMessage message) {
+        rateLimiter.acquire();
         messageReceivedMeter.mark();
 
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",

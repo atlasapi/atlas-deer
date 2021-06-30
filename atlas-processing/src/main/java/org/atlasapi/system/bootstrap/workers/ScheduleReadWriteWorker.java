@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.RateLimiter;
 import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.queue.Worker;
@@ -50,6 +51,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     private final String publisherLatencyTimerName;
 
     private final MetricRegistry metricRegistry;
+    private final RateLimiter rateLimiter;
 
     private ScheduleReadWriteWorker(
             SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory,
@@ -71,6 +73,8 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
         this.publisherExecutionTimerName = metricPrefix + "source.%s.timer.execution";
         this.publisherLatencyTimerName = metricPrefix + "source.%s.timer.latency";
+        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        this.rateLimiter = RateLimiter.create(rateLimit);
     }
 
     public static ScheduleReadWriteWorker create(
@@ -91,6 +95,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
 
     @Override
     public void process(ScheduleUpdateMessage msg) {
+        rateLimiter.acquire();
         long start = System.currentTimeMillis();
 
         messageReceivedMeter.mark();

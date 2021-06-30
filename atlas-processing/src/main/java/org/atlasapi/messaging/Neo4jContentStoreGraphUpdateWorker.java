@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.RateLimiter;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -44,6 +45,7 @@ public class Neo4jContentStoreGraphUpdateWorker
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
+    private final RateLimiter rateLimiter;
 
     private Neo4jContentStoreGraphUpdateWorker(
             ContentResolver legacyResolver,
@@ -61,6 +63,8 @@ public class Neo4jContentStoreGraphUpdateWorker
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
+        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        this.rateLimiter = RateLimiter.create(rateLimit);
     }
 
     public static Neo4jContentStoreGraphUpdateWorker create(
@@ -84,6 +88,7 @@ public class Neo4jContentStoreGraphUpdateWorker
     @SuppressWarnings("deprecation")
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
+        rateLimiter.acquire();
         messageReceivedMeter.mark();
 
         EquivalenceAssertion assertion = message.getGraphUpdate().getAssertion();

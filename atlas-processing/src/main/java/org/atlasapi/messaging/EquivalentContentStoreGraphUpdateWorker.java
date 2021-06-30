@@ -3,6 +3,7 @@ package org.atlasapi.messaging;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.util.concurrent.RateLimiter;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -30,6 +31,7 @@ public class EquivalentContentStoreGraphUpdateWorker
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
+    private final RateLimiter rateLimiter;
 
     private EquivalentContentStoreGraphUpdateWorker(
             EquivalentContentStore equivalentContentStore,
@@ -42,6 +44,8 @@ public class EquivalentContentStoreGraphUpdateWorker
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
+        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        this.rateLimiter = RateLimiter.create(rateLimit);
     }
 
     public static EquivalentContentStoreGraphUpdateWorker create(
@@ -58,6 +62,7 @@ public class EquivalentContentStoreGraphUpdateWorker
 
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
+        rateLimiter.acquire();
         long start = System.currentTimeMillis();
         messageReceivedMeter.mark();
 

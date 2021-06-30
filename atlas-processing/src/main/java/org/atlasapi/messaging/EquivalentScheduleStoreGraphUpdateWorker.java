@@ -4,6 +4,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.RateLimiter;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -32,6 +33,7 @@ public class EquivalentScheduleStoreGraphUpdateWorker
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
+    private final RateLimiter rateLimiter;
 
     private EquivalentScheduleStoreGraphUpdateWorker(
             EquivalentScheduleWriter scheduleWriter,
@@ -46,6 +48,8 @@ public class EquivalentScheduleStoreGraphUpdateWorker
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
+        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        this.rateLimiter = RateLimiter.create(rateLimit);
     }
 
     public static EquivalentScheduleStoreGraphUpdateWorker create(
@@ -61,6 +65,7 @@ public class EquivalentScheduleStoreGraphUpdateWorker
 
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
+        rateLimiter.acquire();
         long start = System.currentTimeMillis();
 
         messageReceivedMeter.mark();

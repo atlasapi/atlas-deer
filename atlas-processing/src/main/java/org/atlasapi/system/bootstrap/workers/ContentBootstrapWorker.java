@@ -6,6 +6,7 @@ import com.codahale.metrics.Timer;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.RateLimiter;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.time.Timestamp;
@@ -46,6 +47,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     private final String publisherLatencyTimerName;
 
     private final MetricRegistry metricRegistry;
+    private final RateLimiter rateLimiter;
 
     private ContentBootstrapWorker(
             ContentResolver contentResolver,
@@ -69,6 +71,8 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         this.metricRegistry = metricRegistry;
 
         this.columbusTelescopeReporter = checkNotNull(columbusTelescopeReporter);
+        int rateLimit = Integer.parseInt(checkNotNull(System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND")));
+        this.rateLimiter = RateLimiter.create(rateLimit);
     }
 
     public static ContentBootstrapWorker create(
@@ -89,6 +93,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
+        rateLimiter.acquire();
         long start = System.currentTimeMillis();
         messageReceivedMeter.mark();
 
