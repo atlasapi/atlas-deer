@@ -72,6 +72,10 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
 
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
+        //TODO remove once partition has cleared
+        if (message.getUpdatedResource().getId().longValue() == 60384491) {
+            return;
+        }
         rateLimiter.acquire();
         long start = System.currentTimeMillis();
 
