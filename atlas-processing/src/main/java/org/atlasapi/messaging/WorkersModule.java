@@ -1,11 +1,14 @@
 package org.atlasapi.messaging;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.RateLimiter;
+import com.google.common.util.concurrent.Service;
+import com.google.common.util.concurrent.ServiceManager;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.properties.Parameter;
+import com.metabroadcast.common.queue.Message;
+import com.metabroadcast.common.queue.MessageSerializer;
+import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
@@ -13,20 +16,17 @@ import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.ProcessingMetricsModule;
 import org.atlasapi.system.bootstrap.workers.ContentEquivalenceAssertionLegacyMessageSerializer;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.queue.Message;
-import com.metabroadcast.common.queue.MessageSerializer;
-import com.metabroadcast.common.queue.kafka.KafkaConsumer;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Service;
-import com.google.common.util.concurrent.ServiceManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
+
+import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Configuration
 @Import({
@@ -90,6 +90,23 @@ public class WorkersModule {
     private final Boolean neo4jContentStoreGraphUpdateEnabled =
             Configurer.get("messaging.deer.content.neo4j.graph.changes.enabled").toBoolean();
 
+    @Nullable private final Integer equivalentContentContentChangesMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.deer.equivalent.content.content.changes.max.messages.per.second");
+    @Nullable private final Integer equivalentContentGraphChangesMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.deer.equivalent.content.graph.changes.max.messages.per.second");
+    @Nullable private final Integer equivalentScheduleContentChangesMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.deer.equivalent.schedule.content.changes.max.messages.per.second");
+    @Nullable private final Integer equivalentScheduleScheduleChangesMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.deer.equivalent.schedule.schedule.changes.max.messages.per.second");
+    @Nullable private final Integer equivalentScheduleGraphChangesMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.deer.equivalent.schedule.graph.changes.max.messages.per.second");
+    @Nullable private final Integer contentEquivalenceGraphChangesMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.deer.equivalence.content.graph.changes.max.messages.per.second");
+    @Nullable private final Integer neo4jContentStoreContentUpdateMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.deer.content.neo4j.content.changes.max.messages.per.second");
+    @Nullable private final Integer neo4jContentStoreGraphUpdateMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.deer.content.neo4j.graph.changes.max.messages.per.second");
+
     @Autowired
     private KafkaMessagingModule messaging;
     @Autowired
@@ -98,6 +115,15 @@ public class WorkersModule {
     private ProcessingMetricsModule metricsModule;
 
     private ServiceManager consumerManager;
+
+    @Nullable
+    private static Integer nullableIntFromConfig(String name) {
+        Parameter parameter = Configurer.get(name);
+        if (parameter == null) {
+            return null;
+        }
+        return parameter.toInt();
+    }
 
     @Bean
     @Lazy
@@ -109,7 +135,8 @@ public class WorkersModule {
                         EquivalentContentStoreGraphUpdateWorker.create(
                                 persistence.getEquivalentContentStore(),
                                 WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
+                                metricsModule.metrics(),
+                                createRateLimiter(equivalentContentGraphChangesMaxMessagesPerSecond)
                         ),
                         serializer(EquivalenceGraphUpdateMessage.class),
                         contentEquivalenceGraphChanges,
@@ -132,7 +159,8 @@ public class WorkersModule {
                         EquivalentContentStoreContentUpdateWorker.create(
                                 persistence.getEquivalentContentStore(),
                                 WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
+                                metricsModule.metrics(),
+                                createRateLimiter(equivalentContentContentChangesMaxMessagesPerSecond)
                         ),
                         serializer(ResourceUpdatedMessage.class),
                         contentChanges,
@@ -158,7 +186,8 @@ public class WorkersModule {
                                         persistence.getContentEquivalenceGraphStore()
                                 ),
                                 WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
+                                metricsModule.metrics(),
+                                createRateLimiter(equivalentScheduleGraphChangesMaxMessagesPerSecond)
                         ),
                         serializer(EquivalenceGraphUpdateMessage.class),
                         contentEquivalenceGraphChanges,
@@ -182,7 +211,8 @@ public class WorkersModule {
                                 persistence.getEquivalentContentStore(),
                                 persistence.getEquivalentScheduleStore(),
                                 WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
+                                metricsModule.metrics(),
+                                createRateLimiter(equivalentScheduleContentChangesMaxMessagesPerSecond)
                         ),
                         serializer(EquivalentContentUpdatedMessage.class),
                         equivalentContentChanges,
@@ -205,7 +235,8 @@ public class WorkersModule {
                         EquivalentScheduleStoreScheduleUpdateWorker.create(
                                 persistence.getEquivalentScheduleStore(),
                                 WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
+                                metricsModule.metrics(),
+                                createRateLimiter(equivalentScheduleScheduleChangesMaxMessagesPerSecond)
                         ),
                         serializer(ScheduleUpdateMessage.class),
                         scheduleChanges,
@@ -229,7 +260,8 @@ public class WorkersModule {
                                 persistence.getContentEquivalenceGraphStore(),
                                 explicitEquivalenceMigrator(),
                                 WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
+                                metricsModule.metrics(),
+                                createRateLimiter(contentEquivalenceGraphChangesMaxMessagesPerSecond)
                         ),
                         new ContentEquivalenceAssertionLegacyMessageSerializer(),
                         equivTopic,
@@ -253,7 +285,8 @@ public class WorkersModule {
                         persistence.contentStore(),
                         persistence.neo4jContentStore(),
                         WORKER_METRIC_PREFIX + workerName + ".",
-                        metricsModule.metrics()
+                        metricsModule.metrics(),
+                        createRateLimiter(neo4jContentStoreContentUpdateMaxMessagesPerSecond)
                 );
 
         return messaging.messageConsumerFactory()
@@ -282,7 +315,8 @@ public class WorkersModule {
                         persistence.legacyEquivalenceStore(),
                         persistence.neo4jContentStore(),
                         WORKER_METRIC_PREFIX + workerName + ".",
-                        metricsModule.metrics()
+                        metricsModule.metrics(),
+                        createRateLimiter(neo4jContentStoreGraphUpdateMaxMessagesPerSecond)
                 );
 
         return messaging.messageConsumerFactory()
@@ -348,5 +382,13 @@ public class WorkersModule {
                 persistence.legacyEquivalenceStore(),
                 persistence.getContentEquivalenceGraphStore()
         );
+    }
+
+    @Nullable
+    private RateLimiter createRateLimiter(@Nullable Integer maxRequestsPerSecond) {
+        if (maxRequestsPerSecond == null) {
+            return null;
+        }
+        return RateLimiter.create(maxRequestsPerSecond);
     }
 }

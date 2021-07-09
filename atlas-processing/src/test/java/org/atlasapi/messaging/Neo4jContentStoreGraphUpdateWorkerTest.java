@@ -110,7 +110,8 @@ public class Neo4jContentStoreGraphUpdateWorkerTest {
                 legacyEquivalenceStore,
                 neo4JContentStore,
                 "",
-                new MetricRegistry()
+                new MetricRegistry(),
+                null
         );
     }
 

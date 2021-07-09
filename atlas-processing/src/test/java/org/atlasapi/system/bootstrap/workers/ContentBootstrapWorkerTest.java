@@ -1,7 +1,16 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import java.util.Collection;
-
+import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.columbus.telescope.api.Event;
+import com.metabroadcast.columbus.telescope.client.TelescopeClientImpl;
+import com.metabroadcast.common.media.MimeType;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
@@ -14,19 +23,6 @@ import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.system.bootstrap.ColumbusTelescopeReporter;
-
-import com.metabroadcast.columbus.telescope.api.Event;
-import com.metabroadcast.columbus.telescope.client.TelescopeClientImpl;
-import com.metabroadcast.common.media.MimeType;
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.time.Timestamp;
-
-import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +31,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.Collection;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -75,7 +73,8 @@ public class ContentBootstrapWorkerTest {
                 writer,
                 "prefix",
                 new MetricRegistry(),
-                columbusTelescopeReporter
+                columbusTelescopeReporter,
+                null
         );
         this.content = new org.atlasapi.content.Item("panda.com", "panda", Publisher.PA);
         this.content.setId(Id.valueOf(1L));

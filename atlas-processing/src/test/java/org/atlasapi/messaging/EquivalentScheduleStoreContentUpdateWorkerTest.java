@@ -39,7 +39,8 @@ public class EquivalentScheduleStoreContentUpdateWorkerTest {
                 contentStore,
                 scheduleWriter,
                 "prefix",
-                new MetricRegistry()
+                new MetricRegistry(),
+                null
         );
     }
 

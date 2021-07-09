@@ -4,7 +4,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -28,6 +27,7 @@ import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -46,14 +46,15 @@ public class Neo4jContentStoreGraphUpdateWorker
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
-    private final RateLimiter rateLimiter;
+    @Nullable private final RateLimiter rateLimiter;
 
     private Neo4jContentStoreGraphUpdateWorker(
             ContentResolver legacyResolver,
             LookupEntryStore legacyEquivalenceStore,
             Neo4jContentStore neo4JContentStore,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
 
     ) {
         this.legacyResolver = checkNotNull(legacyResolver);
@@ -64,11 +65,10 @@ public class Neo4jContentStoreGraphUpdateWorker
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
-        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
-        int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
-                ? 1000 :
-                Integer.parseInt(checkNotNull(defaultRateLimit));
-        this.rateLimiter = RateLimiter.create(rateLimit);
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            log.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static Neo4jContentStoreGraphUpdateWorker create(
@@ -76,14 +76,16 @@ public class Neo4jContentStoreGraphUpdateWorker
             LookupEntryStore legacyEquivalenceStore,
             Neo4jContentStore neo4JContentStore,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         return new Neo4jContentStoreGraphUpdateWorker(
                 legacyResolver,
                 legacyEquivalenceStore,
                 neo4JContentStore,
                 metricPrefix,
-                metricRegistry
+                metricRegistry,
+                rateLimiter
         );
     }
 
@@ -92,7 +94,9 @@ public class Neo4jContentStoreGraphUpdateWorker
     @SuppressWarnings("deprecation")
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
-        rateLimiter.acquire();
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         messageReceivedMeter.mark();
 
         EquivalenceAssertion assertion = message.getGraphUpdate().getAssertion();

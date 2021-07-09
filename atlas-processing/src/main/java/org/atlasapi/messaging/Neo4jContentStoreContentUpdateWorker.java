@@ -5,7 +5,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.base.Optional;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -21,6 +20,7 @@ import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -39,13 +39,14 @@ public class Neo4jContentStoreContentUpdateWorker
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
-    private final RateLimiter rateLimiter;
+    @Nullable private final RateLimiter rateLimiter;
 
     private Neo4jContentStoreContentUpdateWorker(
             ContentResolver contentResolver,
             Neo4jContentStore neo4JContentStore,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.neo4JContentStore = checkNotNull(neo4JContentStore);
@@ -54,27 +55,29 @@ public class Neo4jContentStoreContentUpdateWorker
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
-        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
-        int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
-                ? 1000 :
-                Integer.parseInt(checkNotNull(defaultRateLimit));
-        this.rateLimiter = RateLimiter.create(rateLimit);
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            log.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static Neo4jContentStoreContentUpdateWorker create(
             ContentResolver contentResolver,
             Neo4jContentStore neo4JContentStore,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         return new Neo4jContentStoreContentUpdateWorker(
-                contentResolver, neo4JContentStore, metricPrefix, metricRegistry
+                contentResolver, neo4JContentStore, metricPrefix, metricRegistry, rateLimiter
         );
     }
 
     @Override
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
-        rateLimiter.acquire();
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         messageReceivedMeter.mark();
 
         Id contentId = message.getContentRef().getId();

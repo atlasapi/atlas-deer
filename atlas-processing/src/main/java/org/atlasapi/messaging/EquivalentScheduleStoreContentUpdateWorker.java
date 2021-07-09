@@ -3,7 +3,6 @@ package org.atlasapi.messaging;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.base.Strings;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.RateLimiter;
 import com.metabroadcast.common.queue.RecoverableException;
@@ -18,6 +17,7 @@ import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -42,14 +42,15 @@ public class EquivalentScheduleStoreContentUpdateWorker
     private final String publisherLatencyTimerName;
 
     private final MetricRegistry metricRegistry;
-    private final RateLimiter rateLimiter;
+    @Nullable private final RateLimiter rateLimiter;
 
 
     private EquivalentScheduleStoreContentUpdateWorker(
             EquivalentContentStore contentStore,
             EquivalentScheduleWriter scheduleWriter,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         this.contentStore = checkNotNull(contentStore);
         this.scheduleWriter = checkNotNull(scheduleWriter);
@@ -63,30 +64,33 @@ public class EquivalentScheduleStoreContentUpdateWorker
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
         this.publisherExecutionTimerName = metricPrefix + "source.%s.timer.execution";
         this.publisherLatencyTimerName = metricPrefix + "source.%s.timer.latency";
-        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
-        int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
-                ? 1000 :
-                Integer.parseInt(checkNotNull(defaultRateLimit));
-        this.rateLimiter = RateLimiter.create(rateLimit);
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            LOG.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static EquivalentScheduleStoreContentUpdateWorker create(
             EquivalentContentStore contentStore,
             EquivalentScheduleWriter scheduleWriter,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         return new EquivalentScheduleStoreContentUpdateWorker(
                 contentStore,
                 scheduleWriter,
                 metricPrefix,
-                metricRegistry
+                metricRegistry,
+                rateLimiter
         );
     }
 
     @Override
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
-        rateLimiter.acquire();
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         long start = System.currentTimeMillis();
 
         messageReceivedMeter.mark();

@@ -12,10 +12,10 @@ import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-import org.elasticsearch.common.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -35,13 +35,14 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
     private final Meter failureMeter;
     private final Timer latencyTimer;
     private final String publisherMeterName;
-    private final RateLimiter rateLimiter;
+    @Nullable private final RateLimiter rateLimiter;
 
     private ContentEquivalenceUpdatingWorker(
             EquivalenceGraphStore graphStore,
             DirectAndExplicitEquivalenceMigrator equivMigrator,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         this.graphStore = checkNotNull(graphStore);
         this.equivMigrator = checkNotNull(equivMigrator);
@@ -54,27 +55,29 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
 
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
-        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
-        int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
-                ? 1000 :
-                Integer.parseInt(checkNotNull(defaultRateLimit));
-        this.rateLimiter = RateLimiter.create(rateLimit);
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            LOG.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static ContentEquivalenceUpdatingWorker create(
             EquivalenceGraphStore graphStore,
             DirectAndExplicitEquivalenceMigrator equivMigrator,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         return new ContentEquivalenceUpdatingWorker(
-                graphStore, equivMigrator, metricPrefix, metricRegistry
+                graphStore, equivMigrator, metricPrefix, metricRegistry, rateLimiter
         );
     }
 
     @Override
     public void process(EquivalenceAssertionMessage message) throws RecoverableException {
-        rateLimiter.acquire();
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         messageReceivedMeter.mark();
 
         metricRegistry.meter(

@@ -4,7 +4,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.RateLimiter;
@@ -18,6 +17,7 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -33,13 +33,14 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
-    private final RateLimiter rateLimiter;
+    @Nullable private final RateLimiter rateLimiter;
 
     private SeparatingEventReadWriteWorker(
             EventResolver resolver,
             EventWriter writer,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         this.resolver = checkNotNull(resolver);
         this.writer = checkNotNull(writer);
@@ -48,26 +49,28 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
-        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
-        int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
-                ? 1000 :
-                Integer.parseInt(checkNotNull(defaultRateLimit));
-        this.rateLimiter = RateLimiter.create(rateLimit);
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            LOG.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static SeparatingEventReadWriteWorker create(
             EventResolver resolver,
             EventWriter writer,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
-        return new SeparatingEventReadWriteWorker(resolver, writer, metricPrefix, metricRegistry);
+        return new SeparatingEventReadWriteWorker(resolver, writer, metricPrefix, metricRegistry, rateLimiter);
     }
 
     @Override
     public void process(ResourceUpdatedMessage message)
             throws RecoverableException {
-        rateLimiter.acquire();
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         messageReceivedMeter.mark();
 
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",

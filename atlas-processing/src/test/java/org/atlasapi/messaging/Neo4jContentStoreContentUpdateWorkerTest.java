@@ -1,17 +1,15 @@
 package org.atlasapi.messaging;
 
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.neo4j.service.Neo4jContentStore;
-
-import com.metabroadcast.common.time.Timestamp;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +50,7 @@ public class Neo4jContentStoreContentUpdateWorkerTest {
                 )));
 
         worker = Neo4jContentStoreContentUpdateWorker.create(
-                contentResolver, neo4JContentStore, "", new MetricRegistry()
+                contentResolver, neo4JContentStore, "", new MetricRegistry(), null
         );
     }
 

@@ -3,7 +3,6 @@ package org.atlasapi.system.bootstrap.workers;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -25,6 +24,7 @@ import org.atlasapi.system.bootstrap.ColumbusTelescopeReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -48,14 +48,15 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     private final String publisherLatencyTimerName;
 
     private final MetricRegistry metricRegistry;
-    private final RateLimiter rateLimiter;
+    @Nullable private final RateLimiter rateLimiter;
 
     private ContentBootstrapWorker(
             ContentResolver contentResolver,
             ContentWriter writer,
             String metricPrefix,
             MetricRegistry metricRegistry,
-            ColumbusTelescopeReporter columbusTelescopeReporter
+            ColumbusTelescopeReporter columbusTelescopeReporter,
+            @Nullable RateLimiter rateLimiter
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
@@ -72,11 +73,10 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         this.metricRegistry = metricRegistry;
 
         this.columbusTelescopeReporter = checkNotNull(columbusTelescopeReporter);
-        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
-        int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
-                ? 1000 :
-                Integer.parseInt(checkNotNull(defaultRateLimit));
-        this.rateLimiter = RateLimiter.create(rateLimit);
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            log.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static ContentBootstrapWorker create(
@@ -84,20 +84,24 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             ContentWriter writer,
             String metricPrefix,
             MetricRegistry metricRegistry,
-            ColumbusTelescopeReporter columbusTelescopeReporter
+            ColumbusTelescopeReporter columbusTelescopeReporter,
+            @Nullable RateLimiter rateLimiter
     ) {
         return new ContentBootstrapWorker(
                 contentResolver,
                 writer,
                 metricPrefix,
                 metricRegistry,
-                columbusTelescopeReporter
+                columbusTelescopeReporter,
+                rateLimiter
         );
     }
 
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
-        rateLimiter.acquire();
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         long start = System.currentTimeMillis();
         messageReceivedMeter.mark();
 

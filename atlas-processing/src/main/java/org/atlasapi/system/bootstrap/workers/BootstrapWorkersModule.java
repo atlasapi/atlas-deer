@@ -1,14 +1,21 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.RateLimiter;
+import com.google.common.util.concurrent.Service;
+import com.google.common.util.concurrent.ServiceManager;
+import com.metabroadcast.columbus.telescope.client.TelescopeClientImpl;
+import com.metabroadcast.columbus.telescope.client.TelescopeReporterFactory;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.properties.Parameter;
+import com.metabroadcast.common.queue.kafka.KafkaConsumer;
+import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.EquivalentScheduleStoreScheduleUpdateWorker;
@@ -21,28 +28,21 @@ import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory
 import org.atlasapi.system.bootstrap.ColumbusTelescopeReporter;
 import org.atlasapi.system.bootstrap.EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
-
-import com.metabroadcast.columbus.telescope.client.TelescopeClientImpl;
-import com.metabroadcast.columbus.telescope.client.TelescopeReporterFactory;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.queue.kafka.KafkaConsumer;
-import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Service;
-import com.google.common.util.concurrent.ServiceManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
+
+import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Configuration
 @Import({
@@ -96,6 +96,19 @@ public class BootstrapWorkersModule {
     private final Boolean organisationBootstrapEnabled =
             Configurer.get("messaging.bootstrap.organisation.changes.enabled").toBoolean();
 
+    @Nullable private final Integer contentBootstrapMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.bootstrap.content.changes.max.messages.per.second");
+    @Nullable private final Integer cqlContentBootstrapMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.bootstrap.cql-content.changes.max.messages.per.second");
+    @Nullable private final Integer scheduleBootstrapMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.bootstrap.schedule.changes.max.messages.per.second");
+    @Nullable private final Integer topicBootstrapMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.bootstrap.topics.changes.max.messages.per.second");
+    @Nullable private final Integer eventBootstrapMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.bootstrap.event.changes.max.messages.per.second");
+    @Nullable private final Integer organisationBootstrapMaxMessagesPerSecond =
+            nullableIntFromConfig("messaging.bootstrap.organisation.changes.max.messages.per.second");
+
     private final String columbusTelescopeHost =
             Configurer.get("reporting.columbus-telescope.host").get();
     private final String reportingEnvironment = Configurer.getPlatform();
@@ -124,6 +137,15 @@ public class BootstrapWorkersModule {
 
     private ServiceManager consumerManager;
 
+    @Nullable
+    private static Integer nullableIntFromConfig(String name) {
+        Parameter parameter = Configurer.get(name);
+        if (parameter == null) {
+            return null;
+        }
+        return parameter.toInt();
+    }
+
     @Bean
     @Qualifier("bootstrap")
     public KafkaMessageConsumerFactory bootstrapQueueFactory() {
@@ -149,7 +171,8 @@ public class BootstrapWorkersModule {
                         ),
                         reportingEnvironment,
                         getObjectMapper()
-                )
+                ),
+                createRateLimiter(contentBootstrapMaxMessagesPerSecond)
         );
 
         return bootstrapQueueFactory()
@@ -186,7 +209,8 @@ public class BootstrapWorkersModule {
                         ),
                         reportingEnvironment,
                         getObjectMapper()
-                )
+                ),
+                createRateLimiter(cqlContentBootstrapMaxMessagesPerSecond)
         );
 
         return bootstrapQueueFactory()
@@ -213,7 +237,8 @@ public class BootstrapWorkersModule {
                 persistence.legacyOrganisationResolver(),
                 persistence.idSettingOrganisationStore(),
                 WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics()
+                metricsModule.metrics(),
+                createRateLimiter(organisationBootstrapMaxMessagesPerSecond)
         );
 
         return bootstrapQueueFactory()
@@ -241,7 +266,8 @@ public class BootstrapWorkersModule {
                 persistence.channelResolver(),
                 ignoredScheduleSources,
                 WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics()
+                metricsModule.metrics(),
+                createRateLimiter(scheduleBootstrapMaxMessagesPerSecond)
         );
 
         return bootstrapQueueFactory()
@@ -279,7 +305,8 @@ public class BootstrapWorkersModule {
                 persistence.channelResolver(),
                 ignoredScheduleSources,
                 WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics()
+                metricsModule.metrics(),
+                createRateLimiter(scheduleBootstrapMaxMessagesPerSecond)
         );
 
         return bootstrapQueueFactory()
@@ -306,7 +333,8 @@ public class BootstrapWorkersModule {
                 persistence.legacyTopicResolver(),
                 persistence.topicStore(),
                 WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics()
+                metricsModule.metrics(),
+                createRateLimiter(topicBootstrapMaxMessagesPerSecond)
         );
 
         return bootstrapQueueFactory()
@@ -333,7 +361,8 @@ public class BootstrapWorkersModule {
                 persistence.legacyEventResolver(),
                 persistence.eventWriter(),
                 WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics()
+                metricsModule.metrics(),
+                createRateLimiter(eventBootstrapMaxMessagesPerSecond)
         );
 
         return bootstrapQueueFactory()
@@ -439,7 +468,8 @@ public class BootstrapWorkersModule {
                         EquivalentScheduleStoreScheduleUpdateWorker.create(
                                 persistence.getEquivalentScheduleStore(),
                                 WORKER_METRIC_PREFIX + "ForwardingScheduleStore.Schedule",
-                                metricsModule.metrics()
+                                metricsModule.metrics(),
+                                null
                         )
                 )),
                 new DelegatingContentStore(
@@ -476,5 +506,13 @@ public class BootstrapWorkersModule {
                 new LinkedBlockingQueue<>(columbusTelescopeThreadCapacity),
                 new TelescopeReporterFactory.RejectedExecutionHandlerImpl()
         );
+    }
+
+    @Nullable
+    private RateLimiter createRateLimiter(@Nullable Integer maxRequestsPerSecond) {
+        if (maxRequestsPerSecond == null) {
+            return null;
+        }
+        return RateLimiter.create(maxRequestsPerSecond);
     }
 }

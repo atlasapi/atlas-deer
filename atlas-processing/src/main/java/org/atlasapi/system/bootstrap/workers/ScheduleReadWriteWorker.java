@@ -4,7 +4,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -28,6 +27,7 @@ import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -52,14 +52,15 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     private final String publisherLatencyTimerName;
 
     private final MetricRegistry metricRegistry;
-    private final RateLimiter rateLimiter;
+    @Nullable private final RateLimiter rateLimiter;
 
     private ScheduleReadWriteWorker(
             SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory,
             ChannelResolver channelResolver,
             Iterable<Publisher> ignoredSources,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         this.channelResolver = checkNotNull(channelResolver);
         this.taskFactory = checkNotNull(taskFactory);
@@ -74,11 +75,10 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
         this.publisherExecutionTimerName = metricPrefix + "source.%s.timer.execution";
         this.publisherLatencyTimerName = metricPrefix + "source.%s.timer.latency";
-        String defaultRateLimit = System.getenv("DEFAULT_CONSUMER_MAX_MESSAGES_PER_SECOND");
-        int rateLimit = Strings.isNullOrEmpty(defaultRateLimit)
-                ? 1000 :
-                Integer.parseInt(checkNotNull(defaultRateLimit));
-        this.rateLimiter = RateLimiter.create(rateLimit);
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            LOG.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static ScheduleReadWriteWorker create(
@@ -86,20 +86,24 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
             ChannelResolver channelResolver,
             Iterable<Publisher> ignoredSources,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         return new ScheduleReadWriteWorker(
                 taskFactory,
                 channelResolver,
                 ignoredSources,
                 metricPrefix,
-                metricRegistry
+                metricRegistry,
+                rateLimiter
         );
     }
 
     @Override
     public void process(ScheduleUpdateMessage msg) {
-        rateLimiter.acquire();
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         long start = System.currentTimeMillis();
 
         messageReceivedMeter.mark();
