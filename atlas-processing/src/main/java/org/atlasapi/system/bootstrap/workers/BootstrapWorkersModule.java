@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -140,7 +141,7 @@ public class BootstrapWorkersModule {
     @Nullable
     private static Integer nullableIntFromConfig(String name) {
         Parameter parameter = Configurer.get(name);
-        if (parameter == null) {
+        if (parameter == null || Strings.isNullOrEmpty(parameter.get())) {
             return null;
         }
         return parameter.toInt();

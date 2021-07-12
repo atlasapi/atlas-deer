@@ -1,5 +1,6 @@
 package org.atlasapi.messaging;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.common.util.concurrent.Service;
@@ -119,7 +120,7 @@ public class WorkersModule {
     @Nullable
     private static Integer nullableIntFromConfig(String name) {
         Parameter parameter = Configurer.get(name);
-        if (parameter == null) {
+        if (parameter == null || Strings.isNullOrEmpty(parameter.get())) {
             return null;
         }
         return parameter.toInt();
