@@ -1,22 +1,22 @@
 package org.atlasapi.messaging;
 
-import java.util.concurrent.TimeUnit;
-
-import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.time.Timestamp;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.RateLimiter;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.Timestamp;
+import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -35,12 +35,14 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
     private final Meter failureMeter;
     private final Timer latencyTimer;
     private final String publisherMeterName;
+    @Nullable private final RateLimiter rateLimiter;
 
     private ContentEquivalenceUpdatingWorker(
             EquivalenceGraphStore graphStore,
             DirectAndExplicitEquivalenceMigrator equivMigrator,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         this.graphStore = checkNotNull(graphStore);
         this.equivMigrator = checkNotNull(equivMigrator);
@@ -53,21 +55,29 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
 
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            LOG.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static ContentEquivalenceUpdatingWorker create(
             EquivalenceGraphStore graphStore,
             DirectAndExplicitEquivalenceMigrator equivMigrator,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         return new ContentEquivalenceUpdatingWorker(
-                graphStore, equivMigrator, metricPrefix, metricRegistry
+                graphStore, equivMigrator, metricPrefix, metricRegistry, rateLimiter
         );
     }
 
     @Override
     public void process(EquivalenceAssertionMessage message) throws RecoverableException {
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         messageReceivedMeter.mark();
 
         metricRegistry.meter(

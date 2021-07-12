@@ -4,6 +4,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.RateLimiter;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -15,6 +16,7 @@ import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -32,12 +34,14 @@ public class EquivalentScheduleStoreGraphUpdateWorker
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
+    @Nullable private final RateLimiter rateLimiter;
 
     private EquivalentScheduleStoreGraphUpdateWorker(
             EquivalentScheduleWriter scheduleWriter,
             EquivalenceGraphUpdateResolver graphUpdateResolver,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         this.scheduleWriter = checkNotNull(scheduleWriter);
         this.graphUpdateResolver = checkNotNull(graphUpdateResolver);
@@ -46,21 +50,29 @@ public class EquivalentScheduleStoreGraphUpdateWorker
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            LOG.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static EquivalentScheduleStoreGraphUpdateWorker create(
             EquivalentScheduleWriter scheduleWriter,
             EquivalenceGraphUpdateResolver graphUpdateResolver,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         return new EquivalentScheduleStoreGraphUpdateWorker(
-                scheduleWriter, graphUpdateResolver, metricPrefix, metricRegistry
+                scheduleWriter, graphUpdateResolver, metricPrefix, metricRegistry, rateLimiter
         );
     }
 
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         long start = System.currentTimeMillis();
 
         messageReceivedMeter.mark();

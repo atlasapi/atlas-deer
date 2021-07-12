@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.RateLimiter;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -26,6 +27,7 @@ import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -44,13 +46,15 @@ public class Neo4jContentStoreGraphUpdateWorker
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
     private final Timer latencyTimer;
+    @Nullable private final RateLimiter rateLimiter;
 
     private Neo4jContentStoreGraphUpdateWorker(
             ContentResolver legacyResolver,
             LookupEntryStore legacyEquivalenceStore,
             Neo4jContentStore neo4JContentStore,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
 
     ) {
         this.legacyResolver = checkNotNull(legacyResolver);
@@ -61,6 +65,10 @@ public class Neo4jContentStoreGraphUpdateWorker
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            log.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static Neo4jContentStoreGraphUpdateWorker create(
@@ -68,14 +76,16 @@ public class Neo4jContentStoreGraphUpdateWorker
             LookupEntryStore legacyEquivalenceStore,
             Neo4jContentStore neo4JContentStore,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         return new Neo4jContentStoreGraphUpdateWorker(
                 legacyResolver,
                 legacyEquivalenceStore,
                 neo4JContentStore,
                 metricPrefix,
-                metricRegistry
+                metricRegistry,
+                rateLimiter
         );
     }
 
@@ -84,6 +94,9 @@ public class Neo4jContentStoreGraphUpdateWorker
     @SuppressWarnings("deprecation")
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         messageReceivedMeter.mark();
 
         EquivalenceAssertion assertion = message.getGraphUpdate().getAssertion();

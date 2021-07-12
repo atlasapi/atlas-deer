@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.RateLimiter;
 import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.queue.Worker;
@@ -26,6 +27,7 @@ import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -50,13 +52,15 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     private final String publisherLatencyTimerName;
 
     private final MetricRegistry metricRegistry;
+    @Nullable private final RateLimiter rateLimiter;
 
     private ScheduleReadWriteWorker(
             SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory,
             ChannelResolver channelResolver,
             Iterable<Publisher> ignoredSources,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         this.channelResolver = checkNotNull(channelResolver);
         this.taskFactory = checkNotNull(taskFactory);
@@ -71,6 +75,10 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         this.publisherMeterName = metricPrefix + "source.%s.meter.received";
         this.publisherExecutionTimerName = metricPrefix + "source.%s.timer.execution";
         this.publisherLatencyTimerName = metricPrefix + "source.%s.timer.latency";
+        this.rateLimiter = rateLimiter;
+        if (this.rateLimiter != null) {
+            LOG.info("Limiting rate to a maximum of {} messages per second", this.rateLimiter.getRate());
+        }
     }
 
     public static ScheduleReadWriteWorker create(
@@ -78,19 +86,24 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
             ChannelResolver channelResolver,
             Iterable<Publisher> ignoredSources,
             String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metricRegistry,
+            @Nullable RateLimiter rateLimiter
     ) {
         return new ScheduleReadWriteWorker(
                 taskFactory,
                 channelResolver,
                 ignoredSources,
                 metricPrefix,
-                metricRegistry
+                metricRegistry,
+                rateLimiter
         );
     }
 
     @Override
     public void process(ScheduleUpdateMessage msg) {
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
         long start = System.currentTimeMillis();
 
         messageReceivedMeter.mark();

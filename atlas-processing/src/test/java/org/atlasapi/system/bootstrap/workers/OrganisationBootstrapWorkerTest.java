@@ -1,5 +1,9 @@
 package org.atlasapi.system.bootstrap.workers;
 
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
@@ -7,12 +11,6 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.organisation.OrganisationWriter;
-
-import com.metabroadcast.common.time.Timestamp;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +41,8 @@ public class OrganisationBootstrapWorkerTest {
                 resolver,
                 writer,
                 "prefix",
-                new MetricRegistry()
+                new MetricRegistry(),
+                null
         );
 
         Id id = Id.valueOf(0L);
