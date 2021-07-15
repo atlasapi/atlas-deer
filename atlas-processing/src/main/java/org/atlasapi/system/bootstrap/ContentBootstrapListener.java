@@ -1,12 +1,14 @@
 package org.atlasapi.system.bootstrap;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-
-import javax.annotation.Nullable;
-
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.collect.OptionalMap;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
@@ -28,19 +30,14 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.system.legacy.UnresolvedLegacySegmentException;
-
-import com.metabroadcast.common.collect.OptionalMap;
-
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -238,8 +235,7 @@ public class ContentBootstrapListener
             stringBuilder.append(writeResult.written() ? "DONE, " : "UNCHANGED, ");
 
             stringBuilder.append("Equivalence Graph: ");
-            Optional<EquivalenceGraphUpdate> graphUpdate =
-                    equivalenceMigrator.migrateEquivalence(content.toRef());
+            Optional<EquivalenceGraphUpdate> graphUpdate = updateEquivalenceGraph(content);
             stringBuilder.append(graphUpdate.isPresent() ? "DONE, " : "UNCHANGED, ");
 
             equivalentContentStore.updateContent(content.getId());
@@ -261,6 +257,14 @@ public class ContentBootstrapListener
             return contentWriter.forceWriteContent(content);
         } else {
             return contentWriter.writeContent(content);
+        }
+    }
+
+    private Optional<EquivalenceGraphUpdate> updateEquivalenceGraph(Content content) {
+        if (forceWrite) {
+            return equivalenceMigrator.forceMigrateEquivalence(content.toRef());
+        } else {
+            return equivalenceMigrator.migrateEquivalence(content.toRef());
         }
     }
 

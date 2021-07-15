@@ -1,16 +1,14 @@
 package org.atlasapi.equivalence;
 
-import java.util.Set;
-
+import com.google.common.base.Optional;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.collect.OptionalMap;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.media.entity.Publisher;
 
-import com.metabroadcast.common.collect.OptionalMap;
-
-import com.google.common.base.Optional;
-import com.google.common.util.concurrent.ListenableFuture;
+import java.util.Set;
 
 /**
  * <p> Records equivalences between resources. </p>
@@ -43,6 +41,12 @@ public interface EquivalenceGraphStore {
      */
     Optional<EquivalenceGraphUpdate> updateEquivalences(ResourceRef subject,
             Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws WriteException;
+
+    Optional<EquivalenceGraphUpdate> forceUpdateEquivalences(
+            ResourceRef subject,
+            Set<ResourceRef> assertedAdjacents,
+            Set<Publisher> sources
+    ) throws WriteException;
 
     ListenableFuture<OptionalMap<Id, EquivalenceGraph>> resolveIds(Iterable<Id> ids);
 

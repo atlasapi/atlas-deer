@@ -60,6 +60,14 @@ public class DirectAndExplicitEquivalenceMigrator {
     }
 
     public Optional<EquivalenceGraphUpdate> migrateEquivalence(ResourceRef ref) {
+        return migrateEquivalence(ref, false);
+    }
+
+    public Optional<EquivalenceGraphUpdate> forceMigrateEquivalence(ResourceRef ref) {
+        return migrateEquivalence(ref, true);
+    }
+
+    private Optional<EquivalenceGraphUpdate> migrateEquivalence(ResourceRef ref, boolean forceUpdate) {
         try {
             Id contentId = ref.getId();
             LookupEntry legacyLookupEntry = resolveLegacyEquivalents(contentId);
@@ -73,7 +81,7 @@ public class DirectAndExplicitEquivalenceMigrator {
                 log.debug("Dereferenced {} of {} explicit equivalents for {}",
                         equivRefs.size(), legacyEquivRefs.size(), contentId
                 );
-                Optional<EquivalenceGraphUpdate> graphUpdate = updateGraphStore(ref, equivRefs);
+                Optional<EquivalenceGraphUpdate> graphUpdate = updateGraphStore(ref, equivRefs, forceUpdate);
                 log.debug("Updated graph store for {}? {}", contentId, graphUpdate.isPresent());
                 if (graphUpdate.isPresent()) {
                     log.trace("Graph update for ref {} is {}", contentId, graphUpdate.get());
@@ -101,10 +109,16 @@ public class DirectAndExplicitEquivalenceMigrator {
         return contentResolved.getResources().transform(TO_RESOURCE_REF).toSet();
     }
 
-    private Optional<EquivalenceGraphUpdate> updateGraphStore(ResourceRef ref,
-            Set<ResourceRef> refs)
-            throws WriteException {
-        return graphStore.updateEquivalences(ref, refs, Publisher.all());
+    private Optional<EquivalenceGraphUpdate> updateGraphStore(
+            ResourceRef ref,
+            Set<ResourceRef> refs,
+            boolean forceUpdate
+    ) throws WriteException {
+        if (forceUpdate) {
+            return graphStore.forceUpdateEquivalences(ref, refs, Publisher.all());
+        } else {
+            return graphStore.updateEquivalences(ref, refs, Publisher.all());
+        }
     }
 
     private LookupEntry resolveLegacyEquivalents(Id id) {
