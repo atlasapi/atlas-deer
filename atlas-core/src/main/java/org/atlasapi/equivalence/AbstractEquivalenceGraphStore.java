@@ -1,34 +1,5 @@
 package org.atlasapi.equivalence;
 
-import java.time.Duration;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identifiable;
-import org.atlasapi.entity.Identifiables;
-import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.entity.Sourceds;
-import org.atlasapi.entity.util.StoreException;
-import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
-import org.atlasapi.locks.GroupLock;
-import org.atlasapi.media.entity.Publisher;
-
-import com.metabroadcast.common.collect.MoreSets;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessagingException;
-import com.metabroadcast.common.stream.MoreCollectors;
-import com.metabroadcast.common.time.DateTimeZones;
-import com.metabroadcast.common.time.Timestamp;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Function;
@@ -47,9 +18,35 @@ import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.collect.MoreSets;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.DateTimeZones;
+import com.metabroadcast.common.time.Timestamp;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identifiable;
+import org.atlasapi.entity.Identifiables;
+import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.entity.Sourceds;
+import org.atlasapi.entity.util.StoreException;
+import org.atlasapi.entity.util.WriteException;
+import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
+import org.atlasapi.locks.GroupLock;
+import org.atlasapi.media.entity.Publisher;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.time.Duration;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.in;
@@ -113,6 +110,24 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             Set<ResourceRef> assertedAdjacents,
             Set<Publisher> sources
     ) throws WriteException {
+        return updateEquivalences(subject, assertedAdjacents, sources, false);
+    }
+
+    @Override
+    public final Optional<EquivalenceGraphUpdate> forceUpdateEquivalences(
+            ResourceRef subject,
+            Set<ResourceRef> assertedAdjacents,
+            Set<Publisher> sources
+    ) throws WriteException {
+        return updateEquivalences(subject, assertedAdjacents, sources, true);
+    }
+
+    private Optional<EquivalenceGraphUpdate> updateEquivalences(
+            ResourceRef subject,
+            Set<ResourceRef> assertedAdjacents,
+            Set<Publisher> sources,
+            boolean forceUpdate
+    ) throws WriteException {
         metricRegistry.meter(updateEquivalences + METER_CALLED).mark();
         Timer.Context executionTime = metricRegistry
                 .timer(updateEquivalences + TIMER_EXECUTION)
@@ -131,7 +146,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             Optional<EquivalenceGraphUpdate> updated = updateGraphs(
                     subject,
                     ImmutableSet.copyOf(assertedAdjacents),
-                    sources
+                    sources,
+                    forceUpdate
             );
 
             if (updated.isPresent()) {
@@ -337,7 +353,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private Optional<EquivalenceGraphUpdate> updateGraphs(
             ResourceRef subject,
             ImmutableSet<ResourceRef> assertedAdjacents,
-            Set<Publisher> sources
+            Set<Publisher> sources,
+            boolean forceUpdate
     ) throws StoreException {
 
         Optional<EquivalenceGraph> optionalSubjGraph = existingGraph(subject);
@@ -376,7 +393,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 updatedAdjacents
         );
 
-        if (adjacentsUnchanged(subAdjs, assertedAdjacents, sources)) {
+        if (!forceUpdate && adjacentsUnchanged(subAdjs, assertedAdjacents, sources)) {
             metricRegistry.meter(updateEquivalences + METER_NOP).mark();
             log.debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
 
